@@ -29,4 +29,27 @@ const requireStaff = (req, res, next) => {
   next();
 };
 
-module.exports = { authenticate, requireAdmin, requireStaff };
+const requireBroker = (req, res, next) => {
+  if (req.user?.role !== 'broker') {
+    return res.status(403).json({ message: 'Broker access required' });
+  }
+  next();
+};
+
+const authenticateOptional = (req, res, next) => {
+  const header = req.headers.authorization;
+  if (!header || !header.startsWith('Bearer ')) {
+    req.user = null;
+    return next();
+  }
+  const token = header.split(' ')[1];
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = decoded;
+  } catch {
+    req.user = null;
+  }
+  next();
+};
+
+module.exports = { authenticate, authenticateOptional, requireAdmin, requireStaff, requireBroker };

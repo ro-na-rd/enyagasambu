@@ -3,7 +3,11 @@ const pool = require('../config/db');
 exports.getStats = async (req, res) => {
   try {
     const [[{ totalUsers }]] = await pool.query('SELECT COUNT(*) AS totalUsers FROM users');
+    const [[{ totalSellers }]] = await pool.query("SELECT COUNT(*) AS totalSellers FROM users WHERE role = 'seller'");
+    const [[{ totalBrokers }]] = await pool.query("SELECT COUNT(*) AS totalBrokers FROM users WHERE role = 'broker'");
+    const [[{ totalAmbassadors }]] = await pool.query("SELECT COUNT(*) AS totalAmbassadors FROM users WHERE role = 'ambassador'");
     const [[{ activeListings }]] = await pool.query("SELECT COUNT(*) AS activeListings FROM listings WHERE status = 'active' AND expires_at > NOW()");
+    const [[{ disabledListings }]] = await pool.query("SELECT COUNT(*) AS disabledListings FROM listings WHERE status = 'disabled'");
     const [[{ totalListings }]] = await pool.query("SELECT COUNT(*) AS totalListings FROM listings WHERE status != 'deleted'");
     const [[{ totalUnlocks }]] = await pool.query('SELECT COUNT(*) AS totalUnlocks FROM contact_unlocks');
     const [[{ coinsEarned }]] = await pool.query("SELECT COALESCE(SUM(ABS(amount)), 0) AS coinsEarned FROM coin_transactions WHERE type = 'connect_fee'");
@@ -20,7 +24,7 @@ exports.getStats = async (req, res) => {
     );
 
     return res.json({
-      stats: { totalUsers, activeListings, totalListings, totalUnlocks, coinsEarned, coinsFromListings, coinsFromBoosts },
+      stats: { totalUsers, totalSellers, totalBrokers, totalAmbassadors, activeListings, disabledListings, totalListings, totalUnlocks, coinsEarned, coinsFromListings, coinsFromBoosts },
       recentUsers,
       recentListings,
     });
@@ -31,7 +35,7 @@ exports.getStats = async (req, res) => {
 };
 
 exports.getUsers = async (req, res) => {
-  const { page = 1, search } = req.query;
+  const { page = 1, search, role: roleFilter } = req.query;
   const limit = 20;
   const offset = (parseInt(page) - 1) * limit;
   let where = '1=1';
@@ -39,6 +43,10 @@ exports.getUsers = async (req, res) => {
   if (search) {
     where += ' AND (name LIKE ? OR email LIKE ? OR phone LIKE ?)';
     params.push(`%${search}%`, `%${search}%`, `%${search}%`);
+  }
+  if (roleFilter) {
+    where += ' AND role = ?';
+    params.push(roleFilter);
   }
   try {
     const [users] = await pool.query(
@@ -56,7 +64,9 @@ exports.getUsers = async (req, res) => {
 exports.updateUserRole = async (req, res) => {
   const { id } = req.params;
   const { role } = req.body;
-  if (!['user', 'admin'].includes(role)) return res.status(400).json({ message: 'Invalid role' });
+  if (!['user', 'seller', 'admin', 'broker', 'ambassador'].includes(role)) {
+    return res.status(400).json({ message: 'Invalid role' });
+  }
   if (parseInt(id) === req.user.id) return res.status(400).json({ message: 'Cannot change your own role' });
   try {
     await pool.query('UPDATE users SET role = ? WHERE id = ?', [role, id]);
@@ -121,6 +131,85 @@ exports.deleteListing = async (req, res) => {
   try {
     await pool.query("UPDATE listings SET status = 'deleted' WHERE id = ?", [id]);
     return res.json({ message: 'Listing removed' });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
+
+exports.toggleListingStatus = async (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body;
+  if (!['active', 'disabled', 'sold', 'expired'].includes(status)) {
+    return res.status(400).json({ message: 'Invalid status' });
+  }
+  try {
+    await pool.query('UPDATE listings SET status = ? WHERE id = ?', [status, id]);
+    return res.json({ message: `Listing status changed to ${status}` });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
+
+exports.getParticipants = async (req, res) => {
+  const { period = 'all' } = req.query;
+  let dateFilter = '';
+  if (period === 'daily') dateFilter = "AND created_at >= CURDATE()";
+  else if (period === 'weekly') dateFilter = "AND created_at >= DATE_SUB(CURDATE(), INTERVAL 1 WEEK)";
+  else if (period === 'monthly') dateFilter = "AND created_at >= DATE_SUB(CURDATE(), INTERVAL 1 MONTH)";
+  else if (period === 'yearly') dateFilter = "AND created_at >= DATE_SUB(CURDATE(), INTERVAL 1 YEAR)";
+
+  try {
+    const [[{ sellers }]] = await pool.query(`SELECT COUNT(*) AS sellers FROM users WHERE role = 'seller' ${dateFilter}`);
+    const [[{ buyers }]] = await pool.query(`SELECT COUNT(*) AS buyers FROM users WHERE role = 'user' ${dateFilter}`);
+    const [[{ brokers }]] = await pool.query(`SELECT COUNT(*) AS brokers FROM users WHERE role = 'broker' ${dateFilter}`);
+    const [[{ ambassadors }]] = await pool.query(`SELECT COUNT(*) AS ambassadors FROM users WHERE role = 'ambassador' ${dateFilter}`);
+    const [[{ totalActiveListings }]] = await pool.query("SELECT COUNT(*) AS totalActiveListings FROM listings WHERE status = 'active' AND expires_at > NOW()");
+    const [[{ completedDeals }]] = await pool.query("SELECT COUNT(*) AS completedDeals FROM coin_transactions WHERE type = 'connect_fee'");
+
+    return res.json({ sellers, buyers, brokers, ambassadors, totalActiveListings, completedDeals });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
+
+exports.getRevenueChart = async (req, res) => {
+  const { period = 'monthly' } = req.query;
+  try {
+    let format = '%Y-%m';
+    let groupBy = '1 MONTH';
+    let limit = 12;
+    if (period === 'weekly') { format = '%x-W%v'; groupBy = '1 WEEK'; limit = 12; }
+    if (period === 'daily') { format = '%Y-%m-%d'; groupBy = '1 DAY'; limit = 30; }
+    if (period === 'yearly') { format = '%Y'; groupBy = '1 YEAR'; limit = 5; }
+
+    const [rows] = await pool.query(
+      `SELECT DATE_FORMAT(created_at, '${format}') AS label,
+              SUM(ABS(amount)) AS value
+       FROM coin_transactions
+       WHERE type IN ('connect_fee','listing_fee','boost_fee')
+       GROUP BY label ORDER BY label DESC LIMIT ?`,
+      [limit]
+    );
+    return res.json({ chart: rows.reverse() });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
+
+exports.createListing = async (req, res) => {
+  const { title, description, price, category_id, location, listing_type } = req.body;
+  if (!title || !category_id) return res.status(400).json({ message: 'Title and category are required' });
+  try {
+    const [result] = await pool.query(
+      `INSERT INTO listings (user_id, category_id, title, description, price, location, listing_type, status, expires_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, 'active', DATE_ADD(NOW(), INTERVAL 30 DAY))`,
+      [req.user.id, category_id, title, description || null, price || null, location || null, listing_type || 'sell']
+    );
+    return res.status(201).json({ message: 'Listing created', id: result.insertId });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ message: 'Server error' });

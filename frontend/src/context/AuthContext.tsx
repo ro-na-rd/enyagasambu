@@ -21,20 +21,40 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
+function decodeToken(token: string): { is_staff?: boolean } | null {
+  try {
+    return JSON.parse(atob(token.split('.')[1]));
+  } catch {
+    return null;
+  }
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
   const refreshUser = async () => {
-    try {
-      const { data } = await api.get('/auth/me');
-      setUser(data.user);
-    } catch {
+    const token = localStorage.getItem('nmo_token');
+    const payload = token ? decodeToken(token) : null;
+
+    if (payload?.is_staff) {
       try {
         const { data } = await api.get('/admin/auth/me');
         setUser(data.user);
       } catch {
         setUser(null);
+      }
+    } else {
+      try {
+        const { data } = await api.get('/auth/me');
+        setUser(data.user);
+      } catch {
+        try {
+          const { data } = await api.get('/admin/auth/me');
+          setUser(data.user);
+        } catch {
+          setUser(null);
+        }
       }
     }
   };
@@ -48,7 +68,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string, role?: string) => {
+    if (role === 'broker') {
+      const { data } = await api.post('/auth/broker/login', { email, password });
+      localStorage.setItem('nmo_token', data.token);
+      setUser(data.user);
+      return;
+    }
     const { data } = await api.post('/auth/login', { email, password });
     localStorage.setItem('nmo_token', data.token);
     setUser(data.user);

@@ -227,14 +227,16 @@ export default function Navbar() {
               Support with us
             </button>
 
+            {/* Post to sell — always visible */}
+            <Link href="/listings/create"
+              className="text-white text-xs font-semibold px-4 py-1.5 rounded transition hover:opacity-90"
+              style={{ background: org }}>
+              + Posting
+            </Link>
+
             {/* Auth controls (logged in) */}
             {user && (
               <div className="flex items-center gap-2 ml-1 pl-2" style={{ borderLeft: '1px solid #ddd' }}>
-                <Link href="/listings/create"
-                  className="text-white text-xs font-semibold px-3 py-1 rounded transition hover:opacity-90"
-                  style={{ background: org }}>
-                  {T.listItem}
-                </Link>
                 <Link href="/coins"
                   className="text-xs px-2 py-1 rounded flex items-center gap-1"
                   style={{ background: '#0f1e5a', color: '#fff' }}>
@@ -265,14 +267,6 @@ export default function Navbar() {
                     </div>
                   )}
                 </div>
-              </div>
-            )}
-
-            {/* Not logged in — show Sign In / Register */}
-            {!user && (
-              <div className="flex items-center gap-2 ml-1 pl-2" style={{ borderLeft: '1px solid #ddd' }}>
-                <Link href="/login"    className="text-sm transition hover:opacity-70" style={{ color: navy }}>{T.signIn}</Link>
-                <Link href="/register" className="text-white text-xs font-semibold px-3 py-1 rounded transition hover:opacity-90" style={{ background: org }}>{T.register}</Link>
               </div>
             )}
           </div>
@@ -306,7 +300,7 @@ export default function Navbar() {
           ))}
         </div>
         <div className="flex items-center gap-5">
-          <Link href="/certificate?type=broker" className="text-sm py-3 transition" style={{ color: '#cdd4f0', textDecoration: 'none' }}
+          <Link href="/broker/register" className="text-sm py-3 transition" style={{ color: '#cdd4f0', textDecoration: 'none' }}
             onMouseEnter={e => (e.currentTarget.style.color = '#fff')}
             onMouseLeave={e => (e.currentTarget.style.color = '#cdd4f0')}>
             {T.brokerPortal}

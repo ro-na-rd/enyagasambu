@@ -2,7 +2,7 @@ const router = require('express').Router();
 const multer = require('multer');
 const path = require('path');
 const { body } = require('express-validator');
-const { authenticate } = require('../middleware/auth');
+const { authenticate, authenticateOptional } = require('../middleware/auth');
 const ctrl = require('../controllers/listingController');
 
 const storage = multer.diskStorage({
@@ -34,7 +34,7 @@ router.get('/:id', (req, res, next) => {
 
 router.post(
   '/',
-  authenticate,
+  authenticateOptional,
   upload.array('images', 6),
   [
     body('title').trim().notEmpty().withMessage('Title is required'),

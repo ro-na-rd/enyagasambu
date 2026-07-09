@@ -23,8 +23,17 @@ app.use('/api/coins', require('./routes/coins'));
 app.use('/api/otp', require('./routes/otp'));
 app.use('/api/admin/auth', require('./routes/adminAuth'));
 app.use('/api/admin', require('./routes/admin'));
+app.use('/api/categories', require('./routes/categories'));
 app.use('/api/referrals', require('./routes/referrals'));
 app.use('/api/subscriptions', require('./routes/subscriptions'));
+app.use('/api/auth/broker', require('./routes/brokerAuth'));
+app.use('/api/auth/ambassador', require('./routes/ambassadorAuth'));
+app.use('/api/broker/certificate', require('./routes/brokerCertificate'));
+app.use('/api/ambassador/certificate', require('./routes/ambassadorCertificate'));
+app.use('/api/admin/certificates', require('./routes/adminCertificates'));
+app.use('/api/admin/broker-certificates', require('./routes/adminBrokerCertificates'));
+app.use('/api/settings', require('./routes/settings'));
+app.use('/api/unlock', require('./routes/unlock'));
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok', platform: 'NMO' }));
 

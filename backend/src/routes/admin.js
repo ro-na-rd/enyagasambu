@@ -7,11 +7,15 @@ router.get('/stats',           authenticate, requireStaff, ctrl.getStats);
 router.get('/users',           authenticate, requireStaff, ctrl.getUsers);
 router.get('/listings',        authenticate, requireStaff, ctrl.getAdminListings);
 router.get('/promos',          authenticate, requireStaff, ctrl.getPromos);
+router.get('/participants',    authenticate, requireStaff, ctrl.getParticipants);
+router.get('/revenue-chart',   authenticate, requireStaff, ctrl.getRevenueChart);
 
 // Mutations: admin only
 router.patch('/users/:id/role',  authenticate, requireAdmin, ctrl.updateUserRole);
 router.post('/users/:id/coins',  authenticate, requireAdmin, ctrl.grantCoins);
 router.delete('/listings/:id',   authenticate, requireAdmin, ctrl.deleteListing);
+router.patch('/listings/:id/status', authenticate, requireAdmin, ctrl.toggleListingStatus);
+router.post('/listings',         authenticate, requireAdmin, ctrl.createListing);
 router.post('/promos',           authenticate, requireAdmin, ctrl.createPromo);
 
 module.exports = router;

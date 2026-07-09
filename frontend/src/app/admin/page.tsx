@@ -1,132 +1,209 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { useAuth } from '@/context/AuthContext';
-import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
 import Link from 'next/link';
 
+const NAVY = '#0f1e42';
+const ORG = '#E85D04';
+
 interface Stats {
-  totalUsers: number;
-  activeListings: number;
-  totalListings: number;
-  totalUnlocks: number;
-  coinsEarned: number;
-  coinsFromListings: number;
-  coinsFromBoosts: number;
+  totalUsers: number; totalSellers: number; totalBrokers: number; totalAmbassadors: number;
+  activeListings: number; disabledListings: number; totalListings: number; totalUnlocks: number;
+  coinsEarned: number; coinsFromListings: number; coinsFromBoosts: number;
 }
+interface RecentUser { id: number; name: string; email: string; coins: number; role: string; created_at: string; }
+interface RecentListing { id: number; title: string; status: string; seller_name: string; created_at: string; }
 
-export default function AdminPage() {
-  const { user, loading } = useAuth();
-  const router = useRouter();
+export default function AdminDashboardPage() {
   const [stats, setStats] = useState<Stats | null>(null);
-  const [recentUsers, setRecentUsers] = useState<{ id: number; name: string; email: string; coins: number; created_at: string }[]>([]);
-  const [recentListings, setRecentListings] = useState<{ id: number; title: string; status: string; seller_name: string; created_at: string }[]>([]);
-  const [fetching, setFetching] = useState(true);
+  const [recentUsers, setRecentUsers] = useState<RecentUser[]>([]);
+  const [recentListings, setRecentListings] = useState<RecentListing[]>([]);
+  const [participants, setParticipants] = useState<any>(null);
+  const [chart, setChart] = useState<{ label: string; value: number }[]>([]);
+  const [period, setPeriod] = useState('monthly');
+  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (!loading) {
-      if (!user) router.push('/admin/login');
-      else if (user.role !== 'admin') router.push('/');
-    }
-  }, [user, loading, router]);
+  const load = () => {
+    setLoading(true);
+    Promise.all([
+      api.get('/admin/stats'),
+      api.get(`/admin/participants?period=${period}`),
+      api.get(`/admin/revenue-chart?period=${period}`),
+    ]).then(([s, p, c]) => {
+      setStats(s.data.stats);
+      setRecentUsers(s.data.recentUsers);
+      setRecentListings(s.data.recentListings);
+      setParticipants(p.data);
+      setChart(c.data.chart || []);
+    }).finally(() => setLoading(false));
+  };
 
-  useEffect(() => {
-    if (user?.role === 'admin') {
-      api.get('/admin/stats')
-        .then(({ data }) => { setStats(data.stats); setRecentUsers(data.recentUsers); setRecentListings(data.recentListings); })
-        .finally(() => setFetching(false));
-    }
-  }, [user]);
+  useEffect(() => { load(); }, [period]);
 
-  if (loading || fetching) return <div className="text-center py-24 text-gray-500">Loading…</div>;
+  const cards = [
+    { label: 'Total Users', value: stats?.totalUsers ?? 0, icon: '👥', color: NAVY, bg: '#eef2ff', link: '/admin/users' },
+    { label: 'Active Listings', value: stats?.activeListings ?? 0, icon: '📋', color: ORG, bg: '#fff7ed', link: '/admin/listings' },
+    { label: 'Total Revenue', value: ((stats?.coinsEarned ?? 0) + (stats?.coinsFromListings ?? 0) + (stats?.coinsFromBoosts ?? 0)).toLocaleString(), icon: '🪙', color: '#059669', bg: '#ecfdf5', link: '/admin/reports' },
+    { label: 'Connects Made', value: stats?.totalUnlocks ?? 0, icon: '📞', color: '#7c3aed', bg: '#f5f3ff', link: '/admin/reports' },
+    { label: 'Brokers', value: stats?.totalBrokers ?? 0, icon: '🤝', color: '#0ea5e9', bg: '#f0f9ff', link: '/admin/users?role=broker' },
+    { label: 'Sellers', value: stats?.totalSellers ?? 0, icon: '🏪', color: '#d97706', bg: '#fffbeb', link: '/admin/users?role=seller' },
+    { label: 'Ambassadors', value: stats?.totalAmbassadors ?? 0, icon: '🎖️', color: '#0891b2', bg: '#ecfeff', link: '/admin/users?role=ambassador' },
+    { label: 'Disabled Items', value: stats?.disabledListings ?? 0, icon: '🚫', color: '#dc2626', bg: '#fef2f2', link: '/admin/listings?status=disabled' },
+  ];
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-10">
-      <h1 className="text-2xl font-bold text-gray-900 mb-2">Admin Dashboard</h1>
-      <p className="text-gray-500 text-sm mb-8">Overview of NMO platform activity</p>
+    <div className="p-4 lg:p-8">
+      {/* Page header */}
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+        <p className="text-sm text-gray-500 mt-1">Full platform control &mdash; manage users, listings, participants</p>
+      </div>
 
       {/* Stats cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-10">
-        {[
-          { label: 'Total Users', value: stats?.totalUsers ?? 0, icon: '👤', color: 'bg-blue-50 text-blue-700' },
-          { label: 'Active Listings', value: stats?.activeListings ?? 0, icon: '📋', color: 'bg-orange-50 text-[#FF6B00]' },
-          { label: 'Total Connects', value: stats?.totalUnlocks ?? 0, icon: '📞', color: 'bg-purple-50 text-purple-700' },
-          { label: 'Revenue (coins)', value: (stats?.coinsEarned ?? 0) + (stats?.coinsFromListings ?? 0) + (stats?.coinsFromBoosts ?? 0), icon: '🪙', color: 'bg-yellow-50 text-yellow-700' },
-        ].map((card) => (
-          <div key={card.label} className={`rounded-xl p-5 ${card.color} bg-opacity-60`}>
-            <p className="text-3xl">{card.icon}</p>
-            <p className="text-2xl font-bold mt-2">{card.value.toLocaleString()}</p>
-            <p className="text-sm mt-0.5 opacity-80">{card.label}</p>
-          </div>
-        ))}
-      </div>
-
-      {/* Revenue breakdown */}
-      <div className="bg-white rounded-xl shadow-sm p-5 mb-8">
-        <h2 className="font-semibold text-gray-800 mb-4">Revenue Breakdown (coins collected)</h2>
-        <div className="grid grid-cols-3 gap-4 text-center">
-          <div>
-            <p className="text-xl font-bold text-[#FF6B00]">{stats?.coinsFromListings ?? 0}</p>
-            <p className="text-xs text-gray-500 mt-1">Listing Fees (400 each)</p>
-          </div>
-          <div>
-            <p className="text-xl font-bold text-[#FF6B00]">{stats?.coinsEarned ?? 0}</p>
-            <p className="text-xs text-gray-500 mt-1">Connect Fees (300 each)</p>
-          </div>
-          <div>
-            <p className="text-xl font-bold text-[#FF6B00]">{stats?.coinsFromBoosts ?? 0}</p>
-            <p className="text-xs text-gray-500 mt-1">Boost Fees (200 each)</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Admin navigation */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-10">
-        {[
-          { href: '/admin/users', label: 'Manage Users', icon: '👥' },
-          { href: '/admin/listings', label: 'Manage Listings', icon: '🏪' },
-          { href: '/admin/promos', label: 'Promo Codes', icon: '🎟️' },
-        ].map((item) => (
-          <Link key={item.href} href={item.href} className="bg-white border border-gray-200 rounded-xl p-4 text-center hover:shadow transition" style={{ borderColor: undefined }} onMouseEnter={e => (e.currentTarget.style.borderColor = '#FF6B00')} onMouseLeave={e => (e.currentTarget.style.borderColor = '')}>
-            <p className="text-2xl mb-1">{item.icon}</p>
-            <p className="text-sm font-medium text-gray-700">{item.label}</p>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        {cards.map((card) => (
+          <Link key={card.label} href={card.link}
+            className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 hover:shadow-md transition block">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-2xl">{card.icon}</span>
+              <span className="text-xs font-medium text-gray-400 bg-gray-50 px-2 py-1 rounded-full">{card.label}</span>
+            </div>
+            <p className="text-3xl font-extrabold" style={{ color: card.color }}>
+              {typeof card.value === 'number' ? card.value.toLocaleString() : card.value}
+            </p>
           </Link>
         ))}
       </div>
 
-      <div className="grid sm:grid-cols-2 gap-6">
-        {/* Recent users */}
-        <div className="bg-white rounded-xl shadow-sm p-5">
-          <h2 className="font-semibold text-gray-800 mb-3">Recent Users</h2>
-          <div className="space-y-2">
-            {recentUsers.map((u) => (
-              <div key={u.id} className="flex items-center justify-between text-sm">
-                <div>
-                  <p className="font-medium text-gray-800">{u.name}</p>
-                  <p className="text-xs text-gray-400">{u.email}</p>
-                </div>
-                <span className="font-medium" style={{ color: '#FF6B00' }}>🪙 {u.coins}</span>
-              </div>
-            ))}
+      {/* Participants Overview + Revenue Chart */}
+      <div className="grid lg:grid-cols-2 gap-6 mb-8">
+        {/* Participants */}
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-sm font-bold uppercase tracking-wider text-gray-800">Market Participants</h2>
+            <select value={period} onChange={(e) => setPeriod(e.target.value)}
+              className="border border-gray-200 rounded-lg px-2 py-1 text-xs">
+              <option value="daily">Daily</option>
+              <option value="weekly">Weekly</option>
+              <option value="monthly">Monthly</option>
+              <option value="yearly">Yearly</option>
+              <option value="all">All Time</option>
+            </select>
           </div>
-          <Link href="/admin/users" className="text-xs hover:underline mt-3 inline-block" style={{ color: '#FF6B00' }}>View all users →</Link>
+          {participants ? (
+            <div className="grid grid-cols-3 gap-3">
+              {[
+                { label: 'Buyers', value: participants.buyers, icon: '👤', color: NAVY },
+                { label: 'Sellers', value: participants.sellers, icon: '🏪', color: '#d97706' },
+                { label: 'Brokers', value: participants.brokers, icon: '🤝', color: '#0ea5e9' },
+                { label: 'Ambassadors', value: participants.ambassadors, icon: '🎖️', color: '#0891b2' },
+                { label: 'Active Listings', value: participants.totalActiveListings, icon: '📋', color: ORG },
+                { label: 'Completed Deals', value: participants.completedDeals, icon: '✅', color: '#059669' },
+              ].map((p) => (
+                <div key={p.label} className="text-center p-3 rounded-lg bg-gray-50">
+                  <div className="text-xl mb-1">{p.icon}</div>
+                  <p className="text-lg font-extrabold" style={{ color: p.color }}>{p.value}</p>
+                  <p className="text-[10px] text-gray-500 mt-0.5">{p.label}</p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-gray-400 text-center py-6">Loading...</p>
+          )}
         </div>
 
-        {/* Recent listings */}
-        <div className="bg-white rounded-xl shadow-sm p-5">
-          <h2 className="font-semibold text-gray-800 mb-3">Recent Listings</h2>
-          <div className="space-y-2">
-            {recentListings.map((l) => (
-              <div key={l.id} className="flex items-center justify-between text-sm">
-                <div>
-                  <p className="font-medium text-gray-800 truncate max-w-[180px]">{l.title}</p>
-                  <p className="text-xs text-gray-400">by {l.seller_name}</p>
+        {/* Revenue Chart */}
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
+          <h2 className="text-sm font-bold uppercase tracking-wider text-gray-800 mb-4">
+            Revenue Trend ({period})
+          </h2>
+          <div className="flex items-end gap-2 h-40 mb-2">
+            {chart.map((point, i) => {
+              const max = Math.max(...chart.map(p => p.value), 1);
+              return (
+                <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                  <span className="text-[9px] text-gray-400 font-semibold">{point.value}</span>
+                  <div className="w-full rounded-md transition-all"
+                    style={{ height: `${(point.value / max) * 100}%`, background: `linear-gradient(to top, ${NAVY}, ${ORG})`, minHeight: 4 }} />
+                  <span className="text-[8px] text-gray-400 text-center truncate w-full">{point.label}</span>
                 </div>
-                <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${l.status === 'active' ? 'bg-orange-100 text-[#FF6B00]' : 'bg-gray-100 text-gray-600'}`}>{l.status}</span>
-              </div>
-            ))}
+              );
+            })}
           </div>
-          <Link href="/admin/listings" className="text-xs hover:underline mt-3 inline-block" style={{ color: '#FF6B00' }}>View all listings →</Link>
+        </div>
+      </div>
+
+      {/* Quick Actions */}
+      <div className="flex flex-wrap gap-2 mb-8">
+        <Link href="/admin/listings" className="text-xs font-semibold px-4 py-2 rounded-lg text-white transition hover:opacity-90" style={{ background: NAVY }}>
+          🏠 Manage Listings
+        </Link>
+        <Link href="/admin/users" className="text-xs font-semibold px-4 py-2 rounded-lg text-white transition hover:opacity-90" style={{ background: ORG }}>
+          👥 Manage Users
+        </Link>
+        <Link href="/admin/categories" className="text-xs font-semibold px-4 py-2 rounded-lg text-white transition hover:opacity-90" style={{ background: '#059669' }}>
+          📂 Categories
+        </Link>
+        <Link href="/admin/promos" className="text-xs font-semibold px-4 py-2 rounded-lg text-white transition hover:opacity-90" style={{ background: '#7c3aed' }}>
+          🎟️ Promo Codes
+        </Link>
+      </div>
+
+      {/* Recent Activities */}
+      <div className="grid lg:grid-cols-2 gap-6">
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-sm font-bold uppercase tracking-wider text-gray-800">Recent Users</h2>
+            <Link href="/admin/users" className="text-xs font-semibold hover:underline" style={{ color: ORG }}>View all →</Link>
+          </div>
+          {recentUsers.length === 0 ? (
+            <p className="text-sm text-gray-400 text-center py-6">No users yet</p>
+          ) : (
+            <div className="space-y-2">
+              {recentUsers.map((u) => (
+                <div key={u.id} className="flex items-center justify-between py-2 border-b border-gray-50 last:border-b-0">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0" style={{ background: NAVY }}>
+                      {u.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-gray-800">{u.name}</p>
+                      <p className="text-xs text-gray-400">{u.email} &middot; {u.role}</p>
+                    </div>
+                  </div>
+                  <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ background: '#fff7ed', color: ORG }}>
+                    🪙 {u.coins}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-sm font-bold uppercase tracking-wider text-gray-800">Recent Listings</h2>
+            <Link href="/admin/listings" className="text-xs font-semibold hover:underline" style={{ color: ORG }}>View all →</Link>
+          </div>
+          {recentListings.length === 0 ? (
+            <p className="text-sm text-gray-400 text-center py-6">No listings yet</p>
+          ) : (
+            <div className="space-y-2">
+              {recentListings.map((l) => (
+                <div key={l.id} className="flex items-center justify-between py-2 border-b border-gray-50 last:border-b-0">
+                  <div>
+                    <p className="text-sm font-semibold text-gray-800 truncate max-w-[200px]">{l.title}</p>
+                    <p className="text-xs text-gray-400">by {l.seller_name}</p>
+                  </div>
+                  <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                    l.status === 'active' ? 'bg-green-50 text-green-700' :
+                    l.status === 'disabled' ? 'bg-red-50 text-red-600' :
+                    'bg-gray-100 text-gray-500'
+                  }`}>{l.status}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>

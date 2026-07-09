@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS users (
   phone VARCHAR(20),
   password_hash VARCHAR(255) NOT NULL,
   coins INT DEFAULT 0,
-  role ENUM('user', 'seller', 'admin') DEFAULT 'user',
+  role ENUM('user', 'seller', 'admin', 'broker', 'ambassador') DEFAULT 'user',
   is_verified BOOLEAN DEFAULT FALSE,
   referral_code VARCHAR(20) UNIQUE,
   referred_by INT,
@@ -33,7 +33,7 @@ CREATE TABLE IF NOT EXISTS listings (
   price DECIMAL(12, 2),
   price_type ENUM('fixed', 'negotiable', 'per_day', 'per_month') DEFAULT 'fixed',
   location VARCHAR(200),
-  status ENUM('active', 'expired', 'sold', 'deleted') DEFAULT 'active',
+  status ENUM('active', 'expired', 'sold', 'deleted', 'disabled') DEFAULT 'active',
   listing_type ENUM('sell', 'rent') DEFAULT 'sell',
   is_featured BOOLEAN DEFAULT FALSE,
   featured_until TIMESTAMP NULL,
@@ -212,6 +212,54 @@ CREATE TABLE IF NOT EXISTS staff_otps (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (staff_id) REFERENCES staff(id) ON DELETE CASCADE
 );
+
+-- Ambassador certificate requests
+CREATE TABLE IF NOT EXISTS ambassador_certificates (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL,
+  photo_url VARCHAR(500) DEFAULT NULL,
+  cert_no VARCHAR(50) UNIQUE DEFAULT NULL,
+  status ENUM('pending','paid','generated') DEFAULT 'pending',
+  payment_ref VARCHAR(100) DEFAULT NULL,
+  amount_rwf INT DEFAULT 2000,
+  issued_date DATE DEFAULT NULL,
+  valid_until DATE DEFAULT NULL,
+  generated_by INT DEFAULT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (generated_by) REFERENCES staff(id) ON DELETE SET NULL
+);
+
+-- Broker certificate requests
+CREATE TABLE IF NOT EXISTS broker_certificates (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  broker_id INT NOT NULL,
+  photo_url VARCHAR(500) DEFAULT NULL,
+  phone VARCHAR(20) DEFAULT NULL,
+  cert_no VARCHAR(50) UNIQUE DEFAULT NULL,
+  status ENUM('pending','paid','generated') DEFAULT 'pending',
+  payment_ref VARCHAR(100) DEFAULT NULL,
+  amount_rwf INT DEFAULT 2000,
+  issued_date DATE DEFAULT NULL,
+  valid_until DATE DEFAULT NULL,
+  generated_by INT DEFAULT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (broker_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (generated_by) REFERENCES staff(id) ON DELETE SET NULL
+);
+
+CREATE TABLE IF NOT EXISTS platform_settings (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  setting_key VARCHAR(50) NOT NULL UNIQUE,
+  setting_value TEXT NOT NULL,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+INSERT IGNORE INTO platform_settings (setting_key, setting_value) VALUES
+  ('posting_fee', '400'),
+  ('posting_free', 'false');
 
 CREATE TABLE IF NOT EXISTS renewal_tokens (
   id INT AUTO_INCREMENT PRIMARY KEY,

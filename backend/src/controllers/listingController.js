@@ -153,20 +153,52 @@ exports.createListing = async (req, res) => {
   try {
     await conn.beginTransaction();
 
-    const isAdmin = req.user.role === 'admin';
+    let userId;
+    let isAdmin = false;
+    let postingFree = false;
+    let postingFee = LISTING_COST;
+    let user = null;
+    let isGuest = false;
 
-    const [[user]] = await conn.query('SELECT coins, phone FROM users WHERE id = ? FOR UPDATE', [req.user.id]);
-    if (!isAdmin) {
-      if (!user || user.coins < LISTING_COST) {
+    if (req.user) {
+      userId = req.user.id;
+      isAdmin = req.user.role === 'admin';
+      [[user]] = await conn.query('SELECT coins, phone FROM users WHERE id = ? FOR UPDATE', [userId]);
+    } else {
+      const { guest_name, guest_phone } = req.body;
+      if (!guest_name || !guest_phone) {
         await conn.rollback();
-        return res.status(402).json({ message: `Insufficient coins. You need ${LISTING_COST} coins to list.` });
+        return res.status(400).json({ message: 'Name and phone are required when not signed in.' });
       }
-      await conn.query('UPDATE users SET coins = coins - ? WHERE id = ?', [LISTING_COST, req.user.id]);
+      isGuest = true;
+      const [result] = await conn.query(
+        'INSERT INTO users (name, phone, password_hash, role) VALUES (?, ?, ?, ?)',
+        [guest_name, guest_phone, crypto.randomBytes(32).toString('hex'), 'user']
+      );
+      userId = result.insertId;
     }
 
-    // Check subscription plan for listing duration
-    const [[sub]] = await conn.query('SELECT * FROM seller_subscriptions WHERE user_id = ? AND (expires_at IS NULL OR expires_at > NOW())', [req.user.id]);
-    const durationDays = sub ? sub.listing_duration_days : LISTING_DAYS;
+    if (!isGuest && !isAdmin) {
+      const [settingRows] = await conn.query("SELECT setting_key, setting_value FROM platform_settings WHERE setting_key IN ('posting_free','posting_fee')");
+      const s = {};
+      if (settingRows) settingRows.forEach(r => { s[r.setting_key] = r.setting_value; });
+      postingFree = s.posting_free === 'true';
+      postingFee = parseInt(s.posting_fee, 10) || LISTING_COST;
+
+      if (!postingFree) {
+        if (!user || user.coins < postingFee) {
+          await conn.rollback();
+          return res.status(402).json({ message: `Insufficient coins. You need ${postingFee} coins to list.` });
+        }
+        await conn.query('UPDATE users SET coins = coins - ? WHERE id = ?', [postingFee, userId]);
+      }
+    }
+
+    let durationDays = LISTING_DAYS;
+    if (!isGuest) {
+      const [[sub]] = await conn.query('SELECT * FROM seller_subscriptions WHERE user_id = ? AND (expires_at IS NULL OR expires_at > NOW())', [userId]);
+      if (sub) durationDays = sub.listing_duration_days;
+    }
 
     const { title, description, price, price_type, location, listing_type, category_id } = req.body;
     const expiresAt = new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000);
@@ -174,13 +206,13 @@ exports.createListing = async (req, res) => {
     const [result] = await conn.query(
       `INSERT INTO listings (user_id, category_id, title, description, price, price_type, location, listing_type, expires_at)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [req.user.id, category_id, title, description, price || null, price_type || 'fixed', location, listing_type || 'sell', expiresAt]
+      [userId, category_id, title, description, price || null, price_type || 'fixed', location, listing_type || 'sell', expiresAt]
     );
 
-    if (!isAdmin) {
+    if (!isGuest && !isAdmin && !postingFree) {
       await conn.query(
         'INSERT INTO coin_transactions (user_id, amount, type, listing_id) VALUES (?, ?, ?, ?)',
-        [req.user.id, -LISTING_COST, 'listing_fee', result.insertId]
+        [userId, -postingFee, 'listing_fee', result.insertId]
       );
     }
 
@@ -189,8 +221,8 @@ exports.createListing = async (req, res) => {
       await conn.query('INSERT INTO listing_images (listing_id, image_url, is_primary) VALUES ?', [imageValues]);
     }
 
-    const sellerPhone = normalizePhone(user.phone);
-    if (sellerPhone) {
+    const sellerPhone = user ? normalizePhone(user.phone) : normalizePhone(req.body.guest_phone || '');
+    if (sellerPhone && !isGuest) {
       await createRenewalToken(conn, result.insertId, sellerPhone, expiresAt);
     }
 

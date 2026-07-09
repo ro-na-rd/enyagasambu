@@ -1,6 +1,5 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { validationResult } = require('express-validator');
 const pool = require('../config/db');
 const { applyReferral } = require('./referralController');
 
@@ -14,9 +13,6 @@ const signToken = (user) =>
   );
 
 exports.register = async (req, res) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) return res.status(422).json({ errors: errors.array() });
-
   const { name, email, phone, password, referral_code } = req.body;
 
   const conn = await pool.getConnection();
@@ -66,9 +62,6 @@ exports.register = async (req, res) => {
 };
 
 exports.login = async (req, res) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) return res.status(422).json({ errors: errors.array() });
-
   const { email, password } = req.body;
   try {
     const [rows] = await pool.query(
@@ -98,6 +91,17 @@ exports.me = async (req, res) => {
     );
     if (rows.length === 0) return res.status(404).json({ message: 'User not found' });
     return res.json({ user: rows[0] });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
+
+exports.updateMe = async (req, res) => {
+  const { name, phone } = req.body;
+  try {
+    await pool.query('UPDATE users SET name = COALESCE(?, name), phone = COALESCE(?, phone) WHERE id = ?', [name, phone, req.user.id]);
+    return res.json({ message: 'Profile updated' });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ message: 'Server error' });
