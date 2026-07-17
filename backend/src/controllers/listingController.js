@@ -46,7 +46,7 @@ exports.getCategories = async (req, res) => {
 };
 
 exports.getListings = async (req, res) => {
-  const { category, type, search, page = 1, limit = 20 } = req.query;
+  const { category, type, group, search, page = 1, limit = 20 } = req.query;
   const offset = (parseInt(page) - 1) * parseInt(limit);
 
   let where = "l.status = 'active' AND l.expires_at > NOW()";
@@ -59,6 +59,10 @@ exports.getListings = async (req, res) => {
   if (type) {
     where += ' AND l.listing_type = ?';
     params.push(type);
+  }
+  if (group) {
+    where += ' AND c.type = ?';
+    params.push(group);
   }
   if (search) {
     where += ' AND (l.title LIKE ? OR l.description LIKE ?)';

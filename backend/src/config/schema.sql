@@ -34,7 +34,7 @@ CREATE TABLE IF NOT EXISTS listings (
   price_type ENUM('fixed', 'negotiable', 'per_day', 'per_month') DEFAULT 'fixed',
   location VARCHAR(200),
   status ENUM('active', 'expired', 'sold', 'deleted', 'disabled') DEFAULT 'active',
-  listing_type ENUM('sell', 'rent') DEFAULT 'sell',
+  listing_type ENUM('sell', 'rent', 'auction') DEFAULT 'sell',
   is_featured BOOLEAN DEFAULT FALSE,
   featured_until TIMESTAMP NULL,
   expires_at TIMESTAMP,
@@ -152,7 +152,14 @@ INSERT IGNORE INTO categories (name, slug, type) VALUES
   ('Mechanical Services', 'mechanical', 'service'),
   ('Gardening Services', 'gardening', 'service'),
   ('Arts & Tourism', 'arts-tourism', 'service'),
-  ('Jobs (Abasare)', 'jobs', 'service');
+  ('Jobs (Abasare)', 'jobs', 'service'),
+  ('Food & Beverage', 'food-beverage', 'product'),
+  ('Clothing', 'clothing', 'product'),
+  ('Construction', 'construction', 'service'),
+  ('Health', 'health', 'service'),
+  ('Education', 'education', 'service'),
+  ('Farmer Product', 'farmer-product', 'product'),
+  ('Supply Chain', 'supply-chain', 'service');
 
 -- Additional schema tables needed to support the specification
 CREATE TABLE IF NOT EXISTS staff (

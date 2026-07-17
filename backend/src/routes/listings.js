@@ -39,7 +39,7 @@ router.post(
   [
     body('title').trim().notEmpty().withMessage('Title is required'),
     body('category_id').isInt().withMessage('Category required'),
-    body('listing_type').isIn(['sell', 'rent']).withMessage('Type must be sell or rent'),
+    body('listing_type').isIn(['sell', 'rent', 'auction']).withMessage('Type must be sell, rent, or auction'),
   ],
   ctrl.createListing
 );
@@ -51,7 +51,7 @@ router.post(
   [
     body('title').trim().notEmpty().withMessage('Title is required'),
     body('category_id').isInt().withMessage('Category required'),
-    body('listing_type').isIn(['sell', 'rent']).withMessage('Type must be sell or rent'),
+    body('listing_type').isIn(['sell', 'rent', 'auction']).withMessage('Type must be sell, rent, or auction'),
     body('duration_days').isIn([3, 7, 30]).withMessage('duration_days must be 3, 7, or 30'),
   ],
   ctrl.initiateListingPayment
