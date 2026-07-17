@@ -26,12 +26,19 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const router = useRouter();
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [notifOpen, setNotifOpen] = useState(false);
 
   const isLoginPage = pathname === '/admin/login';
 
   useEffect(() => {
     if (!loading && !user && !isLoginPage) router.replace('/admin/login');
   }, [user, loading, router, isLoginPage]);
+
+  useEffect(() => {
+    const close = () => setNotifOpen(false);
+    window.addEventListener('click', close);
+    return () => window.removeEventListener('click', close);
+  }, []);
 
   if (isLoginPage) return <>{children}</>;
 
@@ -113,10 +120,36 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </div>
 
           <div className="flex items-center gap-3">
-            <button className="relative text-gray-500 hover:text-gray-700 text-lg" title="Notifications">
-              🔔
-              <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">3</span>
-            </button>
+            <div className="relative">
+              <button onClick={(e) => { e.stopPropagation(); setNotifOpen(!notifOpen); }}
+                className="relative text-gray-500 hover:text-gray-700 text-lg" title="Notifications">
+                🔔
+                <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">3</span>
+              </button>
+              {notifOpen && (
+                <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-xl shadow-lg border border-gray-100 z-50" onClick={(e) => e.stopPropagation()}>
+                  <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+                    <span className="text-sm font-bold text-gray-800">Notifications</span>
+                    <span className="text-xs text-gray-400">3 new</span>
+                  </div>
+                  <div className="max-h-64 overflow-y-auto">
+                    {[
+                      { text: 'New user registration: John Doe', time: '10 min ago' },
+                      { text: 'Pending broker certificate request', time: '1 hour ago' },
+                      { text: 'New listing reported: Spam detected', time: '3 hours ago' },
+                    ].map((n, i) => (
+                      <div key={i} className="flex items-start gap-3 px-4 py-3 border-b border-gray-50 last:border-b-0 hover:bg-gray-50 transition cursor-pointer">
+                        <div className="w-8 h-8 rounded-full bg-orange-50 flex items-center justify-center text-sm shrink-0">🔔</div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm text-gray-700 leading-snug">{n.text}</p>
+                          <p className="text-xs text-gray-400 mt-0.5">{n.time}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
             <div className="flex items-center gap-2 pl-3 border-l border-gray-200">
               <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold" style={{ background: NAVY }}>
                 {user.name?.charAt(0).toUpperCase() || 'A'}

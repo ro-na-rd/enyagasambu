@@ -1,7 +1,8 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import Link from 'next/link';
+import api from '@/lib/api';
 
 const NAVY = '#0f1e42';
 const ORG = '#E85D04';
@@ -16,6 +17,14 @@ const authorizedServices = [
 
 export default function BrokerDashboardPage() {
   const { user } = useAuth();
+  const [cert, setCert] = useState<{ status: string; cert_no?: string; amount_rwf?: number } | null>(null);
+  const [certLoading, setCertLoading] = useState(true);
+
+  useEffect(() => {
+    api.get('/broker/certificate').then(({ data }) => {
+      setCert(data.certificate || null);
+    }).catch(() => {}).finally(() => setCertLoading(false));
+  }, []);
 
   const stats = [
     { label: 'Total Clients', value: '24', icon: '👥', color: NAVY, bg: '#eef2ff', change: '+3 this month' },
@@ -47,6 +56,41 @@ export default function BrokerDashboardPage() {
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-900">Broker Dashboard</h1>
         <p className="text-sm text-gray-500 mt-1">Welcome back, <strong>{user?.name}</strong> — here&apos;s your business overview.</p>
+      </div>
+
+      {/* Certificate Status */}
+      <div className="mb-6">
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#0f1e42] to-[#E85D04] flex items-center justify-center text-2xl shrink-0">📜</div>
+            <div>
+              <p className="text-sm font-bold text-gray-800">Broker Certificate</p>
+              {certLoading ? (
+                <p className="text-xs text-gray-400 mt-1">Loading...</p>
+              ) : cert ? (
+                <>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    Status: <span className={`font-semibold ${cert.status === 'active' || cert.status === 'approved' ? 'text-green-600' : 'text-amber-600'}`}>{cert.status}</span>
+                    {cert.cert_no && <span className="ml-2">No: {cert.cert_no}</span>}
+                  </p>
+                  {cert.status !== 'active' && cert.status !== 'approved' && (
+                    <Link href="/broker/certificate" className="text-xs font-semibold text-[#E85D04] hover:underline mt-1 inline-block">Complete Payment →</Link>
+                  )}
+                </>
+              ) : (
+                <>
+                  <p className="text-xs text-gray-500 mt-0.5">Not yet purchased. Get certified to unlock all brokerage services.</p>
+                  <Link href="/broker/certificate" className="text-xs font-semibold text-[#E85D04] hover:underline mt-1 inline-block">Pay Now (RWF 25,000) →</Link>
+                </>
+              )}
+            </div>
+          </div>
+          {cert?.status === 'active' || cert?.status === 'approved' ? (
+            <span className="text-[10px] font-medium text-green-600 bg-green-50 px-3 py-1 rounded-full">Active ✓</span>
+          ) : (
+            <Link href="/broker/certificate" className="text-xs font-medium text-white bg-gradient-to-r from-[#0f1e42] to-[#E85D04] px-4 py-2 rounded-lg hover:opacity-90 transition">Pay Now</Link>
+          )}
+        </div>
       </div>
 
       {/* Stats cards */}

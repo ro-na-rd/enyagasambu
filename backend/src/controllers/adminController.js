@@ -13,6 +13,8 @@ exports.getStats = async (req, res) => {
     const [[{ coinsEarned }]] = await pool.query("SELECT COALESCE(SUM(ABS(amount)), 0) AS coinsEarned FROM coin_transactions WHERE type = 'connect_fee'");
     const [[{ coinsFromListings }]] = await pool.query("SELECT COALESCE(SUM(ABS(amount)), 0) AS coinsFromListings FROM coin_transactions WHERE type = 'listing_fee'");
     const [[{ coinsFromBoosts }]] = await pool.query("SELECT COALESCE(SUM(ABS(amount)), 0) AS coinsFromBoosts FROM coin_transactions WHERE type = 'boost_fee'");
+    const [[{ pendingBrokerCerts }]] = await pool.query("SELECT COUNT(*) AS pendingBrokerCerts FROM broker_certificates WHERE status IN ('pending','paid')");
+    const [[{ pendingAmbassadorCerts }]] = await pool.query("SELECT COUNT(*) AS pendingAmbassadorCerts FROM ambassador_certificates WHERE status IN ('pending','paid')");
 
     const [recentUsers] = await pool.query(
       'SELECT id, name, email, coins, role, created_at FROM users ORDER BY created_at DESC LIMIT 5'
@@ -24,7 +26,7 @@ exports.getStats = async (req, res) => {
     );
 
     return res.json({
-      stats: { totalUsers, totalSellers, totalBrokers, totalAmbassadors, activeListings, disabledListings, totalListings, totalUnlocks, coinsEarned, coinsFromListings, coinsFromBoosts },
+      stats: { totalUsers, totalSellers, totalBrokers, totalAmbassadors, activeListings, disabledListings, totalListings, totalUnlocks, coinsEarned, coinsFromListings, coinsFromBoosts, pendingBrokerCerts, pendingAmbassadorCerts },
       recentUsers,
       recentListings,
     });

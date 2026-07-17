@@ -46,7 +46,7 @@ router.post(
 
 router.post(
   '/initiate',
-  authenticate,
+  authenticateOptional,
   upload.array('images', 6),
   [
     body('title').trim().notEmpty().withMessage('Title is required'),
@@ -57,7 +57,7 @@ router.post(
   ctrl.initiateListingPayment
 );
 
-router.post('/confirm', authenticate, ctrl.confirmListingPayment);
+router.post('/confirm', authenticateOptional, ctrl.confirmListingPayment);
 router.post('/:id/renew/send-token', ctrl.sendRenewalToken);
 router.post('/:id/renew/initiate', ctrl.initiateRenewal);
 router.patch('/:id/renew', ctrl.confirmRenewal);

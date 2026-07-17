@@ -10,6 +10,7 @@ interface Stats {
   totalUsers: number; totalSellers: number; totalBrokers: number; totalAmbassadors: number;
   activeListings: number; disabledListings: number; totalListings: number; totalUnlocks: number;
   coinsEarned: number; coinsFromListings: number; coinsFromBoosts: number;
+  pendingBrokerCerts: number; pendingAmbassadorCerts: number;
 }
 interface RecentUser { id: number; name: string; email: string; coins: number; role: string; created_at: string; }
 interface RecentListing { id: number; title: string; status: string; seller_name: string; created_at: string; }
@@ -49,6 +50,8 @@ export default function AdminDashboardPage() {
     { label: 'Sellers', value: stats?.totalSellers ?? 0, icon: '🏪', color: '#d97706', bg: '#fffbeb', link: '/admin/users?role=seller' },
     { label: 'Ambassadors', value: stats?.totalAmbassadors ?? 0, icon: '🎖️', color: '#0891b2', bg: '#ecfeff', link: '/admin/users?role=ambassador' },
     { label: 'Disabled Items', value: stats?.disabledListings ?? 0, icon: '🚫', color: '#dc2626', bg: '#fef2f2', link: '/admin/listings?status=disabled' },
+    { label: 'Pending Broker Certs', value: stats?.pendingBrokerCerts ?? 0, icon: '📜', color: '#d97706', bg: '#fffbeb', link: '/admin/broker-certificates' },
+    { label: 'Pending Ambassador Certs', value: stats?.pendingAmbassadorCerts ?? 0, icon: '🎖️', color: '#0891b2', bg: '#ecfeff', link: '/admin/certificates' },
   ];
 
   return (
@@ -74,6 +77,33 @@ export default function AdminDashboardPage() {
           </Link>
         ))}
       </div>
+
+      {/* Pending Certificate Requests */}
+      {(stats?.pendingBrokerCerts ?? 0) > 0 || (stats?.pendingAmbassadorCerts ?? 0) > 0 ? (
+        <div className="mb-8">
+          <h2 className="text-sm font-bold uppercase tracking-wider text-gray-800 mb-3">Pending Certificate Requests</h2>
+          <div className="grid grid-cols-2 gap-4">
+            <Link href="/admin/broker-certificates" className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 hover:shadow-md transition block">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-full bg-amber-50 flex items-center justify-center text-2xl">📜</div>
+                <div>
+                  <p className="text-sm font-bold text-gray-800">Broker Certificates</p>
+                  <p className="text-xs text-gray-400 mt-0.5">Pending: <span className="text-amber-600 font-bold">{stats?.pendingBrokerCerts}</span></p>
+                </div>
+              </div>
+            </Link>
+            <Link href="/admin/certificates" className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 hover:shadow-md transition block">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center text-2xl">🎖️</div>
+                <div>
+                  <p className="text-sm font-bold text-gray-800">Ambassador Certificates</p>
+                  <p className="text-xs text-gray-400 mt-0.5">Pending: <span className="text-amber-600 font-bold">{stats?.pendingAmbassadorCerts}</span></p>
+                </div>
+              </div>
+            </Link>
+          </div>
+        </div>
+      ) : null}
 
       {/* Participants Overview + Revenue Chart */}
       <div className="grid lg:grid-cols-2 gap-6 mb-8">

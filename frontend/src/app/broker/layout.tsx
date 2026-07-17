@@ -29,6 +29,8 @@ export default function BrokerLayout({ children }: { children: React.ReactNode }
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [notifOpen, setNotifOpen] = useState(false);
+  const [msgOpen, setMsgOpen] = useState(false);
 
   const isLoginPage = pathname === '/broker/login' || pathname === '/broker/register';
 
@@ -38,7 +40,7 @@ export default function BrokerLayout({ children }: { children: React.ReactNode }
   }, [user, loading, router, isLoginPage]);
 
   useEffect(() => {
-    const close = () => setProfileOpen(false);
+    const close = () => { setProfileOpen(false); setNotifOpen(false); setMsgOpen(false); };
     window.addEventListener('click', close);
     return () => window.removeEventListener('click', close);
   }, []);
@@ -140,14 +142,77 @@ export default function BrokerLayout({ children }: { children: React.ReactNode }
           </div>
 
           <div className="flex items-center gap-2">
-            <button className="relative p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition" title="Notifications">
-              🔔
-              <span className="absolute top-1 right-1 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">3</span>
-            </button>
-            <button className="relative p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition" title="Messages">
-              ✉️
-              <span className="absolute top-1 right-1 w-4 h-4 bg-orange-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">2</span>
-            </button>
+            {/* Notifications Dropdown */}
+            <div className="relative">
+              <button onClick={(e) => { e.stopPropagation(); setProfileOpen(false); setNotifOpen(!notifOpen); }}
+                className="relative p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition" title="Notifications">
+                🔔
+                <span className="absolute top-1 right-1 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">3</span>
+              </button>
+              {notifOpen && (
+                <div className="absolute right-0 top-full mt-1 w-80 bg-white rounded-xl shadow-lg border border-gray-100 z-50" onClick={(e) => e.stopPropagation()}>
+                  <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+                    <span className="text-sm font-bold text-gray-800">Notifications</span>
+                    <span className="text-xs text-gray-400">3 new</span>
+                  </div>
+                  <div className="max-h-64 overflow-y-auto">
+                    {[
+                      { text: 'New lead: David Habimana interested in 3-Bedroom House', time: '5 min ago' },
+                      { text: 'Listing approved: 3-Bedroom House Kacyiru', time: '2 hours ago' },
+                      { text: 'Commission of RWF 4,250 has been credited', time: '1 day ago' },
+                    ].map((n, i) => (
+                      <div key={i} className="flex items-start gap-3 px-4 py-3 border-b border-gray-50 last:border-b-0 hover:bg-gray-50 transition cursor-pointer">
+                        <div className="w-8 h-8 rounded-full bg-orange-50 flex items-center justify-center text-sm shrink-0">🔔</div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm text-gray-700 leading-snug">{n.text}</p>
+                          <p className="text-xs text-gray-400 mt-0.5">{n.time}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <Link href="/broker/notifications" className="block text-center text-xs font-semibold text-[#E85D04] py-3 border-t border-gray-100 hover:bg-gray-50 rounded-b-xl">
+                    View All Notifications
+                  </Link>
+                </div>
+              )}
+            </div>
+            {/* Messages Dropdown */}
+            <div className="relative">
+              <button onClick={(e) => { e.stopPropagation(); setProfileOpen(false); setMsgOpen(!msgOpen); }}
+                className="relative p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition" title="Messages">
+                ✉️
+                <span className="absolute top-1 right-1 w-4 h-4 bg-orange-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">2</span>
+              </button>
+              {msgOpen && (
+                <div className="absolute right-0 top-full mt-1 w-80 bg-white rounded-xl shadow-lg border border-gray-100 z-50" onClick={(e) => e.stopPropagation()}>
+                  <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+                    <span className="text-sm font-bold text-gray-800">Messages</span>
+                    <span className="text-xs text-gray-400">2 unread</span>
+                  </div>
+                  <div className="max-h-64 overflow-y-auto">
+                    {[
+                      { from: 'David Habimana', subject: 'Inquiry about 3-Bedroom House', time: 'Today' },
+                      { from: 'Eva Uwase', subject: 'Commercial Plot Pricing', time: 'Yesterday' },
+                      { from: 'Admin Team', subject: 'Broker Verification Update', time: '2 days ago' },
+                    ].map((m, i) => (
+                      <div key={i} className="flex items-start gap-3 px-4 py-3 border-b border-gray-50 last:border-b-0 hover:bg-gray-50 transition cursor-pointer">
+                        <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-white text-xs font-bold shrink-0" style={{ background: NAVY }}>
+                          {m.from.charAt(0)}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-gray-800">{m.from}</p>
+                          <p className="text-xs text-gray-600 mt-0.5">{m.subject}</p>
+                          <p className="text-xs text-gray-400 mt-0.5">{m.time}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <Link href="/broker/messages" className="block text-center text-xs font-semibold text-[#E85D04] py-3 border-t border-gray-100 hover:bg-gray-50 rounded-b-xl">
+                    View All Messages
+                  </Link>
+                </div>
+              )}
+            </div>
             <div className="relative pl-2 ml-1 border-l border-gray-200">
               <button onClick={(e) => { e.stopPropagation(); setProfileOpen(!profileOpen); }}
                 className="flex items-center gap-2 hover:bg-gray-50 rounded-lg px-2 py-1 transition">

@@ -245,7 +245,18 @@ exports.initiateListingPayment = async (req, res) => {
   const duration = [3, 7, 30].includes(parseInt(duration_days)) ? parseInt(duration_days) : 3;
   const amount = LISTING_PRICE[duration];
 
-  const sellerPhone = normalizePhone(req.user.phone || req.body.phone || '');
+  let sellerPhone;
+  let guestName = '';
+  let guestPhone = '';
+
+  if (req.user) {
+    sellerPhone = normalizePhone(req.user.phone || req.body.phone || '');
+  } else {
+    guestName = req.body.guest_name || '';
+    guestPhone = normalizePhone(req.body.guest_phone || req.body.phone || '');
+    sellerPhone = guestPhone;
+  }
+
   if (!sellerPhone) return res.status(400).json({ message: 'Seller phone is required for payment' });
 
   const images = req.files?.map((f) => `/uploads/${f.filename}`) || [];
@@ -259,6 +270,8 @@ exports.initiateListingPayment = async (req, res) => {
     category_id,
     duration_days: duration,
     images,
+    guest_name: guestName,
+    guest_phone: guestPhone,
   };
 
   const referenceId = uuidv4();
@@ -300,11 +313,29 @@ exports.confirmListingPayment = async (req, res) => {
       const conn = await pool.getConnection();
       try {
         await conn.beginTransaction();
+
+        let userId;
+        if (req.user) {
+          userId = req.user.id;
+        } else {
+          const guestName = payload.guest_name || 'Guest';
+          const guestPhone = normalizePhone(payload.guest_phone || '');
+          if (!guestPhone) {
+            await conn.rollback();
+            return res.status(400).json({ message: 'Guest phone is required' });
+          }
+          const [result] = await conn.query(
+            'INSERT INTO users (name, phone, password_hash, role) VALUES (?, ?, ?, ?)',
+            [guestName, guestPhone, crypto.randomBytes(32).toString('hex'), 'user']
+          );
+          userId = result.insertId;
+        }
+
         const expiresAt = new Date(Date.now() + payload.duration_days * 24 * 60 * 60 * 1000);
         const [result] = await conn.query(
           `INSERT INTO listings (user_id, category_id, title, description, price, price_type, location, listing_type, expires_at)
            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-          [req.user.id, payload.category_id, payload.title, payload.description, payload.price, payload.price_type, payload.location, payload.listing_type, expiresAt]
+          [userId, payload.category_id, payload.title, payload.description, payload.price, payload.price_type, payload.location, payload.listing_type, expiresAt]
         );
 
         if (payload.images?.length) {
@@ -313,8 +344,9 @@ exports.confirmListingPayment = async (req, res) => {
         }
 
         await conn.query('UPDATE payments SET status = ?, listing_id = ? WHERE id = ?', ['confirmed', result.insertId, payment.id]);
-        if (normalizePhone(req.user.phone)) {
-          await createRenewalToken(conn, result.insertId, normalizePhone(req.user.phone), expiresAt);
+        const sellerPhone = req.user ? normalizePhone(req.user.phone) : normalizePhone(payload.guest_phone || '');
+        if (sellerPhone) {
+          await createRenewalToken(conn, result.insertId, sellerPhone, expiresAt);
         }
         await conn.commit();
         return res.json({ message: 'Listing activated', listingId: result.insertId });
