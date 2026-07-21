@@ -1,0 +1,149 @@
+@import "tailwindcss";
+:root {
+    --bg-dark: #0d1117;
+    --bg-panel: #161b22;
+    --bg-panel-2: #1c2333;
+    --bg-panel-3: #21262d;
+    --text-primary: #f0f6fc;
+    --text-secondary: #8b949e;
+    --text-faint: #484f58;
+    --nmo-navy: #0f1e42;
+    --nmo-navy-light: #1a2d5a;
+    --nmo-navy-dark: #0a1430;
+    --nmo-orange: #E85D04;
+    --nmo-orange-light: #FF8A3D;
+    --nmo-orange-dark: #c44d00;
+    --accent-green: #238636;
+    --accent-green-light: #2ea043;
+    --accent-purple: #8957e5;
+    --accent-purple-light: #a371f7;
+    --accent-blue: #1f6feb;
+    --accent-blue-light: #58a6ff;
+    --accent-red: #da3633;
+    --accent-red-light: #f85149;
+    --accent-yellow: #d29922;
+    --radius-lg: 20px;
+    --radius-md: 14px;
+    --radius-sm: 10px;
+    --radius-pill: 999px;
+}
+
+@theme inline {
+    --color-background: var(--bg-dark);
+    --color-foreground: var(--text-primary);
+    --font-sans: var(--font-geist-sans);
+    --font-mono: var(--font-geist-mono);
+}
+
+body {
+    background: var(--bg-dark);
+    color: var(--text-primary);
+    font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+
+
+/* Dark theme inputs */
+
+input,
+textarea,
+select {
+    color: #e6edf3 !important;
+    caret-color: var(--nmo-orange) !important;
+    background-color: #21262d !important;
+    border-color: #30363d !important;
+}
+
+select option {
+    color: #e6edf3 !important;
+    background-color: #161b22 !important;
+}
+
+input::placeholder,
+textarea::placeholder {
+    color: #484f58;
+}
+
+
+/* focus rings: orange */
+
+input:focus,
+textarea:focus,
+select:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(232, 93, 4, 0.2);
+    border-color: var(--nmo-orange) !important;
+}
+
+
+/* scrollbar - dark */
+
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: #0d1117;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #30363d;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--nmo-orange);
+}
+
+
+/* smooth entrance animations */
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes float {
+    0%,
+    100% {
+        transform: translateY(0px) scale(1);
+    }
+    50% {
+        transform: translateY(-30px) scale(1.05);
+    }
+}
+
+@keyframes pulse-glow {
+    0%,
+    100% {
+        box-shadow: 0 0 20px rgba(232, 93, 4, 0.1);
+    }
+    50% {
+        box-shadow: 0 0 30px rgba(232, 93, 4, 0.25);
+    }
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.animate-fadeInUp {
+    animation: fadeInUp 0.5s ease-out;
+}
+
+.animate-slideIn {
+    animation: slideIn 0.3s ease-out;
+}

@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 220" role="img" aria-label="Nyagasambu Market Online logo">
+  <defs>
+    <linearGradient id="orangeGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#ff9f1c"/>
+      <stop offset="100%" stop-color="#ffb830"/>
+    </linearGradient>
+    <linearGradient id="whiteFade" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.95"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0.4"/>
+    </linearGradient>
+  </defs>
+  <rect width="220" height="220" rx="32" fill="transparent"/>
+  <path d="M56 96h108l18 87H38l18-87Z" fill="url(#orangeGrad)" stroke="#fff" stroke-width="10" stroke-linejoin="round"/>
+  <path d="M70 98h80" fill="none" stroke="#fff" stroke-width="12" stroke-linecap="round"/>
+  <path d="M84 85c0-20 18-36 40-36s40 16 40 36" fill="none" stroke="#fff" stroke-width="12" stroke-linecap="round"/>
+  <path d="M78 120l34-21 34 21" fill="none" stroke="#fff" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M78 138h64" fill="none" stroke="#fff" stroke-width="10" stroke-linecap="round"/>
+  <path d="M92 104 110 76 128 104" fill="none" stroke="#fff" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="110" cy="76" r="8" fill="#fff" opacity="0.9"/>
+  <text x="110" y="175" text-anchor="middle" font-family="Inter, sans-serif" font-size="24" font-weight="700" fill="#ffffff">Nyagasambu</text>
+  <text x="110" y="199" text-anchor="middle" font-family="Inter, sans-serif" font-size="14" letter-spacing="0.22em" fill="#ffb830">MARKET ONLINE</text>
+</svg>
