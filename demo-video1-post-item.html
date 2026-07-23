@@ -1,0 +1,971 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>E-Nyagasambu - Post Item Payment Flow Demo</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--navy:#0f1e42;--navy-light:#1a2d5a;--navy-dark:#0a1430;--org:#E85D04;--org-light:#FF8A3D;--org-dark:#c44d00;--mtn-yellow:#ffcc00;--mtn-black:#000;--airtel-red:#ed1c24;--green:#22c55e;--red:#ef4444;--gray:#6b7280;--gray-light:#e5e7eb;--white:#fff;--bg:#f8fafc}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:#1e293b;overflow-x:hidden}
+.phone-frame{width:390px;height:844px;margin:40px auto;border-radius:40px;overflow:hidden;box-shadow:0 25px 80px rgba(0,0,0,.3);position:relative;background:var(--white);border:8px solid #1a1a2e}
+.phone-notch{width:160px;height:30px;background:#1a1a2e;position:absolute;top:0;left:50%;transform:translateX(-50%);border-radius:0 0 20px 20px;z-index:100}
+.phone-status-bar{height:54px;background:var(--navy);display:flex;align-items:flex-end;justify-content:space-between;padding:0 24px 8px;color:var(--white);font-size:12px;font-weight:600}
+.phone-status-bar .time{font-size:15px;font-weight:700}
+.screen{height:calc(100% - 54px);overflow-y:auto;position:relative;scrollbar-width:none}
+.screen::-webkit-scrollbar{display:none}
+.page{display:none;min-height:100%;animation:fadeIn .4s ease}
+.page.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+@keyframes slideUp{from{opacity:0;transform:translateY(100%)}to{opacity:1;transform:translateY(0)}}
+@keyframes slideDown{from{opacity:1;transform:translateY(0)}to{opacity:0;transform:translateY(100%)}}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes checkmark{0%{stroke-dashoffset:100}100%{stroke-dashoffset:0}}
+@keyframes popIn{0%{transform:scale(0);opacity:0}50%{transform:scale(1.1)}100%{transform:scale(1);opacity:1}}
+@keyframes slideInRight{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+@keyframes shake{0%,100%{transform:translateX(0)}10%,30%,50%,70%,90%{transform:translateX(-5px)}20%,40%,60%,80%{transform:translateX(5px)}}
+@keyframes ripple{to{transform:scale(4);opacity:0}}
+@keyframes smsSlide{from{transform:translateY(-100%);opacity:0}to{transform:translateY(0);opacity:1}}
+@keyframes progressFill{from{width:0}to{width:100%}}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+@keyframes glow{0%,100%{box-shadow:0 0 5px rgba(232,93,4,.3)}50%{box-shadow:0 0 20px rgba(232,93,4,.6)}}
+
+/* Navbar */
+.navbar{background:var(--navy);padding:12px 16px;display:flex;align-items:center;justify-content:space-between}
+.navbar-brand{color:var(--white);font-size:18px;font-weight:800}
+.navbar-brand span{color:var(--org)}
+.navbar-icons{display:flex;gap:16px}
+.navbar-icons div{width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;color:var(--white);font-size:11px}
+
+/* Form Styles */
+.form-page{padding:0}
+.form-header{background:var(--navy);padding:16px;color:var(--white);display:flex;align-items:center;gap:12px}
+.form-header .back{font-size:20px;cursor:pointer}
+.form-header h2{font-size:16px;font-weight:700}
+.form-body{padding:16px}
+.form-group{margin-bottom:16px}
+.form-group label{display:block;font-size:13px;font-weight:600;color:var(--navy);margin-bottom:6px}
+.form-group input,.form-group textarea,.form-group select{width:100%;padding:12px;border:2px solid var(--gray-light);border-radius:12px;font-size:14px;transition:border-color .2s;outline:none}
+.form-group input:focus,.form-group textarea:focus,.form-group select:focus{border-color:var(--org)}
+.form-group textarea{height:80px;resize:none}
+.upload-area{border:2px dashed var(--gray-light);border-radius:12px;padding:24px;text-align:center;color:var(--gray);cursor:pointer;transition:all .2s}
+.upload-area:hover{border-color:var(--org);color:var(--org)}
+.upload-area .upload-icon{font-size:32px;margin-bottom:8px}
+.image-preview{display:flex;gap:8px;margin-top:8px}
+.image-preview .thumb{width:60px;height:60px;border-radius:8px;background:var(--gray-light);display:flex;align-items:center;justify-content:center;font-size:20px;overflow:hidden}
+.btn-primary{width:100%;padding:14px;background:var(--org);color:var(--white);border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;transition:all .2s;position:relative;overflow:hidden}
+.btn-primary:hover{background:var(--org-dark);transform:scale(1.02)}
+.btn-primary:active{transform:scale(0.98)}
+.btn-secondary{width:100%;padding:14px;background:var(--navy);color:var(--white);border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer}
+
+/* Payment Modal */
+.modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.6);display:flex;align-items:flex-end;justify-content:center;z-index:200;animation:fadeIn .3s ease}
+.modal-content{background:var(--white);width:390px;max-height:85vh;border-radius:24px 24px 0 0;padding:24px;animation:slideUp .4s ease}
+.modal-handle{width:40px;height:4px;background:var(--gray-light);border-radius:2px;margin:0 auto 16px}
+.modal-title{font-size:18px;font-weight:800;text-align:center;margin-bottom:4px}
+.modal-subtitle{text-align:center;color:var(--gray);font-size:13px;margin-bottom:20px}
+.payment-amount{text-align:center;margin-bottom:20px}
+.payment-amount .currency{font-size:14px;color:var(--gray)}
+.payment-amount .amount{font-size:48px;font-weight:800;color:var(--navy)}
+.payment-amount .rwf{font-size:14px;color:var(--gray);font-weight:600}
+.provider-toggle{display:flex;gap:8px;margin-bottom:16px}
+.provider-btn{flex:1;padding:12px;border:2px solid var(--gray-light);border-radius:12px;background:var(--white);cursor:pointer;text-align:center;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px}
+.provider-btn.active{border-color:var(--org);background:rgba(232,93,4,.05)}
+.provider-btn .logo{font-size:20px}
+.provider-btn .name{font-size:13px;font-weight:700}
+.phone-input-group{display:flex;align-items:center;border:2px solid var(--gray-light);border-radius:12px;overflow:hidden;margin-bottom:16px;transition:border-color .2s}
+.phone-input-group:focus-within{border-color:var(--org)}
+.phone-prefix{padding:12px;background:var(--gray-light);font-size:14px;font-weight:600;color:var(--navy)}
+.phone-input-group input{flex:1;padding:12px;border:none;font-size:14px;outline:none}
+.btn-pay{width:100%;padding:16px;background:linear-gradient(135deg,var(--mtn-yellow),var(--org));color:var(--navy);border:none;border-radius:12px;font-size:16px;font-weight:800;cursor:pointer;position:relative;overflow:hidden;transition:all .2s}
+.btn-pay:hover{transform:scale(1.02);box-shadow:0 8px 24px rgba(232,93,4,.3)}
+.btn-pay.mtn{background:linear-gradient(135deg,var(--mtn-yellow),#e6b800);color:var(--mtn-black)}
+.btn-pay.airtel{background:linear-gradient(135deg,var(--airtel-red),#ff4444);color:var(--white)}
+
+/* Loading States */
+.loading-page{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:40px;text-align:center}
+.spinner{width:60px;height:60px;border:4px solid var(--gray-light);border-top-color:var(--org);border-radius:50%;animation:spin 1s linear infinite;margin-bottom:24px}
+.spinner-sm{width:24px;height:24px;border:3px solid var(--gray-light);border-top-color:var(--org);border-radius:50%;animation:spin 1s linear infinite;display:inline-block;vertical-align:middle;margin-right:8px}
+.loading-text{font-size:16px;font-weight:600;color:var(--navy);margin-bottom:8px}
+.loading-subtext{font-size:13px;color:var(--gray);max-width:280px}
+
+/* Success/Error States */
+.result-page{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:40px;text-align:center}
+.result-icon{width:100px;height:100px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin-bottom:24px;animation:popIn .5s ease}
+.result-icon.success{background:rgba(34,197,94,.1)}
+.result-icon.error{background:rgba(239,68,68,.1)}
+.result-icon svg{width:50px;height:50px}
+.result-title{font-size:22px;font-weight:800;margin-bottom:8px}
+.result-desc{font-size:14px;color:var(--gray);margin-bottom:24px;max-width:300px}
+.btn-retry{padding:12px 32px;background:var(--org);color:var(--white);border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer}
+.btn-outline{padding:12px 32px;background:transparent;border:2px solid var(--org);color:var(--org);border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;margin-top:8px}
+
+/* SMS Notification */
+.sms-notification{position:fixed;top:54px;left:50%;transform:translateX(-50%);width:350px;background:var(--white);border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,.2);padding:16px;z-index:300;animation:smsSlide .4s ease;display:none}
+.sms-notification.show{display:block}
+.sms-header{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.sms-app-icon{width:36px;height:36px;border-radius:8px;background:var(--green);display:flex;align-items:center;justify-content:center;color:var(--white);font-size:16px}
+.sms-app-name{font-size:13px;font-weight:700}
+.sms-time{font-size:11px;color:var(--gray);margin-left:auto}
+.sms-body{font-size:13px;line-height:1.5;color:#374151}
+.sms-otp{font-size:24px;font-weight:800;color:var(--org);letter-spacing:4px;margin:8px 0}
+
+/* Progress Bar */
+.progress-bar{height:3px;background:var(--gray-light);width:100%;position:absolute;top:0;left:0}
+.progress-fill{height:100%;background:var(--org);transition:width .5s ease;border-radius:2px}
+
+/* Step Indicator */
+.steps{display:flex;justify-content:center;gap:8px;padding:16px}
+.step{width:8px;height:8px;border-radius:50%;background:var(--gray-light);transition:all .3s}
+.step.active{background:var(--org);width:24px;border-radius:4px}
+.step.done{background:var(--green)}
+
+/* Phone Mockup Side Panel */
+.side-panel{position:fixed;right:40px;top:50%;transform:translateY(-50%);width:360px;background:var(--white);border-radius:20px;box-shadow:0 12px 48px rgba(0,0,0,.15);padding:24px;display:none}
+.side-panel.show{display:block;animation:slideInRight .4s ease}
+.side-panel-title{font-size:14px;font-weight:700;color:var(--navy);margin-bottom:16px}
+.phone-mockup-sms{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:12px;margin-bottom:8px}
+.phone-mockup-sms .sender{font-size:11px;color:var(--green);font-weight:600;margin-bottom:4px}
+.phone-mockup-sms .msg{font-size:12px;color:#374151;line-height:1.4}
+.momo-popup{background:var(--mtn-yellow);border-radius:16px;padding:16px;text-align:center;color:var(--mtn-black)}
+.momo-popup .amount{font-size:28px;font-weight:800;margin:8px 0}
+.momo-popup .desc{font-size:12px;margin-bottom:12px}
+.momo-popup .pin-input{display:flex;gap:8px;justify-content:center;margin-bottom:12px}
+.momo-popup .pin-dot{width:36px;height:36px;border:2px solid rgba(0,0,0,.2);border-radius:8px;background:var(--white);display:flex;align-items:center;justify-content:center;font-size:18px}
+.momo-popup .approve-btn{padding:10px 32px;background:var(--mtn-black);color:var(--mtn-yellow);border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer}
+
+/* OTP Input */
+.otp-inputs{display:flex;gap:8px;justify-content:center;margin:16px 0}
+.otp-input{width:48px;height:56px;border:2px solid var(--gray-light);border-radius:12px;text-align:center;font-size:24px;font-weight:700;outline:none;transition:all .2s}
+.otp-input:focus{border-color:var(--org);box-shadow:0 0 0 3px rgba(232,93,4,.1)}
+.otp-input.filled{border-color:var(--green);background:rgba(34,197,94,.05)}
+.otp-input.error{border-color:var(--red);animation:shake .5s ease}
+
+/* Page Navigation Controls */
+.page-controls{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);display:flex;gap:8px;z-index:150}
+.page-controls button{padding:10px 20px;border:none;border-radius:20px;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s}
+.page-controls .prev{background:var(--white);color:var(--navy);box-shadow:0 2px 12px rgba(0,0,0,.1)}
+.page-controls .next{background:var(--org);color:var(--white)}
+.page-controls button:hover{transform:scale(1.05)}
+.page-controls button:disabled{opacity:.4;cursor:not-allowed;transform:none}
+
+/* Scenario Tabs */
+.scenario-tabs{position:fixed;top:0;left:0;right:0;background:var(--navy);padding:12px 24px;display:flex;align-items:center;justify-content:space-between;z-index:160}
+.scenario-tabs .title{color:var(--white);font-size:16px;font-weight:700}
+.scenario-tabs .title span{color:var(--org)}
+.tab-btns{display:flex;gap:6px}
+.tab-btn{padding:8px 16px;border:1px solid rgba(255,255,255,.2);border-radius:20px;background:transparent;color:rgba(255,255,255,.6);font-size:12px;font-weight:600;cursor:pointer;transition:all .2s}
+.tab-btn.active{background:var(--org);border-color:var(--org);color:var(--white)}
+
+/* Video Controls */
+.video-bar{position:fixed;bottom:72px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:12px;background:rgba(15,30,66,.9);padding:8px 16px;border-radius:24px;z-index:160;backdrop-filter:blur(10px)}
+.video-bar button{background:none;border:none;color:var(--white);font-size:18px;cursor:pointer;padding:4px 8px;border-radius:8px;transition:background .2s}
+.video-bar button:hover{background:rgba(255,255,255,.1)}
+.video-bar .step-label{color:rgba(255,255,255,.7);font-size:12px;min-width:120px;text-align:center}
+.play-btn{width:40px;height:40px;background:var(--org);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;border:none;color:var(--white);cursor:pointer}
+
+/* Layout */
+.demo-container{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:60px 24px 100px;gap:60px}
+
+/* Feature Cards */
+.feature-card{background:var(--white);border-radius:16px;padding:20px;box-shadow:0 2px 12px rgba(0,0,0,.06);margin-bottom:12px;border-left:4px solid var(--org)}
+.feature-card h4{font-size:14px;font-weight:700;color:var(--navy);margin-bottom:4px}
+.feature-card p{font-size:12px;color:var(--gray)}
+
+/* Hidden */
+.hidden{display:none!important}
+
+/* Confirmation SMS */
+.confirmation-sms{background:var(--white);border:2px solid var(--green);border-radius:12px;padding:16px;margin-top:16px;text-align:left}
+.confirmation-sms .title{font-size:12px;font-weight:700;color:var(--green);margin-bottom:8px}
+.confirmation-sms .body{font-size:12px;color:#374151;line-height:1.5}
+
+/* Timer */
+.timer{font-size:13px;color:var(--gray);margin-top:8px}
+.timer span{color:var(--org);font-weight:700}
+
+/* Mobile Money Logo */
+.momo-logo{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:8px;font-size:12px;font-weight:700}
+.momo-logo.mtn{background:var(--mtn-yellow);color:var(--mtn-black)}
+.momo-logo.airtel{background:var(--airtel-red);color:var(--white)}
+</style>
+</head>
+<body>
+
+<!-- Scenario Tabs -->
+<div class="scenario-tabs">
+  <div class="title">E-Nyagasambu <span>Demo</span> - Post Item Flow</div>
+  <div class="tab-btns">
+    <button class="tab-btn active" onclick="switchScenario('success')">Success Flow</button>
+    <button class="tab-btn" onclick="switchScenario('paymentFail')">Payment Declined</button>
+    <button class="tab-btn" onclick="switchScenario('paymentPending')">Payment Pending</button>
+    <button class="tab-btn" onclick="switchScenario('wrongOtp')">Wrong OTP</button>
+    <button class="tab-btn" onclick="switchScenario('expiredOtp')">Expired OTP</button>
+  </div>
+</div>
+
+<div class="demo-container">
+  <!-- Phone Frame -->
+  <div class="phone-frame">
+    <div class="phone-notch"></div>
+    <div class="phone-status-bar">
+      <div class="time">9:41</div>
+      <div style="display:flex;gap:6px;align-items:center;font-size:11px">
+        <span>5G</span>
+        <span>📶</span>
+        <span>🔋</span>
+      </div>
+    </div>
+    <div class="screen" id="screen">
+      <!-- Step 1: Create Post Form -->
+      <div class="page active" id="page-form">
+        <div class="navbar">
+          <div class="navbar-icons"><div>☰</div></div>
+          <div class="navbar-brand">E-Nyaga<span>sambu</span></div>
+          <div class="navbar-icons"><div>👤</div></div>
+        </div>
+        <div class="form-header">
+          <div class="back">←</div>
+          <h2>Create New Post</h2>
+        </div>
+        <div class="form-body">
+          <div class="steps">
+            <div class="step active"></div>
+            <div class="step"></div>
+            <div class="step"></div>
+          </div>
+          <div class="form-group">
+            <label>Item Title *</label>
+            <input type="text" id="title" placeholder="e.g. iPhone 13 Pro Max, Like New" value="Samsung Galaxy S24 Ultra 256GB">
+          </div>
+          <div class="form-group">
+            <label>Description *</label>
+            <textarea id="desc" placeholder="Describe your item in detail...">Brand new Samsung Galaxy S24 Ultra, 256GB storage, Titanium Black color. Comes with original box, charger, and warranty card. Never used, sealed package.</textarea>
+          </div>
+          <div class="form-group">
+            <label>Category *</label>
+            <select id="category">
+              <option>Electronics & Gadgets</option>
+              <option>Fashion & Clothing</option>
+              <option>Home & Garden</option>
+              <option>Vehicles</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Photos</label>
+            <div class="upload-area" id="uploadArea">
+              <div class="upload-icon">📷</div>
+              <div>Tap to upload photos (max 6)</div>
+            </div>
+            <div class="image-preview" id="imagePreview" style="display:none">
+              <div class="thumb" style="background:#e0e7ff">📱</div>
+              <div class="thumb" style="background:#fef3c7">📦</div>
+              <div class="thumb" style="background:#dcfce7">🔋</div>
+              <div class="thumb" style="background:#fce7f3">+</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:12px">
+            <div class="form-group" style="flex:1">
+              <label>Price (RWF) *</label>
+              <input type="text" id="price" value="850,000">
+            </div>
+            <div class="form-group" style="flex:1">
+              <label>Negotiable</label>
+              <select><option>Yes</option><option>No</option></select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Location *</label>
+            <input type="text" id="location" value="Kicukiro, Kigali">
+          </div>
+          <div class="form-group">
+            <label>Your Phone Number *</label>
+            <div class="phone-input-group">
+              <div class="phone-prefix">+250</div>
+              <input type="tel" id="sellerPhone" placeholder="7XXXXXXXX" value="788123456">
+            </div>
+          </div>
+          <button class="btn-primary" onclick="goToStep2()" id="continueBtn">Continue →</button>
+        </div>
+      </div>
+
+      <!-- Step 2: Review & Submit -->
+      <div class="page" id="page-review">
+        <div class="form-header">
+          <div class="back" onclick="goToStep1()">←</div>
+          <h2>Review & Submit</h2>
+        </div>
+        <div class="form-body">
+          <div class="steps">
+            <div class="step done"></div>
+            <div class="step active"></div>
+            <div class="step"></div>
+          </div>
+          <div class="feature-card">
+            <h4>📱 Samsung Galaxy S24 Ultra 256GB</h4>
+            <p>Electronics & Gadgets • Kicukiro, Kigali</p>
+          </div>
+          <div style="background:var(--navy);color:var(--white);border-radius:16px;padding:20px;text-align:center;margin-bottom:16px">
+            <div style="font-size:13px;opacity:.7;margin-bottom:4px">Posting Fee</div>
+            <div style="font-size:42px;font-weight:800">400 <span style="font-size:16px;opacity:.7">RWF</span></div>
+            <div style="font-size:12px;opacity:.5;margin-top:4px">Via MTN Mobile Money</div>
+          </div>
+          <div class="feature-card">
+            <h4>Duration</h4>
+            <p>30 days active listing</p>
+          </div>
+          <button class="btn-primary" onclick="showPaymentModal()" style="margin-top:8px">
+            💳 Pay 400 RWF & Publish
+          </button>
+        </div>
+      </div>
+
+      <!-- Step 3: Loading - Sending Payment -->
+      <div class="page" id="page-loading-payment">
+        <div class="loading-page">
+          <div class="spinner"></div>
+          <div class="loading-text">Sending payment request...</div>
+          <div class="loading-subtext">Connecting to MTN Mobile Money gateway</div>
+          <div style="margin-top:20px">
+            <span class="momo-logo mtn">📱 MTN MoMo</span>
+          </div>
+          <div style="margin-top:24px;width:200px">
+            <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--gray);margin-bottom:4px">
+              <span>Processing</span><span id="loadingPercent">0%</span>
+            </div>
+            <div style="height:4px;background:var(--gray-light);border-radius:2px;overflow:hidden">
+              <div id="loadingBar" style="height:100%;background:var(--org);width:0;border-radius:2px;transition:width .3s"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 4: Payment Request Sent -->
+      <div class="page" id="page-payment-sent">
+        <div class="result-page">
+          <div style="animation:float 2s ease-in-out infinite;margin-bottom:16px">
+            <div style="width:120px;height:120px;background:linear-gradient(135deg,var(--mtn-yellow),var(--org-light));border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:48px;box-shadow:0 12px 40px rgba(232,93,4,.3)">📱</div>
+          </div>
+          <div class="result-title">Payment Request Sent!</div>
+          <div class="result-desc" style="max-width:320px">
+            A Mobile Money payment request has been sent to<br>
+            <strong>+250 788 123 456</strong><br><br>
+            Please approve it using your Mobile Money PIN on your phone.
+          </div>
+          <div style="background:var(--gray-light);border-radius:12px;padding:16px;width:100%;max-width:300px;margin:16px 0">
+            <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px">
+              <span style="color:var(--gray)">Amount</span>
+              <span style="font-weight:700">400 RWF</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px">
+              <span style="color:var(--gray)">Phone</span>
+              <span style="font-weight:700">+250 788 123 456</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:13px">
+              <span style="color:var(--gray)">Status</span>
+              <span style="font-weight:700;color:var(--mtn-yellow)">⏳ Waiting for approval</span>
+            </div>
+          </div>
+          <div style="margin-top:12px">
+            <div class="spinner-sm"></div>
+            <span style="font-size:13px;color:var(--gray)">Waiting for payment confirmation...</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 5: Payment Verified -->
+      <div class="page" id="page-payment-verified">
+        <div class="result-page">
+          <div class="result-icon success">
+            <svg viewBox="0 0 50 50"><circle cx="25" cy="25" r="23" fill="none" stroke="#22c55e" stroke-width="3"/><path d="M15 25l7 7 13-13" fill="none" stroke="#22c55e" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="stroke-dasharray:100;animation:checkmark .6s ease .3s forwards;stroke-dashoffset:100"/></svg>
+          </div>
+          <div class="result-title" style="color:var(--green)">Payment Verified ✓</div>
+          <div class="result-desc">Your payment of <strong>400 RWF</strong> has been confirmed.<br>Transaction ID: <strong>MOMO-RW-284917</strong></div>
+          <div style="margin-top:8px">
+            <div class="spinner-sm"></div>
+            <span style="font-size:13px;color:var(--gray)">Sending OTP verification code...</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 6: OTP Verification -->
+      <div class="page" id="page-otp">
+        <div class="form-header">
+          <div class="back">←</div>
+          <h2>Verify with OTP</h2>
+        </div>
+        <div class="form-body" style="text-align:center;padding-top:32px">
+          <div class="steps">
+            <div class="step done"></div>
+            <div class="step done"></div>
+            <div class="step active"></div>
+          </div>
+          <div style="width:80px;height:80px;background:linear-gradient(135deg,var(--navy),var(--navy-light));border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;font-size:36px">🔒</div>
+          <div style="font-size:18px;font-weight:800;color:var(--navy);margin-bottom:8px">Enter Verification Code</div>
+          <div style="font-size:13px;color:var(--gray);margin-bottom:20px">We sent a 6-digit code to<br><strong>+250 788 123 456</strong></div>
+          <div class="otp-inputs" id="otpInputs">
+            <input class="otp-input" maxlength="1" data-index="0" inputmode="numeric">
+            <input class="otp-input" maxlength="1" data-index="1" inputmode="numeric">
+            <input class="otp-input" maxlength="1" data-index="2" inputmode="numeric">
+            <input class="otp-input" maxlength="1" data-index="3" inputmode="numeric">
+            <input class="otp-input" maxlength="1" data-index="4" inputmode="numeric">
+            <input class="otp-input" maxlength="1" data-index="5" inputmode="numeric">
+          </div>
+          <div id="otpError" style="color:var(--red);font-size:13px;display:none;margin-bottom:8px"></div>
+          <div class="timer" id="otpTimer">Code expires in <span>5:00</span></div>
+          <button class="btn-primary" onclick="verifyOtp()" id="verifyOtpBtn" style="margin-top:20px">Verify Code</button>
+          <div style="margin-top:16px">
+            <button class="btn-outline" onclick="resendOtp()" id="resendBtn" disabled>Resend Code</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 7: OTP Verified -->
+      <div class="page" id="page-otp-verified">
+        <div class="result-page">
+          <div class="result-icon success">
+            <svg viewBox="0 0 50 50"><circle cx="25" cy="25" r="23" fill="none" stroke="#22c55e" stroke-width="3"/><path d="M15 25l7 7 13-13" fill="none" stroke="#22c55e" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="stroke-dasharray:100;animation:checkmark .6s ease .3s forwards;stroke-dashoffset:100"/></svg>
+          </div>
+          <div class="result-title" style="color:var(--green)">OTP Verified ✓</div>
+          <div class="result-desc">Identity confirmed. Publishing your post...</div>
+          <div style="margin-top:16px">
+            <div class="spinner-sm"></div>
+            <span style="font-size:13px;color:var(--gray)">Finalizing...</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 8: Success -->
+      <div class="page" id="page-success">
+        <div class="result-page">
+          <div style="margin-bottom:24px;animation:popIn .6s ease">
+            <div style="width:120px;height:120px;background:linear-gradient(135deg,var(--green),#16a34a);border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 12px 40px rgba(34,197,94,.3)">
+              <svg width="60" height="60" viewBox="0 0 50 50"><path d="M15 25l7 7 13-13" fill="none" stroke="white" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" style="stroke-dasharray:100;animation:checkmark .6s ease .3s forwards;stroke-dashoffset:100"/></svg>
+            </div>
+          </div>
+          <div class="result-title" style="color:var(--green)">Post Published Successfully! 🎉</div>
+          <div class="result-desc">Your listing <strong>Samsung Galaxy S24 Ultra 256GB</strong> is now live on E-Nyagasambu.</div>
+          <div class="confirmation-sms">
+            <div class="title">📱 SMS Confirmation Sent</div>
+            <div class="body">
+              "E-Nyagasambu: Your listing 'Samsung Galaxy S24 Ultra 256GB' is now live! Listing ID: #NYG-28491. Reply STOP to opt out."
+            </div>
+          </div>
+          <div style="margin-top:16px;display:flex;gap:8px">
+            <button class="btn-primary" style="width:auto;padding:12px 24px">View My Listing</button>
+            <button class="btn-outline" style="width:auto;padding:12px 24px" onclick="resetDemo()">Post Another</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Error: Payment Declined -->
+      <div class="page" id="page-payment-failed">
+        <div class="result-page">
+          <div class="result-icon error" style="animation:shake .5s ease">
+            <svg viewBox="0 0 50 50"><circle cx="25" cy="25" r="23" fill="none" stroke="#ef4444" stroke-width="3"/><line x1="18" y1="18" x2="32" y2="32" stroke="#ef4444" stroke-width="3" stroke-linecap="round"/><line x1="32" y1="18" x2="18" y2="32" stroke="#ef4444" stroke-width="3" stroke-linecap="round"/></svg>
+          </div>
+          <div class="result-title" style="color:var(--red)">Payment Declined</div>
+          <div class="result-desc">Your Mobile Money payment was declined. This may be due to insufficient balance or incorrect PIN.</div>
+          <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:12px;padding:16px;width:100%;max-width:300px;margin-bottom:20px;text-align:left">
+            <div style="font-size:12px;font-weight:700;color:var(--red);margin-bottom:8px">Error Details</div>
+            <div style="font-size:12px;color:#374151">Transaction ID: MOMO-RW-284917<br>Status: REJECTED<br>Reason: Insufficient funds</div>
+          </div>
+          <button class="btn-retry" onclick="retryPayment()">Retry Payment</button>
+          <button class="btn-outline" onclick="resetDemo()">Cancel</button>
+        </div>
+      </div>
+
+      <!-- Error: Payment Pending -->
+      <div class="page" id="page-payment-pending">
+        <div class="result-page">
+          <div class="result-icon" style="background:rgba(255,204,0,.1)">
+            <div style="font-size:48px;animation:float 2s ease-in-out infinite">⏳</div>
+          </div>
+          <div class="result-title" style="color:#d97706">Payment Pending</div>
+          <div class="result-desc">Your payment request is still pending. Please check your phone for the MoMo USSD prompt and approve it.</div>
+          <div style="margin:16px 0">
+            <div class="spinner-sm"></div>
+            <span style="font-size:13px;color:var(--gray)">Still waiting for approval...</span>
+          </div>
+          <div style="font-size:12px;color:var(--gray);margin-bottom:16px">Time remaining: <span style="color:var(--org);font-weight:700" id="pendingTimer">2:45</span></div>
+          <button class="btn-retry" onclick="retryPayment()">Resend Payment Request</button>
+          <button class="btn-outline" onclick="resetDemo()">Cancel</button>
+        </div>
+      </div>
+
+      <!-- Error: Wrong OTP -->
+      <div class="page" id="page-wrong-otp">
+        <div class="result-page">
+          <div class="result-icon error" style="animation:shake .5s ease">
+            <svg viewBox="0 0 50 50"><circle cx="25" cy="25" r="23" fill="none" stroke="#ef4444" stroke-width="3"/><path d="M18 18l14 14M32 18l-14 14" stroke="#ef4444" stroke-width="3" stroke-linecap="round"/></svg>
+          </div>
+          <div class="result-title" style="color:var(--red)">Wrong OTP Code</div>
+          <div class="result-desc">The verification code you entered is incorrect. Please check the SMS and try again.</div>
+          <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:12px;padding:12px;width:100%;max-width:300px;margin-bottom:20px;font-size:12px;color:#374151">
+            Attempts remaining: <strong>2 of 3</strong>
+          </div>
+          <button class="btn-retry" onclick="goToPage('page-otp')">Try Again</button>
+          <button class="btn-outline" onclick="resendOtp()">Resend Code</button>
+        </div>
+      </div>
+
+      <!-- Error: Expired OTP -->
+      <div class="page" id="page-expired-otp">
+        <div class="result-page">
+          <div class="result-icon error">
+            <svg viewBox="0 0 50 50"><circle cx="25" cy="25" r="23" fill="none" stroke="#ef4444" stroke-width="3"/><circle cx="25" cy="20" r="1.5" fill="#ef4444"/><circle cx="25" cy="32" r="1.5" fill="#ef4444"/><circle cx="25" cy="25" r="12" fill="none" stroke="#ef4444" stroke-width="2"/><path d="M25 16v9l5 5" stroke="#ef4444" stroke-width="2" stroke-linecap="round"/></svg>
+          </div>
+          <div class="result-title" style="color:var(--red)">OTP Expired</div>
+          <div class="result-desc">Your verification code has expired. Codes are valid for 5 minutes only.</div>
+          <button class="btn-retry" onclick="resendOtp()">Request New Code</button>
+          <button class="btn-outline" onclick="resetDemo()">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Side Panel: Phone Simulation -->
+  <div class="side-panel" id="sidePanel">
+    <div class="side-panel-title">📱 Phone Simulation</div>
+    <div id="sidePanelContent"></div>
+  </div>
+</div>
+
+<!-- SMS Notification Overlay -->
+<div class="sms-notification" id="smsNotification">
+  <div class="sms-header">
+    <div class="sms-app-icon">💬</div>
+    <div>
+      <div class="sms-app-name">Messages</div>
+      <div style="font-size:11px;color:var(--gray)">MTN Mobile Money</div>
+    </div>
+    <div class="sms-time">now</div>
+  </div>
+  <div class="sms-body" id="smsBody"></div>
+</div>
+
+<!-- Video Controls -->
+<div class="video-bar">
+  <button onclick="prevStep()" id="prevBtn" disabled>◀</button>
+  <button class="play-btn" onclick="toggleAutoPlay()" id="playBtn">▶</button>
+  <button onclick="nextStep()" id="nextBtn">▶</button>
+  <div class="step-label" id="stepLabel">Step 1 of 20</div>
+  <button onclick="resetDemo()">↺</button>
+</div>
+
+<script>
+let currentScenario = 'success';
+let currentStep = 0;
+let autoPlaying = false;
+let autoPlayTimer = null;
+let otpTimerInterval = null;
+let otpTimeLeft = 300;
+
+const successSteps = [
+  {page:'page-form',label:'Fill Form',delay:800},
+  {page:'page-form',label:'Upload Photos',delay:600,action:'showImages'},
+  {page:'page-form',label:'Fill Details',delay:800,action:'fillForm'},
+  {page:'page-review',label:'Review Post',delay:800},
+  {page:'review-payment',label:'Payment Popup',delay:1000,action:'showPaymentModal'},
+  {page:'loading-payment',label:'Sending Payment...',delay:2000,action:'animateLoading'},
+  {page:'payment-sent',label:'Approve on Phone',delay:1500,action:'showPhoneSim'},
+  {page:'payment-sent',label:'Wait for Confirmation',delay:2500,action:'waitForPayment'},
+  {page:'payment-verified',label:'Payment Verified',delay:1500},
+  {page:'page-otp',label:'OTP Sent via SMS',delay:800,action:'showSmsOtp'},
+  {page:'page-otp',label:'Enter OTP',delay:1200,action:'enterOtp'},
+  {page:'page-otp',label:'Verify OTP',delay:800},
+  {page:'page-otp-verified',label:'OTP Verified ✓',delay:1500},
+  {page:'page-success',label:'Post Published! 🎉',delay:1000,action:'showConfirmationSms'},
+  {page:'page-success',label:'Complete',delay:0}
+];
+
+const paymentFailSteps = [
+  {page:'page-form',label:'Fill Form',delay:600,action:'fillForm'},
+  {page:'page-review',label:'Review & Pay',delay:600},
+  {page:'review-payment',label:'Payment Popup',delay:800,action:'showPaymentModal'},
+  {page:'loading-payment',label:'Sending...',delay:2000,action:'animateLoading'},
+  {page:'payment-sent',label:'Waiting...',delay:2000,action:'showPhoneSim'},
+  {page:'payment-failed',label:'Payment Declined',delay:0}
+];
+
+const paymentPendingSteps = [
+  {page:'page-form',label:'Fill Form',delay:600,action:'fillForm'},
+  {page:'page-review',label:'Review & Pay',delay:600},
+  {page:'review-payment',label:'Payment Popup',delay:800,action:'showPaymentModal'},
+  {page:'loading-payment',label:'Sending...',delay:2000,action:'animateLoading'},
+  {page:'payment-sent',label:'Waiting...',delay:2000,action:'showPhoneSim'},
+  {page:'payment-pending',label:'Payment Pending',delay:0}
+];
+
+const wrongOtpSteps = [
+  {page:'page-form',label:'Fill Form',delay:600,action:'fillForm'},
+  {page:'page-review',label:'Review & Pay',delay:600},
+  {page:'review-payment',label:'Payment Popup',delay:800,action:'showPaymentModal'},
+  {page:'loading-payment',label:'Sending...',delay:1500,action:'animateLoading'},
+  {page:'payment-sent',label:'Approving...',delay:1500,action:'showPhoneSim'},
+  {page:'payment-verified',label:'Payment Verified',delay:1200},
+  {page:'page-otp',label:'Enter Wrong OTP',delay:800,action:'showSmsOtp'},
+  {page:'page-otp',label:'Verifying...',delay:1000,action:'enterWrongOtp'},
+  {page:'page-wrong-otp',label:'Wrong OTP',delay:0}
+];
+
+const expiredOtpSteps = [
+  {page:'page-form',label:'Fill Form',delay:600,action:'fillForm'},
+  {page:'page-review',label:'Review & Pay',delay:600},
+  {page:'review-payment',label:'Payment Popup',delay:800,action:'showPaymentModal'},
+  {page:'loading-payment',label:'Sending...',delay:1500,action:'animateLoading'},
+  {page:'payment-sent',label:'Approving...',delay:1500,action:'showPhoneSim'},
+  {page:'payment-verified',label:'Payment Verified',delay:1200},
+  {page:'page-otp',label:'OTP Expired',delay:1500,action:'showExpiredTimer'},
+  {page:'page-expired-otp',label:'OTP Expired',delay:0}
+];
+
+function getSteps(){
+  switch(currentScenario){
+    case 'success':return successSteps;
+    case 'paymentFail':return paymentFailSteps;
+    case 'paymentPending':return paymentPendingSteps;
+    case 'wrongOtp':return wrongOtpSteps;
+    case 'expiredOtp':return expiredOtpSteps;
+    default:return successSteps;
+  }
+}
+
+function goToPage(pageId){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  const target = document.getElementById(pageId);
+  if(target) target.classList.add('active');
+}
+
+function switchScenario(scenario){
+  currentScenario=scenario;
+  currentStep=0;
+  stopAutoPlay();
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  event.target.classList.add('active');
+  hideSidePanel();
+  hideSms();
+  goToPage('page-form');
+  updateStepLabel();
+  document.getElementById('prevBtn').disabled=true;
+  document.getElementById('nextBtn').disabled=false;
+}
+
+function showPaymentModal(){
+  const modal = document.createElement('div');
+  modal.className='modal-overlay';
+  modal.id='paymentModal';
+  modal.innerHTML=`
+    <div class="modal-content">
+      <div class="modal-handle"></div>
+      <div class="modal-title">Post Payment</div>
+      <div class="modal-subtitle">Pay to publish your listing</div>
+      <div class="payment-amount">
+        <div class="currency">Amount</div>
+        <div class="amount">400</div>
+        <div class="rwf">RWF</div>
+      </div>
+      <div class="provider-toggle">
+        <div class="provider-btn active" onclick="selectProvider(this,'mtn')">
+          <div class="logo" style="color:var(--mtn-yellow)">●</div>
+          <div class="name">MTN MoMo</div>
+        </div>
+        <div class="provider-btn" onclick="selectProvider(this,'airtel')">
+          <div class="logo" style="color:var(--airtel-red)">●</div>
+          <div class="name">Airtel Money</div>
+        </div>
+      </div>
+      <div class="phone-input-group">
+        <div class="phone-prefix">+250</div>
+        <input type="tel" placeholder="7XXXXXXXX" value="788123456">
+      </div>
+      <button class="btn-pay mtn" id="payNowBtn" onclick="processPayment()">💳 Pay Now — 400 RWF</button>
+      <div style="text-align:center;margin-top:12px;font-size:11px;color:var(--gray)">
+        🔒 Secured by MTN Mobile Money
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  modal.addEventListener('click',e=>{if(e.target===modal)modal.remove()});
+}
+
+function selectProvider(el,type){
+  document.querySelectorAll('.provider-btn').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  const btn=document.getElementById('payNowBtn');
+  if(type==='mtn'){
+    btn.className='btn-pay mtn';
+    btn.innerHTML='💳 Pay Now — 400 RWF';
+  }else{
+    btn.className='btn-pay airtel';
+    btn.innerHTML='💳 Pay Now — 400 RWF';
+  }
+}
+
+function processPayment(){
+  const modal=document.getElementById('paymentModal');
+  if(modal)modal.remove();
+  goToPage('page-loading-payment');
+  animateProgressBar();
+}
+
+function animateProgressBar(){
+  let pct=0;
+  const bar=document.getElementById('loadingBar');
+  const txt=document.getElementById('loadingPercent');
+  const iv=setInterval(()=>{
+    pct+=Math.random()*15;
+    if(pct>=100){pct=100;clearInterval(iv)}
+    if(bar)bar.style.width=pct+'%';
+    if(txt)txt.textContent=Math.round(pct)+'%';
+  },200);
+}
+
+function showPhoneSim(){
+  const panel=document.getElementById('sidePanel');
+  const content=document.getElementById('sidePanelContent');
+  panel.classList.add('show');
+  content.innerHTML=`
+    <div class="momo-popup">
+      <div style="font-size:14px;font-weight:700;margin-bottom:4px">MTN Mobile Money</div>
+      <div style="font-size:11px;opacity:.7">Payment Request</div>
+      <div class="amount">400 RWF</div>
+      <div class="desc">E-Nyagasambu - Post Listing Fee</div>
+      <div style="font-size:11px;margin-bottom:8px">Enter your PIN to approve:</div>
+      <div class="pin-input">
+        <div class="pin-dot">●</div>
+        <div class="pin-dot">●</div>
+        <div class="pin-dot">●</div>
+        <div class="pin-dot">●</div>
+      </div>
+      <button class="approve-btn" onclick="approvePhonePayment()">✓ Approve Payment</button>
+    </div>
+  `;
+}
+
+function approvePhonePayment(){
+  const content=document.getElementById('sidePanelContent');
+  content.innerHTML=`
+    <div class="momo-popup" style="background:#dcfce7">
+      <div style="font-size:48px;margin-bottom:8px">✅</div>
+      <div style="font-size:14px;font-weight:700;color:#166534">Payment Approved!</div>
+      <div style="font-size:12px;color:#374151;margin-top:4px">400 RWF sent to E-Nyagasambu</div>
+      <div style="font-size:11px;color:#374151;margin-top:8px">Transaction ID: MOMO-RW-284917</div>
+    </div>
+  `;
+  setTimeout(()=>{
+    goToPage('page-payment-verified');
+    setTimeout(()=>{
+      goToPage('page-otp');
+      showSmsNotification('Your E-Nyagasambu verification code is: <div class="sms-otp">482917</div>Valid for 5 minutes. Do not share this code.');
+      startOtpTimer();
+    },1500);
+  },1500);
+}
+
+function showSmsNotification(html){
+  const sms=document.getElementById('smsNotification');
+  const body=document.getElementById('smsBody');
+  body.innerHTML=html;
+  sms.classList.add('show');
+  setTimeout(()=>sms.classList.remove('show'),6000);
+}
+
+function showSmsOtp(){
+  showSmsNotification('Your E-Nyagasambu verification code is: <div class="sms-otp">482917</div>Valid for 5 minutes. Do not share this code.');
+  startOtpTimer();
+}
+
+function startOtpTimer(){
+  otpTimeLeft=300;
+  clearInterval(otpTimerInterval);
+  otpTimerInterval=setInterval(()=>{
+    otpTimeLeft--;
+    const m=Math.floor(otpTimeLeft/60);
+    const s=otpTimeLeft%60;
+    const el=document.querySelector('#otpTimer span');
+    if(el)el.textContent=m+':'+(s<10?'0':'')+s;
+    if(otpTimeLeft<=0){clearInterval(otpTimerInterval)}
+  },1000);
+}
+
+function enterOtp(){
+  const inputs=document.querySelectorAll('.otp-input');
+  const code='482917';
+  let i=0;
+  const iv=setInterval(()=>{
+    if(i<6){
+      inputs[i].value=code[i];
+      inputs[i].classList.add('filled');
+      i++;
+    }else{
+      clearInterval(iv);
+    }
+  },200);
+}
+
+function enterWrongOtp(){
+  const inputs=document.querySelectorAll('.otp-input');
+  const code='123456';
+  let i=0;
+  const iv=setInterval(()=>{
+    if(i<6){
+      inputs[i].value=code[i];
+      inputs[i].classList.add('filled');
+      i++;
+    }else{
+      clearInterval(iv);
+      setTimeout(()=>{
+        inputs.forEach(inp=>inp.classList.add('error'));
+        document.getElementById('otpError').textContent='Invalid verification code. Please try again.';
+        document.getElementById('otpError').style.display='block';
+        setTimeout(()=>goToPage('page-wrong-otp'),1000);
+      },500);
+    }
+  },200);
+}
+
+function showExpiredTimer(){
+  const timer=document.querySelector('#otpTimer span');
+  if(timer)timer.textContent='0:00';
+  setTimeout(()=>goToPage('page-expired-otp'),1500);
+}
+
+function showConfirmationSms(){
+  showSmsNotification('E-Nyagasambu: Your listing \'Samsung Galaxy S24 Ultra 256GB\' is now live! Listing ID: #NYG-28491. Reply STOP to opt out.');
+}
+
+function hideSidePanel(){
+  document.getElementById('sidePanel').classList.remove('show');
+}
+
+function hideSms(){
+  document.getElementById('smsNotification').classList.remove('show');
+}
+
+function fillForm(){
+  document.getElementById('title').value='Samsung Galaxy S24 Ultra 256GB';
+  document.getElementById('desc').value='Brand new Samsung Galaxy S24 Ultra, 256GB storage, Titanium Black color.';
+  document.getElementById('location').value='Kicukiro, Kigali';
+  document.getElementById('sellerPhone').value='788123456';
+  document.getElementById('imagePreview').style.display='flex';
+}
+
+function retryPayment(){
+  goToPage('page-loading-payment');
+  animateProgressBar();
+  setTimeout(()=>{
+    goToPage('page-payment-sent');
+    showPhoneSim();
+  },2000);
+}
+
+function resendOtp(){
+  showSmsNotification('Your E-Nyagasambu verification code is: <div class="sms-otp">739204</div>Valid for 5 minutes. Do not share this code.');
+  startOtpTimer();
+}
+
+function verifyOtp(){
+  goToPage('page-otp-verified');
+  setTimeout(()=>{
+    goToPage('page-success');
+    showConfirmationSms();
+  },1500);
+}
+
+function nextStep(){
+  const steps=getSteps();
+  if(currentStep<steps.length-1){
+    currentStep++;
+    executeStep(currentStep);
+    updateStepLabel();
+  }
+}
+
+function prevStep(){
+  if(currentStep>0){
+    currentStep--;
+    const steps=getSteps();
+    goToPage(steps[currentStep].page);
+    updateStepLabel();
+  }
+}
+
+function executeStep(idx){
+  const steps=getSteps();
+  const step=steps[idx];
+  if(step.action){
+    setTimeout(()=>eval(step.action)(),100);
+  }else{
+    goToPage(step.page);
+  }
+}
+
+function updateStepLabel(){
+  const steps=getSteps();
+  document.getElementById('stepLabel').textContent=`Step ${currentStep+1} of ${steps.length}`;
+  document.getElementById('prevBtn').disabled=currentStep===0;
+  document.getElementById('nextBtn').disabled=currentStep>=steps.length-1;
+}
+
+function toggleAutoPlay(){
+  if(autoPlaying){
+    stopAutoPlay();
+  }else{
+    startAutoPlay();
+  }
+}
+
+function startAutoPlay(){
+  autoPlaying=true;
+  document.getElementById('playBtn').textContent='⏸';
+  autoPlayStep();
+}
+
+function stopAutoPlay(){
+  autoPlaying=false;
+  document.getElementById('playBtn').textContent='▶';
+  clearTimeout(autoPlayTimer);
+}
+
+function autoPlayStep(){
+  if(!autoPlaying)return;
+  const steps=getSteps();
+  if(currentStep>=steps.length-1){stopAutoPlay();return}
+  currentStep++;
+  executeStep(currentStep);
+  updateStepLabel();
+  const delay=steps[currentStep].delay||1500;
+  autoPlayTimer=setTimeout(autoPlayStep,delay);
+}
+
+function resetDemo(){
+  currentStep=0;
+  stopAutoPlay();
+  hideSidePanel();
+  hideSms();
+  goToPage('page-form');
+  updateStepLabel();
+  document.querySelectorAll('.otp-input').forEach(i=>{i.value='';i.classList.remove('filled','error')});
+  document.getElementById('otpError').style.display='none';
+  document.getElementById('imagePreview').style.display='none';
+}
+
+// OTP input auto-focus
+document.querySelectorAll('.otp-input').forEach((input,idx)=>{
+  input.addEventListener('input',e=>{
+    if(e.target.value&&idx<5){
+      document.querySelectorAll('.otp-input')[idx+1].focus();
+    }
+    if(e.target.value)e.target.classList.add('filled');
+  });
+  input.addEventListener('keydown',e=>{
+    if(e.key==='Backspace'&&!e.target.value&&idx>0){
+      document.querySelectorAll('.otp-input')[idx-1].focus();
+    }
+  });
+});
+</script>
+</body>
+</html>

@@ -77,13 +77,13 @@ export default function CoinsPage() {
           if (status.status === 'successful') {
             clearInterval(pollRef.current!);
             setPayStep('success');
-            setMomoMsg(`✅ Payment confirmed! ${status.coinsAdded} coins added to your wallet.`);
+            setMomoMsg(`Payment confirmed! ${status.coinsAdded} coins added to your wallet.`);
             await refreshUser();
             loadBalance();
           } else if (status.status === 'failed') {
             clearInterval(pollRef.current!);
             setPayStep('failed');
-            setMomoMsg(`❌ ${status.message || 'Payment failed or was cancelled.'}`);
+            setMomoMsg(`${status.message || 'Payment failed or was cancelled.'}`);
           }
           // else still pending — keep polling
         } catch {
@@ -92,7 +92,7 @@ export default function CoinsPage() {
       }, 5000);
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
-      setMomoMsg(`❌ ${msg || 'Failed to initiate payment'}`);
+      setMomoMsg(`${msg || 'Failed to initiate payment'}`);
       setPayStep('idle');
     } finally {
       setPaying(false);
@@ -104,13 +104,13 @@ export default function CoinsPage() {
     setApplyingPromo(true); setPromoMsg('');
     try {
       const { data } = await api.post('/auth/promo', { code: promoCode.trim() });
-      setPromoMsg(`✅ ${data.message}`);
+      setPromoMsg(`${data.message}`);
       setPromoCode('');
       await refreshUser();
       loadBalance();
     } catch (err: unknown) {
       const m = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
-      setPromoMsg(`❌ ${m || 'Invalid code'}`);
+      setPromoMsg(`${m || 'Invalid code'}`);
     } finally { setApplyingPromo(false); }
   };
 
@@ -122,7 +122,7 @@ export default function CoinsPage() {
       <p className="text-gray-500 text-sm mb-6">Coins are used to post listings (400), unlock contacts (300), and boost listings (200).</p>
 
       {/* Balance */}
-      <div className="text-white rounded-2xl p-6 mb-8 flex items-center justify-between" style={{ background: 'linear-gradient(135deg, #1a2b6d 0%, #FF6B00 100%)' }}>
+      <div className="text-white rounded-2xl p-6 mb-8 flex items-center justify-between" style={{ background: 'linear-gradient(135deg, #0f1e42 0%, #E85D04 100%)' }}>
         <div>
           <p className="text-orange-200 text-sm">Current Balance</p>
           <p className="text-4xl font-bold mt-1"><Coins size={28} /> {user?.coins ?? 0}</p>
@@ -145,7 +145,7 @@ export default function CoinsPage() {
             placeholder="Enter promo code"
             className="flex-1 border border-gray-300 rounded-lg px-3 py-2.5 text-sm uppercase tracking-widest"
           />
-          <button onClick={handlePromo} disabled={applyingPromo || !promoCode.trim()} className="text-white text-sm font-semibold px-4 py-2 rounded-lg disabled:opacity-60" style={{ background: '#1a2b6d' }}>
+          <button onClick={handlePromo} disabled={applyingPromo || !promoCode.trim()} className="text-white text-sm font-semibold px-4 py-2 rounded-lg disabled:opacity-60" style={{ background: '#0f1e42' }}>
             {applyingPromo ? '…' : 'Apply'}
           </button>
         </div>
@@ -156,9 +156,9 @@ export default function CoinsPage() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-4">
           <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm">
             <h2 className="text-lg font-bold text-gray-900 mb-1">
-              {payStep === 'success' ? '✅ Payment Successful' :
-               payStep === 'failed'  ? '❌ Payment Failed' :
-               payStep === 'waiting' ? '⏳ Waiting for approval…' :
+              {payStep === 'success' ? 'Payment Successful' :
+               payStep === 'failed'  ? 'Payment Failed' :
+               payStep === 'waiting' ? 'Waiting for approval…' :
                `Buy ${selectedPkg.label}`}
             </h2>
 
@@ -205,7 +205,7 @@ export default function CoinsPage() {
             {(payStep === 'success' || payStep === 'failed') && (
               <>
                 <p className="text-sm text-gray-700 my-4">{momoMsg}</p>
-                <button onClick={cancelPayment} className="w-full text-white font-semibold py-2.5 rounded-lg" style={{ background: '#1a2b6d' }}>
+                <button onClick={cancelPayment} className="w-full text-white font-semibold py-2.5 rounded-lg" style={{ background: '#0f1e42' }}>
                   Close
                 </button>
               </>
@@ -223,7 +223,7 @@ export default function CoinsPage() {
             onClick={() => openPayment(pkg)}
             className="bg-white border-2 border-gray-200 hover:border-yellow-400 rounded-xl p-4 text-left transition group"
           >
-            <p className="text-2xl font-bold" style={{ color: '#FF6B00' }}><Coins size={20} /> {pkg.coins.toLocaleString()}</p>
+            <p className="text-2xl font-bold" style={{ color: '#E85D04' }}><Coins size={20} /> {pkg.coins.toLocaleString()}</p>
             <p className="text-gray-800 font-semibold text-sm mt-1">{pkg.price_rwf.toLocaleString()} RWF</p>
             <p className="text-xs text-gray-400 mt-0.5">≈ {(pkg.price_rwf / pkg.coins).toFixed(1)} RWF/coin</p>
             <p className="text-xs text-yellow-600 mt-2 font-medium opacity-0 group-hover:opacity-100 transition">Pay via MoMo →</p>

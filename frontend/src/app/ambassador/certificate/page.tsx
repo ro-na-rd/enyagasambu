@@ -9,12 +9,12 @@ const ORG = '#E85D04';
 
 export default function AmbassadorCertificatePage() {
   const { user } = useAuth();
-  const [cert, setCert] = useState<any>(null);
+  const [cert, setCert] = useState<{ cert_no?: string; status?: string; issued_date?: string; valid_until?: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [phone, setPhone] = useState('');
   const [paying, setPaying] = useState(false);
   const [msg, setMsg] = useState('');
-  const pollRef = useRef<any>(null);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const fetchCert = async () => {
     try {
@@ -53,8 +53,8 @@ export default function AmbassadorCertificatePage() {
           }
         } catch { clearInterval(pollRef.current); setPaying(false); }
       }, 5000);
-    } catch (err: any) {
-      setMsg(err.response?.data?.message || 'Payment initiation failed');
+    } catch (err: unknown) {
+      setMsg((err as { response?: { data?: { message?: string } } })?.response?.data?.message || (err instanceof Error ? err.message : 'Payment initiation failed'));
       setPaying(false);
     }
   };

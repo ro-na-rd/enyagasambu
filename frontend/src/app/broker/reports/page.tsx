@@ -48,7 +48,7 @@ export default function BrokerReportsPage() {
           <input type="date" className="border border-gray-300 rounded-lg px-3 py-2 text-sm" />
           <input type="date" className="border border-gray-300 rounded-lg px-3 py-2 text-sm" />
         </div>
-        <button className="bg-[#0f1e42] text-white text-sm font-semibold px-5 py-2.5 rounded-lg hover:bg-[#162d5e] transition">
+        <button className="bg-[#0f1e42] text-white text-sm font-semibold px-5 py-2.5 rounded-lg hover:bg-[#1a2d5a] transition">
           Generate Report
         </button>
       </div>

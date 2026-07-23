@@ -47,39 +47,39 @@ export default function AdminPromosPage() {
             <Ticket size={18} style={{ color: BRAND.orange }} />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-gray-100">Promo Codes</h1>
-            <p className="text-sm text-gray-500 mt-0.5">Create and manage discount promo codes</p>
+            <h1 className="text-xl font-bold text-gray-900">Promo Codes</h1>
+            <p className="text-sm text-gray-600 mt-0.5">Create and manage discount promo codes</p>
           </div>
         </div>
       </div>
 
-      <div className="rounded-2xl p-6 mb-8" style={{ background: '#161b22', border: '1px solid rgba(255,255,255,0.04)' }}>
-        <h2 className="text-sm font-bold text-gray-100 uppercase tracking-wider mb-4">Create Promo Code</h2>
-        {msg && <p className="text-sm mb-3 text-gray-300">{msg}</p>}
+      <div className="rounded-2xl p-6 mb-8" style={{ background: '#ffffff', border: '1px solid rgba(0,0,0,0.05)' }}>
+        <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-4">Create Promo Code</h2>
+        {msg && <p className="text-sm mb-3 text-gray-700">{msg}</p>}
         <form onSubmit={handleSubmit(onSubmit)} className="grid sm:grid-cols-4 gap-3 items-end">
           <div>
-            <label className="block text-xs text-gray-500 mb-1">Code</label>
+            <label className="block text-xs text-gray-600 mb-1">Code</label>
             <input {...register('code', { required: true })} placeholder="SAVE200"
               className="border rounded-lg px-3 py-2.5 text-sm w-full focus:outline-none focus:ring-2 focus:ring-orange-500/30 uppercase"
-              style={{ background: '#21262d', borderColor: '#30363d', color: '#e6edf3' }} />
+              style={{ background: '#f6f8fa', borderColor: '#d0d7de', color: '#1a1a1a' }} />
           </div>
           <div>
-            <label className="block text-xs text-gray-500 mb-1">Coins discount</label>
+            <label className="block text-xs text-gray-600 mb-1">Coins discount</label>
             <input type="number" {...register('discount_coins', { required: true })} placeholder="200"
               className="border rounded-lg px-3 py-2.5 text-sm w-full focus:outline-none focus:ring-2 focus:ring-orange-500/30"
-              style={{ background: '#21262d', borderColor: '#30363d', color: '#e6edf3' }} />
+              style={{ background: '#f6f8fa', borderColor: '#d0d7de', color: '#1a1a1a' }} />
           </div>
           <div>
-            <label className="block text-xs text-gray-500 mb-1">Max uses</label>
+            <label className="block text-xs text-gray-600 mb-1">Max uses</label>
             <input type="number" {...register('max_uses')} placeholder="100"
               className="border rounded-lg px-3 py-2.5 text-sm w-full focus:outline-none focus:ring-2 focus:ring-orange-500/30"
-              style={{ background: '#21262d', borderColor: '#30363d', color: '#e6edf3' }} />
+              style={{ background: '#f6f8fa', borderColor: '#d0d7de', color: '#1a1a1a' }} />
           </div>
           <div>
-            <label className="block text-xs text-gray-500 mb-1">Expires (optional)</label>
+            <label className="block text-xs text-gray-600 mb-1">Expires (optional)</label>
             <input type="date" {...register('expires_at')}
               className="border rounded-lg px-3 py-2.5 text-sm w-full focus:outline-none focus:ring-2 focus:ring-orange-500/30"
-              style={{ background: '#21262d', borderColor: '#30363d', color: '#e6edf3', colorScheme: 'dark' }} />
+              style={{ background: '#f6f8fa', borderColor: '#d0d7de', color: '#1a1a1a', colorScheme: 'light' }} />
           </div>
           <button type="submit" disabled={isSubmitting}
             className="sm:col-span-4 text-white font-semibold py-2.5 rounded-lg transition disabled:opacity-60"
@@ -89,34 +89,34 @@ export default function AdminPromosPage() {
         </form>
       </div>
 
-      <div className="rounded-xl overflow-hidden" style={{ background: '#161b22', border: '1px solid rgba(255,255,255,0.04)' }}>
+      <div className="rounded-xl overflow-hidden" style={{ background: '#ffffff', border: '1px solid rgba(0,0,0,0.05)' }}>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-white/[0.04]" style={{ background: '#1c2333' }}>
-                <th className="text-left px-4 py-3 text-gray-400 text-xs uppercase font-semibold tracking-wider">Code</th>
-                <th className="text-center px-4 py-3 text-gray-400 text-xs uppercase font-semibold tracking-wider">Coins</th>
-                <th className="text-center px-4 py-3 text-gray-400 text-xs uppercase font-semibold tracking-wider">Uses</th>
-                <th className="text-center px-4 py-3 text-gray-400 text-xs uppercase font-semibold tracking-wider">Max Uses</th>
-                <th className="text-left px-4 py-3 text-gray-400 text-xs uppercase font-semibold tracking-wider">Expires</th>
+              <tr className="border-b border-gray-200" style={{ background: '#f0f2f5' }}>
+                <th className="text-left px-4 py-3 text-gray-500 text-xs uppercase font-semibold tracking-wider">Code</th>
+                <th className="text-center px-4 py-3 text-gray-500 text-xs uppercase font-semibold tracking-wider">Coins</th>
+                <th className="text-center px-4 py-3 text-gray-500 text-xs uppercase font-semibold tracking-wider">Uses</th>
+                <th className="text-center px-4 py-3 text-gray-500 text-xs uppercase font-semibold tracking-wider">Max Uses</th>
+                <th className="text-left px-4 py-3 text-gray-500 text-xs uppercase font-semibold tracking-wider">Expires</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/[0.04]">
+            <tbody className="divide-y divide-gray-200">
               {promos.map((p) => (
-                <tr key={p.id} className="hover:bg-white/[0.02] transition">
+                <tr key={p.id} className="hover:bg-gray-50 transition">
                   <td className="px-4 py-3.5 font-mono font-bold" style={{ color: BRAND.orange }}>{p.code}</td>
-                  <td className="px-4 py-3.5 text-center text-gray-200">
+                  <td className="px-4 py-3.5 text-center text-gray-800">
                     <Coins size={14} className="inline mr-1" style={{ color: BRAND.orange }} /> {p.discount_coins}
                   </td>
-                  <td className="px-4 py-3.5 text-center text-gray-400">{p.uses}</td>
-                  <td className="px-4 py-3.5 text-center text-gray-400">{p.max_uses}</td>
-                  <td className="px-4 py-3.5 text-gray-500">{p.expires_at ? new Date(p.expires_at).toLocaleDateString() : 'Never'}</td>
+                  <td className="px-4 py-3.5 text-center text-gray-500">{p.uses}</td>
+                  <td className="px-4 py-3.5 text-center text-gray-500">{p.max_uses}</td>
+                  <td className="px-4 py-3.5 text-gray-600">{p.expires_at ? new Date(p.expires_at).toLocaleDateString() : 'Never'}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-        {promos.length === 0 && <p className="text-center py-8 text-gray-500 text-sm">No promo codes yet</p>}
+        {promos.length === 0 && <p className="text-center py-8 text-gray-600 text-sm">No promo codes yet</p>}
       </div>
     </div>
   );

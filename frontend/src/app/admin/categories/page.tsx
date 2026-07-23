@@ -58,8 +58,8 @@ export default function AdminCategoriesPage() {
             <Folder size={18} style={{ color: BRAND.orange }} />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-gray-100">Categories</h1>
-            <p className="text-sm text-gray-500 mt-0.5">Manage listing categories</p>
+            <h1 className="text-xl font-bold text-gray-900">Categories</h1>
+            <p className="text-sm text-gray-600 mt-0.5">Manage listing categories</p>
           </div>
         </div>
         <button onClick={() => setShowForm(!showForm)}
@@ -70,21 +70,21 @@ export default function AdminCategoriesPage() {
       </div>
 
       {showForm && (
-        <form onSubmit={handleCreate} className="rounded-2xl p-6 mb-6" style={{ background: '#161b22', border: '1px solid rgba(255,255,255,0.04)' }}>
-          <h2 className="text-sm font-bold text-gray-100 uppercase tracking-wider mb-4">New Category</h2>
+        <form onSubmit={handleCreate} className="rounded-2xl p-6 mb-6" style={{ background: '#ffffff', border: '1px solid rgba(0,0,0,0.05)' }}>
+          <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-4">New Category</h2>
           {msg && <p className="text-sm mb-3 text-gray-300">{msg}</p>}
           <div className="grid sm:grid-cols-3 gap-4">
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Name</label>
+              <label className="block text-xs text-gray-600 mb-1">Name</label>
               <input value={name} onChange={(e) => setName(e.target.value)} required placeholder="Category name"
                 className="border rounded-lg px-3 py-2.5 text-sm w-full focus:outline-none focus:ring-2 focus:ring-orange-500/30"
-                style={{ background: '#21262d', borderColor: '#30363d', color: '#e6edf3' }} />
+                style={{ background: '#f6f8fa', borderColor: '#d0d7de', color: '#1a1a1a' }} />
             </div>
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Type</label>
+              <label className="block text-xs text-gray-600 mb-1">Type</label>
               <select value={type} onChange={(e) => setType(e.target.value)}
                 className="border rounded-lg px-3 py-2.5 text-sm w-full focus:outline-none focus:ring-2 focus:ring-orange-500/30"
-                style={{ background: '#21262d', borderColor: '#30363d', color: '#e6edf3' }}>
+                style={{ background: '#f6f8fa', borderColor: '#d0d7de', color: '#1a1a1a' }}>
                 <option value="products">Products</option>
                 <option value="properties">Properties</option>
                 <option value="vehicles">Vehicles</option>
@@ -98,36 +98,36 @@ export default function AdminCategoriesPage() {
                 style={{ background: BRAND.orange }}>Save</button>
               <button type="button" onClick={() => setShowForm(false)}
                 className="text-sm px-4 py-2.5 rounded-lg transition"
-                style={{ color: '#8b949e', background: '#21262d', border: '1px solid #30363d' }}>Cancel</button>
+                style={{ color: '#6e7781', background: '#f6f8fa', border: '1px solid #d0d7de' }}>Cancel</button>
             </div>
           </div>
         </form>
       )}
 
-      <div className="rounded-xl overflow-hidden" style={{ background: '#161b22', border: '1px solid rgba(255,255,255,0.04)' }}>
+      <div className="rounded-xl overflow-hidden" style={{ background: '#ffffff', border: '1px solid rgba(0,0,0,0.05)' }}>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-white/[0.04]" style={{ background: '#1c2333' }}>
-                <th className="text-left px-4 py-3 text-gray-400 text-xs uppercase font-semibold tracking-wider">Name</th>
-                <th className="text-left px-4 py-3 text-gray-400 text-xs uppercase font-semibold tracking-wider">Type</th>
-                <th className="text-left px-4 py-3 text-gray-400 text-xs uppercase font-semibold tracking-wider">Created</th>
-                <th className="text-center px-4 py-3 text-gray-400 text-xs uppercase font-semibold tracking-wider">Action</th>
+              <tr className="border-b border-gray-200" style={{ background: '#f0f2f5' }}>
+                <th className="text-left px-4 py-3 text-gray-500 text-xs uppercase font-semibold tracking-wider">Name</th>
+                <th className="text-left px-4 py-3 text-gray-500 text-xs uppercase font-semibold tracking-wider">Type</th>
+                <th className="text-left px-4 py-3 text-gray-500 text-xs uppercase font-semibold tracking-wider">Created</th>
+                <th className="text-center px-4 py-3 text-gray-500 text-xs uppercase font-semibold tracking-wider">Action</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/[0.04]">
+            <tbody className="divide-y divide-gray-200">
               {loading ? (
-                <tr><td colSpan={4} className="text-center py-12 text-gray-500">Loading...</td></tr>
+                <tr><td colSpan={4} className="text-center py-12 text-gray-600">Loading...</td></tr>
               ) : categories.length === 0 ? (
-                <tr><td colSpan={4} className="text-center py-12 text-gray-500">No categories found</td></tr>
+                <tr><td colSpan={4} className="text-center py-12 text-gray-600">No categories found</td></tr>
               ) : categories.map((c, idx) => (
-                <tr key={c.id} className="hover:bg-white/[0.02] transition" style={{ animationDelay: `${idx * 0.03}s` }}>
-                  <td className="px-4 py-3.5 font-medium text-gray-200">{c.name}</td>
+                <tr key={c.id} className="hover:bg-gray-50 transition" style={{ animationDelay: `${idx * 0.03}s` }}>
+                  <td className="px-4 py-3.5 font-medium text-gray-800">{c.name}</td>
                   <td className="px-4 py-3.5">
                     <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full capitalize"
-                      style={{ background: `${BRAND.navyLight}40`, color: '#8b949e' }}>{c.type}</span>
+                      style={{ background: `${BRAND.navyLight}40`, color: '#6e7781' }}>{c.type}</span>
                   </td>
-                  <td className="px-4 py-3.5 text-xs text-gray-500">{new Date(c.created_at).toLocaleDateString()}</td>
+                  <td className="px-4 py-3.5 text-xs text-gray-600">{new Date(c.created_at).toLocaleDateString()}</td>
                   <td className="px-4 py-3.5 text-center">
                     <button onClick={() => handleDelete(c.id)}
                       className="text-xs font-semibold hover:underline flex items-center gap-1 mx-auto"

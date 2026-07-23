@@ -48,7 +48,7 @@ export default function StaffDashboard() {
       <div className="min-h-screen flex items-center justify-center" style={{ background: '#f5f6fa' }}>
         <div className="text-center">
           <div className="w-12 h-12 rounded-full mx-auto mb-3 flex items-center justify-center text-white font-black text-xl"
-            style={{ background: '#1a2b6d' }}>E</div>
+            style={{ background: '#0f1e42' }}>E</div>
           <p className="text-gray-500 text-sm">Loading Staff Dashboard…</p>
         </div>
       </div>
@@ -62,7 +62,7 @@ export default function StaffDashboard() {
 
       {/* ── Staff Header Banner ── */}
       <div className="text-white px-6 py-8"
-        style={{ background: 'linear-gradient(135deg, #1a2b6d 0%, #FF6B00 100%)' }}>
+        style={{ background: 'linear-gradient(135deg, #0f1e42 0%, #E85D04 100%)' }}>
         <div className="max-w-6xl mx-auto flex items-center justify-between flex-wrap gap-4">
           <div>
             <p className="text-xs font-bold tracking-widest uppercase opacity-70 mb-1">E-Nyagasambu</p>
@@ -76,7 +76,7 @@ export default function StaffDashboard() {
             </Link>
             <Link href="/staff/listings"
               className="bg-white text-sm font-bold px-4 py-2 rounded-lg transition"
-              style={{ color: '#1a2b6d' }}>
+              style={{ color: '#0f1e42' }}>
               <Store size={16} /> Manage Listings
             </Link>
           </div>
@@ -88,8 +88,8 @@ export default function StaffDashboard() {
         {/* ── Stats Cards ── */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
           {[
-            { label: 'Total Users',    value: stats?.totalUsers ?? 0,     icon: <User />, bg: '#1a2b6d', light: '#e8ecf8' },
-            { label: 'Active Listings',value: stats?.activeListings ?? 0, icon: <FileText />, bg: '#FF6B00', light: '#fff3ec' },
+            { label: 'Total Users',    value: stats?.totalUsers ?? 0,     icon: <User />, bg: '#0f1e42', light: '#e8ecf8' },
+            { label: 'Active Listings',value: stats?.activeListings ?? 0, icon: <FileText />, bg: '#E85D04', light: '#fff3ec' },
             { label: 'Total Connects', value: stats?.totalUnlocks ?? 0,   icon: <Phone />, bg: '#7c3aed', light: '#f5f0ff' },
             { label: 'Coins Revenue',  value: totalRevenue,               icon: <Coins />, bg: '#059669', light: '#ecfdf5' },
           ].map((card) => (
@@ -107,7 +107,7 @@ export default function StaffDashboard() {
 
         {/* ── Revenue Breakdown ── */}
         <div className="bg-white rounded-2xl shadow-sm p-6 mb-6 border border-gray-100">
-          <h2 className="font-bold text-base mb-5" style={{ color: '#1a2b6d' }}>
+          <h2 className="font-bold text-base mb-5" style={{ color: '#0f1e42' }}>
             Revenue Breakdown (coins collected)
           </h2>
           <div className="grid grid-cols-3 gap-4">
@@ -117,7 +117,7 @@ export default function StaffDashboard() {
               { label: 'Boost Fees (200 ea)',   value: stats?.coinsFromBoosts ?? 0 },
             ].map(({ label, value }) => (
               <div key={label} className="text-center p-4 rounded-xl" style={{ background: '#f5f6fa' }}>
-                <p className="text-2xl font-extrabold" style={{ color: '#FF6B00' }}>{value.toLocaleString()}</p>
+                <p className="text-2xl font-extrabold" style={{ color: '#E85D04' }}>{value.toLocaleString()}</p>
                 <p className="text-xs text-gray-500 mt-1">{label}</p>
               </div>
             ))}
@@ -134,7 +134,7 @@ export default function StaffDashboard() {
           ].map((item) => (
             <Link key={item.href} href={item.href}
               className="bg-white border-2 border-gray-100 rounded-2xl p-5 text-center hover:shadow-md transition group"
-              onMouseEnter={e => (e.currentTarget.style.borderColor = '#FF6B00')}
+              onMouseEnter={e => (e.currentTarget.style.borderColor = '#E85D04')}
               onMouseLeave={e => (e.currentTarget.style.borderColor = '')}>
               <p className="text-2xl mb-2">{item.icon}</p>
               <p className="text-sm font-semibold text-gray-700 group-hover:text-gray-900">{item.label}</p>
@@ -148,8 +148,8 @@ export default function StaffDashboard() {
           {/* Recent Users */}
           <div className="bg-white rounded-2xl shadow-sm p-6 border border-gray-100">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="font-bold text-base" style={{ color: '#1a2b6d' }}>Recent Users</h2>
-              <Link href="/staff/users" className="text-xs font-semibold hover:underline" style={{ color: '#FF6B00' }}>View all →</Link>
+              <h2 className="font-bold text-base" style={{ color: '#0f1e42' }}>Recent Users</h2>
+              <Link href="/staff/users" className="text-xs font-semibold hover:underline" style={{ color: '#E85D04' }}>View all →</Link>
             </div>
             <div className="space-y-3">
               {recentUsers.length === 0 && <p className="text-sm text-gray-400">No users yet.</p>}
@@ -157,7 +157,7 @@ export default function StaffDashboard() {
                 <div key={u.id} className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0"
-                      style={{ background: '#1a2b6d' }}>
+                      style={{ background: '#0f1e42' }}>
                       {u.name[0].toUpperCase()}
                     </div>
                     <div>
@@ -165,7 +165,7 @@ export default function StaffDashboard() {
                       <p className="text-xs text-gray-400">{u.email}</p>
                     </div>
                   </div>
-                  <span className="text-xs font-bold px-2 py-1 rounded-full" style={{ background: '#fff3ec', color: '#FF6B00' }}>
+                  <span className="text-xs font-bold px-2 py-1 rounded-full" style={{ background: '#fff3ec', color: '#E85D04' }}>
                     <Coins size={12} /> {u.coins}
                   </span>
                 </div>
@@ -176,8 +176,8 @@ export default function StaffDashboard() {
           {/* Recent Listings */}
           <div className="bg-white rounded-2xl shadow-sm p-6 border border-gray-100">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="font-bold text-base" style={{ color: '#1a2b6d' }}>Recent Listings</h2>
-              <Link href="/staff/listings" className="text-xs font-semibold hover:underline" style={{ color: '#FF6B00' }}>View all →</Link>
+              <h2 className="font-bold text-base" style={{ color: '#0f1e42' }}>Recent Listings</h2>
+              <Link href="/staff/listings" className="text-xs font-semibold hover:underline" style={{ color: '#E85D04' }}>View all →</Link>
             </div>
             <div className="space-y-3">
               {recentListings.length === 0 && <p className="text-sm text-gray-400">No listings yet.</p>}
@@ -189,7 +189,7 @@ export default function StaffDashboard() {
                   </div>
                   <span className={`text-xs font-semibold px-2 py-1 rounded-full ${
                     l.status === 'active'
-                      ? 'bg-orange-50 text-[#FF6B00]'
+                      ? 'bg-orange-50 text-[#E85D04]'
                       : 'bg-gray-100 text-gray-500'
                   }`}>{l.status}</span>
                 </div>
@@ -199,7 +199,7 @@ export default function StaffDashboard() {
         </div>
 
         {/* ── Staff Note ── */}
-        <div className="mt-6 p-4 rounded-2xl border text-sm" style={{ background: '#e8ecf8', borderColor: '#1a2b6d22', color: '#1a2b6d' }}>
+        <div className="mt-6 p-4 rounded-2xl border text-sm" style={{ background: '#e8ecf8', borderColor: '#0f1e4222', color: '#0f1e42' }}>
           <strong>Staff Portal</strong> — You have full platform access. Changes made here affect all users on the E-Nyagasambu marketplace.
         </div>
       </div>

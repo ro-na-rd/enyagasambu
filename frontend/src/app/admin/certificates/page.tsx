@@ -21,18 +21,18 @@ const CERT_TYPES: { value: CertType; label: string }[] = [
 
 const statusBadge = (s: string) => {
   const m: Record<string, string> = { pending: 'bg-yellow-500/10 text-yellow-400', paid: 'bg-blue-500/10 text-blue-400', generated: 'bg-green-500/10 text-green-400' };
-  return `text-[11px] font-bold px-2.5 py-1 rounded-full ${m[s] || 'bg-gray-500/10 text-gray-500'}`;
+  return `text-[11px] font-bold px-2.5 py-1 rounded-full ${m[s] || 'bg-gray-500/10 text-gray-600'}`;
 };
 
 export default function AdminCertificatesPage() {
   const [type, setType] = useState<CertType>('ambassador');
-  const [certs, setCerts] = useState<any[]>([]);
+  const [certs, setCerts] = useState<{ id: number; cert_no?: string; status: string; user_name: string; user_email: string; user_phone?: string; photo_url?: string; phone?: string; created_at: string }[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [pages, setPages] = useState(1);
   const [filter, setFilter] = useState('');
   const [loading, setLoading] = useState(true);
-  const [detail, setDetail] = useState<any>(null);
+  const [detail, setDetail] = useState<{ id: number; cert_no?: string; status: string; user_name: string; user_email: string; user_phone?: string; photo_url?: string; broker_phone?: string; issued_date?: string; valid_until?: string; generated_by_name?: string } | null>(null);
   const [msg, setMsg] = useState('');
 
   const endpoint = type === 'ambassador' ? '/admin/certificates' : '/admin/broker-certificates';
@@ -41,7 +41,7 @@ export default function AdminCertificatesPage() {
   const fetchCerts = async () => {
     setLoading(true);
     try {
-      const params: any = { page };
+      const params: Record<string, string | number> = { page };
       if (filter) params.status = filter;
       const { data } = await api.get(endpoint, { params });
       setCerts(data.certificates);
@@ -61,8 +61,8 @@ export default function AdminCertificatesPage() {
       setMsg(`Certificate ${data.certificate.cert_no} generated!`);
       fetchCerts();
       setDetail(null);
-    } catch (err: any) {
-      setMsg(err.response?.data?.message || 'Failed to generate');
+    } catch (err: unknown) {
+      setMsg((err as { response?: { data?: { message?: string } } })?.response?.data?.message || (err instanceof Error ? err.message : 'Failed to generate'));
     }
   };
 
@@ -74,8 +74,8 @@ export default function AdminCertificatesPage() {
       setMsg(data.message);
       fetchCerts();
       setDetail(null);
-    } catch (err: any) {
-      setMsg(err.response?.data?.message || 'Failed to confirm payment');
+    } catch (err: unknown) {
+      setMsg((err as { response?: { data?: { message?: string } } })?.response?.data?.message || (err instanceof Error ? err.message : 'Failed to confirm payment'));
     }
   };
 
@@ -151,8 +151,8 @@ ${photoHtml}
             <Award size={18} style={{ color: BRAND.orange }} />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-gray-100">Certificates</h1>
-            <p className="text-sm text-gray-500 mt-0.5">{total} total</p>
+            <h1 className="text-xl font-bold text-gray-900">Certificates</h1>
+            <p className="text-sm text-gray-600 mt-0.5">{total} total</p>
           </div>
         </div>
       </div>
@@ -163,10 +163,10 @@ ${photoHtml}
 
       {/* Tabs */}
       <div className="flex gap-1 mb-4 rounded-lg p-1 w-fit"
-        style={{ background: '#21262d' }}>
+        style={{ background: '#f6f8fa' }}>
         {CERT_TYPES.map(t => (
           <button key={t.value} onClick={() => setType(t.value)}
-            className={`text-xs font-semibold px-4 py-2 rounded-lg transition ${type === t.value ? 'text-white' : 'text-gray-500 hover:text-gray-300'}`}
+            className={`text-xs font-semibold px-4 py-2 rounded-lg transition ${type === t.value ? 'text-white' : 'text-gray-600 hover:text-gray-700'}`}
             style={type === t.value ? { background: `linear-gradient(135deg, ${BRAND.navy}, ${BRAND.navyLight})` } : {}}>
             {t.label}
           </button>
@@ -177,10 +177,10 @@ ${photoHtml}
       <div className="flex gap-2 mb-4 flex-wrap">
         {['', 'pending', 'paid', 'generated'].map(s => (
           <button key={s} onClick={() => { setFilter(s); setPage(1); }}
-            className={`text-xs font-semibold px-4 py-2 rounded-lg transition ${filter === s ? 'text-white' : 'text-gray-500 border'}`}
+            className={`text-xs font-semibold px-4 py-2 rounded-lg transition ${filter === s ? 'text-white' : 'text-gray-600 border'}`}
             style={filter === s
               ? { background: BRAND.orange }
-              : { borderColor: '#30363d', background: 'transparent' }}>
+              : { borderColor: '#d0d7de', background: 'transparent' }}>
             {s || 'All'}
           </button>
         ))}
@@ -189,27 +189,27 @@ ${photoHtml}
       {/* Detail Modal */}
       {detail && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setDetail(null)}>
-          <div className="rounded-2xl max-w-lg w-full p-6 shadow-xl" style={{ background: '#161b22', border: '1px solid rgba(255,255,255,0.08)' }} onClick={e => e.stopPropagation()}>
+          <div className="rounded-2xl max-w-lg w-full p-6 shadow-xl" style={{ background: '#ffffff', border: '1px solid rgba(0,0,0,0.08)' }} onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-bold text-gray-100">Certificate Detail</h3>
-              <button onClick={() => setDetail(null)} className="text-gray-500 hover:text-gray-300 text-xl">&times;</button>
+              <h3 className="font-bold text-gray-900">Certificate Detail</h3>
+              <button onClick={() => setDetail(null)} className="text-gray-600 hover:text-gray-700 text-xl">&times;</button>
             </div>
             <div className="space-y-3 text-sm">
-              <div><span className="text-gray-500">Name:</span> <span className="font-semibold text-gray-200">{detail.user_name}</span></div>
-              <div><span className="text-gray-500">Email:</span> <span className="text-gray-300">{detail.user_email}</span></div>
-              <div><span className="text-gray-500">Phone:</span> <span className="text-gray-300">{detail.user_phone || '-'}</span></div>
-              <div><span className="text-gray-500">Cert No:</span> <span className="text-gray-300">{detail.cert_no || '-'}</span></div>
-              <div><span className="text-gray-500">Status:</span> <span className={statusBadge(detail.status)}>{detail.status}</span></div>
-              <div><span className="text-gray-500">Issued:</span> <span className="text-gray-300">{detail.issued_date || '-'}</span></div>
-              <div><span className="text-gray-500">Valid Until:</span> <span className="text-gray-300">{detail.valid_until || '-'}</span></div>
-              {detail.generated_by_name && <div><span className="text-gray-500">Generated By:</span> <span className="text-gray-300">{detail.generated_by_name}</span></div>}
+              <div><span className="text-gray-600">Name:</span> <span className="font-semibold text-gray-800">{detail.user_name}</span></div>
+              <div><span className="text-gray-600">Email:</span> <span className="text-gray-700">{detail.user_email}</span></div>
+              <div><span className="text-gray-600">Phone:</span> <span className="text-gray-700">{detail.user_phone || '-'}</span></div>
+              <div><span className="text-gray-600">Cert No:</span> <span className="text-gray-700">{detail.cert_no || '-'}</span></div>
+              <div><span className="text-gray-600">Status:</span> <span className={statusBadge(detail.status)}>{detail.status}</span></div>
+              <div><span className="text-gray-600">Issued:</span> <span className="text-gray-700">{detail.issued_date || '-'}</span></div>
+              <div><span className="text-gray-600">Valid Until:</span> <span className="text-gray-700">{detail.valid_until || '-'}</span></div>
+              {detail.generated_by_name && <div><span className="text-gray-600">Generated By:</span> <span className="text-gray-700">{detail.generated_by_name}</span></div>}
               {detail.photo_url && (
-                <div><span className="text-gray-500">Photo:</span><br/>
-                  <img src={`${BASE_URL}${detail.photo_url}`} alt="" className="w-20 h-20 rounded-full object-cover mt-1 border border-white/10" />
+                <div><span className="text-gray-600">Photo:</span><br/>
+                  <img src={`${BASE_URL}${detail.photo_url}`} alt="" className="w-20 h-20 rounded-full object-cover mt-1 border border-gray-200" />
                 </div>
               )}
               {type === 'broker' && detail.broker_phone && (
-                <div><span className="text-gray-500">Payment Phone:</span> <span className="text-gray-300">{detail.broker_phone}</span></div>
+                <div><span className="text-gray-600">Payment Phone:</span> <span className="text-gray-700">{detail.broker_phone}</span></div>
               )}
             </div>
             <div className="flex gap-2 mt-6">
@@ -240,46 +240,46 @@ ${photoHtml}
       )}
 
       {/* Table */}
-      <div className="rounded-xl overflow-hidden" style={{ background: '#161b22', border: '1px solid rgba(255,255,255,0.04)' }}>
+      <div className="rounded-xl overflow-hidden" style={{ background: '#ffffff', border: '1px solid rgba(0,0,0,0.05)' }}>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-white/[0.04]" style={{ background: '#1c2333' }}>
-                <th className="px-4 py-3 text-left text-gray-400 text-xs uppercase font-semibold tracking-wider">Name</th>
-                <th className="px-4 py-3 text-left text-gray-400 text-xs uppercase font-semibold tracking-wider">Cert No</th>
-                <th className="px-4 py-3 text-center text-gray-400 text-xs uppercase font-semibold tracking-wider">Status</th>
-                <th className="px-4 py-3 text-center text-gray-400 text-xs uppercase font-semibold tracking-wider">Photo</th>
-                {type === 'broker' && <th className="px-4 py-3 text-left text-gray-400 text-xs uppercase font-semibold tracking-wider">Phone</th>}
-                <th className="px-4 py-3 text-left text-gray-400 text-xs uppercase font-semibold tracking-wider">Date</th>
-                <th className="px-4 py-3 text-center text-gray-400 text-xs uppercase font-semibold tracking-wider">Actions</th>
+              <tr className="border-b border-gray-200" style={{ background: '#f0f2f5' }}>
+                <th className="px-4 py-3 text-left text-gray-500 text-xs uppercase font-semibold tracking-wider">Name</th>
+                <th className="px-4 py-3 text-left text-gray-500 text-xs uppercase font-semibold tracking-wider">Cert No</th>
+                <th className="px-4 py-3 text-center text-gray-500 text-xs uppercase font-semibold tracking-wider">Status</th>
+                <th className="px-4 py-3 text-center text-gray-500 text-xs uppercase font-semibold tracking-wider">Photo</th>
+                {type === 'broker' && <th className="px-4 py-3 text-left text-gray-500 text-xs uppercase font-semibold tracking-wider">Phone</th>}
+                <th className="px-4 py-3 text-left text-gray-500 text-xs uppercase font-semibold tracking-wider">Date</th>
+                <th className="px-4 py-3 text-center text-gray-500 text-xs uppercase font-semibold tracking-wider">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/[0.04]">
+            <tbody className="divide-y divide-gray-200">
               {loading ? (
-                <tr><td colSpan={type === 'broker' ? 7 : 6} className="text-center py-12 text-gray-500">Loading...</td></tr>
+                <tr><td colSpan={type === 'broker' ? 7 : 6} className="text-center py-12 text-gray-600">Loading...</td></tr>
               ) : certs.length === 0 ? (
-                <tr><td colSpan={type === 'broker' ? 7 : 6} className="text-center py-12 text-gray-500">No certificates found</td></tr>
+                <tr><td colSpan={type === 'broker' ? 7 : 6} className="text-center py-12 text-gray-600">No certificates found</td></tr>
               ) : certs.map(c => (
-                <tr key={c.id} className="hover:bg-white/[0.02] transition">
-                  <td className="px-4 py-3.5 font-medium text-gray-200">{c.user_name}</td>
-                  <td className="px-4 py-3.5 text-gray-400 font-mono text-xs">{c.cert_no || '-'}</td>
+                <tr key={c.id} className="hover:bg-gray-50 transition">
+                  <td className="px-4 py-3.5 font-medium text-gray-800">{c.user_name}</td>
+                  <td className="px-4 py-3.5 text-gray-500 font-mono text-xs">{c.cert_no || '-'}</td>
                   <td className="px-4 py-3.5 text-center"><span className={statusBadge(c.status)}>{c.status}</span></td>
                   <td className="px-4 py-3.5 text-center">
                     {c.photo_url ? (
-                      <img src={`${BASE_URL}${c.photo_url}`} alt="" className="w-8 h-8 rounded-full object-cover border border-white/10 mx-auto" />
-                    ) : <span className="text-gray-600">-</span>}
+                      <img src={`${BASE_URL}${c.photo_url}`} alt="" className="w-8 h-8 rounded-full object-cover border border-gray-200 mx-auto" />
+                    ) : <span className="text-gray-700">-</span>}
                   </td>
                   {type === 'broker' && (
-                    <td className="px-4 py-3.5 text-gray-500 text-xs">{c.phone || '-'}</td>
+                    <td className="px-4 py-3.5 text-gray-600 text-xs">{c.phone || '-'}</td>
                   )}
-                  <td className="px-4 py-3.5 text-gray-500 text-xs">
+                  <td className="px-4 py-3.5 text-gray-600 text-xs">
                     {new Date(c.created_at).toLocaleDateString('en-GB')}
                   </td>
                   <td className="px-4 py-3.5">
                     <div className="flex items-center gap-2 justify-center">
                       <button onClick={() => viewDetail(c.id)}
                         className="text-xs font-semibold px-3 py-1.5 rounded-lg border transition"
-                        style={{ borderColor: '#30363d', color: '#8b949e' }}>
+                        style={{ borderColor: '#d0d7de', color: '#6e7781' }}>
                         View
                       </button>
                       {c.status === 'pending' && (
@@ -311,15 +311,15 @@ ${photoHtml}
           </table>
         </div>
         {pages > 1 && (
-          <div className="flex items-center justify-center gap-2 px-4 py-3 border-t border-white/[0.06]"
-            style={{ background: '#1c2333' }}>
+          <div className="flex items-center justify-center gap-2 px-4 py-3 border-t border-gray-200"
+            style={{ background: '#f0f2f5' }}>
             <button disabled={page <= 1} onClick={() => setPage(p => p - 1)}
               className="text-xs px-3 py-1.5 rounded-lg border disabled:opacity-40"
-              style={{ borderColor: '#30363d', color: '#8b949e', background: '#21262d' }}>Prev</button>
-            <span className="text-xs text-gray-500">Page {page} of {pages}</span>
+              style={{ borderColor: '#d0d7de', color: '#6e7781', background: '#f6f8fa' }}>Prev</button>
+            <span className="text-xs text-gray-600">Page {page} of {pages}</span>
             <button disabled={page >= pages} onClick={() => setPage(p => p + 1)}
               className="text-xs px-3 py-1.5 rounded-lg border disabled:opacity-40"
-              style={{ borderColor: '#30363d', color: '#8b949e', background: '#21262d' }}>Next</button>
+              style={{ borderColor: '#d0d7de', color: '#6e7781', background: '#f6f8fa' }}>Next</button>
           </div>
         )}
       </div>

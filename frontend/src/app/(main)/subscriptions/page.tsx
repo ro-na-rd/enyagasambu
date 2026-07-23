@@ -43,7 +43,7 @@ export default function SubscriptionsPage() {
 
   const planColors: Record<string, string> = {
     free: 'border-gray-200',
-    standard: 'border-[#FF6B00]',
+    standard: 'border-[#E85D04]',
     premium: 'border-yellow-400',
   };
 
@@ -51,11 +51,11 @@ export default function SubscriptionsPage() {
     <div className="max-w-3xl mx-auto px-4 py-12">
       <h1 className="text-2xl font-bold text-gray-900 mb-1">Seller Plans</h1>
       <p className="text-gray-500 text-sm mb-2">Upgrade to list more items, keep them active longer, and get featured.</p>
-      {user && <p className="text-sm text-[#FF6B00] mb-6">Your current balance: <Coins size={14} className="inline" /> {user.coins}</p>}
+      {user && <p className="text-sm text-[#E85D04] mb-6">Your current balance: <Coins size={14} className="inline" /> {user.coins}</p>}
 
       {current && (
         <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 mb-6 text-sm">
-          <p className="font-semibold text-[#1a2b6d]">Current plan: <span className="capitalize">{current.plan}</span></p>
+          <p className="font-semibold text-[#0f1e42]">Current plan: <span className="capitalize">{current.plan}</span></p>
           {current.expires_at && <p className="text-orange-500 text-xs mt-0.5">Valid until {new Date(current.expires_at).toLocaleDateString()}</p>}
         </div>
       )}
@@ -69,7 +69,7 @@ export default function SubscriptionsPage() {
               <div className="bg-yellow-400 text-gray-900 text-xs font-bold text-center py-1 rounded-lg mb-3">BEST VALUE</div>
             )}
             <h3 className="text-lg font-bold text-gray-900">{plan.name}</h3>
-            <p className="text-2xl font-bold text-[#FF6B00] mt-1">
+            <p className="text-2xl font-bold text-[#E85D04] mt-1">
               {plan.coins === 0 ? 'Free' : <><Coins size={20} /> {plan.coins}</>}
               {plan.coins > 0 && <span className="text-sm font-normal text-gray-500"> / month</span>}
             </p>
@@ -85,12 +85,12 @@ export default function SubscriptionsPage() {
             {plan.id === 'free' ? (
               <div className="mt-5 text-center text-xs text-gray-400 py-2">Default plan</div>
             ) : current?.plan === plan.id ? (
-              <div className="mt-5 text-center text-sm text-[#FF6B00] font-semibold py-2">✓ Active</div>
+              <div className="mt-5 text-center text-sm text-[#E85D04] font-semibold py-2">✓ Active</div>
             ) : (
               <button
                 onClick={() => handleSubscribe(plan.id)}
                 disabled={!!subscribing}
-                className={`mt-5 w-full font-semibold py-2.5 rounded-lg text-sm transition disabled:opacity-60 ${plan.id === 'premium' ? 'bg-yellow-400 text-gray-900 hover:bg-yellow-300' : 'bg-[#FF6B00] text-white hover:bg-[#e05d00]'}`}
+                className={`mt-5 w-full font-semibold py-2.5 rounded-lg text-sm transition disabled:opacity-60 ${plan.id === 'premium' ? 'bg-yellow-400 text-gray-900 hover:bg-yellow-300' : 'bg-[#E85D04] text-white hover:bg-[#e05d00]'}`}
               >
                 {subscribing === plan.id ? 'Processing…' : `Subscribe (${plan.coins} coins)`}
               </button>

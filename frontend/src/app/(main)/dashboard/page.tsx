@@ -7,7 +7,7 @@ import Link from 'next/link';
 import { Package, Building2, Car, CheckCircle, Handshake, Lock, Wrench, BadgeCheck, Coins, Mail, Phone, Users, List, Plus, Search, Send, Award, MapPin, Clock } from '@/lib/icons';
 import { SITE_DOMAIN } from '@/lib/config';
 
-const NAVY = '#1B2A5E';
+const NAVY = '#0f1e42';
 const ORG  = '#E85D04';
 const GOLD = '#C9A227';
 
@@ -524,7 +524,7 @@ export default function DashboardPage() {
             { href: '/listings/create', icon: <Plus size={24} />, label: 'Post a Listing',   sub: 'Costs 400 coins' },
             { href: '/coins',           icon: <Coins size={24} />, label: 'Buy Coins',        sub: 'Top up wallet' },
             { href: '/listings',        icon: <Search size={24} />, label: 'Browse Listings',  sub: 'Find products' },
-            { href: '/referral',        icon: <Send size={24} />, label: 'Invite Friends',   sub: 'Earn 50 coins each' },
+            { href: '/referral',        icon: <Send size={24} />, label: 'Invite Friends',   sub: 'Earn 200 RWF per cert' },
           ].map(({ href, icon, label, sub }) => (
             <Link key={href} href={href}
               className="bg-white rounded-xl border-2 border-gray-100 p-4 flex flex-col items-center text-center hover:shadow-md transition group"

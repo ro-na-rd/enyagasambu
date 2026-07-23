@@ -1,11 +1,10 @@
 'use client';
-import { use, useEffect, useState, useRef } from 'react';
+import { use, useEffect, useState, useRef, useCallback } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
 import Link from 'next/link';
 import { useLanguage } from '@/context/LanguageContext';
-import { ArrowLeft, Star, ChevronLeft, ChevronRight, Package, MapPin, Unlock, Phone, Loader2, Sparkles, X } from '@/lib/icons';
+import { ArrowLeft, Star, ChevronLeft, ChevronRight, Package, MapPin, Phone, Loader2, X, MessageCircle, Clock, CheckCircle, AlertCircle, RefreshCw, Heart, Send } from '@/lib/icons';
 
 interface ListingDetail {
   id: number;
@@ -27,35 +26,59 @@ interface ListingDetail {
   sellerPhone: string | null;
 }
 
+interface Comment {
+  id: number;
+  user_id: number;
+  user_name: string;
+  content: string;
+  created_at: string;
+}
+
 const ORG = '#E85D04';
-const NAVY = '#1B2A5E';
+const NAVY = '#0f1e42';
+const CONTACT_FEE = 300;
+
+type ContactStep = 'idle' | 'enter_phone' | 'payment_pending' | 'otp_entry' | 'unlocked';
 
 export default function ListingDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const { user, refreshUser } = useAuth();
   const { T } = useLanguage();
-  const router = useRouter();
   const [listing, setListing] = useState<ListingDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState('');
   const [activeImg, setActiveImg] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
 
-  const [step, setStep] = useState<'idle' | 'enter_phone' | 'unlocked'>('idle');
+  // Contact access flow
+  const [contactStep, setContactStep] = useState<ContactStep>('idle');
   const [phone, setPhone] = useState('');
+  const [referenceId, setReferenceId] = useState('');
+  const [otpCode, setOtpCode] = useState('');
   const [working, setWorking] = useState(false);
-  const [connectError, setConnectError] = useState('');
+  const [contactError, setContactError] = useState('');
+  const [contactSuccess, setContactSuccess] = useState('');
   const [sellerPhone, setSellerPhone] = useState<string | null>(null);
-  const [timeLeft, setTimeLeft] = useState(0);
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [sellerName, setSellerName] = useState<string | null>(null);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [boosting, setBoosting] = useState(false);
+  const [otpCountdown, setOtpCountdown] = useState(0);
+  const otpTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Likes & Comments
+  const [liked, setLiked] = useState(false);
+  const [likeCount, setLikeCount] = useState(0);
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [commentText, setCommentText] = useState('');
+  const [commentSubmitting, setCommentSubmitting] = useState(false);
+  const [deletingCommentId, setDeletingCommentId] = useState<number | null>(null);
 
   useEffect(() => {
     api.get(`/listings/${id}`)
       .then(({ data }) => {
         setListing(data.listing);
         if (data.listing.contactUnlocked) {
-          setStep('unlocked');
+          setContactStep('unlocked');
           setSellerPhone(data.listing.sellerPhone);
         }
       })
@@ -64,36 +87,108 @@ export default function ListingDetailPage({ params }: { params: Promise<{ id: st
   }, [id]);
 
   useEffect(() => {
-    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+    if (!listing) return;
+    api.get(`/likes/${id}`).then(({ data }) => {
+      setLiked(data.liked);
+      setLikeCount(data.count);
+    }).catch(() => {});
+    api.get(`/comments/${id}`).then(({ data }) => {
+      setComments(data.comments);
+    }).catch(() => {});
+  }, [id, listing]);
+
+  useEffect(() => {
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current);
+      if (otpTimerRef.current) clearInterval(otpTimerRef.current);
+    };
   }, []);
 
-  const startTimer = (expiresAt: string) => {
-    const expiry = new Date(expiresAt).getTime();
-    if (timerRef.current) clearInterval(timerRef.current);
-    timerRef.current = setInterval(() => {
-      const now = Date.now();
-      const diff = Math.max(0, Math.floor((expiry - now) / 1000));
-      setTimeLeft(diff);
-      if (diff <= 0) {
-        if (timerRef.current) clearInterval(timerRef.current);
-        setStep('idle');
-        setSellerPhone(null);
-      }
+  const startOtpCountdown = useCallback(() => {
+    setOtpCountdown(120);
+    if (otpTimerRef.current) clearInterval(otpTimerRef.current);
+    otpTimerRef.current = setInterval(() => {
+      setOtpCountdown((prev) => {
+        if (prev <= 1) {
+          if (otpTimerRef.current) clearInterval(otpTimerRef.current);
+          return 0;
+        }
+        return prev - 1;
+      });
     }, 1000);
-  };
+  }, []);
 
-  const handleUnlock = async () => {
-    if (!phone.trim()) { setConnectError('Please enter your phone number'); return; }
-    setWorking(true); setConnectError('');
+  const startPaymentPolling = useCallback((refId: string) => {
+    if (pollRef.current) clearInterval(pollRef.current);
+    pollRef.current = setInterval(async () => {
+      try {
+        const { data } = await api.get(`/contact-access/status/${refId}`);
+        if (data.status === 'verified') {
+          if (pollRef.current) clearInterval(pollRef.current);
+          setContactStep('otp_entry');
+          setContactSuccess('Payment successful! A verification code has been sent to your phone.');
+          startOtpCountdown();
+        } else if (data.status === 'confirmed') {
+          if (pollRef.current) clearInterval(pollRef.current);
+          setSellerPhone(data.sellerPhone);
+          setSellerName(data.sellerName);
+          setContactStep('unlocked');
+        } else if (data.status === 'failed') {
+          if (pollRef.current) clearInterval(pollRef.current);
+          setContactError(data.message || 'Payment failed. Please try again.');
+          setContactStep('enter_phone');
+        }
+      } catch {
+        // Keep polling on transient errors
+      }
+    }, 5000);
+  }, [startOtpCountdown]);
+
+  const handleInitiatePayment = async () => {
+    if (!phone.trim()) { setContactError('Please enter your phone number'); return; }
+    setWorking(true); setContactError(''); setContactSuccess('');
     try {
-      const { data } = await api.post('/unlock/direct', { listing_id: id, phone: phone.trim() });
-      setSellerPhone(data.sellerPhone);
-      setStep('unlocked');
-      startTimer(data.expiresAt);
+      const { data } = await api.post('/contact-access/initiate', { listingId: parseInt(id), phone: phone.trim() });
+      if (data.alreadyUnlocked) {
+        setSellerPhone(data.sellerPhone);
+        setSellerName(data.sellerName);
+        setContactStep('unlocked');
+      } else if (data.referenceId) {
+        setReferenceId(data.referenceId);
+        setContactStep('payment_pending');
+        startPaymentPolling(data.referenceId);
+      }
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
-      setConnectError(msg || 'Failed to unlock contact');
+      setContactError(msg || 'Failed to initiate payment');
     } finally { setWorking(false); }
+  };
+
+  const handleVerifyOtp = async () => {
+    if (!otpCode.trim() || otpCode.length !== 6) { setContactError('Please enter the 6-digit code'); return; }
+    setWorking(true); setContactError('');
+    try {
+      const { data } = await api.post('/contact-access/verify-otp', { referenceId, code: otpCode.trim() });
+      setSellerPhone(data.sellerPhone);
+      setSellerName(data.sellerName);
+      setContactStep('unlocked');
+      if (otpTimerRef.current) clearInterval(otpTimerRef.current);
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      setContactError(msg || 'Invalid verification code');
+    } finally { setWorking(false); }
+  };
+
+  const handleResendOtp = async () => {
+    setContactError(''); setContactSuccess('');
+    try {
+      await api.post('/contact-access/resend-otp', { referenceId });
+      setContactSuccess('New verification code sent!');
+      startOtpCountdown();
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      setContactError(msg || 'Failed to resend code');
+    }
   };
 
   const handleBoost = async () => {
@@ -109,10 +204,52 @@ export default function ListingDetailPage({ params }: { params: Promise<{ id: st
     } finally { setBoosting(false); }
   };
 
-  const formatTime = (seconds: number) => {
-    const m = Math.floor(seconds / 60);
-    const s = seconds % 60;
-    return `${m}:${s.toString().padStart(2, '0')}`;
+  const handleToggleLike = async () => {
+    if (!user) return;
+    try {
+      const { data } = await api.post(`/likes/${id}/toggle`);
+      setLiked(data.liked);
+      setLikeCount(data.count);
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      alert(msg || 'Failed to update like');
+    }
+  };
+
+  const handleAddComment = async () => {
+    if (!user || !commentText.trim()) return;
+    setCommentSubmitting(true);
+    try {
+      const { data } = await api.post(`/comments/${id}`, { content: commentText.trim() });
+      setComments((prev) => [...prev, data.comment]);
+      setCommentText('');
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      alert(msg || 'Failed to add comment');
+    } finally { setCommentSubmitting(false); }
+  };
+
+  const handleDeleteComment = async (commentId: number) => {
+    if (!user) return;
+    setDeletingCommentId(commentId);
+    try {
+      await api.delete(`/comments/${id}/${commentId}`);
+      setComments((prev) => prev.filter((c) => c.id !== commentId));
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      alert(msg || 'Failed to delete comment');
+    } finally { setDeletingCommentId(null); }
+  };
+
+  const resetContactFlow = () => {
+    setContactStep('idle');
+    setPhone('');
+    setOtpCode('');
+    setReferenceId('');
+    setContactError('');
+    setContactSuccess('');
+    if (pollRef.current) clearInterval(pollRef.current);
+    if (otpTimerRef.current) clearInterval(otpTimerRef.current);
   };
 
   if (loading) {
@@ -134,7 +271,7 @@ export default function ListingDetailPage({ params }: { params: Promise<{ id: st
     if (fetchError) {
       return (
         <div className="max-w-6xl mx-auto px-4 py-20 text-center">
-          <div className="text-6xl mb-4">📭</div>
+          <div className="text-6xl mb-4 text-gray-300 flex justify-center"><Package size={64} /></div>
           <h2 className="text-xl font-bold text-gray-800 mb-2">Listing Not Found</h2>
           <p className="text-gray-500 mb-6">{fetchError}</p>
           <Link href="/listings" className="inline-flex items-center gap-2 text-sm font-semibold px-5 py-2.5 rounded-lg text-white" style={{ background: '#E85D04' }}>
@@ -230,6 +367,59 @@ export default function ListingDetailPage({ params }: { params: Promise<{ id: st
               {listing.description || 'No description provided.'}
             </p>
           </div>
+
+          {/* Comments Section */}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mt-6">
+            <h2 className="text-sm font-bold uppercase tracking-wider text-gray-800 mb-4">Comments ({comments.length})</h2>
+
+            {user ? (
+              <div className="flex gap-3 mb-6">
+                <input
+                  type="text"
+                  value={commentText}
+                  onChange={(e) => setCommentText(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && !commentSubmitting && handleAddComment()}
+                  placeholder="Add a comment..."
+                  className="flex-1 border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#E85D04]/30 focus:border-[#E85D04] transition"
+                />
+                <button onClick={handleAddComment} disabled={commentSubmitting || !commentText.trim()}
+                  className="px-4 py-2.5 rounded-xl text-white text-sm font-bold hover:shadow-lg transition disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2 shrink-0"
+                  style={{ background: `linear-gradient(135deg, ${NAVY}, ${ORG})` }}>
+                  {commentSubmitting ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
+                  Post
+                </button>
+              </div>
+            ) : (
+              <p className="text-sm text-gray-400 italic mb-6">Sign in to leave a comment.</p>
+            )}
+
+            {comments.length === 0 ? (
+              <p className="text-sm text-gray-400 text-center py-4">No comments yet. Be the first!</p>
+            ) : (
+              <div className="space-y-4">
+                {comments.map((comment) => (
+                  <div key={comment.id} className="flex gap-3 group">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center shrink-0">
+                      <span className="text-xs font-bold text-gray-600">{comment.user_name.charAt(0).toUpperCase()}</span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-sm font-semibold text-gray-800">{comment.user_name}</span>
+                        <span className="text-xs text-gray-400">{new Date(comment.created_at).toLocaleDateString()}</span>
+                        {user && (user.id === comment.user_id) && (
+                          <button onClick={() => handleDeleteComment(comment.id)} disabled={deletingCommentId === comment.id}
+                            className="text-xs text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition ml-auto">
+                            {deletingCommentId === comment.id ? '...' : 'Delete'}
+                          </button>
+                        )}
+                      </div>
+                      <p className="text-sm text-gray-600 break-words">{comment.content}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Info - Right */}
@@ -248,9 +438,23 @@ export default function ListingDetailPage({ params }: { params: Promise<{ id: st
 
             <p className="text-2xl font-extrabold mt-3" style={{ color: ORG }}>{priceLabel}</p>
 
-            <div className="flex items-center gap-2 mt-3 text-sm text-gray-500">
-              <MapPin size={14} />
-              {listing.location || 'Kigali'}
+            <div className="flex items-center gap-4 mt-3">
+              <div className="flex items-center gap-2 text-sm text-gray-500">
+                <MapPin size={14} />
+                {listing.location || 'Kigali'}
+              </div>
+              {user && (
+                <button onClick={handleToggleLike}
+                  className={`flex items-center gap-1.5 text-sm font-semibold transition ${liked ? 'text-red-500' : 'text-gray-400 hover:text-red-400'}`}>
+                  <Heart size={16} className={liked ? 'fill-current' : ''} />
+                  {likeCount > 0 && <span>{likeCount}</span>}
+                </button>
+              )}
+              {!user && likeCount > 0 && (
+                <span className="flex items-center gap-1.5 text-sm text-gray-400">
+                  <Heart size={14} /> {likeCount}
+                </span>
+              )}
             </div>
 
             {/* Quick info grid */}
@@ -289,54 +493,82 @@ export default function ListingDetailPage({ params }: { params: Promise<{ id: st
               </div>
             )}
 
-            {/* Connect Section */}
+            {/* Connect Section — MoMo Payment */}
             {!isOwner && (
               <div className="mt-6 pt-5 border-t border-gray-100">
-                {step === 'unlocked' ? (
+                {contactStep === 'unlocked' ? (
                   <div className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-2xl p-5 text-center">
-                    <div className="text-4xl mb-3"><Sparkles size={40} /></div>
-                    <p className="text-xs font-medium text-gray-600 mb-1">Seller's contact number</p>
-                    <p className="text-2xl font-extrabold" style={{ color: NAVY }}>{sellerPhone || 'Not provided'}</p>
-                    <div className="mt-3 inline-flex items-center gap-2 bg-white rounded-full px-4 py-2 shadow-sm">
-                      <span className="text-lg"><Unlock size={20} /></span>
-                      <span className="text-sm font-bold" style={{ color: ORG }}>{formatTime(timeLeft)}</span>
-                      <span className="text-xs text-gray-400">remaining</span>
+                    <div className="w-14 h-14 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-3">
+                      <CheckCircle size={28} style={{ color: '#059669' }} />
                     </div>
-                    <p className="text-xs text-gray-400 mt-3">Contact the seller to complete your transaction</p>
+                    <p className="text-sm font-bold text-gray-800 mb-1">Seller Contact Unlocked</p>
+                    {sellerName && <p className="text-xs text-gray-500 mb-2">{sellerName}</p>}
+                    <p className="text-2xl font-extrabold" style={{ color: NAVY }}>{sellerPhone || 'Not provided'}</p>
+                    <div className="flex items-center justify-center gap-3 mt-4">
+                      {sellerPhone && (
+                        <a href={`tel:${sellerPhone}`}
+                          className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-white text-sm font-bold hover:shadow-lg transition"
+                          style={{ background: `linear-gradient(135deg, ${NAVY}, #0f1e42)` }}>
+                          <Phone size={16} /> Call
+                        </a>
+                      )}
+                      {sellerPhone && (
+                        <a href={`https://wa.me/${sellerPhone.replace(/^0/, '250')}`} target="_blank" rel="noopener noreferrer"
+                          className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-white text-sm font-bold hover:shadow-lg transition"
+                          style={{ background: 'linear-gradient(135deg, #25d366, #128c7e)' }}>
+                          <MessageCircle size={16} /> WhatsApp
+                        </a>
+                      )}
+                    </div>
+                    <button onClick={resetContactFlow}
+                      className="text-xs text-gray-400 hover:text-gray-600 mt-3 underline">Unlock another contact</button>
                   </div>
                 ) : (
                   <div>
                     <div className="flex items-center gap-3 mb-4">
-                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-50 to-orange-100 flex items-center justify-center text-xl"><Phone size={24} /></div>
+                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-50 to-orange-100 flex items-center justify-center text-xl">
+                        <Phone size={24} />
+                      </div>
                       <div>
-                        <p className="text-sm font-bold text-gray-800">Interested in this listing?</p>
-                        <p className="text-xs text-gray-500">Connect with the seller</p>
+                        <p className="text-sm font-bold text-gray-800">Get Seller Contact</p>
+                        <p className="text-xs text-gray-500">One-time payment of {CONTACT_FEE} RWF</p>
                       </div>
                     </div>
 
-                    {connectError && (
-                      <div className="bg-red-50 border border-red-200 rounded-xl p-3 mb-3">
-                        <p className="text-xs text-red-700">{connectError}</p>
+                    {contactError && (
+                      <div className="bg-red-50 border border-red-200 rounded-xl p-3 mb-3 flex items-start gap-2">
+                        <AlertCircle size={14} className="text-red-500 mt-0.5 shrink-0" />
+                        <p className="text-xs text-red-700">{contactError}</p>
+                      </div>
+                    )}
+                    {contactSuccess && (
+                      <div className="bg-green-50 border border-green-200 rounded-xl p-3 mb-3 flex items-start gap-2">
+                        <CheckCircle size={14} className="text-green-500 mt-0.5 shrink-0" />
+                        <p className="text-xs text-green-700">{contactSuccess}</p>
                       </div>
                     )}
 
-                    {step === 'idle' ? (
+                    {/* Step 1: Enter phone number */}
+                    {contactStep === 'idle' && (
                       <div>
                         <p className="text-sm text-gray-600 mb-3">
-                          Enter your phone number to unlock the seller's contact for <strong>3 minutes</strong>.
+                          Pay <strong className="text-orange-600">{CONTACT_FEE} RWF</strong> via MTN MoMo or Airtel Money to unlock the seller&apos;s phone number, WhatsApp, and call options.
                         </p>
-                        <button onClick={() => setStep('enter_phone')}
+                        <button onClick={() => setContactStep('enter_phone')}
                           disabled={isExpired}
                           className="w-full text-white font-bold py-3 rounded-xl text-sm hover:shadow-lg hover:scale-[1.01] active:scale-[0.99] transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                           style={{ background: `linear-gradient(135deg, ${NAVY}, ${ORG})` }}>
                           <Phone size={16} />
-                          {T.connectSeller}
+                          Get Seller Contact
                         </button>
                       </div>
-                    ) : (
+                    )}
+
+                    {/* Step 2: Enter phone for MoMo payment */}
+                    {contactStep === 'enter_phone' && (
                       <div>
-                        <p className="text-sm font-semibold text-gray-800 mb-1">Enter your phone number</p>
-                        <p className="text-xs text-gray-500 mb-3">Unlock the seller's contact for <strong className="text-orange-600">3 minutes</strong>.</p>
+                        <p className="text-sm font-semibold text-gray-800 mb-1">Enter your Mobile Money number</p>
+                        <p className="text-xs text-gray-500 mb-3">A payment request of <strong className="text-orange-600">{CONTACT_FEE} RWF</strong> will be sent to this number.</p>
                         <div className="relative mb-3">
                           <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
                             <Phone size={16} />
@@ -345,16 +577,69 @@ export default function ListingDetailPage({ params }: { params: Promise<{ id: st
                             placeholder="+250 7XX XXX XXX"
                             className="w-full border border-gray-300 rounded-xl pl-10 pr-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#E85D04]/30 focus:border-[#E85D04] transition" />
                         </div>
-                        <button onClick={handleUnlock} disabled={working}
+                        <button onClick={handleInitiatePayment} disabled={working}
                           className="w-full text-white font-bold py-3 rounded-xl text-sm hover:shadow-lg disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition"
                           style={{ background: `linear-gradient(135deg, ${NAVY}, ${ORG})` }}>
                           {working ? (
-                            <><Loader2 size={16} className="animate-spin" /> Unlocking...</>
+                            <><Loader2 size={16} className="animate-spin" /> Sending request...</>
                           ) : (
-                            <><Unlock size={14} /> Unlock Contact</>
+                            <>Pay {CONTACT_FEE} RWF</>
                           )}
                         </button>
-                        <button onClick={() => { setStep('idle'); setPhone(''); setConnectError(''); }}
+                        <button onClick={resetContactFlow}
+                          className="w-full text-gray-500 text-sm py-2 mt-1 hover:underline">Cancel</button>
+                      </div>
+                    )}
+
+                    {/* Step 3: Payment pending — polling MoMo */}
+                    {contactStep === 'payment_pending' && (
+                      <div className="text-center py-4">
+                        <div className="w-14 h-14 rounded-full bg-orange-100 flex items-center justify-center mx-auto mb-3">
+                          <Loader2 size={28} className="animate-spin" style={{ color: ORG }} />
+                        </div>
+                        <p className="text-sm font-bold text-gray-800 mb-1">Waiting for payment</p>
+                        <p className="text-xs text-gray-500 mb-3">
+                          A payment request of <strong>{CONTACT_FEE} RWF</strong> has been sent to <strong>{phone}</strong>.
+                        </p>
+                        <p className="text-xs text-gray-400">Please approve the payment on your phone by entering your Mobile Money PIN.</p>
+                        <div className="flex items-center justify-center gap-2 mt-4 text-xs text-gray-400">
+                          <Clock size={12} />
+                          <span>Checking payment status...</span>
+                        </div>
+                        <button onClick={() => { if (pollRef.current) clearInterval(pollRef.current); setContactStep('enter_phone'); setContactError(''); }}
+                          className="text-gray-500 text-sm py-2 mt-3 hover:underline">Cancel</button>
+                      </div>
+                    )}
+
+                    {/* Step 4: Enter OTP */}
+                    {contactStep === 'otp_entry' && (
+                      <div>
+                        <p className="text-sm font-semibold text-gray-800 mb-1">Enter Verification Code</p>
+                        <p className="text-xs text-gray-500 mb-3">Enter the 6-digit code sent to <strong>{phone}</strong>.</p>
+                        <input type="text" value={otpCode} onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                          placeholder="000000"
+                          maxLength={6}
+                          className="w-full border border-gray-300 rounded-xl px-4 py-3 text-center text-2xl font-mono tracking-[0.3em] focus:outline-none focus:ring-2 focus:ring-[#E85D04]/30 focus:border-[#E85D04] transition"
+                          style={{ letterSpacing: '0.3em' }} />
+                        <button onClick={handleVerifyOtp} disabled={working || otpCode.length !== 6}
+                          className="w-full text-white font-bold py-3 rounded-xl text-sm hover:shadow-lg disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition mt-3"
+                          style={{ background: `linear-gradient(135deg, ${NAVY}, ${ORG})` }}>
+                          {working ? (
+                            <><Loader2 size={16} className="animate-spin" /> Verifying...</>
+                          ) : (
+                            <>Verify & Unlock</>
+                          )}
+                        </button>
+                        <div className="flex items-center justify-center gap-4 mt-3">
+                          {otpCountdown > 0 ? (
+                            <span className="text-xs text-gray-400">Resend code in {Math.floor(otpCountdown / 60)}:{(otpCountdown % 60).toString().padStart(2, '0')}</span>
+                          ) : (
+                            <button onClick={handleResendOtp} className="text-xs font-semibold hover:underline flex items-center gap-1" style={{ color: ORG }}>
+                              <RefreshCw size={12} /> Resend code
+                            </button>
+                          )}
+                        </div>
+                        <button onClick={resetContactFlow}
                           className="w-full text-gray-500 text-sm py-2 mt-1 hover:underline">Cancel</button>
                       </div>
                     )}

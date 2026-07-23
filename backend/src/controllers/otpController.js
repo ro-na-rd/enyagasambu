@@ -1,32 +1,11 @@
 const pool = require('../config/db');
-const AfricasTalking = require('africastalking');
-
-let at, sms;
-try {
-  at = AfricasTalking({
-    apiKey: process.env.AT_API_KEY,
-    username: process.env.AT_USERNAME,
-  });
-  sms = at.SMS;
-} catch {
-  sms = null;
-}
+const { sendSms } = require('../services/smsService');
 
 const CONNECT_COST = 300;
 const OTP_TTL_MINUTES = 10;
 
 function generateCode() {
   return String(Math.floor(100000 + Math.random() * 900000));
-}
-
-async function sendSms(phone, code) {
-  if (!sms) return;
-  const message = `Your NMO verification code is: ${code}. Valid for ${OTP_TTL_MINUTES} minutes. Do not share this code with anyone.`;
-  await sms.send({
-    to: [phone],
-    message,
-    from: process.env.AT_SENDER_ID || 'NMO',
-  });
 }
 
 // ─── STEP 1: buyer submits their phone, we send OTP ──────────────────────────
@@ -66,7 +45,8 @@ exports.sendOtp = async (req, res) => {
       [req.user.id, listing_id, phone, code, expiresAt]
     );
 
-    await sendSms(phone, code);
+    const message = `Your NMO verification code is: ${code}. Valid for ${OTP_TTL_MINUTES} minutes. Do not share this code with anyone.`;
+    await sendSms(phone, message);
 
     return res.json({ message: `Verification code sent to ${phone}`, otpSent: true });
   } catch (err) {

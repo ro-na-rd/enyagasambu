@@ -6,7 +6,7 @@ import { useState } from 'react';
 import type { Lang } from '@/lib/translations';
 import { Search, UserPlus, Star, Heart, Users, Menu, Coins, LayoutDashboard, List, Gift, Wrench, LogOut } from '@/lib/icons';
 
-const navy = '#1B2A5E';
+const navy = '#0f1e42';
 const org  = '#E85D04';
 
 function ReadMeModal({ onClose }: { onClose: () => void }) {
@@ -36,7 +36,7 @@ function ReadMeModal({ onClose }: { onClose: () => void }) {
           <li><strong>Browse &amp; Search</strong> — filter by category, location or keyword. Listings show public info (title, price, location, photos).</li>
           <li><strong>Reveal Seller Contact</strong> — costs 300 coins + OTP phone verification to protect both parties.</li>
           <li><strong>Boost a Listing</strong> — spend 200 coins to feature your listing for 7 days (appears at the top).</li>
-          <li><strong>Refer &amp; Earn</strong> — share your referral code; earn coins every time someone signs up with it.</li>
+          <li><strong>Refer &amp; Earn</strong> — share your referral code; earn 200 RWF when a referred ambassador pays for their certificate.</li>
           <li><strong>Seller Plans</strong> — subscribe for a monthly plan to reduce per-listing coin cost.</li>
           <li><strong>Auction</strong> — submit items for timed public auction; bidders compete until the timer ends.</li>
         </ol>
@@ -62,7 +62,7 @@ function ReadMeModal({ onClose }: { onClose: () => void }) {
           <li><strong>Seller</strong> — post &amp; manage listings, boost, subscribe</li>
           <li><strong>Staff</strong> — moderate listings and users</li>
           <li><strong>Admin</strong> — full platform control</li>
-          <li><strong>Ambassador</strong> — promote the platform, earn referral coins</li>
+          <li><strong>Ambassador</strong> — promote the platform, earn referral rewards</li>
         </ul>
       </div>
     </div>
@@ -244,7 +244,7 @@ export default function Navbar() {
               <div className="flex items-center gap-2 ml-1 pl-2" style={{ borderLeft: '1px solid #ddd' }}>
                 <Link href="/coins"
                   className="text-xs px-2 py-1 rounded flex items-center gap-1"
-                  style={{ background: '#0f1e5a', color: '#fff' }}>
+                  style={{ background: '#0f1e42', color: '#fff' }}>
                   <Coins size={13} /> {user.coins}
                 </Link>
                 <div className="relative">
@@ -319,7 +319,7 @@ export default function Navbar() {
       </nav>
 
       {/* ── CATEGORY PILLS ── */}
-      <div className="px-5 py-1.5 flex gap-2 flex-wrap" style={{ background: '#1d3080' }}>
+      <div className="px-5 py-1.5 flex gap-2 flex-wrap" style={{ background: '#0f1e42' }}>
         {CAT_LINKS.map(({ label, href, disabled }, i) => (
           disabled ? (
             <span

@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>E-Nyagasambu — Get Seller Contact Payment Flow Demo</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+--navy:#0f1e42;--navy-light:#1a2d5a;--orange:#E85D04;--orange-light:#F48C06;
+--green:#16a34a;--red:#dc2626;--blue:#2563eb;--mtn-yellow:#FFCC00;--mtn-blue:#0033A0;
+--airtel-red:#ED1C24;--bg:#f0f2f5;--card:#fff;--text:#1a1a2e;--text-light:#6b7280;
+--radius:12px;--shadow:0 4px 24px rgba(0,0,0,0.12);
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden}
+.phone-frame{width:390px;height:844px;margin:0 auto;background:var(--card);border-radius:40px;box-shadow:0 0 0 12px #1a1a2e,0 0 60px rgba(0,0,0,0.3);position:relative;overflow:hidden}
+.status-bar{height:50px;background:var(--navy);display:flex;align-items:flex-end;justify-content:space-between;padding:0 30px 8px;color:#fff;font-size:12px;font-weight:600}
+.status-bar .time{font-size:14px;font-weight:700}
+.status-icons{display:flex;gap:5px;align-items:center}
+.page{position:absolute;top:50px;left:0;right:0;bottom:0;overflow-y:auto;transition:transform 0.4s cubic-bezier(0.4,0,0.2,1),opacity 0.4s ease}
+.page.hidden{transform:translateX(100%);opacity:0;pointer-events:none}
+
+/* Navbar */
+.navbar{background:var(--navy);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10}
+.navbar .logo{color:#fff;font-size:18px;font-weight:800;letter-spacing:-0.5px}
+.navbar .logo span{color:var(--orange)}
+.navbar-links{display:flex;gap:16px;align-items:center}
+.navbar-links a{color:rgba(255,255,255,0.8);text-decoration:none;font-size:13px;font-weight:500}
+.back-btn{display:flex;align-items:center;gap:4px;color:#fff;text-decoration:none;font-size:13px;font-weight:600;cursor:pointer;background:none;border:none}
+.back-btn svg{width:20px;height:20px}
+
+/* Product Page */
+.product-gallery{width:100%;aspect-ratio:4/3;background:linear-gradient(135deg,#e2e8f0,#f1f5f9);display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
+.gallery-placeholder{display:flex;flex-direction:column;align-items:center;gap:8px;color:#94a3b8}
+.gallery-placeholder svg{width:64px;height:64px;opacity:0.5}
+.gallery-dots{position:absolute;bottom:12px;display:flex;gap:6px}
+.gallery-dots .dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,0.5)}
+.gallery-dots .dot.active{background:#fff;width:20px;border-radius:4px}
+.gallery-badge{position:absolute;top:12px;left:12px;background:var(--green);color:#fff;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:700}
+.gallery-heart{position:absolute;top:12px;right:12px;width:36px;height:36px;background:rgba(255,255,255,0.9);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.gallery-heart svg{width:20px;height:20px;color:#9ca3af}
+.gallery-heart.liked svg{color:var(--red);fill:var(--red)}
+.product-info{padding:16px}
+.product-price{font-size:28px;font-weight:900;color:var(--navy)}
+.product-price span{font-size:14px;font-weight:600;color:var(--text-light)}
+.product-title{font-size:18px;font-weight:700;margin:8px 0 4px}
+.product-meta{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.product-meta .meta{display:flex;align-items:center;gap:4px;font-size:12px;color:var(--text-light)}
+.product-meta .meta svg{width:14px;height:14px}
+.product-desc{font-size:14px;line-height:1.6;color:var(--text-light);margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid #e5e7eb}
+.product-seller{display:flex;align-items:center;gap:12px;padding:12px;background:#f8fafc;border-radius:var(--radius);margin-bottom:16px}
+.seller-avatar{width:48px;height:48px;background:var(--navy);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px;font-weight:800}
+.seller-info{flex:1}
+.seller-info .seller-name{font-size:14px;font-weight:700}
+.seller-info .seller-joined{font-size:12px;color:var(--text-light)}
+
+/* Contact Lock Card */
+.lock-card{background:linear-gradient(135deg,var(--navy),var(--navy-light));border-radius:var(--radius);padding:20px;color:#fff;margin-bottom:16px;position:relative;overflow:hidden}
+.lock-card::before{content:'';position:absolute;top:-30px;right:-30px;width:100px;height:100px;background:rgba(255,255,255,0.05);border-radius:50%}
+.lock-card .lock-icon{width:48px;height:48px;background:rgba(255,255,255,0.15);border-radius:12px;display:flex;align-items:center;justify-content:center;margin-bottom:12px}
+.lock-card .lock-icon svg{width:24px;height:24px;color:var(--orange)}
+.lock-card h3{font-size:16px;font-weight:800;margin-bottom:4px}
+.lock-card p{font-size:12px;opacity:0.7;line-height:1.5;margin-bottom:16px}
+.lock-card .price-tag{display:inline-flex;align-items:center;gap:4px;background:var(--mtn-yellow);color:#000;padding:6px 12px;border-radius:8px;font-size:13px;font-weight:800;margin-bottom:12px}
+.btn-unlock{width:100%;padding:14px;border:none;border-radius:var(--radius);font-size:15px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:all 0.2s;background:var(--orange);color:#fff}
+.btn-unlock:hover{background:var(--orange-light);transform:translateY(-1px)}
+
+/* Contact Revealed Card */
+.contact-card{background:linear-gradient(135deg,#f0fdf4,#dcfce7);border:2px solid #bbf7d0;border-radius:var(--radius);padding:20px;margin-bottom:16px}
+.contact-card .verified-badge{display:inline-flex;align-items:center;gap:4px;background:var(--green);color:#fff;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;margin-bottom:12px}
+.contact-card h3{font-size:16px;font-weight:800;color:#166534;margin-bottom:12px}
+.contact-detail{display:flex;align-items:center;gap:12px;padding:12px;background:#fff;border-radius:8px;margin-bottom:8px}
+.contact-detail .cd-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.contact-detail .cd-icon.phone{background:#dbeafe}
+.contact-detail .cd-icon.whatsapp{background:#dcfce7}
+.contact-detail .cd-icon.call{background:#dbeafe}
+.contact-detail .cd-text{flex:1}
+.contact-detail .cd-label{font-size:11px;color:var(--text-light);text-transform:uppercase;font-weight:600}
+.contact-detail .cd-value{font-size:15px;font-weight:700;color:var(--navy)}
+.contact-actions{display:flex;gap:8px;margin-top:12px}
+.contact-actions .btn-call{flex:1;padding:12px;border:none;border-radius:var(--radius);font-size:14px;font-weight:700;cursor:pointer;background:var(--blue);color:#fff;display:flex;align-items:center;justify-content:center;gap:6px}
+.contact-actions .btn-whatsapp{flex:1;padding:12px;border:none;border-radius:var(--radius);font-size:14px;font-weight:700;cursor:pointer;background:#25D366;color:#fff;display:flex;align-items:center;justify-content:center;gap:6px}
+
+/* Buttons */
+.btn{padding:14px 24px;border:none;border-radius:var(--radius);font-size:15px;font-weight:700;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:8px;width:100%}
+.btn-primary{background:var(--orange);color:#fff}
+.btn-primary:hover{background:var(--orange-light);transform:translateY(-1px)}
+.btn-momo{background:var(--mtn-yellow);color:#000}
+.btn-momo:hover{background:#e6b800}
+.btn-success{background:var(--green);color:#fff}
+.btn-outline{background:transparent;border:2px solid #e5e7eb;color:var(--text)}
+
+/* Overlays */
+.overlay{position:absolute;inset:0;background:rgba(0,0,0,0.5);z-index:100;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity 0.3s}
+.overlay.show{opacity:1;pointer-events:all}
+.modal{background:#fff;border-radius:24px 24px 0 0;padding:24px 20px 32px;width:100%;transform:translateY(100%);transition:transform 0.4s cubic-bezier(0.4,0,0.2,1)}
+.overlay.show .modal{transform:translateY(0)}
+.modal-handle{width:40px;height:4px;background:#d1d5db;border-radius:2px;margin:0 auto 16px}
+.modal h3{font-size:20px;font-weight:800;text-align:center;margin-bottom:4px}
+.modal .modal-sub{text-align:center;color:var(--text-light);font-size:13px;margin-bottom:20px}
+
+/* Payment */
+.payment-card{background:#f8fafc;border:2px solid #e2e8f0;border-radius:var(--radius);padding:16px;margin-bottom:16px}
+.payment-card .amount{font-size:32px;font-weight:900;color:var(--navy);text-align:center}
+.payment-card .amount span{font-size:14px;font-weight:600;color:var(--text-light)}
+.payment-card .desc{text-align:center;font-size:12px;color:var(--text-light);margin-top:4px}
+.provider-tabs{display:flex;gap:8px;margin-bottom:16px}
+.provider-tab{flex:1;padding:12px;border:2px solid #e5e7eb;border-radius:var(--radius);display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;transition:all 0.2s;font-weight:700;font-size:13px}
+.provider-tab.active{border-color:var(--mtn-yellow);background:#fffbe6}
+.provider-tab.mtn{color:var(--mtn-blue)}
+.provider-tab.airtel{color:var(--airtel-red)}
+.phone-input-wrap{display:flex;align-items:center;border:2px solid #e5e7eb;border-radius:var(--radius);overflow:hidden;margin-bottom:16px;transition:border-color 0.2s}
+.phone-input-wrap:focus-within{border-color:var(--orange)}
+.phone-prefix{padding:12px 14px;background:#f8fafc;font-size:15px;font-weight:700;color:var(--navy);border-right:2px solid #e5e7eb}
+.phone-input-wrap input{flex:1;padding:12px 14px;border:none;font-size:15px;font-family:inherit;outline:none}
+
+/* Loading */
+.spinner{width:48px;height:48px;border:4px solid #e5e7eb;border-top-color:var(--orange);border-radius:50%;animation:spin 1s linear infinite;margin:0 auto}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-text{text-align:center;margin-top:16px;font-size:14px;color:var(--text-light);font-weight:500}
+.loading-sub{text-align:center;font-size:12px;color:#9ca3af;margin-top:4px}
+.loading-icon{width:80px;height:80px;margin:0 auto 20px;animation:float 2s ease-in-out infinite}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+
+/* SMS Notification */
+.sms-notification{position:absolute;top:-80px;left:16px;right:16px;background:#fff;border-radius:16px;box-shadow:var(--shadow);padding:14px 16px;display:flex;gap:12px;align-items:flex-start;z-index:200;transform:translateY(0);transition:transform 0.5s cubic-bezier(0.4,0,0.2,1);border:1px solid #e5e7eb}
+.sms-notification.slide-in{transform:translateY(80px)}
+.sms-notification .sms-icon{width:36px;height:36px;background:var(--green);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.sms-notification .sms-icon svg{width:20px;height:20px;color:#fff}
+.sms-notification .sms-content{flex:1;min-width:0}
+.sms-notification .sms-app{font-size:11px;font-weight:700;color:var(--text-light);text-transform:uppercase;letter-spacing:0.5px}
+.sms-notification .sms-body{font-size:13px;color:var(--text);margin-top:2px;line-height:1.4}
+.sms-notification .sms-time{font-size:11px;color:#9ca3af;flex-shrink:0}
+
+/* Success/Error */
+.success-check{width:80px;height:80px;background:#dcfce7;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;animation:popIn 0.5s cubic-bezier(0.175,0.885,0.32,1.275)}
+@keyframes popIn{from{transform:scale(0);opacity:0}to{transform:scale(1);opacity:1}}
+.success-check svg{width:40px;height:40px;color:var(--green)}
+.error-cross{width:80px;height:80px;background:#fef2f2;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;animation:popIn 0.5s cubic-bezier(0.175,0.885,0.32,1.275)}
+.error-cross svg{width:40px;height:40px;color:var(--red)}
+
+/* OTP */
+.otp-inputs{display:flex;gap:8px;justify-content:center;margin:20px 0}
+.otp-input{width:48px;height:56px;border:2px solid #e5e7eb;border-radius:var(--radius);text-align:center;font-size:24px;font-weight:800;transition:all 0.2s}
+.otp-input:focus{border-color:var(--orange);box-shadow:0 0 0 3px rgba(232,93,4,0.1)}
+.otp-input.filled{border-color:var(--green);background:#f0fdf4}
+.otp-input.error{border-color:var(--red);background:#fef2f2}
+
+/* Confetti */
+.confetti-container{position:absolute;inset:0;pointer-events:none;z-index:150;overflow:hidden}
+.confetti{position:absolute;width:8px;height:8px;border-radius:2px;animation:confettiFall 3s ease-out forwards}
+@keyframes confettiFall{0%{transform:translateY(-20px) rotate(0deg);opacity:1}100%{transform:translateY(844px) rotate(720deg);opacity:0}}
+
+/* Timeline */
+.timeline{padding:16px}
+.timeline-item{display:flex;gap:12px;padding-bottom:20px;position:relative}
+.timeline-item::before{content:'';position:absolute;left:15px;top:32px;bottom:0;width:2px;background:#e5e7eb}
+.timeline-item:last-child::before{display:none}
+.timeline-dot{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;z-index:1}
+.timeline-dot.pending{background:#e5e7eb}
+.timeline-dot.active{background:var(--orange);animation:pulse 2s infinite}
+.timeline-dot.done{background:var(--green)}
+.timeline-dot.error{background:var(--red)}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(232,93,4,0.4)}50%{box-shadow:0 0 0 8px rgba(232,93,4,0)}}
+.timeline-item .tl-content{flex:1;padding-top:4px}
+.timeline-item .tl-title{font-size:14px;font-weight:700}
+.timeline-item .tl-desc{font-size:12px;color:var(--text-light);margin-top:2px}
+
+/* Phone mockup */
+.phone-mockup{width:200px;margin:0 auto;position:relative}
+.phone-mockup-frame{background:#1a1a2e;border-radius:24px;padding:8px;box-shadow:0 8px 32px rgba(0,0,0,0.2)}
+.phone-mockup-screen{background:#fff;border-radius:18px;overflow:hidden;aspect-ratio:9/16}
+.momo-popup{background:linear-gradient(135deg,var(--mtn-yellow),#e6b800);padding:16px;border-radius:12px;text-align:center}
+.momo-popup .momo-header{font-size:11px;font-weight:800;color:var(--mtn-blue);margin-bottom:8px}
+.momo-popup .momo-amount{font-size:20px;font-weight:900;color:#000}
+.momo-popup .momo-desc{font-size:10px;color:#333;margin:4px 0 8px}
+.momo-popup .momo-pin{background:#fff;border-radius:8px;padding:8px;margin:8px 0;font-size:14px;letter-spacing:4px}
+.momo-popup .momo-btns{display:flex;gap:8px}
+.momo-popup .momo-btn{flex:1;padding:8px;border:none;border-radius:8px;font-weight:700;font-size:11px;cursor:pointer}
+
+/* Demo controls */
+.demo-controls{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--navy);border-radius:16px;padding:12px 20px;display:flex;gap:10px;z-index:1000;box-shadow:0 8px 32px rgba(0,0,0,0.3);flex-wrap:wrap;justify-content:center}
+.demo-controls button{padding:8px 16px;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;transition:all 0.2s}
+.demo-controls .play{background:var(--orange);color:#fff}
+.demo-controls .pause{background:#4b5563;color:#fff}
+.demo-controls .reset{background:#374151;color:#fff}
+.demo-controls .scenario{background:var(--navy-light);color:#fff;border:1px solid rgba(255,255,255,0.2)}
+.demo-controls .scenario.active{background:var(--orange);border-color:var(--orange)}
+.demo-title{position:fixed;top:12px;left:50%;transform:translateX(-50%);background:var(--navy);color:#fff;padding:8px 20px;border-radius:12px;font-size:13px;font-weight:700;z-index:1000;box-shadow:var(--shadow)}
+
+/* Animations */
+.fade-in{animation:fadeIn 0.5s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.slide-up{animation:slideUp 0.4s ease}
+@keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+
+/* Similar items */
+.similar-section{padding:0 16px 16px}
+.similar-section h3{font-size:16px;font-weight:800;margin-bottom:12px}
+.similar-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.similar-card{background:#f8fafc;border-radius:8px;overflow:hidden;border:1px solid #e5e7eb}
+.similar-card .sc-img{aspect-ratio:4/3;background:#e2e8f0}
+.similar-card .sc-info{padding:8px}
+.similar-card .sc-price{font-size:14px;font-weight:800;color:var(--navy)}
+.similar-card .sc-title{font-size:11px;color:var(--text-light);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+</style>
+</head>
+<body>
+
+<div class="demo-title">E-Nyagasambu — Get Seller Contact Payment Flow (300 RWF)</div>
+
+<div class="phone-frame" id="phone">
+  <div class="status-bar">
+    <span class="time" id="phoneTime">9:41</span>
+    <div class="status-icons">
+      <svg width="16" height="12" viewBox="0 0 16 12" fill="white"><rect x="0" y="8" width="3" height="4" rx="0.5"/><rect x="4" y="5" width="3" height="7" rx="0.5"/><rect x="8" y="2" width="3" height="10" rx="0.5"/><rect x="12" y="0" width="3" height="12" rx="0.5"/></svg>
+      <svg width="16" height="12" viewBox="0 0 24 16" fill="white"><path d="M1 8c4.5-6 17.5-6 22 0" stroke="white" fill="none" stroke-width="2"/><path d="M5 11c3.5-4.5 10.5-4.5 14 0" stroke="white" fill="none" stroke-width="2"/><circle cx="12" cy="14" r="2"/></svg>
+      <svg width="24" height="12" viewBox="0 0 28 14" fill="white"><rect x="0" y="1" width="24" height="12" rx="3" stroke="white" fill="none" stroke-width="1.5"/><rect x="25" y="4.5" width="2" height="5" rx="1"/><rect x="2" y="3" width="18" height="8" rx="1.5" fill="#4ade80"/></svg>
+    </div>
+  </div>
+
+  <!-- SMS Notification -->
+  <div class="sms-notification" id="smsNotification">
+    <div class="sms-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/></svg></div>
+    <div class="sms-content">
+      <div class="sms-app">Messages</div>
+      <div class="sms-body" id="smsBody"></div>
+    </div>
+    <div class="sms-time">now</div>
+  </div>
+
+  <!-- PAGE 1: Product Detail -->
+  <div class="page" id="pageProduct">
+    <div class="navbar">
+      <button class="back-btn" onclick="goBack()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        Back
+      </button>
+      <div class="logo">E-Nyagasambu</div>
+      <div class="navbar-links">
+        <a href="#" style="color:#fff"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg></a>
+        <a href="#" style="color:#fff"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg></a>
+      </div>
+    </div>
+    <div class="product-gallery">
+      <div class="gallery-badge">For Sale</div>
+      <div class="gallery-heart" id="heartBtn" onclick="this.classList.toggle('liked')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg></div>
+      <div class="gallery-placeholder">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+        <span style="font-size:13px">iPhone 13 Pro Max</span>
+      </div>
+      <div class="gallery-dots">
+        <div class="dot active"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+      </div>
+    </div>
+    <div class="product-info">
+      <div class="product-price">150,000 <span>RWF</span></div>
+      <div class="product-title">iPhone 13 Pro Max, 128GB — Like New</div>
+      <div class="product-meta">
+        <div class="meta"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg> Kicukiro, Kigali</div>
+        <div class="meta"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg> Posted 2h ago</div>
+        <div class="meta"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> 248 views</div>
+      </div>
+      <div class="product-desc">
+        Excellent condition iPhone 13 Pro Max in Sierra Blue. Used for 6 months with a case and screen protector. Comes with original charger, cable, and box. No scratches or dents. Battery health at 94%. Factory unlocked.
+      </div>
+
+      <div class="product-seller">
+        <div class="seller-avatar">JM</div>
+        <div class="seller-info">
+          <div class="seller-name">Jean-Marc N.</div>
+          <div class="seller-joined">Member since Jan 2025 · 12 listings</div>
+        </div>
+      </div>
+
+      <!-- Lock Card -->
+      <div class="lock-card" id="lockCard">
+        <div class="lock-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></div>
+        <h3>Contact Info Locked</h3>
+        <p>Get the seller's phone number, WhatsApp, and call directly. A small fee applies.</p>
+        <div class="price-tag">300 RWF</div>
+        <button class="btn-unlock" id="btnGetContact" onclick="showContactPaymentModal()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+          Get Seller Contact
+        </button>
+      </div>
+
+      <div class="similar-section">
+        <h3>Similar Items</h3>
+        <div class="similar-grid">
+          <div class="similar-card"><div class="sc-img"></div><div class="sc-info"><div class="sc-price">120,000 RWF</div><div class="sc-title">iPhone 12 Pro Max</div></div></div>
+          <div class="similar-card"><div class="sc-img"></div><div class="sc-info"><div class="sc-price">180,000 RWF</div><div class="sc-title">iPhone 14 Pro</div></div></div>
+          <div class="similar-card"><div class="sc-img"></div><div class="sc-info"><div class="sc-price">95,000 RWF</div><div class="sc-title">Samsung S23 Ultra</div></div></div>
+          <div class="similar-card"><div class="sc-img"></div><div class="sc-info"><div class="sc-price">110,000 RWF</div><div class="sc-title">iPhone 13 128GB</div></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAGE 2: Loading -->
+  <div class="page hidden" id="pageLoading">
+    <div class="navbar">
+      <div class="logo">E-Nyagasambu</div>
+    </div>
+    <div style="padding:40px 20px;text-align:center">
+      <div class="spinner"></div>
+      <div class="loading-text" id="loadingText">Sending Mobile Money payment request...</div>
+      <div class="loading-sub" id="loadingSub">Please wait while we connect to the payment gateway</div>
+    </div>
+    <div class="timeline" id="loadingTimeline">
+      <div class="timeline-item fade-in">
+        <div class="timeline-dot active" id="tl1"></div>
+        <div class="tl-content"><div class="tl-title">Payment Request Sent</div><div class="tl-desc">A USSD prompt is being sent to your phone</div></div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot pending" id="tl2"></div>
+        <div class="tl-content"><div class="tl-title">Approve on Phone</div><div class="tl-desc">Enter your MoMo PIN on the USSD popup</div></div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot pending" id="tl3"></div>
+        <div class="tl-content"><div class="tl-title">Verifying Payment</div><div class="tl-desc">Checking with MTN gateway</div></div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot pending" id="tl4"></div>
+        <div class="tl-content"><div class="tl-title">OTP Sent</div><div class="tl-desc">6-digit code via SMS</div></div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot pending" id="tl5"></div>
+        <div class="tl-content"><div class="tl-title">Contact Unlocked</div><div class="tl-desc">Seller info revealed!</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAGE 3: OTP -->
+  <div class="page hidden" id="pageOTP">
+    <div class="navbar">
+      <div class="logo">E-Nyagasambu</div>
+    </div>
+    <div style="padding:24px 20px;text-align:center">
+      <div style="width:64px;height:64px;background:#dbeafe;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+      </div>
+      <h2 style="font-size:22px;font-weight:800;margin-bottom:4px">Verify Identity</h2>
+      <p style="font-size:13px;color:var(--text-light);margin-bottom:8px">Enter the 6-digit code sent to your phone</p>
+      <div style="background:#f0fdf4;border-radius:8px;padding:10px;font-size:12px;color:#166534;font-weight:600;margin-bottom:20px;display:inline-flex;align-items:center;gap:6px">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg>
+        Payment of 300 RWF verified
+      </div>
+      <div class="otp-inputs" id="otpInputs">
+        <input class="otp-input" maxlength="1" data-index="0">
+        <input class="otp-input" maxlength="1" data-index="1">
+        <input class="otp-input" maxlength="1" data-index="2">
+        <input class="otp-input" maxlength="1" data-index="3">
+        <input class="otp-input" maxlength="1" data-index="4">
+        <input class="otp-input" maxlength="1" data-index="5">
+      </div>
+      <p style="font-size:12px;color:var(--text-light);margin-bottom:4px">Code expires in <span id="otpTimer" style="color:var(--orange);font-weight:700">5:00</span></p>
+      <button class="btn btn-outline" style="margin-bottom:12px;color:var(--blue);border-color:var(--blue);font-weight:700" onclick="resendOTP()">Resend Code</button>
+      <button class="btn btn-primary" id="btnVerifyOTP" onclick="verifyOTP()">Verify OTP</button>
+    </div>
+  </div>
+
+  <!-- PAGE 4: Contact Revealed -->
+  <div class="page hidden" id="pageRevealed">
+    <div class="navbar">
+      <div class="logo">E-Nyagasambu</div>
+    </div>
+    <div class="confetti-container" id="confetti"></div>
+    <div style="padding:20px 16px">
+      <div style="text-align:center;margin-bottom:20px">
+        <div class="success-check" style="width:64px;height:64px">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>
+        </div>
+        <h2 style="font-size:20px;font-weight:800;margin-bottom:4px">Contact Unlocked!</h2>
+        <p style="font-size:13px;color:var(--text-light)">Seller's contact information is now visible</p>
+      </div>
+
+      <!-- Contact Card -->
+      <div class="contact-card">
+        <div class="verified-badge"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg> Verified Contact</div>
+        <h3>Jean-Marc N.</h3>
+        <div class="contact-detail">
+          <div class="cd-icon phone"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg></div>
+          <div class="cd-text">
+            <div class="cd-label">Phone Number</div>
+            <div class="cd-value" id="sellerPhone">+250 788 234 567</div>
+          </div>
+        </div>
+        <div class="contact-detail">
+          <div class="cd-icon whatsapp"><svg width="20" height="20" viewBox="0 0 24 24" fill="#25D366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg></div>
+          <div class="cd-text">
+            <div class="cd-label">WhatsApp</div>
+            <div class="cd-value" id="sellerWhatsApp">+250 788 234 567</div>
+          </div>
+        </div>
+        <div class="contact-actions">
+          <button class="btn-call" onclick="alert('Calling Jean-Marc...')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72"/></svg> Call Now</button>
+          <button class="btn-whatsapp" onclick="alert('Opening WhatsApp...')"><svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg> WhatsApp</button>
+        </div>
+      </div>
+
+      <!-- Summary -->
+      <div style="background:#f8fafc;border-radius:var(--radius);padding:16px;margin-bottom:16px">
+        <div style="font-size:12px;font-weight:700;color:var(--text-light);margin-bottom:8px;text-transform:uppercase">Payment Summary</div>
+        <div style="font-size:13px;line-height:1.8;color:var(--text)">
+          <div><strong>Fee Paid:</strong> 300 RWF</div>
+          <div><strong>Method:</strong> MTN Mobile Money</div>
+          <div><strong>Transaction ID:</strong> <span id="summaryTxn">MTN-20260723-XXXXX</span></div>
+          <div><strong>Contact:</strong> Unlocked permanently for this seller</div>
+        </div>
+      </div>
+
+      <button class="btn btn-primary" onclick="goToProduct()">View Listing Again</button>
+    </div>
+  </div>
+
+  <!-- PAGE 5: Error -->
+  <div class="page hidden" id="pageError">
+    <div class="navbar">
+      <div class="logo">E-Nyagasambu</div>
+    </div>
+    <div style="padding:40px 20px;text-align:center">
+      <div class="error-cross">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </div>
+      <h2 style="font-size:24px;font-weight:800;margin-bottom:8px" id="errorTitle">Payment Failed</h2>
+      <p style="font-size:14px;color:var(--text-light);margin-bottom:24px;line-height:1.5" id="errorMsg">Your payment could not be processed.</p>
+      <div id="errorDetails" style="background:#fef2f2;border-radius:var(--radius);padding:16px;margin-bottom:16px;text-align:left"></div>
+      <button class="btn btn-primary" style="margin-bottom:12px" onclick="retryPayment()">Retry Payment</button>
+      <button class="btn btn-outline" onclick="goToProduct()">Back to Listing</button>
+    </div>
+  </div>
+
+  <!-- OVERLAY: Payment Modal -->
+  <div class="overlay" id="paymentOverlay">
+    <div class="modal">
+      <div class="modal-handle"></div>
+      <h3>Get Seller Contact</h3>
+      <p class="modal-sub">Pay to unlock the seller's phone number and WhatsApp</p>
+      
+      <div class="payment-card">
+        <div class="amount">300 <span>RWF</span></div>
+        <div class="desc">One-time access fee per seller</div>
+      </div>
+
+      <div class="provider-tabs">
+        <div class="provider-tab mtn active" onclick="selectProvider('mtn')">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="var(--mtn-blue)"><circle cx="12" cy="12" r="10"/><text x="12" y="16" text-anchor="middle" fill="white" font-size="10" font-weight="bold">M</text></svg>
+          MTN MoMo
+        </div>
+        <div class="provider-tab airtel" onclick="selectProvider('airtel')">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="var(--airtel-red)"><circle cx="12" cy="12" r="10"/><text x="12" y="16" text-anchor="middle" fill="white" font-size="10" font-weight="bold">A</text></svg>
+          Airtel Money
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Mobile Money Number</label>
+        <div class="phone-input-wrap">
+          <span class="phone-prefix" id="phonePrefix">+250</span>
+          <input type="tel" id="momoPhone" placeholder="78XXXXXXX" maxlength="9">
+        </div>
+      </div>
+
+      <button class="btn btn-momo" id="btnPayNow" onclick="startPayment()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="var(--mtn-blue)"><rect x="2" y="6" width="20" height="12" rx="2"/></svg>
+        Pay 300 RWF Now
+      </button>
+      <p style="text-align:center;font-size:11px;color:var(--text-light);margin-top:12px">Secured by MTN Mobile Money. Your PIN is never shared.</p>
+    </div>
+  </div>
+
+  <!-- OVERLAY: MoMo Prompt -->
+  <div class="overlay" id="momoOverlay">
+    <div class="modal" style="background:transparent;box-shadow:none;padding:0">
+      <div style="text-align:center;color:#fff;margin-bottom:12px;font-size:12px;opacity:0.7">Simulated MoMo USSD Prompt</div>
+      <div class="phone-mockup">
+        <div class="phone-mockup-frame">
+          <div class="phone-mockup-screen" style="padding:8px;background:var(--mtn-yellow)">
+            <div class="momo-popup">
+              <div class="momo-header">MTN MOBILE MONEY</div>
+              <div style="font-size:10px;color:#666;margin-bottom:4px">Payment Request</div>
+              <div class="momo-amount">300 RWF</div>
+              <div class="momo-desc">To: E-Nyagasambu<br>Ref: Contact Access</div>
+              <div class="momo-pin">••••</div>
+              <div style="font-size:10px;color:#666;margin-bottom:8px">Enter your MoMo PIN</div>
+              <div class="momo-btns">
+                <div class="momo-btn" style="background:#ccc" onclick="declinePayment()">Decline</div>
+                <div class="momo-btn" style="background:#16a34a;color:#fff" onclick="approvePayment()">Approve</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- OVERLAY: OTP SMS -->
+  <div class="overlay" id="otpSmsOverlay">
+    <div class="modal" style="background:rgba(0,0,0,0.7)">
+      <div class="modal-handle" style="background:rgba(255,255,255,0.3)"></div>
+      <div style="background:#fff;border-radius:16px;padding:16px">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+          <div style="width:36px;height:36px;background:var(--green);border-radius:10px;display:flex;align-items:center;justify-content:center">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/></svg>
+          </div>
+          <div>
+            <div style="font-size:11px;font-weight:700;color:var(--text-light)">MESSAGES</div>
+            <div style="font-size:13px;font-weight:600">New SMS received</div>
+          </div>
+        </div>
+        <div style="background:#f8fafc;border-radius:12px;padding:14px">
+          <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:4px">E-Nyagasambu</div>
+          <div style="font-size:13px;color:var(--text);line-height:1.5">Your OTP code is: <strong style="font-size:18px;color:var(--orange);letter-spacing:2px" id="otpDisplay">584217</strong><br><span style="font-size:11px;color:var(--text-light)">Valid for 5 minutes. Do not share this code.</span></div>
+        </div>
+        <button class="btn btn-primary" style="margin-top:12px;background:var(--navy)" onclick="closeOtpSms()">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- OVERLAY: Confirmation -->
+  <div class="overlay" id="confirmSmsOverlay">
+    <div class="modal" style="background:rgba(0,0,0,0.7)">
+      <div class="modal-handle" style="background:rgba(255,255,255,0.3)"></div>
+      <div style="background:#fff;border-radius:16px;padding:16px">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+          <div style="width:36px;height:36px;background:var(--green);border-radius:10px;display:flex;align-items:center;justify-content:center">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/></svg>
+          </div>
+          <div>
+            <div style="font-size:11px;font-weight:700;color:var(--text-light)">MESSAGES</div>
+            <div style="font-size:13px;font-weight:600">Confirmation SMS</div>
+          </div>
+        </div>
+        <div style="background:#f0fdf4;border-radius:12px;padding:14px">
+          <div style="font-size:12px;font-weight:700;color:#166534;margin-bottom:4px">E-Nyagasambu</div>
+          <div style="font-size:13px;color:var(--text);line-height:1.5">Contact unlocked! You can now call or WhatsApp Jean-Marc N. about the iPhone 13 Pro Max. 📱</div>
+        </div>
+        <button class="btn btn-success" style="margin-top:12px" onclick="closeConfirmSms()">Done</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Demo Controls -->
+<div class="demo-controls">
+  <button class="play" id="btnPlay" onclick="autoPlay()">▶ Auto Play</button>
+  <button class="pause" onclick="pauseDemo()" style="display:none" id="btnPause">⏸ Pause</button>
+  <button class="reset" onclick="resetDemo()">↺ Reset</button>
+  <button class="scenario active" data-scenario="success" onclick="setScenario('success')">✓ Success</button>
+  <button class="scenario" data-scenario="declined" onclick="setScenario('declined')">✗ Declined</button>
+  <button class="scenario" data-scenario="cancelled" onclick="setScenario('cancelled')">⊘ Cancelled</button>
+  <button class="scenario" data-scenario="wrong-otp" onclick="setScenario('wrong-otp')">⊘ Wrong OTP</button>
+  <button class="scenario" data-scenario="expired-otp" onclick="setScenario('expired-otp')">⏰ Expired</button>
+</div>
+
+<script>
+let currentScenario = 'success';
+let isPlaying = false;
+let otpCode = '584217';
+
+function setScenario(s) {
+  currentScenario = s;
+  document.querySelectorAll('.scenario').forEach(b => b.classList.remove('active'));
+  document.querySelector(`[data-scenario="${s}"]`).classList.add('active');
+  resetDemo();
+}
+
+function resetDemo() {
+  isPlaying = false;
+  autoPlayStep = 0;
+  document.getElementById('btnPlay').style.display = '';
+  document.getElementById('btnPause').style.display = 'none';
+  showPage('pageProduct');
+  ['paymentOverlay','momoOverlay','otpSmsOverlay','confirmSmsOverlay'].forEach(id => {
+    document.getElementById(id).classList.remove('show');
+  });
+  document.getElementById('smsNotification').classList.remove('slide-in');
+  document.getElementById('smsNotification').style.top = '-80px';
+  document.getElementById('lockCard').style.display = '';
+  resetOTP();
+}
+
+function resetOTP() {
+  document.querySelectorAll('.otp-input').forEach(inp => {
+    inp.value = '';
+    inp.classList.remove('filled', 'error');
+  });
+  document.getElementById('otpTimer').textContent = '5:00';
+}
+
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
+  const page = document.getElementById(id);
+  page.classList.remove('hidden');
+  page.scrollTop = 0;
+}
+
+function goToProduct() { resetDemo(); }
+function goBack() { resetDemo(); }
+
+function selectProvider(p) {
+  document.querySelectorAll('.provider-tab').forEach(t => t.classList.remove('active'));
+  document.querySelector(`.provider-tab.${p}`).classList.add('active');
+  const btn = document.getElementById('btnPayNow');
+  if (p === 'mtn') {
+    btn.style.background = 'var(--mtn-yellow)';
+    btn.style.color = '#000';
+  } else {
+    btn.style.background = 'var(--airtel-red)';
+    btn.style.color = '#fff';
+  }
+}
+
+function showContactPaymentModal() {
+  document.getElementById('paymentOverlay').classList.add('show');
+}
+
+function startPayment() {
+  document.getElementById('paymentOverlay').classList.remove('show');
+  showPage('pageLoading');
+  document.getElementById('loadingText').textContent = 'Sending Mobile Money payment request...';
+  document.getElementById('loadingSub').textContent = 'Connecting to MTN gateway...';
+  updateTimeline(1);
+
+  setTimeout(() => {
+    document.getElementById('momoOverlay').classList.add('show');
+  }, 2000);
+}
+
+function approvePayment() {
+  document.getElementById('momoOverlay').classList.remove('show');
+  updateTimeline(2);
+  document.getElementById('loadingText').textContent = 'Payment approved! Verifying...';
+  document.getElementById('loadingSub').textContent = 'Checking payment status with MTN...';
+
+  setTimeout(() => {
+    updateTimeline(3);
+    document.getElementById('loadingText').textContent = 'Verifying payment with gateway...';
+    setTimeout(() => {
+      if (currentScenario === 'declined' || currentScenario === 'cancelled') {
+        showError();
+        return;
+      }
+      updateTimeline(4);
+      document.getElementById('loadingText').textContent = 'Payment verified! Sending OTP...';
+      document.getElementById('loadingSub').textContent = 'A 6-digit code is being sent to your phone';
+      setTimeout(() => {
+        showSmsNotification('Your E-Nyagasambu OTP code is: ' + otpCode + '. Valid for 5 minutes.');
+        setTimeout(() => {
+          showPage('pageOTP');
+          showOtpSmsOverlay();
+        }, 1500);
+      }, 1500);
+    }, 2000);
+  }, 1500);
+}
+
+function declinePayment() {
+  document.getElementById('momoOverlay').classList.remove('show');
+  setTimeout(() => {
+    showError('Payment Declined', 'You declined the payment request. No money was deducted.');
+  }, 500);
+}
+
+function showError(title, msg) {
+  title = title || 'Payment Not Completed';
+  msg = msg || 'Your payment could not be processed.';
+  showPage('pageError');
+  document.getElementById('errorTitle').textContent = title;
+  document.getElementById('errorMsg').textContent = msg;
+  const details = document.getElementById('errorDetails');
+  if (title === 'Payment Declined') {
+    details.innerHTML = '<div style="font-size:12px;color:#991b1b;line-height:1.6"><strong>What happened:</strong><br>You declined the payment on your phone. No money was charged.</div>';
+  } else if (title === 'Payment Cancelled') {
+    details.innerHTML = '<div style="font-size:12px;color:#9a3412;line-height:1.6"><strong>What happened:</strong><br>The payment request was cancelled or timed out. Your account was not charged.</div>';
+  } else {
+    details.innerHTML = '<div style="font-size:12px;color:#991b1b;line-height:1.6"><strong>What happened:</strong><br>The payment could not be completed. Please check your MoMo balance and try again.</div>';
+  }
+}
+
+function retryPayment() { resetDemo(); autoPlay(); }
+
+function showSmsNotification(text) {
+  const el = document.getElementById('smsNotification');
+  document.getElementById('smsBody').textContent = text;
+  el.style.top = '-80px';
+  el.classList.add('slide-in');
+  setTimeout(() => { el.classList.remove('slide-in'); el.style.top = '-80px'; }, 6000);
+}
+
+function showOtpSmsOverlay() {
+  document.getElementById('otpDisplay').textContent = otpCode;
+  document.getElementById('otpSmsOverlay').classList.add('show');
+}
+
+function closeOtpSms() {
+  document.getElementById('otpSmsOverlay').classList.remove('show');
+  document.querySelectorAll('.otp-input')[0].focus();
+  startOtpTimer();
+}
+
+let otpTimerInterval;
+function startOtpTimer() {
+  let seconds = 300;
+  clearInterval(otpTimerInterval);
+  otpTimerInterval = setInterval(() => {
+    if (seconds <= 0) { clearInterval(otpTimerInterval); document.getElementById('otpTimer').textContent = '0:00'; return; }
+    seconds--;
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    document.getElementById('otpTimer').textContent = `${m}:${s.toString().padStart(2,'0')}`;
+  }, 1000);
+}
+
+function resendOTP() {
+  otpCode = '731849';
+  document.getElementById('otpDisplay').textContent = otpCode;
+  showSmsNotification('Your NEW E-Nyagasambu OTP code is: ' + otpCode + '. Valid for 5 minutes.');
+  showOtpSmsOverlay();
+  resetOTP();
+}
+
+function verifyOTP() {
+  const inputs = document.querySelectorAll('.otp-input');
+  const entered = Array.from(inputs).map(i => i.value).join('');
+  
+  if (currentScenario === 'wrong-otp' && entered !== '999999') {
+    inputs.forEach(i => i.classList.add('error'));
+    showSmsNotification('Incorrect OTP. Please try again or resend a new code.');
+    return;
+  }
+  if (currentScenario === 'expired-otp') {
+    inputs.forEach(i => i.classList.add('error'));
+    document.getElementById('otpTimer').textContent = '0:00';
+    clearInterval(otpTimerInterval);
+    showSmsNotification('OTP has expired. Please request a new code.');
+    return;
+  }
+
+  inputs.forEach(i => { i.classList.remove('error'); i.classList.add('filled'); });
+  updateTimeline(5);
+
+  setTimeout(() => {
+    document.getElementById('lockCard').style.display = 'none';
+    showPage('pageRevealed');
+    createConfetti();
+    document.getElementById('summaryTxn').textContent = 'MTN-20260723-' + Math.random().toString(36).substr(2,5).toUpperCase();
+    setTimeout(() => {
+      showSmsNotification('Contact unlocked! You can now reach Jean-Marc N. about iPhone 13 Pro Max.');
+      setTimeout(() => {
+        document.getElementById('confirmSmsOverlay').classList.add('show');
+      }, 1500);
+    }, 1500);
+  }, 1000);
+}
+
+function updateTimeline(step) {
+  for (let i = 1; i <= 5; i++) {
+    const dot = document.getElementById('tl' + i);
+    if (dot) dot.className = 'timeline-dot ' + (i < step ? 'done' : i === step ? 'active' : 'pending');
+  }
+}
+
+function createConfetti() {
+  const container = document.getElementById('confetti');
+  container.innerHTML = '';
+  const colors = ['#E85D04','#FFCC00','#16a34a','#2563eb','#ec4899','#8b5cf6'];
+  for (let i = 0; i < 50; i++) {
+    const c = document.createElement('div');
+    c.className = 'confetti';
+    c.style.left = Math.random() * 100 + '%';
+    c.style.background = colors[Math.floor(Math.random() * colors.length)];
+    c.style.animationDelay = Math.random() * 1 + 's';
+    c.style.animationDuration = (2 + Math.random() * 2) + 's';
+    c.style.width = (4 + Math.random() * 8) + 'px';
+    c.style.height = (4 + Math.random() * 8) + 'px';
+    container.appendChild(c);
+  }
+}
+
+// Auto-play
+function autoPlay() {
+  if (isPlaying) return;
+  isPlaying = true;
+  document.getElementById('btnPlay').style.display = 'none';
+  document.getElementById('btnPause').style.display = '';
+  
+  const sequences = {
+    success: [
+      { delay: 0, fn: () => { resetDemo(); isPlaying = true; document.getElementById('btnPlay').style.display='none'; document.getElementById('btnPause').style.display=''; }},
+      { delay: 1500, fn: () => showContactPaymentModal() },
+      { delay: 3500, fn: () => { document.getElementById('momoPhone').value='788123456'; }},
+      { delay: 4500, fn: () => startPayment() },
+      { delay: 7500, fn: () => approvePayment() },
+      { delay: 15000, fn: () => { document.getElementById('otpSmsOverlay').classList.remove('show'); }},
+      { delay: 16000, fn: () => { autoFillOTP(); }},
+      { delay: 17500, fn: () => verifyOTP() },
+      { delay: 22000, fn: () => {} },
+    ],
+    declined: [
+      { delay: 0, fn: () => { resetDemo(); isPlaying = true; document.getElementById('btnPlay').style.display='none'; document.getElementById('btnPause').style.display=''; }},
+      { delay: 1500, fn: () => showContactPaymentModal() },
+      { delay: 3000, fn: () => { document.getElementById('momoPhone').value='788123456'; }},
+      { delay: 4000, fn: () => startPayment() },
+      { delay: 7000, fn: () => declinePayment() },
+      { delay: 9000, fn: () => {} },
+    ],
+    cancelled: [
+      { delay: 0, fn: () => { resetDemo(); isPlaying = true; document.getElementById('btnPlay').style.display='none'; document.getElementById('btnPause').style.display=''; }},
+      { delay: 1500, fn: () => showContactPaymentModal() },
+      { delay: 3000, fn: () => { document.getElementById('momoPhone').value='788123456'; }},
+      { delay: 4000, fn: () => startPayment() },
+      { delay: 7000, fn: () => { document.getElementById('momoOverlay').classList.remove('show'); }},
+      { delay: 8000, fn: () => showError('Payment Cancelled', 'The payment request was cancelled or timed out.') },
+      { delay: 10000, fn: () => {} },
+    ],
+    'wrong-otp': [
+      { delay: 0, fn: () => { resetDemo(); isPlaying = true; document.getElementById('btnPlay').style.display='none'; document.getElementById('btnPause').style.display=''; }},
+      { delay: 1500, fn: () => showContactPaymentModal() },
+      { delay: 3000, fn: () => { document.getElementById('momoPhone').value='788123456'; }},
+      { delay: 4000, fn: () => startPayment() },
+      { delay: 7000, fn: () => approvePayment() },
+      { delay: 15000, fn: () => { document.getElementById('otpSmsOverlay').classList.remove('show'); }},
+      { delay: 16000, fn: () => { autoFillWrongOTP(); }},
+      { delay: 17500, fn: () => verifyOTP() },
+      { delay: 19500, fn: () => { document.querySelectorAll('.otp-input').forEach(i=>{i.value='';i.classList.remove('error','filled')}); }},
+      { delay: 21000, fn: () => { resendOTP(); }},
+      { delay: 22500, fn: () => { document.getElementById('otpSmsOverlay').classList.remove('show'); }},
+      { delay: 23500, fn: () => { autoFillOTP(); }},
+      { delay: 25000, fn: () => verifyOTP() },
+      { delay: 29000, fn: () => {} },
+    ],
+    'expired-otp': [
+      { delay: 0, fn: () => { resetDemo(); isPlaying = true; document.getElementById('btnPlay').style.display='none'; document.getElementById('btnPause').style.display=''; }},
+      { delay: 1500, fn: () => showContactPaymentModal() },
+      { delay: 3000, fn: () => { document.getElementById('momoPhone').value='788123456'; }},
+      { delay: 4000, fn: () => startPayment() },
+      { delay: 7000, fn: () => approvePayment() },
+      { delay: 15000, fn: () => { document.getElementById('otpSmsOverlay').classList.remove('show'); }},
+      { delay: 16000, fn: () => { clearInterval(otpTimerInterval); document.getElementById('otpTimer').textContent='0:00'; }},
+      { delay: 17000, fn: () => { autoFillOTP(); }},
+      { delay: 18500, fn: () => verifyOTP() },
+      { delay: 20500, fn: () => { document.querySelectorAll('.otp-input').forEach(i=>{i.value='';i.classList.remove('error','filled')}); }},
+      { delay: 22000, fn: () => { resendOTP(); }},
+      { delay: 23500, fn: () => { document.getElementById('otpSmsOverlay').classList.remove('show'); }},
+      { delay: 24500, fn: () => { autoFillOTP(); }},
+      { delay: 26000, fn: () => verifyOTP() },
+      { delay: 30000, fn: () => {} },
+    ]
+  };
+
+  const seq = sequences[currentScenario] || sequences.success;
+  seq.forEach(step => setTimeout(step.fn, step.delay));
+}
+
+function pauseDemo() {
+  isPlaying = false;
+  document.getElementById('btnPlay').style.display = '';
+  document.getElementById('btnPause').style.display = 'none';
+}
+
+function autoFillOTP() {
+  const digits = otpCode.split('');
+  const inputs = document.querySelectorAll('.otp-input');
+  let i = 0;
+  function fillDigit() {
+    if (i >= digits.length) return;
+    inputs[i].value = digits[i];
+    inputs[i].classList.add('filled');
+    i++;
+    setTimeout(fillDigit, 200);
+  }
+  fillDigit();
+}
+
+function autoFillWrongOTP() {
+  const digits = '999999'.split('');
+  const inputs = document.querySelectorAll('.otp-input');
+  let i = 0;
+  function fillDigit() {
+    if (i >= digits.length) return;
+    inputs[i].value = digits[i];
+    inputs[i].classList.add('filled');
+    i++;
+    setTimeout(fillDigit, 200);
+  }
+  fillDigit();
+}
+
+// OTP input auto-focus
+document.querySelectorAll('.otp-input').forEach((input, idx, inputs) => {
+  input.addEventListener('input', () => {
+    if (input.value && idx < inputs.length - 1) inputs[idx + 1].focus();
+  });
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Backspace' && !input.value && idx > 0) inputs[idx - 1].focus();
+  });
+});
+
+function updateTime() {
+  const now = new Date();
+  document.getElementById('phoneTime').textContent = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+}
+setInterval(updateTime, 30000);
+updateTime();
+</script>
+</body>
+</html>

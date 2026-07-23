@@ -6,7 +6,7 @@ import Link from 'next/link';
 import {
   LayoutDashboard, Users, Package, Folder, FileText, Award, BarChart3,
   Activity, Ticket, Settings, User, LogOut, Bell, Menu, X, ChevronRight,
-  Shield, Sparkles
+  Shield, Sparkles, AlertOctagon, Medal, UserPlus
 } from '@/lib/icons';
 
 const BRAND = {
@@ -64,7 +64,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: '#0d1117' }}>
+      <div className="min-h-screen flex items-center justify-center" style={{ background: '#ffffff' }}>
         <div className="text-center">
           <div className="w-14 h-14 rounded-2xl mx-auto mb-4 flex items-center justify-center text-white font-black text-xl"
             style={{ background: `linear-gradient(135deg, ${BRAND.orange}, ${BRAND.orangeDark})`, boxShadow: `0 8px 32px ${BRAND.orange}44` }}>
@@ -89,7 +89,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   };
 
   return (
-    <div className="h-screen overflow-hidden flex" style={{ background: '#0d1117', fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif" }}>
+    <div className="h-screen overflow-hidden flex" style={{ background: '#ffffff', fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif" }}>
       {sidebarOpen && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-30 lg:hidden" onClick={() => setSidebarOpen(false)} />
       )}
@@ -163,16 +163,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <div className="flex-1 flex flex-col min-w-0 lg:ml-[260px]">
 
         {/* Header */}
-        <header className="bg-[#0d1117]/80 backdrop-blur-xl border-b border-white/[0.05] px-4 lg:px-6 h-16 flex items-center justify-between sticky top-0 z-20">
+        <header className="bg-white/80 backdrop-blur-xl border-b border-gray-200 px-4 lg:px-6 h-16 flex items-center justify-between sticky top-0 z-20">
           <div className="flex items-center gap-4">
-            <button className="lg:hidden text-gray-400 hover:text-white p-2 -ml-2 rounded-xl hover:bg-white/[0.06] transition"
+            <button className="lg:hidden text-gray-500 hover:text-white p-2 -ml-2 rounded-xl hover:bg-gray-100 transition"
               onClick={() => setSidebarOpen(true)}>
               <Menu size={20} />
             </button>
             <div className="hidden sm:flex items-center gap-2 text-sm">
-              <span className="text-gray-500">Admin</span>
-              <ChevronRight size={14} className="text-gray-600" />
-              <span className="font-semibold text-gray-200">
+              <span className="text-gray-700">Admin</span>
+              <ChevronRight size={14} className="text-gray-700" />
+              <span className="font-semibold text-gray-800">
                 {pathname === '/admin' ? 'Dashboard' : pathname.split('/').pop()?.replace(/-/g, ' ') || ''}
               </span>
             </div>
@@ -182,16 +182,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             {/* Notifications */}
             <div className="relative">
               <button onClick={(e) => { e.stopPropagation(); setNotifOpen(!notifOpen); }}
-                className="relative p-2.5 rounded-xl text-gray-400 hover:text-white hover:bg-white/[0.06] transition-all">
+                className="relative p-2.5 rounded-xl text-gray-500 hover:text-white hover:bg-gray-100 transition-all">
                 <Bell size={18} />
                 <span className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full text-[8px] font-bold text-white flex items-center justify-center"
                   style={{ background: BRAND.orange }}>3</span>
               </button>
               {notifOpen && (
-                <div className="absolute right-0 top-full mt-2 w-80 bg-[#161b22] rounded-2xl shadow-2xl border border-white/[0.08] z-50 overflow-hidden"
+                <div className="absolute right-0 top-full mt-2 w-80 bg-[#ffffff] rounded-2xl shadow-2xl border border-gray-200 z-50 overflow-hidden"
                   onClick={(e) => e.stopPropagation()}>
-                  <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.06]">
-                    <span className="text-sm font-bold text-gray-100">Notifications</span>
+                  <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
+                    <span className="text-sm font-bold text-gray-900">Notifications</span>
                     <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${BRAND.orange}20`, color: BRAND.orange }}>3 new</span>
                   </div>
                   <div className="max-h-72 overflow-y-auto">
@@ -200,14 +200,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                       { text: 'Pending broker certificate request', time: '1 hour ago', type: 'cert' },
                       { text: 'New listing reported: Spam detected', time: '3 hours ago', type: 'alert' },
                     ].map((n, i) => (
-                      <div key={i} className="flex items-start gap-3 px-5 py-3.5 border-b border-white/[0.04] last:border-b-0 hover:bg-white/[0.02] transition cursor-pointer">
+                      <div key={i} className="flex items-start gap-3 px-5 py-3.5 border-b border-gray-200 last:border-b-0 hover:bg-gray-50 transition cursor-pointer">
                         <div className="w-8 h-8 rounded-xl flex items-center justify-center text-sm shrink-0"
                           style={{ background: n.type === 'alert' ? 'rgba(218,54,51,0.15)' : n.type === 'cert' ? 'rgba(31,111,235,0.15)' : 'rgba(35,134,54,0.15)' }}>
-                          {n.type === 'alert' ? '🚨' : n.type === 'cert' ? '🏅' : '👤'}
+                          {n.type === 'alert' ? <AlertOctagon size={16} /> : n.type === 'cert' ? <Medal size={16} /> : <UserPlus size={16} />}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-[13px] text-gray-300 leading-snug">{n.text}</p>
-                          <p className="text-[11px] text-gray-500 mt-0.5">{n.time}</p>
+                          <p className="text-[13px] text-gray-700 leading-snug">{n.text}</p>
+                          <p className="text-[11px] text-gray-700 mt-0.5">{n.time}</p>
                         </div>
                       </div>
                     ))}
@@ -217,14 +217,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </div>
 
             {/* Profile */}
-            <div className="flex items-center gap-2.5 pl-3 ml-1 border-l border-white/[0.06]">
+            <div className="flex items-center gap-2.5 pl-3 ml-1 border-l border-gray-200">
               <div className="w-8 h-8 rounded-xl flex items-center justify-center text-white text-xs font-bold shrink-0"
                 style={{ background: `linear-gradient(135deg, ${BRAND.navy}, ${BRAND.navyLight})` }}>
                 {user.name?.charAt(0).toUpperCase() || 'A'}
               </div>
               <div className="hidden sm:block">
-                <p className="text-[13px] font-semibold text-gray-200 leading-tight">{user.name}</p>
-                <p className="text-[10px] text-gray-500 capitalize">{user.role}</p>
+                <p className="text-[13px] font-semibold text-gray-800 leading-tight">{user.name}</p>
+                <p className="text-[10px] text-gray-700 capitalize">{user.role}</p>
               </div>
             </div>
           </div>

@@ -38,7 +38,7 @@ export default function AdminSettingsPage() {
     } catch { setSaved(false); }
   };
 
-  if (loading) return <div className="p-8 text-gray-500 text-sm">Loading settings…</div>;
+  if (loading) return <div className="p-8 text-gray-600 text-sm">Loading settings…</div>;
 
   return (
     <div className="p-4 lg:p-8 animate-fadeInUp">
@@ -48,32 +48,32 @@ export default function AdminSettingsPage() {
             <SettingsIcon size={18} style={{ color: BRAND.orange }} />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-gray-100">Settings</h1>
-            <p className="text-sm text-gray-500 mt-0.5">Platform configuration and preferences</p>
+            <h1 className="text-xl font-bold text-gray-900">Settings</h1>
+            <p className="text-sm text-gray-600 mt-0.5">Platform configuration and preferences</p>
           </div>
         </div>
       </div>
 
       <div className="max-w-2xl space-y-6">
-        <form onSubmit={handleSave} className="rounded-2xl p-6" style={{ background: '#161b22', border: '1px solid rgba(255,255,255,0.04)' }}>
-          <h2 className="text-sm font-bold text-gray-100 uppercase tracking-wider mb-4">General Settings</h2>
+        <form onSubmit={handleSave} className="rounded-2xl p-6" style={{ background: '#ffffff', border: '1px solid rgba(0,0,0,0.05)' }}>
+          <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-4">General Settings</h2>
           <div className="space-y-4">
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Platform Name</label>
+              <label className="block text-xs text-gray-600 mb-1">Platform Name</label>
               <input defaultValue="E-Nyagasambu"
                 className="border rounded-lg px-3 py-2.5 text-sm w-full focus:outline-none focus:ring-2 focus:ring-orange-500/30"
-                style={{ background: '#21262d', borderColor: '#30363d', color: '#e6edf3' }} />
+                style={{ background: '#f6f8fa', borderColor: '#d0d7de', color: '#1a1a1a' }} />
             </div>
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Support Email</label>
+              <label className="block text-xs text-gray-600 mb-1">Support Email</label>
               <input type="email" defaultValue="support@enyagasambu.rw"
                 className="border rounded-lg px-3 py-2.5 text-sm w-full focus:outline-none focus:ring-2 focus:ring-orange-500/30"
-                style={{ background: '#21262d', borderColor: '#30363d', color: '#e6edf3' }} />
+                style={{ background: '#f6f8fa', borderColor: '#d0d7de', color: '#1a1a1a' }} />
             </div>
             <div className="flex items-center gap-3">
               <input type="checkbox" id="reg" defaultChecked className="rounded accent-orange-500"
-                style={{ background: '#21262d', borderColor: '#30363d' }} />
-              <label htmlFor="reg" className="text-sm text-gray-400">Allow new user registration</label>
+                style={{ background: '#f6f8fa', borderColor: '#d0d7de' }} />
+              <label htmlFor="reg" className="text-sm text-gray-500">Allow new user registration</label>
             </div>
           </div>
           <div className="mt-6 flex items-center gap-3">
@@ -83,18 +83,18 @@ export default function AdminSettingsPage() {
           </div>
         </form>
 
-        <div className="rounded-2xl p-6" style={{ background: '#161b22', border: '1px solid rgba(255,255,255,0.04)' }}>
-          <h2 className="text-sm font-bold text-gray-100 uppercase tracking-wider mb-4"><Coins size={16} className="inline mr-1" style={{ color: BRAND.orange }} /> Seller Posting Fee</h2>
-          <p className="text-xs text-gray-500 mb-4">Control whether sellers pay coins to post listings. Admin always posts for free.</p>
+        <div className="rounded-2xl p-6" style={{ background: '#ffffff', border: '1px solid rgba(0,0,0,0.05)' }}>
+          <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-4"><Coins size={16} className="inline mr-1" style={{ color: BRAND.orange }} /> Seller Posting Fee</h2>
+          <p className="text-xs text-gray-600 mb-4">Control whether sellers pay coins to post listings. Admin always posts for free.</p>
 
           <div className="space-y-5">
             <div className="flex items-center justify-between p-4 rounded-xl"
               style={{ background: postingFeeEnabled ? 'rgba(232,93,4,0.1)' : 'rgba(46,160,67,0.1)' }}>
               <div>
-                <p className="text-sm font-semibold text-gray-200">
+                <p className="text-sm font-semibold text-gray-800">
                   {postingFeeEnabled ? <><CheckCircle size={14} className="inline" style={{ color: '#2ea043' }} /> Fee Enabled — Sellers pay to post</> : <><CheckCircle size={14} className="inline" style={{ color: '#2ea043' }} /> Fee Disabled — Sellers post for FREE</>}
                 </p>
-                <p className="text-xs text-gray-500 mt-0.5">
+                <p className="text-xs text-gray-600 mt-0.5">
                   {postingFeeEnabled
                     ? `Sellers must pay ${postingFee} coins per listing`
                     : 'Sellers can post listings without paying coins'}
@@ -111,13 +111,13 @@ export default function AdminSettingsPage() {
 
             {postingFeeEnabled && (
               <div>
-                <label className="block text-xs text-gray-500 mb-1">Listing Fee (coins)</label>
+                <label className="block text-xs text-gray-600 mb-1">Listing Fee (coins)</label>
                 <input
                   type="number"
                   value={postingFee}
                   onChange={(e) => setPostingFee(e.target.value)}
                   className="border rounded-lg px-3 py-2.5 text-sm w-full max-w-[200px] focus:outline-none focus:ring-2 focus:ring-orange-500/30"
-                  style={{ background: '#21262d', borderColor: '#30363d', color: '#e6edf3' }} />
+                  style={{ background: '#f6f8fa', borderColor: '#d0d7de', color: '#1a1a1a' }} />
               </div>
             )}
 
@@ -131,20 +131,20 @@ export default function AdminSettingsPage() {
           </div>
         </div>
 
-        <div className="rounded-2xl p-6" style={{ background: '#161b22', border: '1px solid rgba(255,255,255,0.04)' }}>
-          <h2 className="text-sm font-bold text-gray-100 uppercase tracking-wider mb-4">Other Pricing</h2>
+        <div className="rounded-2xl p-6" style={{ background: '#ffffff', border: '1px solid rgba(0,0,0,0.05)' }}>
+          <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-4">Other Pricing</h2>
           <div className="space-y-4">
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Connect Fee (coins)</label>
+              <label className="block text-xs text-gray-600 mb-1">Connect Fee (coins)</label>
               <input type="number" defaultValue="300"
                 className="border rounded-lg px-3 py-2.5 text-sm w-full max-w-[200px] focus:outline-none focus:ring-2 focus:ring-orange-500/30"
-                style={{ background: '#21262d', borderColor: '#30363d', color: '#e6edf3' }} />
+                style={{ background: '#f6f8fa', borderColor: '#d0d7de', color: '#1a1a1a' }} />
             </div>
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Boost Fee (coins)</label>
+              <label className="block text-xs text-gray-600 mb-1">Boost Fee (coins)</label>
               <input type="number" defaultValue="200"
                 className="border rounded-lg px-3 py-2.5 text-sm w-full max-w-[200px] focus:outline-none focus:ring-2 focus:ring-orange-500/30"
-                style={{ background: '#21262d', borderColor: '#30363d', color: '#e6edf3' }} />
+                style={{ background: '#f6f8fa', borderColor: '#d0d7de', color: '#1a1a1a' }} />
             </div>
           </div>
         </div>

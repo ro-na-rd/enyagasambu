@@ -12,7 +12,7 @@ const statusColors: Record<string, string> = {
   active: 'bg-green-500/10 text-green-400',
   disabled: 'bg-red-500/10 text-red-400',
   sold: 'bg-blue-500/10 text-blue-400',
-  expired: 'bg-gray-500/10 text-gray-400',
+  expired: 'bg-gray-500/10 text-gray-500',
 };
 
 export default function AdminListingsPage() {
@@ -53,24 +53,24 @@ export default function AdminListingsPage() {
             <Package size={18} style={{ color: ORG }} />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-gray-100">Listings <span className="text-gray-500 text-base font-normal">({total})</span></h1>
-            <p className="text-sm text-gray-500 mt-0.5">Manage all platform listings &mdash; activate, disable, or remove</p>
+            <h1 className="text-xl font-bold text-gray-900">Listings <span className="text-gray-600 text-base font-normal">({total})</span></h1>
+            <p className="text-sm text-gray-600 mt-0.5">Manage all platform listings &mdash; activate, disable, or remove</p>
           </div>
         </div>
       </div>
 
       <div className="flex flex-wrap gap-3 mb-5">
         <div className="relative flex-1 min-w-[200px]">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-600" />
           <input value={search} onChange={(e) => setSearch(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && load(search, statusFilter)}
             placeholder="Search listings…"
             className="border rounded-lg pl-9 pr-3 py-2 text-sm w-full"
-            style={{ background: '#21262d', borderColor: '#30363d', color: '#e6edf3' }} />
+            style={{ background: '#f6f8fa', borderColor: '#d0d7de', color: '#1a1a1a' }} />
         </div>
         <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); load(search, e.target.value); }}
           className="border rounded-lg px-3 py-2 text-sm"
-          style={{ background: '#21262d', borderColor: '#30363d', color: '#e6edf3' }}>
+          style={{ background: '#f6f8fa', borderColor: '#d0d7de', color: '#1a1a1a' }}>
           <option value="">All Status</option>
           <option value="active">Active</option>
           <option value="disabled">Disabled</option>
@@ -86,25 +86,25 @@ export default function AdminListingsPage() {
         </button>
       </div>
 
-      <div className="rounded-xl overflow-hidden" style={{ background: '#161b22', border: '1px solid rgba(255,255,255,0.04)' }}>
+      <div className="rounded-xl overflow-hidden" style={{ background: '#ffffff', border: '1px solid rgba(0,0,0,0.05)' }}>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-white/[0.04]" style={{ background: '#1c2333' }}>
-                <th className="text-left px-4 py-3 text-gray-400 text-xs uppercase font-semibold tracking-wider">Listing</th>
-                <th className="text-left px-4 py-3 text-gray-400 text-xs uppercase font-semibold tracking-wider">Seller</th>
-                <th className="text-center px-4 py-3 text-gray-400 text-xs uppercase font-semibold tracking-wider">Status</th>
-                <th className="text-center px-4 py-3 text-gray-400 text-xs uppercase font-semibold tracking-wider">Date</th>
-                <th className="text-center px-4 py-3 text-gray-400 text-xs uppercase font-semibold tracking-wider">Actions</th>
+              <tr className="border-b border-gray-200" style={{ background: '#f0f2f5' }}>
+                <th className="text-left px-4 py-3 text-gray-500 text-xs uppercase font-semibold tracking-wider">Listing</th>
+                <th className="text-left px-4 py-3 text-gray-500 text-xs uppercase font-semibold tracking-wider">Seller</th>
+                <th className="text-center px-4 py-3 text-gray-500 text-xs uppercase font-semibold tracking-wider">Status</th>
+                <th className="text-center px-4 py-3 text-gray-500 text-xs uppercase font-semibold tracking-wider">Date</th>
+                <th className="text-center px-4 py-3 text-gray-500 text-xs uppercase font-semibold tracking-wider">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/[0.04]">
+            <tbody className="divide-y divide-gray-200">
               {fetching ? (
-                <tr><td colSpan={5} className="text-center py-12 text-gray-500">Loading…</td></tr>
+                <tr><td colSpan={5} className="text-center py-12 text-gray-600">Loading…</td></tr>
               ) : listings.length === 0 ? (
-                <tr><td colSpan={5} className="text-center py-12 text-gray-500">No listings found</td></tr>
+                <tr><td colSpan={5} className="text-center py-12 text-gray-600">No listings found</td></tr>
               ) : listings.map((l) => (
-                <tr key={l.id} className="hover:bg-white/[0.02] transition">
+                <tr key={l.id} className="hover:bg-gray-50 transition">
                   <td className="px-4 py-3.5">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
@@ -112,18 +112,18 @@ export default function AdminListingsPage() {
                         <Package size={14} />
                       </div>
                       <div>
-                        <p className="font-medium text-gray-200 truncate max-w-[200px]">{l.title}</p>
-                        <p className="text-xs text-gray-500">{l.category_name}</p>
+                        <p className="font-medium text-gray-800 truncate max-w-[200px]">{l.title}</p>
+                        <p className="text-xs text-gray-600">{l.category_name}</p>
                       </div>
                     </div>
                   </td>
-                  <td className="px-4 py-3.5 text-gray-400">{l.seller_name}</td>
+                  <td className="px-4 py-3.5 text-gray-500">{l.seller_name}</td>
                   <td className="px-4 py-3.5 text-center">
-                    <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${statusColors[l.status] || 'bg-gray-500/10 text-gray-500'}`}>
+                    <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${statusColors[l.status] || 'bg-gray-500/10 text-gray-600'}`}>
                       {l.status}
                     </span>
                   </td>
-                  <td className="px-4 py-3.5 text-center text-xs text-gray-500">{new Date(l.created_at).toLocaleDateString()}</td>
+                  <td className="px-4 py-3.5 text-center text-xs text-gray-600">{new Date(l.created_at).toLocaleDateString()}</td>
                   <td className="px-4 py-3.5">
                     <div className="flex items-center gap-2 justify-center flex-wrap">
                       {l.status === 'active' ? (

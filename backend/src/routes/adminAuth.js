@@ -2,6 +2,7 @@ const router = require('express').Router();
 const { body, validationResult } = require('express-validator');
 const { authenticate } = require('../middleware/auth');
 const { login, verifyOtp, me } = require('../controllers/adminAuthController');
+const { loginLimiter, otpLimiter } = require('../middleware/rateLimiter');
 
 const validate = (req, res, next) => {
   const errs = validationResult(req);
@@ -11,14 +12,14 @@ const validate = (req, res, next) => {
   next();
 };
 
-router.post('/login', [
-  body('email').trim().isEmail().withMessage('Valid email is required'),
+router.post('/login', loginLimiter, [
+  body('email').trim().notEmpty().withMessage('Username is required'),
   body('password').trim().notEmpty().withMessage('Password is required'),
   validate,
 ], login);
 
 router.post('/verify-otp', [
-  body('email').trim().isEmail().withMessage('Valid email is required'),
+  body('email').trim().notEmpty().withMessage('Username is required'),
   body('code').trim().notEmpty().withMessage('OTP code is required'),
   validate,
 ], verifyOtp);

@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { SITE_DOMAIN } from '@/lib/config';
 import { Lock, MapPin, Phone, Mail, Globe, Camera, Image, Download } from '@/lib/icons';
 
-const NAVY   = '#1B2A5E';
+const NAVY   = '#0f1e42';
 const ORG    = '#E85D04';
 const MAROON = '#3a1a2e';
 

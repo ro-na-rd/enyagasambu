@@ -1,7 +1,6 @@
 const crypto = require('crypto');
 const pool = require('../config/db');
 const { sendSms } = require('../services/smsService');
-const { uploadToS3 } = require('../services/s3Service');
 
 const OTP_TTL_MINUTES = 5;
 

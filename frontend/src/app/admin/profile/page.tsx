@@ -37,14 +37,14 @@ export default function AdminProfilePage() {
             <User size={18} style={{ color: BRAND.orange }} />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-gray-100">Profile</h1>
-            <p className="text-sm text-gray-500 mt-0.5">Your account information</p>
+            <h1 className="text-xl font-bold text-gray-900">Profile</h1>
+            <p className="text-sm text-gray-600 mt-0.5">Your account information</p>
           </div>
         </div>
       </div>
 
       <div className="max-w-2xl">
-        <div className="rounded-2xl overflow-hidden mb-6" style={{ background: '#161b22', border: '1px solid rgba(255,255,255,0.04)' }}>
+        <div className="rounded-2xl overflow-hidden mb-6" style={{ background: '#ffffff', border: '1px solid rgba(0,0,0,0.05)' }}>
           <div className="h-20" style={{ background: `linear-gradient(90deg, ${BRAND.navy}, ${BRAND.orange})` }} />
           <div className="px-6 pb-6 -mt-10">
             <div className="flex items-end gap-4 mb-6">
@@ -53,34 +53,34 @@ export default function AdminProfilePage() {
                 {user.name?.charAt(0).toUpperCase() || 'A'}
               </div>
               <div className="pb-1">
-                <p className="text-lg font-bold text-gray-100">{user.name}</p>
-                <p className="text-xs text-gray-500">{user.email}</p>
+                <p className="text-lg font-bold text-gray-900">{user.name}</p>
+                <p className="text-xs text-gray-600">{user.email}</p>
               </div>
             </div>
           </div>
         </div>
 
-        <form onSubmit={handleSave} className="rounded-2xl p-6" style={{ background: '#161b22', border: '1px solid rgba(255,255,255,0.04)' }}>
-          <h2 className="text-sm font-bold text-gray-100 uppercase tracking-wider mb-4">Edit Profile</h2>
-          {msg && <p className="text-sm mb-3 text-gray-300">{msg}</p>}
+        <form onSubmit={handleSave} className="rounded-2xl p-6" style={{ background: '#ffffff', border: '1px solid rgba(0,0,0,0.05)' }}>
+          <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-4">Edit Profile</h2>
+          {msg && <p className="text-sm mb-3 text-gray-700">{msg}</p>}
           <div className="space-y-4">
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Name</label>
+              <label className="block text-xs text-gray-600 mb-1">Name</label>
               <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })}
                 className="border rounded-lg px-3 py-2.5 text-sm w-full focus:outline-none focus:ring-2 focus:ring-orange-500/30"
-                style={{ background: '#21262d', borderColor: '#30363d', color: '#e6edf3' }} />
+                style={{ background: '#f6f8fa', borderColor: '#d0d7de', color: '#1a1a1a' }} />
             </div>
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Email</label>
+              <label className="block text-xs text-gray-600 mb-1">Email</label>
               <input value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })}
                 className="border rounded-lg px-3 py-2.5 text-sm w-full focus:outline-none focus:ring-2 focus:ring-orange-500/30"
-                style={{ background: '#21262d', borderColor: '#30363d', color: '#e6edf3' }} />
+                style={{ background: '#f6f8fa', borderColor: '#d0d7de', color: '#1a1a1a' }} />
             </div>
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Phone</label>
+              <label className="block text-xs text-gray-600 mb-1">Phone</label>
               <input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })}
                 className="border rounded-lg px-3 py-2.5 text-sm w-full focus:outline-none focus:ring-2 focus:ring-orange-500/30"
-                style={{ background: '#21262d', borderColor: '#30363d', color: '#e6edf3' }} />
+                style={{ background: '#f6f8fa', borderColor: '#d0d7de', color: '#1a1a1a' }} />
             </div>
             <button type="submit" className="text-white text-sm font-semibold px-5 py-2.5 rounded-lg transition"
               style={{ background: `linear-gradient(135deg, ${BRAND.orange}, ${BRAND.orangeDark})` }}>Save Changes</button>

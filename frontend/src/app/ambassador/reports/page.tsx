@@ -7,7 +7,7 @@ const NAVY = '#0f1e42';
 const ORG = '#E85D04';
 
 export default function AmbassadorReportsPage() {
-  const [referral, setReferral] = useState<any>(null);
+  const [referral, setReferral] = useState<{ totalReferrals?: number; bonusPaid?: number; bonusPerReferral?: number } | null>(null);
 
   useEffect(() => {
     api.get('/referrals/me').then(({ data }) => setReferral(data)).catch(() => {});

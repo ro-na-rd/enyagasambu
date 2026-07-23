@@ -10,9 +10,9 @@ const ORG = '#E85D04';
 
 const ambassadorRoles = [
   { href: '/ambassador/profile',    icon: <User size={20} />,  label: 'My Profile',        desc: 'Manage your account information and contact details', color: '#0f1e42' },
-  { href: '/ambassador/referrals',  icon: <LinkIcon size={20} />,  label: 'My Referrals',      desc: 'Refer users to the platform and earn coins', color: '#059669' },
+  { href: '/ambassador/referrals',  icon: <LinkIcon size={20} />,  label: 'My Referrals',      desc: 'Refer ambassadors and earn RWF when they get certified', color: '#059669' },
   { href: '/ambassador/activities', icon: <FileText size={20} />,  label: 'My Activities',     desc: 'Track your actions, events, and achievements', color: '#d97706' },
-  { href: '/ambassador/rewards',    icon: <Gift size={20} />,  label: 'Rewards & Earnings', desc: 'View your coins, bonuses, and reward history', color: '#E85D04' },
+  { href: '/ambassador/rewards',    icon: <Gift size={20} />,  label: 'Rewards & Earnings', desc: 'View your RWF earnings, bonuses, and reward history', color: '#E85D04' },
   { href: '/ambassador/certificate',icon: <Award size={20} />,  label: 'My Certificate',    desc: 'Get your official ambassador certificate', color: '#7c3aed' },
   { href: '/ambassador/announcements',icon: <Megaphone size={20} />,label: 'Announcements',     desc: 'Stay updated with latest news and program updates', color: '#0891b2' },
   { href: '/ambassador/reports',    icon: <BarChart3 size={20} />,  label: 'Reports',           desc: 'View your performance reports and analytics', color: '#be123c' },
@@ -29,8 +29,8 @@ const certStatusConfig: Record<string, { label: string; icon: React.ReactNode; c
 
 export default function AmbassadorDashboardPage() {
   const { user } = useAuth();
-  const [referral, setReferral] = useState<any>(null);
-  const [cert, setCert] = useState<any>(null);
+  const [referral, setReferral] = useState<{ totalReferrals?: number; bonusPaid?: number; bonusPerReferral?: number; referralCode?: string } | null>(null);
+  const [cert, setCert] = useState<{ cert_no?: string; status?: string; issued_date?: string } | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -117,7 +117,7 @@ export default function AmbassadorDashboardPage() {
                   <code className="text-2xl font-extrabold tracking-[0.2em] select-all" style={{ color: NAVY }}>
                     {referral?.referralCode || '------'}
                   </code>
-                  <p className="text-xs text-gray-400 mt-2 mb-4">Share this code with friends to earn {referral?.bonusPerReferral ?? 200} coins each!</p>
+                   <p className="text-xs text-gray-400 mt-2 mb-4">Share this code with ambassadors to earn {referral?.bonusPerReferral ?? 200} RWF when they get certified!</p>
                   <button
                     onClick={() => {
                       const link = `${window.location.origin}/register?ref=${referral?.referralCode || ''}`;

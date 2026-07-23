@@ -20,7 +20,7 @@ interface Listing {
 }
 
 const ORG = '#E85D04';
-const NAVY = '#1B2A5E';
+const NAVY = '#0f1e42';
 
 export default function ListingCard({ listing }: { listing: Listing }) {
   const { T } = useLanguage();

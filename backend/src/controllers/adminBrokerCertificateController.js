@@ -67,30 +67,16 @@ exports.confirmPayment = async (req, res) => {
     if (cert.status === 'generated') return res.status(400).json({ message: 'Certificate already generated' });
     if (cert.status === 'paid') return res.status(400).json({ message: 'Payment already confirmed' });
 
-    const year = new Date().getFullYear();
-    const [[{ cnt }]] = await pool.query(
-      "SELECT COUNT(*) AS cnt FROM broker_certificates WHERE YEAR(created_at) = ? AND cert_no IS NOT NULL",
-      [year]
-    );
-    const certNo = `ENA-BRK-${year}-${String(cnt + 1).padStart(4, '0')}`;
-    const issuedDate = new Date().toISOString().split('T')[0];
-    const validUntil = new Date();
-    validUntil.setFullYear(validUntil.getFullYear() + 1);
-    const validUntilStr = validUntil.toISOString().split('T')[0];
-
     await pool.query(
-      'UPDATE broker_certificates SET status = ?, cert_no = ?, issued_date = ?, valid_until = ?, generated_by = ? WHERE id = ?',
-      ['generated', certNo, issuedDate, validUntilStr, req.user.id, id]
+      'UPDATE broker_certificates SET status = ? WHERE id = ?',
+      ['paid', id]
     );
 
     return res.json({
-      message: `Payment confirmed. Certificate ${certNo} generated automatically.`,
+      message: 'Payment confirmed. You can now generate the certificate.',
       certificate: {
         ...cert,
-        cert_no: certNo,
-        status: 'generated',
-        issued_date: issuedDate,
-        valid_until: validUntilStr,
+        status: 'paid',
       },
     });
   } catch (err) {

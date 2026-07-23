@@ -1,7 +1,6 @@
 const router = require('express').Router();
 const crypto = require('crypto');
-const { authenticate } = require('../middleware/auth');
-const { requireAdmin } = require('../middleware/auth');
+const { authenticate, requireAdmin } = require('../middleware/auth');
 const { getPackages, getBalance, initiateMomoPayment, checkMomoPayment } = require('../controllers/coinController');
 const { createSandboxUser, getSandboxApiKey } = require('../services/momoService');
 

@@ -2,18 +2,16 @@ const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const pool = require('../config/db');
-const { sendSms } = require('../services/smsService');
 
 const OTP_TTL_MINUTES = 10;
 
 function generateCode() {
-  return String(Math.floor(100000 + Math.random() * 900000));
+  return String(crypto.randomInt(100000, 1000000));
 }
 
 exports.login = async (req, res) => {
   const { email, password } = req.body;
   const username = email;
-  console.log('[Admin login attempt]', username);
   if (!username || !password) return res.status(400).json({ message: 'Username and password are required' });
 
   try {
@@ -22,13 +20,11 @@ exports.login = async (req, res) => {
       [username]
     );
     if (!staff) {
-      console.log('[Admin login] staff not found for username:', username);
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
     const valid = await bcrypt.compare(password, staff.password_hash);
     if (!valid) {
-      console.log('[Admin login] wrong password for:', username);
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 

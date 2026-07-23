@@ -5,8 +5,8 @@ const NAVY = '#0f1e42';
 const ORG = '#E85D04';
 
 const announcements = [
-  { title: 'Welcome to the Ambassador Program!', date: 'Today', desc: 'Start referring friends and earn coins for every successful referral. Your referral code is now active.', type: 'info' },
-  { title: 'Double Coins Weekend', date: '2 days ago', desc: 'Earn double referral bonuses this weekend! Every successful referral will earn you 400 coins instead of 200.', type: 'promo' },
+  { title: 'Welcome to the Ambassador Program!', date: 'Today', desc: 'Start referring ambassadors and earn 200 RWF for every certificate payment. Your referral code is now active.', type: 'info' },
+  { title: 'Certificate Referral Bonus', date: '2 days ago', desc: 'Earn 200 RWF for every ambassador you refer who pays for their certificate. Share your code now!', type: 'promo' },
   { title: 'New Ambassador Features', date: '1 week ago', desc: 'Check out the new Ambassador Dashboard with real-time stats, activity tracking, and reward history.', type: 'update' },
 ];
 

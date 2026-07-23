@@ -189,7 +189,7 @@ export default function CreateListingPage() {
           </div>
           <button
             onClick={handlePaid}
-            className="w-full bg-[#FF6B00] text-white font-semibold py-3 rounded-lg hover:bg-[#e05d00] transition"
+            className="w-full bg-[#E85D04] text-white font-semibold py-3 rounded-lg hover:bg-[#e05d00] transition"
           >
             {T.iHavePaid}
           </button>
@@ -232,14 +232,14 @@ export default function CreateListingPage() {
             maxLength={6}
             value={otpCode}
             onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
-            className="w-full text-center text-2xl tracking-[0.5em] font-mono border border-gray-300 rounded-lg px-3 py-3 focus:outline-none focus:border-[#FF6B00]"
+            className="w-full text-center text-2xl tracking-[0.5em] font-mono border border-gray-300 rounded-lg px-3 py-3 focus:outline-none focus:border-[#E85D04]"
             placeholder="000000"
           />
 
           <button
             onClick={handleVerifyOtp}
             disabled={otpCode.length !== 6 || publishing}
-            className="w-full bg-[#FF6B00] text-white font-semibold py-3 rounded-lg hover:bg-[#e05d00] transition disabled:opacity-60"
+            className="w-full bg-[#E85D04] text-white font-semibold py-3 rounded-lg hover:bg-[#e05d00] transition disabled:opacity-60"
           >
             {publishing ? T.publishing : T.verifyAndPublish}
           </button>
@@ -247,7 +247,7 @@ export default function CreateListingPage() {
           <button
             onClick={handleResendOtp}
             disabled={otpResendCooldown > 0}
-            className="text-sm text-[#FF6B00] hover:underline disabled:opacity-50"
+            className="text-sm text-[#E85D04] hover:underline disabled:opacity-50"
           >
             {otpResendCooldown > 0 ? T.resendIn(otpResendCooldown) : T.resendCode}
           </button>
@@ -361,7 +361,7 @@ export default function CreateListingPage() {
                   onClick={() => setDurationDays(d)}
                   className={`border rounded-lg px-3 py-3 text-sm font-medium transition ${
                     durationDays === d
-                      ? 'border-[#FF6B00] bg-orange-50 text-[#FF6B00]'
+                      ? 'border-[#E85D04] bg-orange-50 text-[#E85D04]'
                       : 'border-gray-200 text-gray-600 hover:border-gray-300'
                   }`}
                 >
@@ -403,7 +403,7 @@ export default function CreateListingPage() {
             accept="image/*"
             multiple
             onChange={handleImages}
-            className="text-sm text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-orange-50 file:text-[#FF6B00] file:font-medium hover:file:bg-orange-100"
+            className="text-sm text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-orange-50 file:text-[#E85D04] file:font-medium hover:file:bg-orange-100"
           />
           {previews.length > 0 && (
             <div className="flex gap-2 mt-3 flex-wrap">
@@ -419,7 +419,7 @@ export default function CreateListingPage() {
         <button
           type="submit"
           disabled={isSubmitting}
-          className="w-full bg-[#FF6B00] text-white font-semibold py-3 rounded-lg hover:bg-[#e05d00] transition disabled:opacity-60"
+          className="w-full bg-[#E85D04] text-white font-semibold py-3 rounded-lg hover:bg-[#e05d00] transition disabled:opacity-60"
         >
           {isSubmitting ? 'Processing...' : postingFree ? 'Post Listing (Free)' : `Pay & Post (${DURATION_PRICES[durationDays].toLocaleString()} RWF)`}
         </button>

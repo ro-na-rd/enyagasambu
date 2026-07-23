@@ -24,7 +24,7 @@ interface Listing {
 interface Category { id: number; name: string; slug: string; }
 
 const ORG = '#E85D04';
-const NAVY = '#1B2A5E';
+const NAVY = '#0f1e42';
 
 export default function MyListingsPage() {
   const [step, setStep] = useState<'phone' | 'otp' | 'listings'>('phone');
@@ -336,7 +336,7 @@ export default function MyListingsPage() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Replace Photos (optional, up to 6)</label>
                 <input type="file" accept="image/*" multiple onChange={e => setEditImages(Array.from(e.target.files || []).slice(0, 6))}
-                  className="text-sm text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-orange-50 file:text-[#FF6B00] file:font-medium" />
+                  className="text-sm text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-orange-50 file:text-[#E85D04] file:font-medium" />
               </div>
             </div>
 

@@ -85,14 +85,14 @@ function RegisterForm() {
           <input {...register('referral_code')} className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 focus:outline-none  uppercase" placeholder="e.g. AB12CD" />
         </div>
 
-        <button type="submit" disabled={isSubmitting} className="w-full bg-[#FF6B00] text-white font-semibold py-2.5 rounded-lg hover:bg-[#e05d00] transition disabled:opacity-60">
+        <button type="submit" disabled={isSubmitting} className="w-full bg-[#E85D04] text-white font-semibold py-2.5 rounded-lg hover:bg-[#e05d00] transition disabled:opacity-60">
           {isSubmitting ? T.creatingAccount : T.createAccountBtn}
         </button>
       </form>
 
       <p className="text-center text-sm text-gray-500 mt-5">
         {T.alreadyHaveAccount}{' '}
-        <Link href="/login" className="text-[#FF6B00] font-medium hover:underline">{T.signIn}</Link>
+        <Link href="/login" className="text-[#E85D04] font-medium hover:underline">{T.signIn}</Link>
       </p>
     </div>
   );

@@ -34,15 +34,15 @@ export default function AdminAnalyticsPage() {
             <BarChart3 size={18} style={{ color: ORG }} />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-gray-100">Analytics</h1>
-            <p className="text-sm text-gray-500 mt-0.5">Platform growth and performance trends</p>
+            <h1 className="text-xl font-bold text-gray-900">Analytics</h1>
+            <p className="text-sm text-gray-600 mt-0.5">Platform growth and performance trends</p>
           </div>
         </div>
       </div>
 
       <div className="grid lg:grid-cols-3 gap-4 mb-8">
         {[
-          { label: 'Total Users', value: stats?.totalUsers ?? '-', icon: <Users size={24} />, change: '+12%', gradient: `linear-gradient(135deg, ${NAVY}, #162d6e)` },
+          { label: 'Total Users', value: stats?.totalUsers ?? '-', icon: <Users size={24} />, change: '+12%', gradient: `linear-gradient(135deg, ${NAVY}, #0f1e42)` },
           { label: 'Total Listings', value: stats?.totalListings ?? '-', icon: <Package size={24} />, change: '+8%', gradient: `linear-gradient(135deg, ${ORG}, ${ORG}dd)` },
           { label: 'Coin Revenue', value: totalRevenue.toLocaleString(), icon: <Coins size={24} />, change: '+15%', gradient: 'linear-gradient(135deg, #059669, #047857)' },
         ].map((item) => (
@@ -63,10 +63,10 @@ export default function AdminAnalyticsPage() {
         ))}
       </div>
 
-      <div className="rounded-xl p-6" style={{ background: '#161b22', border: '1px solid rgba(255,255,255,0.04)' }}>
+      <div className="rounded-xl p-6" style={{ background: '#ffffff', border: '1px solid rgba(0,0,0,0.05)' }}>
         <div className="flex items-center gap-3 mb-6">
           <TrendingUp size={18} style={{ color: ORG }} />
-          <h2 className="text-sm font-bold text-gray-100 uppercase tracking-wider">Yearly Trends</h2>
+          <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wider">Yearly Trends</h2>
         </div>
         <div className="space-y-8">
           {data.map((series) => {
@@ -74,8 +74,8 @@ export default function AdminAnalyticsPage() {
             return (
               <div key={series.label}>
                 <div className="flex justify-between text-sm mb-3">
-                  <span className="font-semibold text-gray-300">{series.label}</span>
-                  <span className="text-gray-500">{series.values[series.values.length - 1]} total</span>
+                  <span className="font-semibold text-gray-700">{series.label}</span>
+                  <span className="text-gray-600">{series.values[series.values.length - 1]} total</span>
                 </div>
                 <div className="flex items-end gap-1.5 h-24">
                   {series.values.map((v, i) => {
@@ -88,18 +88,18 @@ export default function AdminAnalyticsPage() {
                             height: `${Math.max(h, 3)}%`,
                             background: isCurrent
                               ? `linear-gradient(to top, ${ORG}, ${ORG}88)`
-                              : `linear-gradient(to top, ${NAVY}, #162d6e)`,
+                              : `linear-gradient(to top, ${NAVY}, #0f1e42)`,
                             opacity: isCurrent ? 1 : 0.5,
                             minHeight: 4,
                             boxShadow: isCurrent ? `0 0 12px ${ORG}44` : 'none',
                           }}
                           title={`${months[i]}: ${v}`}>
                           <div className="absolute -top-7 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-lg text-white text-[9px] font-bold opacity-0 group-hover/bar:opacity-100 transition-opacity whitespace-nowrap"
-                            style={{ background: '#21262d' }}>
+                            style={{ background: '#f6f8fa' }}>
                             {v.toLocaleString()}
                           </div>
                         </div>
-                        {i % 3 === 0 && <span className="text-[8px] text-gray-500">{months[i]}</span>}
+                        {i % 3 === 0 && <span className="text-[8px] text-gray-600">{months[i]}</span>}
                       </div>
                     );
                   })}

@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import { Target, Eye, Diamond } from '@/lib/icons';
 
-const navy = '#1B2A5E';
+const navy = '#0f1e42';
 const org  = '#E85D04';
 
 interface Member {
@@ -152,7 +152,7 @@ export default function AboutPage() {
               { step: '03', title: 'Browse & Search',            desc: 'Filter by category, keyword or location across all sectors.' },
               { step: '04', title: 'Reveal Seller Contact',      desc: 'Costs 300 coins + OTP verification to protect both parties.' },
               { step: '05', title: 'Boost & Feature',            desc: '200 coins boosts your listing to the top for 7 days.' },
-              { step: '06', title: 'Refer & Earn',               desc: 'Share your code — earn coins every time someone joins.' },
+              { step: '06', title: 'Refer & Earn',               desc: 'Share your code — earn 200 RWF when a referred ambassador pays for their certificate.' },
             ].map(({ step, title, desc }) => (
               <div key={step} className="flex gap-4 bg-white rounded-xl p-5 border border-gray-100">
                 <div className="text-xl font-black shrink-0 mt-0.5" style={{ color: org }}>{step}</div>

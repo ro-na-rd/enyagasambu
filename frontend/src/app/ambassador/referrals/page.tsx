@@ -7,7 +7,7 @@ const NAVY = '#0f1e42';
 const ORG = '#E85D04';
 
 export default function AmbassadorReferralsPage() {
-  const [referral, setReferral] = useState(null);
+  const [referral, setReferral] = useState<{ referralCode: string; totalReferrals: number; totalEarned: number; rewards: { code: string; amount: number; used: boolean; createdAt: string }[] } | null>(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
 
@@ -31,6 +31,7 @@ export default function AmbassadorReferralsPage() {
           <div className="w-10 h-10 rounded-xl mx-auto mb-3 flex items-center justify-center text-white font-bold" style={{ background: NAVY }}>E</div>
           <p className="text-gray-400 text-sm animate-pulse">Loading your referrals...</p>
         </div>
+      </div>
     );
   }
 
@@ -40,6 +41,7 @@ export default function AmbassadorReferralsPage() {
         <div className="text-center py-16 bg-white rounded-xl border border-gray-100 shadow-sm">
           <p className="text-gray-400">Could not load referral data</p>
         </div>
+      </div>
     );
   }
 
@@ -53,6 +55,7 @@ export default function AmbassadorReferralsPage() {
           <h1 className="text-2xl font-bold text-gray-900">My Referrals</h1>
           <p className="text-sm text-gray-500">Track your referral activity and earnings</p>
         </div>
+      </div>
 
       <div className="space-y-6">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -60,7 +63,7 @@ export default function AmbassadorReferralsPage() {
             { label: 'Total Referrals', value: referral.totalReferrals, icon: 'users' },
             { label: 'Successful', value: referral.bonusPaid, icon: 'check' },
             { label: 'Pending', value: referral.totalReferrals - referral.bonusPaid, icon: 'clock' },
-            { label: 'Bonus/Referral', value: referral.bonusPerReferral + ' coins', icon: 'coins' },
+            { label: 'Bonus/Referral', value: referral.bonusPerReferral + ' RWF', icon: 'coins' },
           ].map((s) => {
             const IconComp = s.icon === 'users' ? Users : s.icon === 'check' ? Check : s.icon === 'clock' ? Clock : Coins;
             const color = s.label === 'Total Referrals' ? NAVY : s.label === 'Successful' ? '#059669' : s.label === 'Pending' ? '#d97706' : ORG;
@@ -70,6 +73,7 @@ export default function AmbassadorReferralsPage() {
                   <div className="w-10 h-10 rounded-xl flex items-center justify-center group-hover:scale-110 transition" style={{ background: color + '15', color: color }}>
                     <IconComp size={22} />
                   </div>
+                </div>
                 <p className="text-2xl font-extrabold" style={{ color: color }}>{s.value}</p>
                 <p className="text-xs text-gray-500 mt-1">{s.label}</p>
               </div>
@@ -90,15 +94,18 @@ export default function AmbassadorReferralsPage() {
                     <code className="text-3xl font-extrabold tracking-[0.15em] select-all" style={{ color: NAVY }}>
                       {referral.referralCode}
                     </code>
-                    <p className="text-xs text-gray-400 mt-2">Share this code with friends to earn {referral.bonusPerReferral} coins each!</p>
+                    <p className="text-xs text-gray-400 mt-2">Share this code with ambassadors to earn {referral.bonusPerReferral} RWF when they pay for their certificate!</p>
                   </div>
+                </div>
                 <button onClick={copyLink}
                   className="w-full sm:w-auto flex items-center gap-2 text-white font-bold px-6 py-3 rounded-xl transition-all hover:shadow-lg"
                   style={{ background: 'linear-gradient(135deg, ' + NAVY + ', ' + ORG + ')' }}>
                   {copied ? <><Check size={18} /> Copied!</> : <><Copy size={18} /> Copy Link</>}
                 </button>
               </div>
+            </div>
           </div>
+        </div>
 
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
           <h2 className="text-sm font-bold uppercase tracking-wider text-gray-800 mb-4">Referral Performance</h2>
@@ -125,6 +132,8 @@ export default function AmbassadorReferralsPage() {
               );
             })}
           </div>
+        </div>
       </div>
+    </div>
   );
 }

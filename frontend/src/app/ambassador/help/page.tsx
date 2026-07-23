@@ -5,11 +5,11 @@ const NAVY = '#0f1e42';
 const ORG = '#E85D04';
 
 const faqs = [
-  { q: 'What is the Ambassador Program?', a: 'The Ambassador Program rewards you for referring new users to E-Nyagasambu. You earn coins for every successful referral.' },
-  { q: 'How do I refer someone?', a: 'Share your unique referral code or referral link with friends. When they register using your code, you both earn a bonus.' },
-  { q: 'How many coins do I earn per referral?', a: 'You earn 200 coins for each successful referral. The person you refer also gets a bonus.' },
+  { q: 'What is the Ambassador Program?', a: 'The Ambassador Program rewards you for referring new ambassadors to E-Nyagasambu. You earn 200 RWF when a referred ambassador pays for their certificate.' },
+  { q: 'How do I refer someone?', a: 'Share your unique referral code or referral link with other ambassadors. When they register and pay for their certificate, you earn a reward.' },
+  { q: 'How many RWF do I earn per referral?', a: 'You earn 200 RWF for each ambassador you refer who pays for their certificate. The reward is credited to your coins balance.' },
   { q: 'Where can I see my referrals?', a: 'Go to the My Referrals page in your Ambassador Dashboard to track all your referrals and earnings.' },
-  { q: 'How do I withdraw my coins?', a: 'Coins can be used to post listings, boost your ads, and access premium features on the platform.' },
+  { q: 'How do I use my coins?', a: 'Coins can be used to post listings, boost your ads, and access premium features on the platform.' },
 ];
 
 export default function AmbassadorHelpPage() {

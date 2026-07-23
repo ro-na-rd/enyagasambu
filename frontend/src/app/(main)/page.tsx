@@ -66,7 +66,7 @@ const PARTNERS = [
   { name: 'RPPA',      logo: '/partners/rppa.jpg',      bg: '#fff' },
 ];
 
-const navy  = '#1B2A5E';
+const navy  = '#0f1e42';
 const org   = '#E85D04';
 const darkOrg = '#c04a00';
 

@@ -4,6 +4,7 @@ const { requestToPay, getPaymentStatus } = require('../services/momoService');
 const { uploadToS3 } = require('../services/s3Service');
 
 const CERT_PRICE = 2000;
+const REFERRAL_REWARD = 200;
 
 exports.getMyCertificate = async (req, res) => {
   try {
@@ -143,6 +144,21 @@ exports.checkPayment = async (req, res) => {
         'UPDATE ambassador_certificates SET status = ?, cert_no = ?, issued_date = ?, valid_until = ? WHERE id = ?',
         ['generated', certNo, issuedDate, validUntilStr, cert.id]
       );
+
+      // Credit referrer with 200 RWF if this user was referred and bonus not yet paid
+      const [[referral]] = await pool.query(
+        'SELECT referrer_id FROM referrals WHERE referred_id = ? AND bonus_paid = 0 LIMIT 1',
+        [req.user.id]
+      );
+      if (referral) {
+        await pool.query('UPDATE users SET coins = coins + ? WHERE id = ?', [REFERRAL_REWARD, referral.referrer_id]);
+        await pool.query(
+          "INSERT INTO coin_transactions (user_id, amount, type, reference) VALUES (?, ?, 'referral_bonus', ?)",
+          [referral.referrer_id, REFERRAL_REWARD, `cert_referral_${req.user.id}`]
+        );
+        await pool.query('UPDATE referrals SET bonus_paid = 1 WHERE referrer_id = ? AND referred_id = ?', [referral.referrer_id, req.user.id]);
+      }
+
       return res.json({ status: 'generated', cert_no: certNo });
     }
 

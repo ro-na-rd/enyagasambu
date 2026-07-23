@@ -16,7 +16,7 @@ interface Listing {
 interface Category { id: number; name: string; slug: string; type: string; }
 
 const ORG = '#E85D04';
-const NAVY = '#1B2A5E';
+const NAVY = '#0f1e42';
 
 const TABS = [
   { key: 'products',    label: 'Products',    type: 'sell',   group: 'product' },
@@ -141,7 +141,7 @@ function ListingsContent() {
         <div className="space-y-8">
 
           {/* Hero */}
-          <div className="bg-gradient-to-br from-[#1B2A5E] to-[#E85D04] rounded-2xl p-8 md:p-12 text-center text-white relative overflow-hidden">
+          <div className="bg-gradient-to-br from-[#0f1e42] to-[#E85D04] rounded-2xl p-8 md:p-12 text-center text-white relative overflow-hidden">
             <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
             <div className="absolute bottom-0 left-0 w-48 h-48 bg-black/10 rounded-full translate-y-1/2 -translate-x-1/2" />
             <div className="relative z-10">
@@ -158,9 +158,9 @@ function ListingsContent() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
               { value: '2,700+', label: 'Active Listings', icon: <Package size={30} />, color: '#E85D04' },
-              { value: '23', label: 'Categories', icon: <Store size={30} />, color: '#1B2A5E' },
+              { value: '23', label: 'Categories', icon: <Store size={30} />, color: '#0f1e42' },
               { value: '1,000+', label: 'Trusted Sellers', icon: <Users size={30} />, color: '#E85D04' },
-              { value: '6,500+', label: 'Product Images', icon: <Image size={30} />, color: '#1B2A5E' },
+              { value: '6,500+', label: 'Product Images', icon: <Image size={30} />, color: '#0f1e42' },
             ].map((s, i) => (
               <div key={i} className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 text-center">
                 <div className="text-3xl mb-1">{s.icon}</div>
@@ -265,7 +265,7 @@ function ListingsContent() {
           </div>
 
           {/* CTA */}
-          <div className="bg-gradient-to-r from-[#1B2A5E] to-[#E85D04] rounded-2xl p-8 md:p-10 text-center text-white relative overflow-hidden">
+          <div className="bg-gradient-to-r from-[#0f1e42] to-[#E85D04] rounded-2xl p-8 md:p-10 text-center text-white relative overflow-hidden">
             <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PHBhdGggZD0iTTM2IDM0djItSDI0di0yaDEyek0zNiAyNHYySDI0di0yaDEyeiIvPjwvZz48L2c+PC9zdmc+')] opacity-30" />
             <div className="relative z-10">
               <h3 className="text-2xl font-bold mb-3">Ready to Grow Your Business?</h3>
@@ -275,7 +275,7 @@ function ListingsContent() {
               </p>
               <div className="flex flex-wrap justify-center gap-3">
                 <Link href="/listings/create"
-                  className="inline-block bg-white text-[#1B2A5E] font-bold px-8 py-3 rounded-xl hover:shadow-lg transition shadow-md">
+                  className="inline-block bg-white text-[#0f1e42] font-bold px-8 py-3 rounded-xl hover:shadow-lg transition shadow-md">
                   Start Selling Now
                 </Link>
                 <Link href="/register"

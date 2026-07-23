@@ -5,7 +5,7 @@ import api from '@/lib/api';
 import { Lock, MapPin, Phone, Mail, Globe, Camera, Image, User } from '@/lib/icons';
 import { SITE_DOMAIN } from '@/lib/config';
 
-const NAVY = '#1B2A5E';
+const NAVY = '#0f1e42';
 const ORG = '#E85D04';
 const MAROON = '#3a1a2e';
 
@@ -183,7 +183,7 @@ export default function BrokerCertificatePage() {
   const [photo, setPhoto] = useState<string | null>(null);
   const [photoStep, setPhotoStep] = useState(true);
   const [certStatus, setCertStatus] = useState<string | null>(null);
-  const [cert, setCert] = useState<any>(null);
+  const [cert, setCert] = useState<{ id?: number; cert_no?: string; status?: string; issued_date?: string; valid_until?: string } | null>(null);
   const [msg, setMsg] = useState('');
   const [phone, setPhone] = useState('');
   const [busy, setBusy] = useState(false);
@@ -238,8 +238,9 @@ export default function BrokerCertificatePage() {
       const { data } = await api.post('/broker/certificate/request');
       setMsg(data.message);
       fetchStatus();
-    } catch (err: any) {
-      setMsg(err.response?.data?.message || 'Failed to request certificate');
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || (err instanceof Error ? err.message : 'Failed to request certificate');
+      setMsg(msg);
     } finally { setBusy(false); }
   };
 
@@ -250,8 +251,8 @@ export default function BrokerCertificatePage() {
       const { data } = await api.post('/broker/certificate/pay', { phone });
       setMsg(data.message);
       fetchStatus();
-    } catch (err: any) {
-      setMsg(err.response?.data?.message || 'Payment submission failed');
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || (err instanceof Error ? err.message : 'Payment submission failed');
     } finally { setBusy(false); }
   };
 

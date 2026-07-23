@@ -1,3 +1,13 @@
 node_modules/
 .env
+.env.local
+.env*.local
 uploads/
+dist/
+.next/
+*.log
+npm-debug.log*
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

@@ -1,7 +1,7 @@
 const pool = require('../config/db');
 const crypto = require('crypto');
 
-const REFERRAL_BONUS = 200; // coins given to referrer when referred user registers
+const REFERRAL_BONUS = 200; // RWF credited to referrer when referred ambassador pays for certificate
 
 function makeCode() {
   return crypto.randomBytes(4).toString('hex').toUpperCase();
@@ -38,7 +38,7 @@ exports.getMyReferral = async (req, res) => {
   }
 };
 
-// Called during registration when referral_code is provided
+// Called during registration when referral_code is provided — records the referral, no coins yet
 exports.applyReferral = async (conn, referredUserId, referralCode) => {
   const [[referrer]] = await conn.query(
     'SELECT id FROM users WHERE referral_code = ? AND id != ?',
@@ -50,15 +50,5 @@ exports.applyReferral = async (conn, referredUserId, referralCode) => {
     'INSERT IGNORE INTO referrals (referrer_id, referred_id) VALUES (?, ?)',
     [referrer.id, referredUserId]
   );
-  await conn.query('UPDATE users SET coins = coins + ?, referred_by = ? WHERE id = ?', [REFERRAL_BONUS, referrer.id, referredUserId]);
-  await conn.query('UPDATE users SET coins = coins + ? WHERE id = ?', [REFERRAL_BONUS, referrer.id]);
-  await conn.query(
-    "INSERT INTO coin_transactions (user_id, amount, type, reference) VALUES (?, ?, 'referral_bonus', ?)",
-    [referrer.id, REFERRAL_BONUS, `referred_${referredUserId}`]
-  );
-  await conn.query(
-    "INSERT INTO coin_transactions (user_id, amount, type, reference) VALUES (?, ?, 'referral_bonus', ?)",
-    [referredUserId, REFERRAL_BONUS, `welcome_referral`]
-  );
-  await conn.query('UPDATE referrals SET bonus_paid = 1 WHERE referrer_id = ? AND referred_id = ?', [referrer.id, referredUserId]);
+  await conn.query('UPDATE users SET referred_by = ? WHERE id = ?', [referrer.id, referredUserId]);
 };

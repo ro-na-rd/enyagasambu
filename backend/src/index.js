@@ -35,8 +35,20 @@ app.use('/api/admin/certificates', require('./routes/adminCertificates'));
 app.use('/api/admin/broker-certificates', require('./routes/adminBrokerCertificates'));
 app.use('/api/settings', require('./routes/settings'));
 app.use('/api/unlock', require('./routes/unlock'));
+app.use('/api/contact-access', require('./routes/contactAccess'));
+app.use('/api/likes', require('./routes/likes'));
+app.use('/api/comments', require('./routes/comments'));
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok', platform: 'NMO' }));
+
+app.use((req, res) => {
+  res.status(404).json({ message: 'Route not found' });
+});
+
+app.use((err, req, res, _next) => {
+  console.error('[Unhandled error]', err);
+  res.status(500).json({ message: 'Internal server error' });
+});
 
 const PORT = process.env.PORT || 5000;
 startRenewalScheduler();
