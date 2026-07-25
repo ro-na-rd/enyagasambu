@@ -7,7 +7,7 @@ const NAVY = '#0f1e42';
 const ORG = '#E85D04';
 
 export default function AmbassadorReferralsPage() {
-  const [referral, setReferral] = useState<{ referralCode: string; totalReferrals: number; totalEarned: number; rewards: { code: string; amount: number; used: boolean; createdAt: string }[] } | null>(null);
+  const [referral, setReferral] = useState<{ referralCode: string; totalReferrals?: number; totalEarned?: number; bonusPaid?: number; bonusPerReferral?: number; rewards: { code: string; amount: number; used: boolean; createdAt: string }[] } | null>(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
 
@@ -60,10 +60,10 @@ export default function AmbassadorReferralsPage() {
       <div className="space-y-6">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[
-            { label: 'Total Referrals', value: referral.totalReferrals, icon: 'users' },
-            { label: 'Successful', value: referral.bonusPaid, icon: 'check' },
-            { label: 'Pending', value: referral.totalReferrals - referral.bonusPaid, icon: 'clock' },
-            { label: 'Bonus/Referral', value: referral.bonusPerReferral + ' RWF', icon: 'coins' },
+            { label: 'Total Referrals', value: referral.totalReferrals ?? 0, icon: 'users' },
+            { label: 'Successful', value: referral.bonusPaid ?? 0, icon: 'check' },
+            { label: 'Pending', value: (referral.totalReferrals ?? 0) - (referral.bonusPaid ?? 0), icon: 'clock' },
+            { label: 'Bonus/Referral', value: (referral.bonusPerReferral ?? 200) + ' RWF', icon: 'coins' },
           ].map((s) => {
             const IconComp = s.icon === 'users' ? Users : s.icon === 'check' ? Check : s.icon === 'clock' ? Clock : Coins;
             const color = s.label === 'Total Referrals' ? NAVY : s.label === 'Successful' ? '#059669' : s.label === 'Pending' ? '#d97706' : ORG;
@@ -94,7 +94,7 @@ export default function AmbassadorReferralsPage() {
                     <code className="text-3xl font-extrabold tracking-[0.15em] select-all" style={{ color: NAVY }}>
                       {referral.referralCode}
                     </code>
-                    <p className="text-xs text-gray-400 mt-2">Share this code with ambassadors to earn {referral.bonusPerReferral} RWF when they pay for their certificate!</p>
+                    <p className="text-xs text-gray-400 mt-2">Share this code with ambassadors to earn {referral.bonusPerReferral ?? 200} RWF when they pay for their certificate!</p>
                   </div>
                 </div>
                 <button onClick={copyLink}
@@ -111,11 +111,11 @@ export default function AmbassadorReferralsPage() {
           <h2 className="text-sm font-bold uppercase tracking-wider text-gray-800 mb-4">Referral Performance</h2>
           <div className="flex items-end gap-6 h-32">
             {[
-              { label: 'Total', value: referral.totalReferrals, color: NAVY },
-              { label: 'Successful', value: referral.bonusPaid, color: '#059669' },
-              { label: 'Pending', value: Math.max(referral.totalReferrals - referral.bonusPaid, 0), color: '#d97706' },
+              { label: 'Total', value: referral.totalReferrals ?? 0, color: NAVY },
+              { label: 'Successful', value: referral.bonusPaid ?? 0, color: '#059669' },
+              { label: 'Pending', value: Math.max((referral.totalReferrals ?? 0) - (referral.bonusPaid ?? 0), 0), color: '#d97706' },
             ].map((bar) => {
-              const max = Math.max(referral.totalReferrals, 1);
+              const max = Math.max(referral.totalReferrals ?? 0, 1);
               const heightPct = (bar.value / max) * 100;
               return (
                 <div key={bar.label} className="flex-1 flex flex-col items-center gap-2">

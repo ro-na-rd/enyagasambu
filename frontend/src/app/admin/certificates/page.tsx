@@ -11,7 +11,7 @@ const BRAND = {
   orange: '#E85D04',
   orangeDark: '#c44d00',
 };
-const BASE_URL = api.defaults.baseURL?.replace('/api', '') || 'http://localhost:5000';
+const BASE_URL = api.defaults.baseURL?.replace('/api', '') || 'http://localhost:5500';
 
 type CertType = 'ambassador' | 'broker';
 const CERT_TYPES: { value: CertType; label: string }[] = [
@@ -26,7 +26,7 @@ const statusBadge = (s: string) => {
 
 export default function AdminCertificatesPage() {
   const [type, setType] = useState<CertType>('ambassador');
-  const [certs, setCerts] = useState<{ id: number; cert_no?: string; status: string; user_name: string; user_email: string; user_phone?: string; photo_url?: string; phone?: string; created_at: string }[]>([]);
+  const [certs, setCerts] = useState<{ id: number; cert_no?: string; status: string; user_name: string; user_email: string; user_phone?: string; photo_url?: string; phone?: string; created_at: string; issued_date?: string; valid_until?: string }[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [pages, setPages] = useState(1);
@@ -228,7 +228,7 @@ ${photoHtml}
                 </button>
               )}
               {detail.status === 'generated' && (
-                <button onClick={() => handlePrint(detail.cert_no)}
+                <button onClick={() => detail.cert_no && handlePrint(detail.cert_no)}
                   className="flex-1 text-sm font-bold px-4 py-2.5 rounded-lg text-white transition hover:opacity-90"
                   style={{ background: BRAND.navy }}>
                   <FileText size={14} className="inline mr-1" /> Print Certificate
@@ -297,7 +297,7 @@ ${photoHtml}
                         </button>
                       )}
                       {c.status === 'generated' && (
-                        <button onClick={() => handlePrint(c.cert_no)}
+                        <button onClick={() => c.cert_no && handlePrint(c.cert_no)}
                           className="text-xs font-bold px-3 py-1.5 rounded-lg text-white transition hover:opacity-90"
                           style={{ background: BRAND.navy }}>
                           Print

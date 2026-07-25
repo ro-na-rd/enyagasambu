@@ -488,7 +488,7 @@ export default function DashboardPage() {
                   className="flex items-center gap-3 py-3 hover:bg-gray-50 transition rounded-lg px-2">
                   <div className="w-12 h-12 rounded-lg overflow-hidden shrink-0 bg-gray-100 flex items-center justify-center">
                     {l.primary_image
-                      ? <img src={`${process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:5000'}${l.primary_image}`} alt="" className="w-full h-full object-cover"/>
+                      ? <img src={`${process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:5500'}${l.primary_image}`} alt="" className="w-full h-full object-cover"/>
                       : <Package size={20} />
                     }
                   </div>

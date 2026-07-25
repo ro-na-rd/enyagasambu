@@ -42,16 +42,16 @@ export default function AmbassadorCertificatePage() {
         try {
           const { data: statusData } = await api.get(`/ambassador/certificate/payment-status/${data.referenceId}`);
           if (statusData.status === 'paid') {
-            clearInterval(pollRef.current);
+            if (pollRef.current) clearInterval(pollRef.current);
             setMsg('Payment successful! Waiting for admin to generate your certificate.');
             await fetchCert();
             setPaying(false);
           } else if (statusData.status === 'failed') {
-            clearInterval(pollRef.current);
+            if (pollRef.current) clearInterval(pollRef.current);
             setMsg('Payment failed. Try again.');
             setPaying(false);
           }
-        } catch { clearInterval(pollRef.current); setPaying(false); }
+        } catch { if (pollRef.current) clearInterval(pollRef.current); setPaying(false); }
       }, 5000);
     } catch (err: unknown) {
       setMsg((err as { response?: { data?: { message?: string } } })?.response?.data?.message || (err instanceof Error ? err.message : 'Payment initiation failed'));
@@ -151,7 +151,7 @@ export default function AmbassadorCertificatePage() {
                 <p className="text-sm text-gray-500 mt-2">E-Nyagasambu Digital Marketplace</p>
               </div>
               <div className="border-t border-gray-200 pt-4 text-center text-xs text-gray-500 space-y-1">
-                <p><strong>Certificate No:</strong> {cert.cert_no}</p>
+                <p><strong>Certificate No:</strong> {cert?.cert_no}</p>
                 <p><strong>Name:</strong> {user?.name}</p>
                 <p><strong>Issued:</strong> {issuedDisplay}</p>
                 <p><strong>Valid Until:</strong> {validUntilDisplay}</p>

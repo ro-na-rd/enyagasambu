@@ -244,6 +244,307 @@ exports.getPromos = async (req, res) => {
   }
 };
 
+exports.getConnects = async (req, res) => {
+  const { page = 1, search, status, type, date_from, date_to, sale_status } = req.query;
+  const limit = 20;
+  const offset = (parseInt(page) - 1) * limit;
+
+  try {
+    // 1. Coin-based unlocks from contact_unlocks
+    let whereCu = '1=1';
+    const paramsCu = [];
+    if (search) {
+      whereCu += ' AND (bu.name LIKE ? OR bu.phone LIKE ? OR l.title LIKE ? OR su.name LIKE ? OR su.phone LIKE ?)';
+      paramsCu.push(`%${search}%`, `%${search}%`, `%${search}%`, `%${search}%`, `%${search}%`);
+    }
+    if (status === 'active') whereCu += ' AND (cu.expires_at IS NULL OR cu.expires_at > NOW())';
+    if (status === 'expired') whereCu += ' AND cu.expires_at IS NOT NULL AND cu.expires_at <= NOW()';
+    if (sale_status) { whereCu += ' AND cu.sale_status = ?'; paramsCu.push(sale_status); }
+    if (date_from) { whereCu += ' AND cu.unlocked_at >= ?'; paramsCu.push(date_from); }
+    if (date_to) { whereCu += ' AND cu.unlocked_at <= ?'; paramsCu.push(date_to + ' 23:59:59'); }
+    if (type && type !== 'coin') whereCu += ' AND 0=1';
+
+    const [coinUnlocks] = await pool.query(
+      `SELECT cu.id, cu.buyer_id, cu.listing_id, cu.buyer_phone, cu.expires_at, cu.unlocked_at,
+              cu.sale_status,
+              'coin' AS connect_type,
+              CASE WHEN cu.expires_at IS NULL THEN 'permanent'
+                   WHEN cu.expires_at > NOW() THEN 'active'
+                   ELSE 'expired' END AS status,
+              bu.name AS buyer_name, bu.email AS buyer_email,
+              su.name AS seller_name, su.phone AS seller_phone, su.email AS seller_email,
+              l.title AS listing_title, l.price AS listing_price, l.status AS listing_status,
+              l.listing_type
+       FROM contact_unlocks cu
+       LEFT JOIN users bu ON cu.buyer_id = bu.id
+       JOIN listings l ON cu.listing_id = l.id
+       JOIN users su ON l.user_id = su.id
+       WHERE ${whereCu}
+       ORDER BY cu.unlocked_at DESC LIMIT ? OFFSET ?`,
+      [...paramsCu, limit, offset]
+    );
+
+    const [[{ totalCu }]] = await pool.query(
+      `SELECT COUNT(*) AS totalCu FROM contact_unlocks cu
+       LEFT JOIN users bu ON cu.buyer_id = bu.id
+       JOIN listings l ON cu.listing_id = l.id
+       JOIN users su ON l.user_id = su.id
+       WHERE ${whereCu}`, paramsCu
+    );
+
+    // 2. MoMo payment-based connections from contact_access_payments
+    let whereCap = '1=1';
+    const paramsCap = [];
+    if (search) {
+      whereCap += ' AND (bu.name LIKE ? OR cap.buyer_phone LIKE ? OR l.title LIKE ? OR su.name LIKE ? OR su.phone LIKE ?)';
+      paramsCap.push(`%${search}%`, `%${search}%`, `%${search}%`, `%${search}%`, `%${search}%`);
+    }
+    if (status === 'active') whereCap += " AND cap.status = 'confirmed'";
+    if (status === 'expired') whereCap += " AND cap.status = 'failed'";
+    if (status === 'pending') whereCap += " AND cap.status IN ('pending','verified')";
+    if (date_from) { whereCap += ' AND cap.created_at >= ?'; paramsCap.push(date_from); }
+    if (date_to) { whereCap += ' AND cap.created_at <= ?'; paramsCap.push(date_to + ' 23:59:59'); }
+    if (type && type !== 'momo') whereCap += ' AND 0=1';
+
+    const [momoPayments] = await pool.query(
+      `SELECT cap.id, cap.buyer_id, cap.listing_id, cap.buyer_phone, cap.reference_id,
+              cap.amount_rwf, cap.status AS payment_status, cap.otp_verified, cap.created_at AS unlocked_at,
+              'pending' AS sale_status,
+              'momo' AS connect_type,
+              CASE WHEN cap.status = 'confirmed' THEN 'active'
+                   WHEN cap.status = 'failed' THEN 'failed'
+                   WHEN cap.status = 'verified' THEN 'otp_pending'
+                   ELSE 'pending' END AS status,
+              bu.name AS buyer_name, bu.email AS buyer_email,
+              su.name AS seller_name, su.phone AS seller_phone, su.email AS seller_email,
+              l.title AS listing_title, l.price AS listing_price, l.status AS listing_status,
+              l.listing_type
+       FROM contact_access_payments cap
+       LEFT JOIN users bu ON cap.buyer_id = bu.id
+       JOIN listings l ON cap.listing_id = l.id
+       JOIN users su ON l.user_id = su.id
+       WHERE ${whereCap}
+       ORDER BY cap.created_at DESC LIMIT ? OFFSET ?`,
+      [...paramsCap, limit, offset]
+    );
+
+    const [[{ totalCap }]] = await pool.query(
+      `SELECT COUNT(*) AS totalCap FROM contact_access_payments cap
+       LEFT JOIN users bu ON cap.buyer_id = bu.id
+       JOIN listings l ON cap.listing_id = l.id
+       JOIN users su ON l.user_id = su.id
+       WHERE ${whereCap}`, paramsCap
+    );
+
+    // 3. OTP-based connections from otp_codes
+    let whereOtp = '1=1';
+    const paramsOtp = [];
+    if (search) {
+      whereOtp += ' AND (u.name LIKE ? OR o.phone LIKE ? OR l.title LIKE ? OR su.name LIKE ? OR su.phone LIKE ?)';
+      paramsOtp.push(`%${search}%`, `%${search}%`, `%${search}%`, `%${search}%`, `%${search}%`);
+    }
+    if (status === 'active') whereOtp += " AND o.used = 1";
+    if (status === 'expired') whereOtp += " AND o.used = 0 AND o.expires_at <= NOW()";
+    if (status === 'pending') whereOtp += " AND o.used = 0 AND o.expires_at > NOW()";
+    if (date_from) { whereOtp += ' AND o.created_at >= ?'; paramsOtp.push(date_from); }
+    if (date_to) { whereOtp += ' AND o.created_at <= ?'; paramsOtp.push(date_to + ' 23:59:59'); }
+    if (type && type !== 'otp') whereOtp += ' AND 0=1';
+
+    const [otpCodes] = await pool.query(
+      `SELECT o.id, o.user_id AS buyer_id, o.listing_id, o.phone AS buyer_phone, o.used,
+              o.expires_at, o.created_at AS unlocked_at,
+              'pending' AS sale_status,
+              'otp' AS connect_type,
+              CASE WHEN o.used = 1 THEN 'completed'
+                   WHEN o.expires_at <= NOW() THEN 'expired'
+                   ELSE 'pending' END AS status,
+              u.name AS buyer_name, u.email AS buyer_email,
+              su.name AS seller_name, su.phone AS seller_phone, su.email AS seller_email,
+              l.title AS listing_title, l.price AS listing_price, l.status AS listing_status,
+              l.listing_type
+       FROM otp_codes o
+       LEFT JOIN users u ON o.user_id = u.id
+       JOIN listings l ON o.listing_id = l.id
+       JOIN users su ON l.user_id = su.id
+       WHERE ${whereOtp}
+       ORDER BY o.created_at DESC LIMIT ? OFFSET ?`,
+      [...paramsOtp, limit, offset]
+    );
+
+    const [[{ totalOtp }]] = await pool.query(
+      `SELECT COUNT(*) AS totalOtp FROM otp_codes o
+       LEFT JOIN users u ON o.user_id = u.id
+       JOIN listings l ON o.listing_id = l.id
+       JOIN users su ON l.user_id = su.id
+       WHERE ${whereOtp}`, paramsOtp
+    );
+
+    // Merge and sort all connects
+    const allConnects = [...coinUnlocks, ...momoPayments, ...otpCodes]
+      .sort((a, b) => new Date(b.unlocked_at).getTime() - new Date(a.unlocked_at).getTime())
+      .slice(0, limit);
+
+    const total = totalCu + totalCap + totalOtp;
+
+    // Summary stats
+    const [[{ totalCoinConnects }]] = await pool.query('SELECT COUNT(*) AS totalCoinConnects FROM contact_unlocks');
+    const [[{ totalMomoConnects }]] = await pool.query("SELECT COUNT(*) AS totalMomoConnects FROM contact_access_payments WHERE status = 'confirmed'");
+    const [[{ totalOtpConnects }]] = await pool.query('SELECT COUNT(*) AS totalOtpConnects FROM otp_codes WHERE used = 1');
+    const [[{ pendingOtps }]] = await pool.query("SELECT COUNT(*) AS pendingOtps FROM otp_codes WHERE used = 0 AND expires_at > NOW()");
+    const [[{ pendingPayments }]] = await pool.query("SELECT COUNT(*) AS pendingPayments FROM contact_access_payments WHERE status IN ('pending','verified')");
+    const [[{ moMoRevenue }]] = await pool.query("SELECT COALESCE(SUM(amount_rwf), 0) AS moMoRevenue FROM contact_access_payments WHERE status = 'confirmed'");
+
+    // Seller summary
+    const [sellerSummary] = await pool.query(
+      `SELECT su.id AS seller_id, su.name AS seller_name, su.phone AS seller_phone,
+              COUNT(*) AS connect_count,
+              SUM(CASE WHEN cu.sale_status = 'sold' THEN 1 ELSE 0 END) AS sold_count,
+              SUM(CASE WHEN cu.sale_status = 'rented' THEN 1 ELSE 0 END) AS rented_count
+       FROM contact_unlocks cu
+       JOIN listings l ON cu.listing_id = l.id
+       JOIN users su ON l.user_id = su.id
+       GROUP BY su.id, su.name, su.phone
+       ORDER BY connect_count DESC`
+    );
+
+    return res.json({
+      connects: allConnects,
+      total,
+      page: parseInt(page),
+      stats: {
+        totalCoinConnects,
+        totalMomoConnects,
+        totalOtpConnects,
+        pendingOtps,
+        pendingPayments,
+        totalAll: totalCoinConnects + totalMomoConnects + totalOtpConnects,
+        moMoRevenue,
+      },
+      sellerSummary,
+    });
+  } catch (err) {
+    console.error('[Admin getConnects error]', err);
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
+
+exports.updateContactSaleStatus = async (req, res) => {
+  const { id } = req.params;
+  const { sale_status } = req.body;
+  if (!['pending', 'sold', 'rented'].includes(sale_status)) {
+    return res.status(400).json({ message: 'Invalid sale_status' });
+  }
+  try {
+    const [result] = await pool.query(
+      'UPDATE contact_unlocks SET sale_status = ? WHERE id = ?',
+      [sale_status, id]
+    );
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: 'Connect not found' });
+    }
+    if (sale_status === 'sold') {
+      const [[row]] = await pool.query('SELECT listing_id FROM contact_unlocks WHERE id = ?', [id]);
+      if (row) {
+        await pool.query("UPDATE listings SET status = 'sold' WHERE id = ?", [row.listing_id]);
+      }
+    }
+    return res.json({ message: 'Sale status updated', sale_status });
+  } catch (err) {
+    console.error('[Admin updateContactSaleStatus error]', err);
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
+
+exports.exportConnects = async (req, res) => {
+  const { search, status, type, date_from, date_to, sale_status } = req.query;
+  try {
+    let whereCu = '1=1';
+    const paramsCu = [];
+    if (search) {
+      whereCu += ' AND (bu.name LIKE ? OR bu.phone LIKE ? OR l.title LIKE ? OR su.name LIKE ? OR su.phone LIKE ?)';
+      paramsCu.push(`%${search}%`, `%${search}%`, `%${search}%`, `%${search}%`, `%${search}%`);
+    }
+    if (status === 'active') whereCu += ' AND (cu.expires_at IS NULL OR cu.expires_at > NOW())';
+    if (status === 'expired') whereCu += ' AND cu.expires_at IS NOT NULL AND cu.expires_at <= NOW()';
+    if (sale_status) { whereCu += ' AND cu.sale_status = ?'; paramsCu.push(sale_status); }
+    if (date_from) { whereCu += ' AND cu.unlocked_at >= ?'; paramsCu.push(date_from); }
+    if (date_to) { whereCu += ' AND cu.unlocked_at <= ?'; paramsCu.push(date_to + ' 23:59:59'); }
+    if (type && type !== 'coin') whereCu += ' AND 0=1';
+
+    const [coinUnlocks] = await pool.query(
+      `SELECT cu.id, cu.buyer_phone, cu.unlocked_at, cu.sale_status,
+              'coin' AS connect_type, bu.name AS buyer_name, bu.email AS buyer_email,
+              su.name AS seller_name, su.phone AS seller_phone, su.email AS seller_email,
+              l.title AS listing_title, l.price AS listing_price, l.status AS listing_status
+       FROM contact_unlocks cu
+       LEFT JOIN users bu ON cu.buyer_id = bu.id
+       JOIN listings l ON cu.listing_id = l.id
+       JOIN users su ON l.user_id = su.id
+       WHERE ${whereCu} ORDER BY cu.unlocked_at DESC`, paramsCu
+    );
+
+    let whereCap = '1=1';
+    const paramsCap = [];
+    if (search) {
+      whereCap += ' AND (bu.name LIKE ? OR cap.buyer_phone LIKE ? OR l.title LIKE ? OR su.name LIKE ? OR su.phone LIKE ?)';
+      paramsCap.push(`%${search}%`, `%${search}%`, `%${search}%`, `%${search}%`, `%${search}%`);
+    }
+    if (status === 'active') whereCap += " AND cap.status = 'confirmed'";
+    if (status === 'expired') whereCap += " AND cap.status = 'failed'";
+    if (status === 'pending') whereCap += " AND cap.status IN ('pending','verified')";
+    if (date_from) { whereCap += ' AND cap.created_at >= ?'; paramsCap.push(date_from); }
+    if (date_to) { whereCap += ' AND cap.created_at <= ?'; paramsCap.push(date_to + ' 23:59:59'); }
+    if (type && type !== 'momo') whereCap += ' AND 0=1';
+
+    const [momoPayments] = await pool.query(
+      `SELECT cap.id, cap.buyer_phone, cap.amount_rwf, cap.created_at AS unlocked_at,
+              'pending' AS sale_status, 'momo' AS connect_type,
+              bu.name AS buyer_name, bu.email AS buyer_email,
+              su.name AS seller_name, su.phone AS seller_phone, su.email AS seller_email,
+              l.title AS listing_title, l.price AS listing_price, l.status AS listing_status
+       FROM contact_access_payments cap
+       LEFT JOIN users bu ON cap.buyer_id = bu.id
+       JOIN listings l ON cap.listing_id = l.id
+       JOIN users su ON l.user_id = su.id
+       WHERE ${whereCap} ORDER BY cap.created_at DESC`, paramsCap
+    );
+
+    let whereOtp = '1=1';
+    const paramsOtp = [];
+    if (search) {
+      whereOtp += ' AND (u.name LIKE ? OR o.phone LIKE ? OR l.title LIKE ? OR su.name LIKE ? OR su.phone LIKE ?)';
+      paramsOtp.push(`%${search}%`, `%${search}%`, `%${search}%`, `%${search}%`, `%${search}%`);
+    }
+    if (status === 'active') whereOtp += " AND o.used = 1";
+    if (status === 'expired') whereOtp += " AND o.used = 0 AND o.expires_at <= NOW()";
+    if (status === 'pending') whereOtp += " AND o.used = 0 AND o.expires_at > NOW()";
+    if (date_from) { whereOtp += ' AND o.created_at >= ?'; paramsOtp.push(date_from); }
+    if (date_to) { whereOtp += ' AND o.created_at <= ?'; paramsOtp.push(date_to + ' 23:59:59'); }
+    if (type && type !== 'otp') whereOtp += ' AND 0=1';
+
+    const [otpCodes] = await pool.query(
+      `SELECT o.id, o.phone AS buyer_phone, o.created_at AS unlocked_at,
+              'pending' AS sale_status, 'otp' AS connect_type,
+              u.name AS buyer_name, u.email AS buyer_email,
+              su.name AS seller_name, su.phone AS seller_phone, su.email AS seller_email,
+              l.title AS listing_title, l.price AS listing_price, l.status AS listing_status
+       FROM otp_codes o
+       LEFT JOIN users u ON o.user_id = u.id
+       JOIN listings l ON o.listing_id = l.id
+       JOIN users su ON l.user_id = su.id
+       WHERE ${whereOtp} ORDER BY o.created_at DESC`, paramsOtp
+    );
+
+    const all = [...coinUnlocks, ...momoPayments, ...otpCodes]
+      .sort((a, b) => new Date(b.unlocked_at).getTime() - new Date(a.unlocked_at).getTime());
+
+    return res.json({ connects: all });
+  } catch (err) {
+    console.error('[Admin exportConnects error]', err);
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
+
 exports.updateProfile = async (req, res) => {
   const { name, email, phone } = req.body;
   try {

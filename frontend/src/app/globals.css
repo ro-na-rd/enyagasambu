@@ -31,8 +31,8 @@
 @theme inline {
     --color-background: var(--bg-dark);
     --color-foreground: var(--text-primary);
-    --font-sans: var(--font-geist-sans);
-    --font-mono: var(--font-geist-mono);
+    --font-sans: 'Inter', 'Segoe UI', system-ui, sans-serif;
+    --font-mono: ui-monospace, SFMono-Regular, monospace;
     --color-nmo-navy: #0f1e42;
     --color-nmo-navy-light: #1a2d5a;
     --color-nmo-navy-dark: #0a1430;

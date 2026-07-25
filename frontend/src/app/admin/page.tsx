@@ -131,7 +131,7 @@ export default function AdminDashboardPage() {
     { label: 'Total Users', value: stats?.totalUsers ?? 0, icon: <Users size={20} />, gradient: `linear-gradient(135deg, ${BRAND.navy}, #0f1e42)`, link: '/admin/users', change: '+12%' },
     { label: 'Active Listings', value: stats?.activeListings ?? 0, icon: <Package size={20} />, gradient: `linear-gradient(135deg, ${BRAND.orange}, ${BRAND.orangeDark})`, link: '/admin/listings', change: '+8%' },
     { label: 'Revenue (coins)', value: totalRevenue.toLocaleString(), icon: <Coins size={20} />, gradient: 'linear-gradient(135deg, #059669, #047857)', link: '/admin/reports', change: '+24%' },
-    { label: 'Connects', value: stats?.totalUnlocks ?? 0, icon: <Phone size={20} />, gradient: 'linear-gradient(135deg, #7c3aed, #6d28d9)', link: '/admin/reports', change: '+15%' },
+    { label: 'Connects', value: stats?.totalUnlocks ?? 0, icon: <Phone size={20} />, gradient: 'linear-gradient(135deg, #7c3aed, #6d28d9)', link: '/admin/connects', change: '+15%' },
   ];
 
   const secondaryCards = [

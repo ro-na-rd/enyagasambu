@@ -41,19 +41,19 @@ export default function AmbassadorRewardsPage() {
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
         <h2 className="text-sm font-bold uppercase tracking-wider text-gray-800 mb-4">Reward History</h2>
         <div className="space-y-3">
-          {referral && referral.bonusPaid > 0 && (
+          {referral && (referral.bonusPaid ?? 0) > 0 && (
             <div className="flex items-center justify-between py-3 border-b border-gray-50">
               <div className="flex items-center gap-3">
                 <span style={{ color: '#059669' }}><Coins size={20} /></span>
                 <div>
                   <p className="text-sm font-medium text-gray-800">Referral Bonuses</p>
-                  <p className="text-xs text-gray-400">{referral.bonusPaid} successful referral(s) paid for certificate</p>
+                  <p className="text-xs text-gray-400">{referral.bonusPaid ?? 0} successful referral(s) paid for certificate</p>
                 </div>
               </div>
-              <span className="text-sm font-bold text-green-600">+{referral.bonusPaid * (referral.bonusPerReferral ?? 200)} RWF</span>
+              <span className="text-sm font-bold text-green-600">+{(referral.bonusPaid ?? 0) * (referral.bonusPerReferral ?? 200)} RWF</span>
             </div>
           )}
-          {(!referral || referral.bonusPaid === 0) && (
+          {(!referral || (referral.bonusPaid ?? 0) === 0) && (
             <p className="text-sm text-gray-400 text-center py-4">No referral earnings yet. Share your code with ambassadors!</p>
           )}
         </div>

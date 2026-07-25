@@ -1,46 +1,11 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { Play, Smartphone, FileText, List, Clock, Coins, Lock, CheckCircle, Store, Search, Unlock, Phone, CreditCard, Clock3, Star, Package, Monitor, ExternalLink, AlertOctagon, Award, User, MessageSquare, Info, MailOpen, Check, X, MousePointerClick } from '@/lib/icons';
+import { Smartphone, FileText, List, Clock, Coins, Lock, CheckCircle, Store, Search, Unlock, Phone, CreditCard, Clock3, Star, Package, AlertOctagon, Award, User, MessageSquare, Info, MailOpen, Check } from '@/lib/icons';
 
 const NAVY = '#0f1e42';
 const ORG = '#E85D04';
 const LIGHT_BG = '#f8f9fc';
-
-const VIDEOS: { key: Flow; title: string; duration: string; thumbnail: string; embedId: string; description: string }[] = [
-  {
-    key: 'post',
-    title: 'How to Post a Listing',
-    duration: '3:24',
-    thumbnail: '/og-image.png',
-    embedId: 'dQw4w9WgXcQ',
-    description: 'Full walkthrough: fill out the form, upload photos, choose duration, pay with MoMo, verify with OTP, and publish your listing.',
-  },
-  {
-    key: 'view',
-    title: 'How to Get Seller Contact',
-    duration: '2:15',
-    thumbnail: '/og-image.png',
-    embedId: 'dQw4w9WgXcQ',
-    description: 'See how to browse listings, open a listing, tap Get Contact, pay 300 RWF via MoMo, enter OTP, and reveal the seller phone.',
-  },
-  {
-    key: 'payment',
-    title: 'MoMo Payment Guide',
-    duration: '1:48',
-    thumbnail: '/og-image.png',
-    embedId: 'dQw4w9WgXcQ',
-    description: 'Step-by-step MoMo payment: how the USSD prompt works, how to approve, and how OTP verification secures your transaction.',
-  },
-  {
-    key: 'coins',
-    title: 'How to Buy Coins',
-    duration: '1:30',
-    thumbnail: '/og-image.png',
-    embedId: 'dQw4w9WgXcQ',
-    description: 'Choose a coin package, pay with MoMo, and get coins instantly in your wallet to use for listings, contacts, and boosts.',
-  },
-];
 
 type Flow = 'post' | 'view' | 'payment' | 'coins';
 
@@ -217,8 +182,6 @@ const FLOWS: { key: Flow; label: string; icon: React.ReactNode; steps: Step[] }[
 export default function GuidePage() {
   const [activeFlow, setActiveFlow] = useState<Flow>('post');
   const [activeStep, setActiveStep] = useState(0);
-  const [playingVideo, setPlayingVideo] = useState<Flow | null>(null);
-  const [videoMode, setVideoMode] = useState<'desktop' | 'mobile'>('mobile');
   const stepsEndRef = useRef<HTMLDivElement>(null);
   const currentFlow = FLOWS.find(f => f.key === activeFlow)!;
   const steps = currentFlow.steps;
@@ -254,158 +217,6 @@ export default function GuidePage() {
           <p className="text-base max-w-lg mx-auto" style={{ color: 'rgba(0,0,0,0.5)' }}>
             Step-by-step guide to posting listings, connecting with sellers, and making payments on E-Nyagasambu.
           </p>
-        </div>
-      </div>
-
-      {/* Video Section */}
-      <div className="max-w-5xl mx-auto px-4 py-6">
-        {/* Featured Video Player */}
-        {playingVideo && (
-          <div className="mb-8 rounded-2xl overflow-hidden"
-            style={{
-              background: '#ffffff',
-              border: '1px solid rgba(0, 0, 0, 0.08)',
-              boxShadow: '0 25px 60px rgba(0,0,0,0.08)',
-            }}>
-            <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100">
-              <div className="flex items-center gap-2">
-                <Play size={14} style={{ color: ORG }} />
-                <span className="text-sm font-bold text-gray-900">
-                  {VIDEOS.find(v => v.key === playingVideo)?.title}
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setVideoMode('mobile')}
-                  className="p-1.5 rounded-lg transition-colors"
-                  style={{ background: videoMode === 'mobile' ? `${ORG}22` : 'transparent', color: videoMode === 'mobile' ? ORG : 'rgba(0,0,0,0.3)' }}
-                  title="Mobile View"
-                >
-                  <Smartphone size={14} />
-                </button>
-                <button
-                  onClick={() => setVideoMode('desktop')}
-                  className="p-1.5 rounded-lg transition-colors"
-                  style={{ background: videoMode === 'desktop' ? `${ORG}22` : 'transparent', color: videoMode === 'desktop' ? ORG : 'rgba(0,0,0,0.3)' }}
-                  title="Desktop View"
-                >
-                  <Monitor size={14} />
-                </button>
-                <button
-                  onClick={() => setPlayingVideo(null)}
-                  className="p-1.5 rounded-lg transition-colors hover:bg-gray-100"
-                  style={{ color: 'rgba(0,0,0,0.4)' }}
-                  title="Close"
-                >
-                  <X size={14} />
-                </button>
-              </div>
-            </div>
-            <div className={`mx-auto ${videoMode === 'mobile' ? 'max-w-[360px]' : 'max-w-full'}`}>
-              <div className="relative w-full" style={{ paddingBottom: videoMode === 'mobile' ? '177.78%' : '56.25%' }}>
-                <iframe
-                  className="absolute inset-0 w-full h-full"
-                  src={`https://www.youtube.com/embed/${VIDEOS.find(v => v.key === playingVideo)?.embedId}?autoplay=1&rel=0`}
-                  title={VIDEOS.find(v => v.key === playingVideo)?.title}
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                />
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Video Cards */}
-        <div className="rounded-2xl overflow-hidden"
-          style={{
-            background: '#ffffff',
-            border: '1px solid rgba(0, 0, 0, 0.08)',
-          }}>
-          <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Play size={14} style={{ color: ORG }} />
-              <h2 className="text-sm font-bold text-gray-900">Tutorial Videos</h2>
-            </div>
-            <span className="text-[10px] font-bold tracking-wider uppercase" style={{ color: 'rgba(0,0,0,0.3)' }}>
-              {VIDEOS.length} videos
-            </span>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-0 divide-y sm:divide-y-0 sm:divide-x divide-gray-100">
-            {VIDEOS.map((video) => (
-              <button
-                key={video.key}
-                onClick={() => { setPlayingVideo(video.key); setActiveFlow(video.key); }}
-                className="group text-left p-5 transition-all hover:bg-gray-50"
-              >
-                {/* Thumbnail */}
-                <div className="relative rounded-xl overflow-hidden mb-3 aspect-video"
-                  style={{ background: `linear-gradient(135deg, ${NAVY}, ${NAVY}cc)` }}>
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="w-10 h-10 rounded-full flex items-center justify-center transition-transform group-hover:scale-110"
-                      style={{ background: `${ORG}dd`, boxShadow: `0 4px 15px ${ORG}44` }}>
-                      <Play size={16} className="text-white ml-0.5" />
-                    </div>
-                  </div>
-                  <div className="absolute bottom-2 right-2 px-2 py-0.5 rounded text-[10px] font-bold"
-                    style={{ background: 'rgba(0,0,0,0.7)', color: '#fff' }}>
-                    {video.duration}
-                  </div>
-                </div>
-                <h3 className="text-xs font-bold text-gray-900 mb-1 group-hover:text-gray-900 transition-colors">
-                  {video.title}
-                </h3>
-                <p className="text-[10px] leading-relaxed" style={{ color: 'rgba(0,0,0,0.4)' }}>
-                  {video.description}
-                </p>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Interactive Demo CTA */}
-        <Link href="/demo" className="mt-6 block rounded-2xl overflow-hidden group"
-          style={{
-            background: `linear-gradient(135deg, ${NAVY}, ${NAVY}ee)`,
-            border: '1px solid rgba(255,255,255,0.05)',
-          }}>
-          <div className="p-6 sm:p-8 flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0"
-                style={{ background: `${ORG}22`, boxShadow: `0 4px 20px ${ORG}33` }}>
-                <MousePointerClick size={24} style={{ color: ORG }} />
-              </div>
-              <div>
-                <h3 className="text-base font-extrabold text-white mb-1">
-                  Try the Interactive Demo
-                </h3>
-                <p className="text-xs text-white/50 max-w-md">
-                  Click through the complete payment workflow — from posting an item to OTP verification. Includes success and error scenarios.
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-bold transition-all group-hover:scale-105"
-              style={{ background: ORG, color: '#fff', boxShadow: `0 4px 15px ${ORG}44` }}>
-              Launch Demo
-              <span className="text-lg">→</span>
-            </div>
-          </div>
-        </Link>
-
-        {/* How to Record Your Own Video */}
-        <div className="mt-6 rounded-xl p-5"
-          style={{ background: '#ffffff', border: '1px solid rgba(0, 0, 0, 0.06)' }}>
-          <div className="flex items-start gap-3">
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-              style={{ background: `${ORG}15` }}>
-              <ExternalLink size={14} style={{ color: ORG }} />
-            </div>
-            <div>
-              <h3 className="text-sm font-bold text-gray-900 mb-1">Want to create your own tutorial?</h3>
-              <p className="text-xs leading-relaxed" style={{ color: 'rgba(0,0,0,0.5)' }}>
-                Record your screen while using the app. Free tools: OBS Studio (desktop), or built-in screen recorder on Android/iOS. Upload to YouTube, then replace the embed IDs in <code className="px-1.5 py-0.5 rounded text-[10px] bg-gray-100" style={{ color: ORG }}>frontend/src/app/(main)/guide/page.tsx</code> with your video IDs.
-              </p>
-            </div>
-          </div>
         </div>
       </div>
 

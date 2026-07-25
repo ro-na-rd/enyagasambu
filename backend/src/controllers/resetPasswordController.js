@@ -1,6 +1,9 @@
 const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 const pool = require('../config/db');
+const { sendPasswordResetEmail } = require('../services/emailService');
+
+const FRONTEND_URL = process.env.FRONTEND_URL || 'https://enyagasambu.rw';
 
 exports.forgotPassword = async (req, res) => {
   const { email } = req.body;
@@ -23,6 +26,14 @@ exports.forgotPassword = async (req, res) => {
       'INSERT INTO password_resets (email, token, expires_at) VALUES (?, ?, ?)',
       [email, token, expiresAt]
     );
+
+    const resetUrl = `${FRONTEND_URL}/reset-password?token=${token}`;
+
+    try {
+      await sendPasswordResetEmail(email, resetUrl);
+    } catch (emailErr) {
+      console.error('[forgotPassword] email send failed:', emailErr.message);
+    }
 
     return res.json({
       message: 'If that email is registered, a reset link has been sent.',

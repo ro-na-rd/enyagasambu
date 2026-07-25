@@ -57,8 +57,8 @@ export default function AmbassadorDashboardPage() {
 
   const activities = [
     { action: 'You joined the Ambassador Program', time: 'Just now', icon: <Sparkles size={16} /> },
-    ...(referral && referral.totalReferrals > 0
-      ? [{ action: `${referral.totalReferrals} referral(s) made`, time: 'Today', icon: <LinkIcon size={16} /> }]
+    ...(referral && (referral.totalReferrals ?? 0) > 0
+      ? [{ action: `${referral.totalReferrals ?? 0} referral(s) made`, time: 'Today', icon: <LinkIcon size={16} /> }]
       : []),
   ];
 
@@ -193,11 +193,11 @@ export default function AmbassadorDashboardPage() {
             {referral ? (
               <div className="flex items-end gap-4 h-28">
                 {[
-                  { label: 'Total', value: referral.totalReferrals, color: NAVY },
-                  { label: 'Successful', value: referral.bonusPaid, color: '#059669' },
-                  { label: 'Pending', value: referral.totalReferrals - referral.bonusPaid, color: '#d97706' },
+                  { label: 'Total', value: referral.totalReferrals ?? 0, color: NAVY },
+                  { label: 'Successful', value: referral.bonusPaid ?? 0, color: '#059669' },
+                  { label: 'Pending', value: (referral.totalReferrals ?? 0) - (referral.bonusPaid ?? 0), color: '#d97706' },
                 ].map((bar) => {
-                  const max = Math.max(referral.totalReferrals, 1);
+                  const max = Math.max(referral.totalReferrals ?? 0, 1);
                   return (
                     <div key={bar.label} className="flex-1 flex flex-col items-center gap-2">
                       <span className="text-xs font-semibold text-gray-700">{bar.value}</span>

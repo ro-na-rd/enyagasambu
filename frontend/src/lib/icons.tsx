@@ -122,3 +122,4 @@ export const AwardSmall = createIcon(<><circle cx="12" cy="8" r="6" /><path d="M
 export const Info = createIcon(<><circle cx="12" cy="12" r="10" /><path d="M12 16v-4" /><path d="M12 8h.01" /></>);
 export const MessageSquare = createIcon(<><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></>);
 export const MailOpen = createIcon(<><path d="M21.2 8.4c.5.38.8.97.8 1.6v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V10a2 2 0 0 1 .8-1.6l8-6a2 2 0 0 1 2.4 0l8 6Z" /><polyline points="22 10 12 16 2 10" /></>);
+export const MousePointerClick = createIcon(<><path d="m9 9 5 12 1.774-5.226L21 14 12 9z" /><path d="M21 3l-7.5 7.5" /><path d="M14.5 9.5 9 4" /><path d="m3 21 3.5-3.5" /><circle cx="15" cy="15" r="1" /></>);

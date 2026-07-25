@@ -6,7 +6,7 @@ import Link from 'next/link';
 import {
   LayoutDashboard, Users, Package, Folder, FileText, Award, BarChart3,
   Activity, Ticket, Settings, User, LogOut, Bell, Menu, X, ChevronRight,
-  Shield, Sparkles, AlertOctagon, Medal, UserPlus
+  Shield, Sparkles, AlertOctagon, Medal, UserPlus, Link as LinkIcon
 } from '@/lib/icons';
 
 const BRAND = {
@@ -33,6 +33,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: '/admin/certificates', icon: <Award size={18} />, label: 'Certificates' },
   { href: '/admin/analytics', icon: <BarChart3 size={18} />, label: 'Analytics' },
   { href: '/admin/reports', icon: <Activity size={18} />, label: 'Reports' },
+  { href: '/admin/connects', icon: <LinkIcon size={18} />, label: 'Connects' },
   { href: '/admin/promos', icon: <Ticket size={18} />, label: 'Promotions' },
   { href: '/admin/content', icon: <FileText size={18} />, label: 'Content' },
   { href: '/admin/settings', icon: <Settings size={18} />, label: 'Settings' },

@@ -23,8 +23,6 @@ export default function ForgotPasswordPage() {
     setSuccess('');
     try {
       const { data: res } = await api.post('/auth/forgot-password', { email: data.email });
-      localStorage.setItem('nmo_reset_token', res.token);
-      localStorage.setItem('nmo_reset_email', data.email);
       setSuccess(res.message);
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
@@ -95,15 +93,17 @@ export default function ForgotPasswordPage() {
                   <CheckCircle size={28} style={{ color: '#22c55e' }} />
                 </div>
               </div>
-              <p className="text-gray-900 text-sm font-medium mb-6">{success}</p>
-              <Link href="/reset-password"
+              <p className="text-gray-900 text-sm font-medium mb-2">{success}</p>
+              <p className="text-xs mb-6" style={{ color: 'rgba(0,0,0,0.4)' }}>
+                Check your email for the password reset link. The link expires in 1 hour.
+              </p>
+              <Link href="/login"
                 className="inline-block w-full font-bold py-3.5 rounded-xl transition-all duration-200 text-sm tracking-wide text-center"
                 style={{
-                  background: `linear-gradient(135deg, ${ORG}, ${ORG}dd)`,
-                  color: '#fff',
-                  boxShadow: `0 4px 20px ${ORG}44`,
+                  border: '1px solid rgba(0,0,0,0.1)',
+                  color: 'rgba(0,0,0,0.7)',
                 }}>
-                Enter Reset Code
+                Back to Sign In
               </Link>
             </div>
           ) : (

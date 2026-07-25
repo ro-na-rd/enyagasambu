@@ -9,6 +9,9 @@ router.get('/listings',        authenticate, requireStaff, ctrl.getAdminListings
 router.get('/promos',          authenticate, requireStaff, ctrl.getPromos);
 router.get('/participants',    authenticate, requireStaff, ctrl.getParticipants);
 router.get('/revenue-chart',   authenticate, requireStaff, ctrl.getRevenueChart);
+router.get('/connects',            authenticate, requireStaff, ctrl.getConnects);
+router.get('/connects/export',     authenticate, requireStaff, ctrl.exportConnects);
+router.patch('/connects/:id/sale-status', authenticate, requireAdmin, ctrl.updateContactSaleStatus);
 router.put('/profile',         authenticate, requireStaff, ctrl.updateProfile);
 
 // Mutations: admin only

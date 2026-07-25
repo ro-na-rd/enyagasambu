@@ -68,6 +68,7 @@ CREATE TABLE IF NOT EXISTS contact_unlocks (
   listing_id INT NOT NULL,
   buyer_phone VARCHAR(20),
   expires_at TIMESTAMP NULL,
+  sale_status ENUM('pending', 'sold', 'rented') DEFAULT 'pending',
   unlocked_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   UNIQUE KEY unique_unlock (buyer_id, listing_id),
   FOREIGN KEY (buyer_id) REFERENCES users(id) ON DELETE CASCADE,

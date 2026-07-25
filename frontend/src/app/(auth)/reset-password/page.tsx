@@ -1,8 +1,8 @@
 'use client';
 import { useForm } from 'react-hook-form';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import api from '@/lib/api';
 import { Lock, Eye, EyeOff, X, CheckCircle, Loader2, AlertTriangle } from '@/lib/icons';
 
@@ -11,16 +11,23 @@ interface ResetForm { token: string; password: string; confirmPassword: string; 
 const NAVY = '#0f1e42';
 const ORG = '#E85D04';
 
-export default function ResetPasswordPage() {
-  const { register, handleSubmit, watch, formState: { errors, isSubmitting } } = useForm<ResetForm>();
+function ResetPasswordForm() {
+  const { register, handleSubmit, watch, setValue, formState: { errors, isSubmitting } } = useForm<ResetForm>();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [mounted, setMounted] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [capsLock, setCapsLock] = useState(false);
 
-  useEffect(() => { setMounted(true); }, []);
+  useEffect(() => {
+    setMounted(true);
+    const token = searchParams.get('token');
+    if (token) {
+      setValue('token', token);
+    }
+  }, [searchParams, setValue]);
 
   const onSubmit = async (data: ResetForm) => {
     setError('');
@@ -31,8 +38,6 @@ export default function ResetPasswordPage() {
         password: data.password,
       });
       setSuccess(res.message);
-      localStorage.removeItem('nmo_reset_token');
-      localStorage.removeItem('nmo_reset_email');
       setTimeout(() => router.push('/login'), 3000);
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
@@ -235,5 +240,17 @@ background: 'rgba(0, 0, 0, 0.03)',
       </div>
 
     </div>
+  );
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center" style={{ background: '#f8fafc' }}>
+        <Loader2 size={24} className="animate-spin" style={{ color: '#E85D04' }} />
+      </div>
+    }>
+      <ResetPasswordForm />
+    </Suspense>
   );
 }
