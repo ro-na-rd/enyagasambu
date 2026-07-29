@@ -33,6 +33,8 @@
     --color-foreground: var(--text-primary);
     --font-sans: 'Inter', 'Segoe UI', system-ui, sans-serif;
     --font-mono: ui-monospace, SFMono-Regular, monospace;
+    --font-heading: 'Poppins', 'Inter', sans-serif;
+    --font-display: 'Space Grotesk', 'Inter', sans-serif;
     --color-nmo-navy: #0f1e42;
     --color-nmo-navy-light: #1a2d5a;
     --color-nmo-navy-dark: #0a1430;
@@ -45,6 +47,10 @@ body {
     background: var(--bg-dark);
     color: #1a1a1a;
     font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: 'Poppins', 'Inter', sans-serif;
 }
 
 

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useLanguage } from '@/context/LanguageContext';
 import api from '@/lib/api';
 import { Smartphone, Clock, CheckCircle, Sparkles } from '@/lib/icons';
+import SimulationBanner from '@/components/SimulationBanner';
 
 interface CreateForm {
   title: string;
@@ -37,6 +38,7 @@ export default function CreateListingPage() {
   const [otpSent, setOtpSent] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [otpResendCooldown, setOtpResendCooldown] = useState(0);
+  const [postSuccess, setPostSuccess] = useState(false);
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<CreateForm>({
     defaultValues: { listing_type: 'sell' },
   });
@@ -60,6 +62,8 @@ export default function CreateListingPage() {
       setError('Please provide your name and phone number.');
       return;
     }
+    const digits = sellerPhone.trim().replace(/\D/g, '');
+    if (digits.length < 10) { setError('Please enter the full phone number (at least 10 digits)'); return; }
     setError('');
     const form = new FormData();
     Object.entries(data).forEach(([k, v]) => form.append(k, v));
@@ -69,7 +73,10 @@ export default function CreateListingPage() {
     images.forEach((f) => form.append('images', f));
     try {
       const { data: res } = await api.post('/listings', form, { headers: { 'Content-Type': 'multipart/form-data' } });
-      router.push(`/listings/${res.listingId}`);
+      setPostSuccess(true);
+      setTimeout(() => {
+        window.location.href = `/listings/${res.listingId}`;
+      }, 2000);
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
       setError(msg || 'Failed to create listing.');
@@ -81,6 +88,8 @@ export default function CreateListingPage() {
       setError('Please provide your name and phone number.');
       return;
     }
+    const digits = sellerPhone.trim().replace(/\D/g, '');
+    if (digits.length < 10) { setError('Please enter the full phone number (at least 10 digits)'); return; }
     setError('');
     const form = new FormData();
     Object.entries(data).forEach(([k, v]) => form.append(k, v));
@@ -195,6 +204,7 @@ export default function CreateListingPage() {
           </button>
           <p className="text-xs text-gray-400">{T.afterPayingConfirm}</p>
         </div>
+        <SimulationBanner referenceId={referenceId} paymentType="listing" />
       </div>
     );
   }
@@ -209,6 +219,19 @@ export default function CreateListingPage() {
           <h2 className="text-xl font-bold text-gray-900">{T.confirmingPayment}</h2>
           <p className="text-gray-500 text-sm">{T.confirmingPaymentDesc}</p>
         </div>
+        <SimulationBanner
+          referenceId={referenceId}
+          paymentType="listing"
+          onSuccess={() => {
+            if (pollRef.current) clearInterval(pollRef.current);
+            confirmPayment();
+          }}
+          onFailure={() => {
+            if (pollRef.current) clearInterval(pollRef.current);
+            setError('Payment failed. Please try again.');
+            setStep('form');
+          }}
+        />
       </div>
     );
   }
@@ -220,9 +243,9 @@ export default function CreateListingPage() {
           <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto">
             <span className="text-3xl"><CheckCircle size={32} /></span>
           </div>
-          <h2 className="text-xl font-bold text-gray-900">{T.paymentVerified}</h2>
+          <h2 className="text-xl font-bold text-gray-900">Verify Your Phone</h2>
           <p className="text-gray-500 text-sm">
-            {T.enterOtpSentTo(sellerPhone)}
+            Enter the 6-digit code sent to <strong>{sellerPhone}</strong> as SMS
           </p>
 
           {otpError && <p className="text-red-500 text-sm">{otpError}</p>}
@@ -252,6 +275,7 @@ export default function CreateListingPage() {
             {otpResendCooldown > 0 ? T.resendIn(otpResendCooldown) : T.resendCode}
           </button>
         </div>
+        <SimulationBanner referenceId={referenceId} paymentType="listing" />
       </div>
     );
   }
@@ -284,6 +308,13 @@ export default function CreateListingPage() {
       </p>
 
       {error && <div className="bg-red-50 text-red-700 text-sm rounded-lg px-4 py-3 mb-4">{error}</div>}
+
+      {postSuccess && (
+        <div className="bg-green-50 text-green-700 text-sm rounded-lg px-4 py-3 mb-4 flex items-center gap-2">
+          <CheckCircle size={16} />
+          <span>Listing posted successfully! Redirecting...</span>
+        </div>
+      )}
 
       <form onSubmit={handleSubmit(postingFree ? onSubmitFree : onSubmitPaid)} className="bg-white rounded-2xl shadow p-6 space-y-5">
         <div>
@@ -418,10 +449,10 @@ export default function CreateListingPage() {
 
         <button
           type="submit"
-          disabled={isSubmitting}
+          disabled={isSubmitting || postSuccess}
           className="w-full bg-[#E85D04] text-white font-semibold py-3 rounded-lg hover:bg-[#e05d00] transition disabled:opacity-60"
         >
-          {isSubmitting ? 'Processing...' : postingFree ? 'Post Listing (Free)' : `Pay & Post (${DURATION_PRICES[durationDays].toLocaleString()} RWF)`}
+          {postSuccess ? 'Posted!' : isSubmitting ? 'Processing...' : postingFree ? 'Post Listing (Free)' : `Pay & Post (${DURATION_PRICES[durationDays].toLocaleString()} RWF)`}
         </button>
       </form>
     </div>

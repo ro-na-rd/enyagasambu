@@ -1,9 +1,9 @@
 'use client';
 import Link from 'next/link';
 import { useLanguage } from '@/context/LanguageContext';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import api from '@/lib/api';
-import { Star, Package, MapPin, Phone, X, Lock, Unlock, CheckCircle } from '@/lib/icons';
+import { Star, Package, MapPin, Phone, X, Lock, Unlock, CheckCircle, Coins, Loader2, Clock, Check, AlertCircle, RefreshCw } from '@/lib/icons';
 
 interface Listing {
   id: number;
@@ -21,21 +21,35 @@ interface Listing {
 
 const ORG = '#E85D04';
 const NAVY = '#0f1e42';
+const ACCESS_FEE = 300;
+
+type ConnectStep = 'idle' | 'enter_phone' | 'select_method' | 'payment_pending' | 'otp_entry' | 'unlocked';
 
 export default function ListingCard({ listing }: { listing: Listing }) {
   const { T } = useLanguage();
   const [showConnect, setShowConnect] = useState(false);
-  const [step, setStep] = useState<'idle' | 'enter_phone' | 'unlocked'>('idle');
+  const [step, setStep] = useState<ConnectStep>('idle');
   const [phone, setPhone] = useState('');
   const [working, setWorking] = useState(false);
   const [connectError, setConnectError] = useState('');
+  const [connectSuccess, setConnectSuccess] = useState('');
   const [sellerPhone, setSellerPhone] = useState<string | null>(null);
   const [imgError, setImgError] = useState(false);
   const [timeLeft, setTimeLeft] = useState(0);
+  const [unlockType, setUnlockType] = useState<'temporary' | 'permanent'>('temporary');
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const otpTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [referenceId, setReferenceId] = useState('');
+  const [otpCode, setOtpCode] = useState('');
+  const [otpCountdown, setOtpCountdown] = useState(0);
 
   useEffect(() => {
-    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+      if (pollRef.current) clearInterval(pollRef.current);
+      if (otpTimerRef.current) clearInterval(otpTimerRef.current);
+    };
   }, []);
 
   const priceLabel = listing.price != null
@@ -46,16 +60,23 @@ export default function ListingCard({ listing }: { listing: Listing }) {
     setShowConnect(true);
     setStep('enter_phone');
     setConnectError('');
+    setConnectSuccess('');
   };
 
   const closeConnect = () => {
     setShowConnect(false);
     setStep('idle');
     setPhone('');
+    setOtpCode('');
+    setReferenceId('');
     setConnectError('');
+    setConnectSuccess('');
     setSellerPhone(null);
     if (timerRef.current) clearInterval(timerRef.current);
+    if (pollRef.current) clearInterval(pollRef.current);
+    if (otpTimerRef.current) clearInterval(otpTimerRef.current);
     setTimeLeft(0);
+    setOtpCountdown(0);
   };
 
   const startTimer = (expiresAt: string) => {
@@ -73,18 +94,99 @@ export default function ListingCard({ listing }: { listing: Listing }) {
     }, 1000);
   };
 
-  const handleUnlock = async () => {
+  const startOtpCountdown = useCallback(() => {
+    setOtpCountdown(120);
+    if (otpTimerRef.current) clearInterval(otpTimerRef.current);
+    otpTimerRef.current = setInterval(() => {
+      setOtpCountdown((prev) => {
+        if (prev <= 1) {
+          if (otpTimerRef.current) clearInterval(otpTimerRef.current);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  }, []);
+
+  const startPaymentPolling = useCallback((refId: string) => {
+    if (pollRef.current) clearInterval(pollRef.current);
+    pollRef.current = setInterval(async () => {
+      try {
+        const { data } = await api.get(`/contact-access/status/${refId}`);
+        if (data.status === 'verified') {
+          if (pollRef.current) clearInterval(pollRef.current);
+          setStep('otp_entry');
+          setConnectSuccess('Payment successful! A verification code has been sent to your phone.');
+          startOtpCountdown();
+        } else if (data.status === 'confirmed') {
+          if (pollRef.current) clearInterval(pollRef.current);
+          setSellerPhone(data.sellerPhone);
+          setStep('unlocked');
+          setUnlockType('permanent');
+        } else if (data.status === 'failed') {
+          if (pollRef.current) clearInterval(pollRef.current);
+          setConnectError(data.message || 'Payment failed. Please try again.');
+          setStep('select_method');
+        }
+      } catch {
+        // Keep polling on transient errors
+      }
+    }, 5000);
+  }, [startOtpCountdown]);
+
+  const handleProceedToMethod = () => {
     if (!phone.trim()) { setConnectError('Please enter your phone number'); return; }
-    setWorking(true); setConnectError('');
+    const digits = phone.trim().replace(/\D/g, '');
+    if (digits.length < 10) { setConnectError('Please enter the full phone number (at least 10 digits)'); return; }
+    setConnectError('');
+    setConnectSuccess('');
+    setStep('select_method');
+  };
+
+  const handleMomoInitiate = async () => {
+    setWorking(true); setConnectError(''); setConnectSuccess('');
     try {
-      const { data } = await api.post('/unlock/direct', { listing_id: listing.id, phone: phone.trim() });
-      setSellerPhone(data.sellerPhone);
-      setStep('unlocked');
-      startTimer(data.expiresAt);
+      const { data } = await api.post('/contact-access/initiate', { listingId: listing.id, phone: phone.trim() });
+      if (data.alreadyUnlocked) {
+        setSellerPhone(data.sellerPhone);
+        setStep('unlocked');
+        setUnlockType('permanent');
+      } else if (data.referenceId) {
+        setReferenceId(data.referenceId);
+        setStep('payment_pending');
+        startPaymentPolling(data.referenceId);
+      }
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
-      setConnectError(msg || 'Failed to unlock contact');
+      setConnectError(msg || 'Failed to initiate payment');
     } finally { setWorking(false); }
+  };
+
+  const handleVerifyOtp = async () => {
+    if (!otpCode.trim() || otpCode.length !== 6) { setConnectError('Please enter the 6-digit code'); return; }
+    setWorking(true); setConnectError('');
+    try {
+      const { data } = await api.post('/contact-access/verify-otp', { referenceId, code: otpCode.trim() });
+      setSellerPhone(data.sellerPhone);
+      setStep('unlocked');
+      setUnlockType('permanent');
+      if (otpTimerRef.current) clearInterval(otpTimerRef.current);
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      setConnectError(msg || 'Invalid verification code');
+    } finally { setWorking(false); }
+  };
+
+  const handleResendOtp = async () => {
+    setConnectError(''); setConnectSuccess('');
+    try {
+      await api.post('/contact-access/resend-otp', { referenceId });
+      setConnectSuccess('New verification code sent!');
+      startOtpCountdown();
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      setConnectError(msg || 'Failed to resend code');
+    }
   };
 
   const formatTime = (seconds: number) => {
@@ -184,7 +286,7 @@ export default function ListingCard({ listing }: { listing: Listing }) {
               style={{ background: `linear-gradient(135deg, ${NAVY}, ${ORG})` }}
             >
               <Phone size={14} strokeWidth={2.5} />
-              Connect with Seller (300 coins)
+              Connect with Seller
             </button>
           </div>
         </div>
@@ -201,7 +303,7 @@ export default function ListingCard({ listing }: { listing: Listing }) {
               <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-50 to-orange-100 flex items-center justify-center shrink-0"><Phone size={24} /></div>
               <div>
                 <h3 className="font-bold text-base" style={{ color: NAVY }}>Connect with seller</h3>
-                <p className="text-xs text-gray-400">Pay 300 coins to unlock contact</p>
+                <p className="text-xs text-gray-400">Connect with the seller directly</p>
               </div>
             </div>
 
@@ -226,27 +328,35 @@ export default function ListingCard({ listing }: { listing: Listing }) {
                   <CheckCircle size={32} className="mb-2 mx-auto" style={{ color: '#16a34a' }} />
                   <p className="text-xs font-medium text-gray-600 mb-1">Seller's contact number</p>
                   <p className="text-2xl font-extrabold" style={{ color: NAVY }}>{sellerPhone || 'Not provided'}</p>
-                  <div className="mt-3 inline-flex items-center gap-1.5 bg-white rounded-full px-3 py-1 shadow-sm">
-                    <Unlock size={14} />
-                    <span className="text-xs font-bold text-orange-600">
-                      {formatTime(timeLeft)}
-                    </span>
-                  </div>
+                  {unlockType === 'temporary' ? (
+                    <div className="mt-3 inline-flex items-center gap-1.5 bg-white rounded-full px-3 py-1 shadow-sm">
+                      <Clock size={14} />
+                      <span className="text-xs font-bold text-orange-600">
+                        {formatTime(timeLeft)}
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="mt-3 inline-flex items-center gap-1.5 bg-green-100 rounded-full px-3 py-1 shadow-sm">
+                      <Check size={14} style={{ color: '#16a34a' }} />
+                      <span className="text-xs font-bold text-green-700">Permanent unlock</span>
+                    </div>
+                  )}
                 </div>
                 <button onClick={closeConnect} className="w-full text-white font-semibold py-3 rounded-xl text-sm hover:opacity-90 transition" style={{ background: NAVY }}>
                   Done
                 </button>
               </div>
-            ) : (
+            ) : step === 'enter_phone' ? (
               <div>
                 {connectError && (
-                  <div className="bg-red-50 border border-red-200 rounded-xl p-3 mb-3">
+                  <div className="bg-red-50 border border-red-200 rounded-xl p-3 mb-3 flex items-start gap-2">
+                    <AlertCircle size={14} className="text-red-500 mt-0.5 shrink-0" />
                     <p className="text-xs text-red-700">{connectError}</p>
                   </div>
                 )}
                 <p className="text-sm font-semibold text-gray-800 mb-1">Enter your phone number</p>
                 <p className="text-xs text-gray-500 mb-3">
-                  We'll unlock the seller's contact for <strong className="text-orange-600">3 minutes</strong>.
+                  Choose how to unlock the seller's contact — via coins or mobile money.
                 </p>
                 <div className="relative mb-3">
                   <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
@@ -261,17 +371,110 @@ export default function ListingCard({ listing }: { listing: Listing }) {
                   />
                 </div>
                 <button
-                  onClick={handleUnlock}
-                  disabled={working}
-                  className="w-full text-white font-bold py-3 rounded-xl text-sm hover:shadow-lg hover:scale-[1.01] active:scale-[0.99] transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  onClick={handleProceedToMethod}
+                  className="w-full text-white font-bold py-3 rounded-xl text-sm hover:shadow-lg hover:scale-[1.01] active:scale-[0.99] transition-all flex items-center justify-center gap-2"
                   style={{ background: `linear-gradient(135deg, ${NAVY}, ${ORG})` }}
                 >
+                  Continue
+                </button>
+              </div>
+            ) : step === 'select_method' ? (
+              <div>
+                {connectError && (
+                  <div className="bg-red-50 border border-red-200 rounded-xl p-3 mb-3 flex items-start gap-2">
+                    <AlertCircle size={14} className="text-red-500 mt-0.5 shrink-0" />
+                    <p className="text-xs text-red-700">{connectError}</p>
+                  </div>
+                )}
+                <p className="text-xs text-gray-500 mb-3">
+                  Unlock the seller's contact via mobile money.
+                </p>
+
+                <button onClick={handleMomoInitiate} disabled={working}
+                  className="w-full text-left border border-gray-200 rounded-xl p-4 mb-2 hover:border-orange-300 hover:bg-orange-50/50 transition disabled:opacity-60 flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-orange-50 to-orange-100 flex items-center justify-center shrink-0">
+                    <Phone size={20} style={{ color: ORG }} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold text-gray-800">Pay {ACCESS_FEE} RWF via MoMo</p>
+                    <p className="text-xs text-gray-500">Permanent unlock — no time limit</p>
+                  </div>
                   {working ? (
-                    <><svg className="animate-spin h-4 w-4" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg> Unlocking…</>
+                    <Loader2 size={18} className="animate-spin shrink-0" style={{ color: ORG }} />
                   ) : (
-                    <><Lock size={16} strokeWidth={2.5} /> Unlock Contact</>
+                    <Lock size={16} className="shrink-0 text-gray-400" />
                   )}
                 </button>
+
+                <button onClick={() => setStep('enter_phone')}
+                  className="w-full text-gray-500 text-sm py-2 mt-1 hover:underline">Back</button>
+              </div>
+            ) : step === 'payment_pending' ? (
+              <div className="text-center py-4">
+                <div className="w-14 h-14 rounded-full bg-orange-100 flex items-center justify-center mx-auto mb-3">
+                  <Loader2 size={28} className="animate-spin" style={{ color: ORG }} />
+                </div>
+                <p className="text-sm font-bold text-gray-800 mb-1">Waiting for payment</p>
+                <p className="text-xs text-gray-500 mb-3">
+                  A payment request of <strong>{ACCESS_FEE} RWF</strong> has been sent to <strong>{phone}</strong>.
+                </p>
+                <p className="text-xs text-gray-400">Please approve the payment on your phone by entering your Mobile Money PIN.</p>
+                <div className="flex items-center justify-center gap-2 mt-4 text-xs text-gray-400">
+                  <Clock size={12} />
+                  <span>Checking payment status...</span>
+                </div>
+                <button onClick={() => { if (pollRef.current) clearInterval(pollRef.current); setStep('select_method'); setConnectError(''); }}
+                  className="text-gray-500 text-sm py-2 mt-3 hover:underline">Cancel</button>
+              </div>
+            ) : step === 'otp_entry' ? (
+              <div>
+                {connectError && (
+                  <div className="bg-red-50 border border-red-200 rounded-xl p-3 mb-3 flex items-start gap-2">
+                    <AlertCircle size={14} className="text-red-500 mt-0.5 shrink-0" />
+                    <p className="text-xs text-red-700">{connectError}</p>
+                  </div>
+                )}
+                {connectSuccess && (
+                  <div className="bg-green-50 border border-green-200 rounded-xl p-3 mb-3 flex items-start gap-2">
+                    <CheckCircle size={14} className="text-green-500 mt-0.5 shrink-0" />
+                    <p className="text-xs text-green-700">{connectSuccess}</p>
+                  </div>
+                )}
+                <p className="text-sm font-semibold text-gray-800 mb-1">Verify Your Phone</p>
+                <p className="text-xs text-gray-500 mb-3">Enter the 6-digit code sent to <strong>{phone}</strong> as SMS</p>
+                <input type="text" value={otpCode} onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  placeholder="000000" maxLength={6}
+                  className="w-full border border-gray-300 rounded-xl px-4 py-3 text-center text-2xl font-mono tracking-[0.3em] focus:outline-none focus:ring-2 focus:ring-[#E85D04]/30 focus:border-[#E85D04] transition"
+                  style={{ letterSpacing: '0.3em' }} />
+                <button onClick={handleVerifyOtp} disabled={working || otpCode.length !== 6}
+                  className="w-full text-white font-bold py-3 rounded-xl text-sm hover:shadow-lg disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition mt-3"
+                  style={{ background: `linear-gradient(135deg, ${NAVY}, ${ORG})` }}>
+                  {working ? (
+                    <><Loader2 size={16} className="animate-spin" /> Verifying...</>
+                  ) : (
+                    <>Verify & Unlock</>
+                  )}
+                </button>
+                <div className="flex items-center justify-center gap-4 mt-3">
+                  {otpCountdown > 0 ? (
+                    <span className="text-xs text-gray-400">Resend code in {Math.floor(otpCountdown / 60)}:{(otpCountdown % 60).toString().padStart(2, '0')}</span>
+                  ) : (
+                    <button onClick={handleResendOtp} className="text-xs font-semibold hover:underline flex items-center gap-1" style={{ color: ORG }}>
+                      <RefreshCw size={12} /> Resend code
+                    </button>
+                  )}
+                </div>
+                <button onClick={() => { if (pollRef.current) clearInterval(pollRef.current); setStep('select_method'); setConnectError(''); }}
+                  className="w-full text-gray-500 text-sm py-2 mt-1 hover:underline">Cancel</button>
+              </div>
+            ) : (
+              <div>
+                {connectError && (
+                  <div className="bg-red-50 border border-red-200 rounded-xl p-3 mb-3 flex items-start gap-2">
+                    <AlertCircle size={14} className="text-red-500 mt-0.5 shrink-0" />
+                    <p className="text-xs text-red-700">{connectError}</p>
+                  </div>
+                )}
               </div>
             )}
           </div>

@@ -17,9 +17,12 @@ router.put('/profile',         authenticate, requireStaff, ctrl.updateProfile);
 // Mutations: admin only
 router.patch('/users/:id/role',  authenticate, requireAdmin, ctrl.updateUserRole);
 router.post('/users/:id/coins',  authenticate, requireAdmin, ctrl.grantCoins);
+router.patch('/users/:id/free-posting', authenticate, requireAdmin, ctrl.toggleFreePosting);
 router.delete('/listings/:id',   authenticate, requireAdmin, ctrl.deleteListing);
 router.patch('/listings/:id/status', authenticate, requireAdmin, ctrl.toggleListingStatus);
 router.post('/listings',         authenticate, requireAdmin, ctrl.createListing);
 router.post('/promos',           authenticate, requireAdmin, ctrl.createPromo);
+router.put('/promos/:id',        authenticate, requireAdmin, ctrl.updatePromo);
+router.delete('/promos/:id',     authenticate, requireAdmin, ctrl.deletePromo);
 
 module.exports = router;

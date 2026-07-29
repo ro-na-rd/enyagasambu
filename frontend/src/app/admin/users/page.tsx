@@ -1,12 +1,12 @@
 'use client';
 import { useEffect, useState } from 'react';
 import api from '@/lib/api';
-import { Coins, Search, Users as UsersIcon, Filter } from '@/lib/icons';
+import { Coins, Search, Users as UsersIcon, Filter, Check, X } from '@/lib/icons';
 
 const ORG = '#E85D04';
 const NAVY = '#0f1e42';
 
-interface User { id: number; name: string; email: string; phone: string; coins: number; role: string; created_at: string; }
+interface User { id: number; name: string; email: string; phone: string; coins: number; role: string; can_post_free: boolean; created_at: string; }
 
 const roleColors: Record<string, string> = {
   user: 'bg-gray-500/10 text-gray-500',
@@ -39,6 +39,11 @@ export default function AdminUsersPage() {
 
   const handleRole = async (userId: number, role: string) => {
     await api.patch(`/admin/users/${userId}/role`, { role });
+    load(search, roleFilter);
+  };
+
+  const handleFreePosting = async (userId: number) => {
+    await api.patch(`/admin/users/${userId}/free-posting`);
     load(search, roleFilter);
   };
 
@@ -102,15 +107,16 @@ export default function AdminUsersPage() {
                 <th className="text-left px-4 py-3 text-gray-500 text-xs uppercase font-semibold tracking-wider">User</th>
                 <th className="text-left px-4 py-3 text-gray-500 text-xs uppercase font-semibold tracking-wider">Phone</th>
                 <th className="text-center px-4 py-3 text-gray-500 text-xs uppercase font-semibold tracking-wider">Coins</th>
+                <th className="text-center px-4 py-3 text-gray-500 text-xs uppercase font-semibold tracking-wider">Free Post</th>
                 <th className="text-center px-4 py-3 text-gray-500 text-xs uppercase font-semibold tracking-wider">Role</th>
                 <th className="text-center px-4 py-3 text-gray-500 text-xs uppercase font-semibold tracking-wider">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
               {fetching ? (
-                <tr><td colSpan={5} className="text-center py-12 text-gray-600">Loading…</td></tr>
+                <tr><td colSpan={6} className="text-center py-12 text-gray-600">Loading…</td></tr>
               ) : users.length === 0 ? (
-                <tr><td colSpan={5} className="text-center py-12 text-gray-600">No users found</td></tr>
+                <tr><td colSpan={6} className="text-center py-12 text-gray-600">No users found</td></tr>
               ) : users.map((u, idx) => (
                 <tr key={u.id} className="hover:bg-gray-50 transition" style={{ animationDelay: `${idx * 0.03}s` }}>
                   <td className="px-4 py-3.5">
@@ -130,6 +136,16 @@ export default function AdminUsersPage() {
                     <span className="font-semibold" style={{ color: ORG }}>
                       <Coins size={14} className="inline mr-0.5" /> {u.coins}
                     </span>
+                  </td>
+                  <td className="px-4 py-3.5 text-center">
+                    <button onClick={() => handleFreePosting(u.id)}
+                      className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-full transition ${
+                        u.can_post_free
+                          ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                          : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                      }`}>
+                      {u.can_post_free ? <><Check size={12} /> Free</> : <><X size={12} /> No</>}
+                    </button>
                   </td>
                   <td className="px-4 py-3.5 text-center">
                     <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-full ${roleColors[u.role] || 'bg-gray-500/10 text-gray-600'}`}>

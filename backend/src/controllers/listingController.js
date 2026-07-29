@@ -184,18 +184,24 @@ exports.createListing = async (req, res) => {
     }
 
     if (!isGuest && !isAdmin) {
-      const [settingRows] = await conn.query("SELECT setting_key, setting_value FROM platform_settings WHERE setting_key IN ('posting_free','posting_fee')");
-      const s = {};
-      if (settingRows) settingRows.forEach(r => { s[r.setting_key] = r.setting_value; });
-      postingFree = s.posting_free === 'true';
-      postingFee = parseInt(s.posting_fee, 10) || LISTING_COST;
+      // Check if user has free posting privilege
+      const [[userRow]] = await conn.query('SELECT can_post_free FROM users WHERE id = ?', [userId]);
+      if (userRow?.can_post_free) {
+        postingFree = true;
+      } else {
+        const [settingRows] = await conn.query("SELECT setting_key, setting_value FROM platform_settings WHERE setting_key IN ('posting_free','posting_fee')");
+        const s = {};
+        if (settingRows) settingRows.forEach(r => { s[r.setting_key] = r.setting_value; });
+        postingFree = s.posting_free === 'true';
+        postingFee = parseInt(s.posting_fee, 10) || LISTING_COST;
 
-      if (!postingFree) {
-        if (!user || user.coins < postingFee) {
-          await conn.rollback();
-          return res.status(402).json({ message: `Insufficient coins. You need ${postingFee} coins to list.` });
+        if (!postingFree) {
+          if (!user || user.coins < postingFee) {
+            await conn.rollback();
+            return res.status(402).json({ message: `Insufficient coins. You need ${postingFee} coins to list.` });
+          }
+          await conn.query('UPDATE users SET coins = coins - ? WHERE id = ?', [postingFee, userId]);
         }
-        await conn.query('UPDATE users SET coins = coins - ? WHERE id = ?', [postingFee, userId]);
       }
     }
 

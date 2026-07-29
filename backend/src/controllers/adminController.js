@@ -52,11 +52,25 @@ exports.getUsers = async (req, res) => {
   }
   try {
     const [users] = await pool.query(
-      `SELECT id, name, email, phone, coins, role, is_verified, created_at FROM users WHERE ${where} ORDER BY created_at DESC LIMIT ? OFFSET ?`,
+      `SELECT id, name, email, phone, coins, role, is_verified, can_post_free, created_at FROM users WHERE ${where} ORDER BY created_at DESC LIMIT ? OFFSET ?`,
       [...params, limit, offset]
     );
     const [[{ total }]] = await pool.query(`SELECT COUNT(*) AS total FROM users WHERE ${where}`, params);
     return res.json({ users, total, page: parseInt(page) });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
+
+exports.toggleFreePosting = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const [[user]] = await pool.query('SELECT can_post_free FROM users WHERE id = ?', [id]);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    const newVal = user.can_post_free ? 0 : 1;
+    await pool.query('UPDATE users SET can_post_free = ? WHERE id = ?', [newVal, id]);
+    return res.json({ can_post_free: !!newVal, message: newVal ? 'User can now post for free' : 'Free posting removed' });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ message: 'Server error' });
@@ -163,8 +177,8 @@ exports.getParticipants = async (req, res) => {
   else if (period === 'yearly') dateFilter = "AND created_at >= DATE_SUB(CURDATE(), INTERVAL 1 YEAR)";
 
   try {
-    const [[{ sellers }]] = await pool.query(`SELECT COUNT(*) AS sellers FROM users WHERE role = 'seller' ${dateFilter}`);
-    const [[{ buyers }]] = await pool.query(`SELECT COUNT(*) AS buyers FROM users WHERE role = 'user' ${dateFilter}`);
+    const [[{ sellers }]] = await pool.query(`SELECT COUNT(DISTINCT user_id) AS sellers FROM listings WHERE status != 'deleted' ${dateFilter.replace('created_at', 'created_at')}`);
+    const [[{ buyers }]] = await pool.query(`SELECT COUNT(DISTINCT buyer_id) AS buyers FROM contact_unlocks WHERE buyer_id IS NOT NULL ${dateFilter.replace('created_at', 'unlocked_at')}`);
     const [[{ brokers }]] = await pool.query(`SELECT COUNT(*) AS brokers FROM users WHERE role = 'broker' ${dateFilter}`);
     const [[{ ambassadors }]] = await pool.query(`SELECT COUNT(*) AS ambassadors FROM users WHERE role = 'ambassador' ${dateFilter}`);
     const [[{ totalActiveListings }]] = await pool.query("SELECT COUNT(*) AS totalActiveListings FROM listings WHERE status = 'active' AND expires_at > NOW()");
@@ -235,9 +249,56 @@ exports.createPromo = async (req, res) => {
 };
 
 exports.getPromos = async (req, res) => {
+  const { search } = req.query;
   try {
-    const [promos] = await pool.query('SELECT * FROM promo_codes ORDER BY created_at DESC');
+    let where = '1=1';
+    const params = [];
+    if (search) {
+      where += ' AND code LIKE ?';
+      params.push(`%${search}%`);
+    }
+    const [promos] = await pool.query(
+      `SELECT *,
+        CASE WHEN expires_at IS NOT NULL AND expires_at < NOW() THEN 'expired'
+             WHEN uses >= max_uses THEN 'depleted'
+             ELSE 'active' END AS status
+       FROM promo_codes WHERE ${where} ORDER BY created_at DESC`, params
+    );
     return res.json({ promos });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
+
+exports.updatePromo = async (req, res) => {
+  const { id } = req.params;
+  const { code, discount_coins, max_uses, expires_at } = req.body;
+  try {
+    const fields = [];
+    const params = [];
+    if (code !== undefined) { fields.push('code = ?'); params.push(code.toUpperCase()); }
+    if (discount_coins !== undefined) { fields.push('discount_coins = ?'); params.push(parseInt(discount_coins)); }
+    if (max_uses !== undefined) { fields.push('max_uses = ?'); params.push(parseInt(max_uses)); }
+    if (expires_at !== undefined) { fields.push('expires_at = ?'); params.push(expires_at || null); }
+    if (fields.length === 0) return res.status(400).json({ message: 'No fields to update' });
+    params.push(id);
+    const [result] = await pool.query(`UPDATE promo_codes SET ${fields.join(', ')} WHERE id = ?`, params);
+    if (result.affectedRows === 0) return res.status(404).json({ message: 'Promo not found' });
+    return res.json({ message: 'Promo updated' });
+  } catch (err) {
+    if (err.code === 'ER_DUP_ENTRY') return res.status(409).json({ message: 'Code already exists' });
+    console.error(err);
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
+
+exports.deletePromo = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const [result] = await pool.query('DELETE FROM promo_codes WHERE id = ?', [id]);
+    if (result.affectedRows === 0) return res.status(404).json({ message: 'Promo not found' });
+    return res.json({ message: 'Promo deleted' });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ message: 'Server error' });

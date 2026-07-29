@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS users (
   coins INT DEFAULT 0,
   role ENUM('user', 'seller', 'admin', 'broker', 'ambassador') DEFAULT 'user',
   is_verified BOOLEAN DEFAULT FALSE,
+  can_post_free BOOLEAN DEFAULT FALSE,
   referral_code VARCHAR(20) UNIQUE,
   referred_by INT,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -336,4 +337,20 @@ CREATE TABLE IF NOT EXISTS renewal_tokens (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   UNIQUE KEY unique_token (listing_id, token),
   FOREIGN KEY (listing_id) REFERENCES listings(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS content_pages (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  title VARCHAR(200) NOT NULL,
+  slug VARCHAR(200) NOT NULL UNIQUE,
+  type ENUM('page', 'guide', 'faq', 'policy') DEFAULT 'page',
+  content LONGTEXT,
+  status ENUM('draft', 'published') DEFAULT 'draft',
+  meta_description VARCHAR(500),
+  created_by INT,
+  updated_by INT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
+  FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL
 );

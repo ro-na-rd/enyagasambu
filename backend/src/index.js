@@ -39,6 +39,7 @@ app.use('/api/contact-access', require('./routes/contactAccess'));
 app.use('/api/likes', require('./routes/likes'));
 app.use('/api/comments', require('./routes/comments'));
 app.use('/api/content', require('./routes/content'));
+app.use('/api/simulation', require('./routes/simulation'));
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok', platform: 'NMO' }));
 

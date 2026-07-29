@@ -1,12 +1,17 @@
 const crypto = require('crypto');
+const { randomUUID: uuidv4 } = require('crypto');
 const jwt = require('jsonwebtoken');
 const { validationResult } = require('express-validator');
 const pool = require('../config/db');
 const { sendSms } = require('../services/smsService');
 const { uploadToS3 } = require('../services/s3Service');
+const { requestToPay, getPaymentStatus } = require('../services/momoService');
 
 const OTP_TTL_MINUTES = 10;
 const TOKEN_EXPIRY = '1h';
+const REPOST_COST = 400;
+
+const repostPayments = new Map(); // referenceId -> { listingId, userId, phone }
 
 function normalizePhone(phone) {
   return phone ? phone.replace(/\s+/g, '') : '';
@@ -198,37 +203,70 @@ exports.deleteListing = async (req, res) => {
   }
 };
 
+// Step 1: Initiate MoMo payment for repost (400 RWF)
 exports.repostListing = async (req, res) => {
   const { id } = req.params;
-  const conn = await pool.getConnection();
+  let referenceId;
 
   try {
-    await conn.beginTransaction();
-
-    const [[listing]] = await conn.query(
-      `SELECT l.id, l.expires_at FROM listings l
+    const [[listing]] = await pool.query(
+      `SELECT l.id FROM listings l
        JOIN users u ON l.user_id = u.id
        WHERE l.id = ? AND u.phone = ? AND l.status != 'deleted'`,
       [id, req.user.phone]
     );
-    if (!listing) {
-      await conn.rollback();
-      return res.status(404).json({ message: 'Listing not found' });
+    if (!listing) return res.status(404).json({ message: 'Listing not found' });
+
+    referenceId = uuidv4();
+    repostPayments.set(referenceId, { listingId: Number(id), userId: req.user.id, phone: req.user.phone });
+
+    await requestToPay({
+      referenceId,
+      amount: REPOST_COST,
+      payerPhone: req.user.phone,
+      payerMessage: `NMO: Repost listing #${id} (${REPOST_COST} RWF)`,
+      payeeNote: `Listing repost – #${id}`,
+    });
+
+    return res.json({
+      message: `Payment request of ${REPOST_COST} RWF sent to ${req.user.phone}. Approve on your phone.`,
+      referenceId,
+    });
+  } catch (err) {
+    if (referenceId) repostPayments.delete(referenceId);
+    console.error('[Repost initiate error]', err?.response?.data || err.message);
+    return res.status(502).json({ message: 'Failed to send payment request. Please try again.' });
+  }
+};
+
+// Step 2: Poll payment status and extend listing if paid
+exports.checkRepostPayment = async (req, res) => {
+  const { referenceId } = req.params;
+
+  const pending = repostPayments.get(referenceId);
+  if (!pending) return res.status(404).json({ message: 'Repost payment not found or expired' });
+
+  try {
+    const momoStatus = await getPaymentStatus(referenceId);
+
+    if (momoStatus.status === 'SUCCESSFUL') {
+      const newExpiresAt = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000);
+      await pool.query(
+        "UPDATE listings SET status = 'active', expires_at = ? WHERE id = ?",
+        [newExpiresAt, pending.listingId]
+      );
+      repostPayments.delete(referenceId);
+      return res.json({ status: 'successful', message: 'Listing reposted', expires_at: newExpiresAt });
     }
 
-    const newExpiresAt = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000);
-    await conn.query(
-      "UPDATE listings SET status = 'active', expires_at = ? WHERE id = ?",
-      [newExpiresAt, id]
-    );
+    if (momoStatus.status === 'FAILED') {
+      repostPayments.delete(referenceId);
+      return res.json({ status: 'failed', message: 'Payment was declined or failed.' });
+    }
 
-    await conn.commit();
-    return res.json({ message: 'Listing reposted', expires_at: newExpiresAt });
+    return res.json({ status: 'pending' });
   } catch (err) {
-    await conn.rollback();
-    console.error('[Phone listing repost error]', err);
-    return res.status(500).json({ message: 'Server error' });
-  } finally {
-    conn.release();
+    console.error('[Repost check error]', err?.response?.data || err.message);
+    return res.status(502).json({ message: 'Could not check payment status.' });
   }
 };

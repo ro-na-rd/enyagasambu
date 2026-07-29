@@ -1,24 +1,27 @@
 'use client';
 import { useState, useEffect, useCallback } from 'react';
 import api from '@/lib/api';
-import { FileText, Edit3, Trash2, Plus, X, Check, Eye, Clock, CheckCircle, AlertCircle } from '@/lib/icons';
+import {
+  FileText, Edit3, Trash2, Plus, X, Check, Eye, Clock,
+  CheckCircle, AlertCircle, Search, Filter, BookOpen, HelpCircle, Shield
+} from '@/lib/icons';
 
 const BRAND = { navy: '#0f1e42', orange: '#E85D04', orangeDark: '#c44d00' };
 
 interface ContentPage {
-  id: number;
-  title: string;
-  slug: string;
-  type: string;
-  content: string;
-  status: string;
-  meta_description: string | null;
-  created_by_name: string | null;
-  created_at: string;
-  updated_at: string;
+  id: number; title: string; slug: string; type: string; content: string;
+  status: string; meta_description: string | null; created_by_name: string | null;
+  created_at: string; updated_at: string;
 }
 
 const emptyForm = { title: '', slug: '', type: 'page', content: '', status: 'draft', meta_description: '' };
+
+const typeConfig: Record<string, { icon: React.ReactNode; color: string; bg: string }> = {
+  page: { icon: <FileText size={12} />, color: '#0f1e42', bg: 'rgba(15,30,66,0.08)' },
+  guide: { icon: <BookOpen size={12} />, color: '#059669', bg: 'rgba(5,150,105,0.08)' },
+  faq: { icon: <HelpCircle size={12} />, color: '#7c3aed', bg: 'rgba(124,58,237,0.08)' },
+  policy: { icon: <Shield size={12} />, color: '#d29922', bg: 'rgba(210,153,34,0.08)' },
+};
 
 export default function AdminContentPage() {
   const [items, setItems] = useState<ContentPage[]>([]);
@@ -32,6 +35,7 @@ export default function AdminContentPage() {
   const [search, setSearch] = useState('');
   const [filterType, setFilterType] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
+  const [previewItem, setPreviewItem] = useState<ContentPage | null>(null);
 
   const flash = (type: 'success' | 'error', text: string) => {
     setMsg({ type, text });
@@ -62,11 +66,8 @@ export default function AdminContentPage() {
       const { data } = await api.get(`/content/${id}`);
       setEditingId(id);
       setForm({
-        title: data.title,
-        slug: data.slug,
-        type: data.type,
-        content: data.content || '',
-        status: data.status,
+        title: data.title, slug: data.slug, type: data.type,
+        content: data.content || '', status: data.status,
         meta_description: data.meta_description || '',
       });
       setShowModal(true);
@@ -110,10 +111,6 @@ export default function AdminContentPage() {
     }
   };
 
-  const handleDelete = async (id: number) => {
-    setDeleting(id);
-  };
-
   const confirmDelete = async (id: number) => {
     try {
       await api.delete(`/content/${id}`);
@@ -134,6 +131,8 @@ export default function AdminContentPage() {
   });
 
   const types = [...new Set(items.map((i) => i.type))];
+  const publishedCount = items.filter(i => i.status === 'published').length;
+  const draftCount = items.filter(i => i.status === 'draft').length;
 
   return (
     <div className="p-4 lg:p-8 animate-fadeInUp">
@@ -151,7 +150,7 @@ export default function AdminContentPage() {
           </div>
           <div>
             <h1 className="text-xl font-bold text-gray-900">Content Management</h1>
-            <p className="text-sm text-gray-600 mt-0.5">Manage pages, guides, and site content</p>
+            <p className="text-sm text-gray-600 mt-0.5">Manage pages, guides, FAQs, and policies</p>
           </div>
         </div>
         <button onClick={openCreate}
@@ -161,17 +160,35 @@ export default function AdminContentPage() {
         </button>
       </div>
 
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+        {[
+          { label: 'Total Pages', value: items.length, icon: <FileText size={18} />, gradient: `linear-gradient(135deg, ${BRAND.navy}, #1a2d5a)` },
+          { label: 'Published', value: publishedCount, icon: <CheckCircle size={18} />, gradient: 'linear-gradient(135deg, #059669, #047857)' },
+          { label: 'Drafts', value: draftCount, icon: <Clock size={18} />, gradient: 'linear-gradient(135deg, #d29922, #b8860b)' },
+          { label: 'Content Types', value: types.length, icon: <BookOpen size={18} />, gradient: 'linear-gradient(135deg, #7c3aed, #6d28d9)' },
+        ].map((card) => (
+          <div key={card.label} className="relative overflow-hidden rounded-2xl p-4 text-white"
+            style={{ background: card.gradient }}>
+            <div className="absolute top-0 right-0 w-20 h-20 opacity-10"
+              style={{ background: 'radial-gradient(circle, white, transparent 70%)', transform: 'translate(30%, -30%)' }} />
+            <div className="relative z-10">
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-white/15 mb-3">{card.icon}</div>
+              <p className="text-xl font-extrabold">{card.value}</p>
+              <p className="text-[10px] font-medium text-white/60 mt-0.5">{card.label}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+
       <div className="flex flex-wrap gap-3 mb-4">
         <div className="flex-1 min-w-[200px]">
           <div className="relative">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
-              type="text"
-              placeholder="Search pages..."
-              value={search}
+              type="text" placeholder="Search pages..." value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 text-sm rounded-xl border border-gray-200 focus:outline-none focus:border-orange-400 bg-white"
+              className="w-full pl-9 pr-4 py-2.5 text-sm rounded-xl border border-gray-200 focus:outline-none focus:border-orange-400 bg-white"
             />
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"><FileText size={14} /></span>
           </div>
         </div>
         <select value={filterType} onChange={(e) => setFilterType(e.target.value)}
@@ -193,7 +210,7 @@ export default function AdminContentPage() {
             <thead>
               <tr className="border-b border-gray-200" style={{ background: '#f0f2f5' }}>
                 <th className="text-left px-4 py-3 text-gray-400 text-xs uppercase font-semibold tracking-wider">Title</th>
-                <th className="text-left px-4 py-3 text-gray-400 text-xs uppercase font-semibold tracking-wider">Type</th>
+                <th className="text-center px-4 py-3 text-gray-400 text-xs uppercase font-semibold tracking-wider">Type</th>
                 <th className="text-center px-4 py-3 text-gray-400 text-xs uppercase font-semibold tracking-wider">Status</th>
                 <th className="text-left px-4 py-3 text-gray-400 text-xs uppercase font-semibold tracking-wider">Updated</th>
                 <th className="text-center px-4 py-3 text-gray-400 text-xs uppercase font-semibold tracking-wider">Actions</th>
@@ -204,64 +221,68 @@ export default function AdminContentPage() {
                 <tr><td colSpan={5} className="px-4 py-12 text-center text-gray-400">Loading...</td></tr>
               ) : filtered.length === 0 ? (
                 <tr><td colSpan={5} className="px-4 py-12 text-center text-gray-400">No pages found</td></tr>
-              ) : filtered.map((item) => (
-                <tr key={item.id} className="hover:bg-gray-50 transition">
-                  <td className="px-4 py-3.5">
-                    <div className="font-medium text-gray-800">{item.title}</div>
-                    <div className="text-[11px] text-gray-400 mt-0.5">/{item.slug}</div>
-                  </td>
-                  <td className="px-4 py-3.5">
-                    <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full"
-                      style={{ background: `${BRAND.navy}10`, color: BRAND.navy }}>
-                      {item.type}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3.5 text-center">
-                    <button onClick={() => handleToggleStatus(item.id)}
-                      className={`text-[11px] font-semibold px-2.5 py-1 rounded-full cursor-pointer transition hover:opacity-80 ${
-                        item.status === 'published'
-                          ? 'bg-green-500/10 text-green-600'
-                          : 'bg-yellow-500/10 text-yellow-600'
-                      }`}>
-                      {item.status === 'published' ? 'Published' : 'Draft'}
-                    </button>
-                  </td>
-                  <td className="px-4 py-3.5 text-xs text-gray-600">
-                    <div className="flex items-center gap-1">
-                      <Clock size={12} className="text-gray-400" />
-                      {new Date(item.updated_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3.5 text-center">
-                    <div className="flex items-center justify-center gap-2">
-                      {item.status === 'published' && (
-                        <a href={`/guide`} target="_blank" rel="noopener noreferrer"
-                          className="text-xs font-semibold flex items-center gap-1 hover:underline" style={{ color: BRAND.navy }}>
-                          <Eye size={12} /> View
-                        </a>
-                      )}
-                      <button onClick={() => openEdit(item.id)}
-                        className="text-xs font-semibold flex items-center gap-1 hover:underline"
-                        style={{ color: BRAND.orange }}>
-                        <Edit3 size={12} /> Edit
+              ) : filtered.map((item) => {
+                const tc = typeConfig[item.type] || typeConfig.page;
+                return (
+                  <tr key={item.id} className="hover:bg-gray-50 transition">
+                    <td className="px-4 py-3.5">
+                      <div className="font-medium text-gray-800">{item.title}</div>
+                      <div className="text-[11px] text-gray-400 mt-0.5">/{item.slug}</div>
+                    </td>
+                    <td className="px-4 py-3.5 text-center">
+                      <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold px-2.5 py-1 rounded-full"
+                        style={{ background: tc.bg, color: tc.color }}>
+                        {tc.icon} {item.type}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3.5 text-center">
+                      <button onClick={() => handleToggleStatus(item.id)}
+                        className={`text-[10px] font-semibold px-2.5 py-1 rounded-full cursor-pointer transition hover:opacity-80 ${
+                          item.status === 'published'
+                            ? 'bg-green-500/10 text-green-600'
+                            : 'bg-yellow-500/10 text-yellow-600'
+                        }`}>
+                        {item.status === 'published' ? 'Published' : 'Draft'}
                       </button>
-                      {deleting === item.id ? (
-                        <span className="flex items-center gap-1 text-[11px]">
-                          <button onClick={() => confirmDelete(item.id)} className="text-red-600 font-bold hover:underline">Yes</button>
-                          <span className="text-gray-400">/</span>
-                          <button onClick={() => setDeleting(null)} className="text-gray-500 font-bold hover:underline">No</button>
-                        </span>
-                      ) : (
-                        <button onClick={() => handleDelete(item.id)}
-                          className="text-xs font-semibold flex items-center gap-1 hover:underline"
-                          style={{ color: '#f85149' }}>
-                          <Trash2 size={12} /> Delete
+                    </td>
+                    <td className="px-4 py-3.5 text-xs text-gray-600">
+                      <div className="flex items-center gap-1">
+                        <Clock size={12} className="text-gray-400" />
+                        {new Date(item.updated_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3.5 text-center">
+                      <div className="flex items-center justify-center gap-1">
+                        <button onClick={() => setPreviewItem(item)}
+                          className="p-1.5 rounded-lg transition hover:bg-gray-100" style={{ color: BRAND.navy }}>
+                          <Eye size={15} />
                         </button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                        <button onClick={() => openEdit(item.id)}
+                          className="p-1.5 rounded-lg transition hover:bg-gray-100" style={{ color: BRAND.orange }}>
+                          <Edit3 size={15} />
+                        </button>
+                        {deleting === item.id ? (
+                          <span className="flex items-center gap-1">
+                            <button onClick={() => confirmDelete(item.id)}
+                              className="text-[10px] font-bold px-2 py-1 rounded bg-red-500 text-white hover:bg-red-600 transition">
+                              Yes
+                            </button>
+                            <button onClick={() => setDeleting(null)}
+                              className="text-[10px] font-bold px-2 py-1 rounded bg-gray-200 text-gray-600 hover:bg-gray-300 transition">
+                              No
+                            </button>
+                          </span>
+                        ) : (
+                          <button onClick={() => setDeleting(item.id)}
+                            className="p-1.5 rounded-lg transition hover:bg-red-50 text-red-500">
+                            <Trash2 size={15} />
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -270,6 +291,35 @@ export default function AdminContentPage() {
       <div className="mt-4 text-xs text-gray-400 text-right">
         {filtered.length} page{filtered.length !== 1 ? 's' : ''} total
       </div>
+
+      {previewItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.5)' }}
+          onClick={() => setPreviewItem(null)}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] overflow-hidden flex flex-col"
+            onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+              <div>
+                <h2 className="text-lg font-bold text-gray-900">{previewItem.title}</h2>
+                <p className="text-xs text-gray-500">/{previewItem.slug} &middot; {previewItem.type}</p>
+              </div>
+              <button onClick={() => setPreviewItem(null)} className="p-2 rounded-lg hover:bg-gray-100 transition">
+                <X size={18} className="text-gray-500" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-6">
+              {previewItem.meta_description && (
+                <p className="text-sm text-gray-500 mb-4 italic">{previewItem.meta_description}</p>
+              )}
+              <div className="prose prose-sm max-w-none"
+                dangerouslySetInnerHTML={{ __html: previewItem.content || '<p class="text-gray-400">No content</p>' }} />
+            </div>
+            <div className="flex items-center justify-between px-6 py-3 border-t border-gray-100 text-xs text-gray-400">
+              <span>By {previewItem.created_by_name || 'Unknown'}</span>
+              <span>Updated {new Date(previewItem.updated_at).toLocaleDateString()}</span>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.4)' }}

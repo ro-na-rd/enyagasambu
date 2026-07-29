@@ -301,8 +301,8 @@ export default function AdminConnectsPage() {
               <tr className="border-b border-gray-200" style={{ background: '#f0f2f5' }}>
                 <th className="text-left px-4 py-3 text-gray-500 text-xs uppercase font-semibold tracking-wider">#</th>
                 <th className="text-left px-4 py-3 text-gray-500 text-xs uppercase font-semibold tracking-wider">Listing</th>
-                <th className="text-left px-4 py-3 text-gray-500 text-xs uppercase font-semibold tracking-wider">Buyer</th>
-                <th className="text-left px-4 py-3 text-gray-500 text-xs uppercase font-semibold tracking-wider">Seller</th>
+                <th className="text-left px-4 py-3 text-gray-500 text-xs uppercase font-semibold tracking-wider">Seller (Posted)</th>
+                <th className="text-left px-4 py-3 text-gray-500 text-xs uppercase font-semibold tracking-wider">Buyer (Viewed)</th>
                 <th className="text-center px-4 py-3 text-gray-500 text-xs uppercase font-semibold tracking-wider">Type</th>
                 <th className="text-center px-4 py-3 text-gray-500 text-xs uppercase font-semibold tracking-wider">Payment</th>
                 <th className="text-center px-4 py-3 text-gray-500 text-xs uppercase font-semibold tracking-wider">Listing Status</th>
@@ -335,6 +335,15 @@ export default function AdminConnectsPage() {
                     </td>
                     <td className="px-4 py-3.5">
                       <div className="flex items-center gap-2">
+                        <Store size={11} className="text-amber-500 shrink-0" />
+                        <div>
+                          <p className="font-medium text-gray-800 text-xs">{c.seller_name}</p>
+                          <p className="text-[11px] text-gray-600">{c.seller_phone}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3.5">
+                      <div className="flex items-center gap-2">
                         <div className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-[10px] font-bold shrink-0"
                           style={{ background: `linear-gradient(135deg, ${NAVY}, #0f1e42)` }}>
                           {(c.buyer_name || 'G').charAt(0).toUpperCase()}
@@ -342,15 +351,6 @@ export default function AdminConnectsPage() {
                         <div>
                           <p className="font-medium text-gray-800 text-xs">{c.buyer_name || 'Guest'}</p>
                           <p className="text-[11px] text-gray-600">{c.buyer_phone}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3.5">
-                      <div className="flex items-center gap-2">
-                        <Store size={11} className="text-amber-500 shrink-0" />
-                        <div>
-                          <p className="font-medium text-gray-800 text-xs">{c.seller_name}</p>
-                          <p className="text-[11px] text-gray-600">{c.seller_phone}</p>
                         </div>
                       </div>
                     </td>
@@ -469,25 +469,25 @@ export default function AdminConnectsPage() {
 
               <div className="rounded-xl p-4" style={{ background: '#f6f8fa', border: '1px solid #e1e4e8' }}>
                 <div className="flex items-center gap-2 mb-2">
-                  <User size={14} style={{ color: NAVY }} />
-                  <span className="text-xs font-bold text-gray-700 uppercase tracking-wider">Buyer</span>
-                </div>
-                <p className="text-sm font-semibold text-gray-900">{detailModal.buyer_name || 'Guest User'}</p>
-                <p className="text-xs text-gray-600 mt-0.5">{detailModal.buyer_phone}</p>
-                {detailModal.buyer_email && (
-                  <p className="text-xs text-gray-600">{detailModal.buyer_email}</p>
-                )}
-              </div>
-
-              <div className="rounded-xl p-4" style={{ background: '#f6f8fa', border: '1px solid #e1e4e8' }}>
-                <div className="flex items-center gap-2 mb-2">
                   <Store size={14} style={{ color: '#d29922' }} />
-                  <span className="text-xs font-bold text-gray-700 uppercase tracking-wider">Seller</span>
+                  <span className="text-xs font-bold text-gray-700 uppercase tracking-wider">Seller (Posted)</span>
                 </div>
                 <p className="text-sm font-semibold text-gray-900">{detailModal.seller_name}</p>
                 <p className="text-xs text-gray-600 mt-0.5">{detailModal.seller_phone}</p>
                 {detailModal.seller_email && (
                   <p className="text-xs text-gray-600">{detailModal.seller_email}</p>
+                )}
+              </div>
+
+              <div className="rounded-xl p-4" style={{ background: '#f6f8fa', border: '1px solid #e1e4e8' }}>
+                <div className="flex items-center gap-2 mb-2">
+                  <User size={14} style={{ color: NAVY }} />
+                  <span className="text-xs font-bold text-gray-700 uppercase tracking-wider">Buyer (Viewed)</span>
+                </div>
+                <p className="text-sm font-semibold text-gray-900">{detailModal.buyer_name || 'Guest User'}</p>
+                <p className="text-xs text-gray-600 mt-0.5">{detailModal.buyer_phone}</p>
+                {detailModal.buyer_email && (
+                  <p className="text-xs text-gray-600">{detailModal.buyer_email}</p>
                 )}
               </div>
 

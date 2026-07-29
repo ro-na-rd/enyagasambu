@@ -20,6 +20,7 @@ services:
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+      MINIO_VOLUMES: /data
     ports:
       - "9000:9000"
       - "9001:9001"

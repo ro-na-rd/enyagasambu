@@ -5,6 +5,7 @@ import api from '@/lib/api';
 import Link from 'next/link';
 import { useLanguage } from '@/context/LanguageContext';
 import { ArrowLeft, Star, ChevronLeft, ChevronRight, Package, MapPin, Phone, Loader2, X, MessageCircle, Clock, CheckCircle, AlertCircle, RefreshCw, Heart, Send } from '@/lib/icons';
+import SimulationBanner from '@/components/SimulationBanner';
 
 interface ListingDetail {
   id: number;
@@ -146,6 +147,8 @@ export default function ListingDetailPage({ params }: { params: Promise<{ id: st
 
   const handleInitiatePayment = async () => {
     if (!phone.trim()) { setContactError('Please enter your phone number'); return; }
+    const digits = phone.trim().replace(/\D/g, '');
+    if (digits.length < 10) { setContactError('Please enter the full phone number (at least 10 digits)'); return; }
     setWorking(true); setContactError(''); setContactSuccess('');
     try {
       const { data } = await api.post('/contact-access/initiate', { listingId: parseInt(id), phone: phone.trim() });
@@ -610,12 +613,25 @@ export default function ListingDetailPage({ params }: { params: Promise<{ id: st
                           className="text-gray-500 text-sm py-2 mt-3 hover:underline">Cancel</button>
                       </div>
                     )}
+                    <SimulationBanner
+                      referenceId={referenceId}
+                      paymentType="contact"
+                      onSuccess={() => {
+                        if (pollRef.current) clearInterval(pollRef.current);
+                        startPaymentPolling(referenceId);
+                      }}
+                      onFailure={() => {
+                        if (pollRef.current) clearInterval(pollRef.current);
+                        setContactError('Payment failed. Please try again.');
+                        setContactStep('enter_phone');
+                      }}
+                    />
 
                     {/* Step 4: Enter OTP */}
                     {contactStep === 'otp_entry' && (
                       <div>
-                        <p className="text-sm font-semibold text-gray-800 mb-1">Enter Verification Code</p>
-                        <p className="text-xs text-gray-500 mb-3">Enter the 6-digit code sent to <strong>{phone}</strong>.</p>
+                        <p className="text-sm font-semibold text-gray-800 mb-1">Verify Your Phone</p>
+                        <p className="text-xs text-gray-500 mb-3">Enter the 6-digit code sent to <strong>{phone}</strong> as SMS</p>
                         <input type="text" value={otpCode} onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
                           placeholder="000000"
                           maxLength={6}
@@ -643,6 +659,7 @@ export default function ListingDetailPage({ params }: { params: Promise<{ id: st
                           className="w-full text-gray-500 text-sm py-2 mt-1 hover:underline">Cancel</button>
                       </div>
                     )}
+                    <SimulationBanner referenceId={referenceId} paymentType="contact" />
                   </div>
                 )}
               </div>

@@ -319,7 +319,7 @@ export default function Navbar() {
       </nav>
 
       {/* ── CATEGORY PILLS ── */}
-      <div className="px-5 py-1.5 flex gap-2 flex-wrap" style={{ background: '#0f1e42' }}>
+      <div className="px-5 py-1.5 flex gap-2 flex-wrap" style={{ background: '#0f1e42', borderTop: '1px solid rgba(255,255,255,0.25)' }}>
         {CAT_LINKS.map(({ label, href, disabled }, i) => (
           disabled ? (
             <span

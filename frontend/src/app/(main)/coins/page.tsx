@@ -4,6 +4,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
 import { Coins, Smartphone } from '@/lib/icons';
+import SimulationBanner from '@/components/SimulationBanner';
 
 interface Package { id: number; coins: number; price_rwf: number; label: string; }
 interface Transaction { id: number; amount: number; type: string; created_at: string; }
@@ -18,6 +19,7 @@ export default function CoinsPage() {
   const [promoCode, setPromoCode] = useState('');
   const [promoMsg, setPromoMsg] = useState('');
   const [applyingPromo, setApplyingPromo] = useState(false);
+  const [momoReferenceId, setMomoReferenceId] = useState('');
 
   // MoMo payment state
   const [selectedPkg, setSelectedPkg] = useState<Package | null>(null);
@@ -53,6 +55,7 @@ export default function CoinsPage() {
     if (pollRef.current) clearInterval(pollRef.current);
     setPayStep('idle');
     setSelectedPkg(null);
+    setMomoReferenceId('');
   };
 
   const handlePay = async () => {
@@ -66,6 +69,7 @@ export default function CoinsPage() {
         phone: momoPhone.trim(),
       });
 
+      setMomoReferenceId(data.referenceId);
       setPayStep('waiting');
       setMomoMsg('Check your phone — approve the MoMo prompt.');
 
@@ -199,6 +203,22 @@ export default function CoinsPage() {
                   <p className="text-xs text-gray-400">Checking status every 5 seconds…</p>
                   <button onClick={cancelPayment} className="text-sm text-gray-400 hover:underline">Cancel</button>
                 </div>
+                <SimulationBanner
+                  referenceId={momoReferenceId}
+                  paymentType="contact"
+                  onSuccess={() => {
+                    if (pollRef.current) clearInterval(pollRef.current);
+                    setPayStep('success');
+                    setMomoMsg('Payment confirmed!');
+                    refreshUser();
+                    loadBalance();
+                  }}
+                  onFailure={() => {
+                    if (pollRef.current) clearInterval(pollRef.current);
+                    setPayStep('failed');
+                    setMomoMsg('Payment failed.');
+                  }}
+                />
               </>
             )}
 

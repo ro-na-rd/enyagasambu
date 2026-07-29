@@ -1,8 +1,9 @@
 'use client';
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import api from '@/lib/api';
 import { FileText, Smartphone, Package } from '@/lib/icons';
+import SimulationBanner from '@/components/SimulationBanner';
 
 interface Listing {
   id: number;
@@ -43,6 +44,10 @@ export default function MyListingsPage() {
 
   const [confirmDelete, setConfirmDelete] = useState<number | null>(null);
 
+  const [repostInfo, setRepostInfo] = useState<{ listingId: number; referenceId: string } | null>(null);
+  const [repostStep, setRepostStep] = useState<'idle' | 'pay' | 'waiting'>('idle');
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
   const authHeaders = useCallback(() => ({ headers: { Authorization: `Bearer ${token}` } }), [token]);
 
   useEffect(() => {
@@ -62,6 +67,8 @@ export default function MyListingsPage() {
 
   const handleRequestOtp = async () => {
     if (!phone.trim()) { setError('Please enter your phone number'); return; }
+    const digits = phone.trim().replace(/\D/g, '');
+    if (digits.length < 10) { setError('Please enter the full phone number (at least 10 digits)'); return; }
     setError(''); setLoading(true);
     try {
       await api.post('/listings/phone-access/request', { phone: phone.trim() });
@@ -136,15 +143,50 @@ export default function MyListingsPage() {
     }
   };
 
+  const REPOST_COST = 400;
+
   const handleRepost = async (id: number) => {
+    setError('');
     try {
       const { data } = await api.post(`/listings/phone-access/${id}/repost`, {}, authHeaders());
-      setListings(prev => prev.map(l => l.id === id ? { ...l, status: 'active', expires_at: data.expires_at } : l));
+      setRepostInfo({ listingId: id, referenceId: data.referenceId });
+      setRepostStep('pay');
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
-      setError(msg || 'Failed to repost');
+      setError(msg || 'Failed to initiate repost payment');
     }
   };
+
+  const handleRepostPaid = () => {
+    if (!repostInfo) return;
+    const { listingId, referenceId } = repostInfo;
+    setRepostStep('waiting');
+    pollRef.current = setInterval(async () => {
+      try {
+        const { data } = await api.get(`/listings/phone-access/repost-check/${referenceId}`, authHeaders());
+        if (data.status === 'successful') {
+          if (pollRef.current) clearInterval(pollRef.current);
+          setListings(prev => prev.map(l => l.id === listingId ? { ...l, status: 'active', expires_at: data.expires_at } : l));
+          setRepostStep('idle');
+          setRepostInfo(null);
+        } else if (data.status === 'failed') {
+          if (pollRef.current) clearInterval(pollRef.current);
+          setError(data.message || 'Payment failed');
+          setRepostStep('idle');
+          setRepostInfo(null);
+        }
+      } catch {
+        if (pollRef.current) clearInterval(pollRef.current);
+        setError('Failed to check payment status');
+        setRepostStep('idle');
+        setRepostInfo(null);
+      }
+    }, 3000);
+  };
+
+  useEffect(() => {
+    return () => { if (pollRef.current) clearInterval(pollRef.current); };
+  }, []);
 
   if (step === 'phone') {
     return (
@@ -238,6 +280,8 @@ export default function MyListingsPage() {
 
       {error && <div className="bg-red-50 text-red-700 text-sm rounded-lg px-4 py-3 mb-4">{error}</div>}
 
+      <SimulationBanner referenceId={repostInfo?.referenceId} />
+
       {listings.length === 0 ? (
         <div className="text-center py-20 text-gray-500">
           <p className="text-5xl mb-4"><FileText size={48} /></p>
@@ -294,6 +338,38 @@ export default function MyListingsPage() {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {repostStep !== 'idle' && repostInfo && (
+        <div className="fixed inset-0 bg-black/60 z-[9999] flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl w-full max-w-sm p-8 relative text-center">
+            <h2 className="text-xl font-bold text-gray-900 mb-2">Repost Listing</h2>
+            {repostStep === 'pay' && (
+              <>
+                <p className="text-gray-500 text-sm mb-4">
+                  Pay {REPOST_COST} RWF via MTN MoMo to repost this listing
+                </p>
+                <div className="bg-orange-50 rounded-lg px-4 py-3 text-sm text-gray-700 mb-4">
+                  <p className="font-medium">{phone}</p>
+                  <p className="text-xs text-gray-500 mt-1">A payment request has been sent to your phone. Approve on MoMo then click below.</p>
+                </div>
+                <button onClick={handleRepostPaid} className="w-full bg-[#E85D04] text-white font-semibold py-3 rounded-lg hover:bg-[#e05d00] transition text-sm">
+                  I Have Paid
+                </button>
+                <button onClick={() => { setRepostStep('idle'); setRepostInfo(null); if (pollRef.current) clearInterval(pollRef.current); }} className="w-full text-gray-500 text-sm py-2 mt-2 hover:underline">
+                  Cancel
+                </button>
+              </>
+            )}
+            {repostStep === 'waiting' && (
+              <div className="py-6">
+                <div className="w-12 h-12 border-4 border-gray-200 border-t-[#E85D04] rounded-full animate-spin mx-auto mb-4" />
+                <p className="text-gray-600 text-sm">Waiting for payment confirmation...</p>
+                <p className="text-gray-400 text-xs mt-2">Check your phone and approve the MoMo prompt</p>
+              </div>
+            )}
+          </div>
         </div>
       )}
 

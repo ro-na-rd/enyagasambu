@@ -1,5 +1,7 @@
 const axios = require('axios');
 
+const SIMULATION_MODE = process.env.PAYMENT_SIMULATION === 'true';
+
 // Rwanda-specific sandbox confirmed from API portal
 const COLLECTION_BASE  = process.env.MOMO_ENV === 'production'
   ? 'https://proxy.momoapi.mtn.com'
@@ -17,6 +19,9 @@ const API_KEY          = process.env.MOMO_API_KEY;
 const CURRENCY = 'RWF';
 const TARGET_ENV = process.env.MOMO_ENV === 'production' ? 'mtnrwanda' : 'sandbox';
 
+// In-memory store for simulated payments (referenceId -> status)
+const simulatedPayments = new Map();
+
 async function getAccessToken() {
   const credentials = Buffer.from(`${USER_ID}:${API_KEY}`).toString('base64');
   const { data } = await axios.post(
@@ -33,6 +38,18 @@ async function getAccessToken() {
 }
 
 async function requestToPay({ referenceId, amount, payerPhone, payerMessage, payeeNote }) {
+  // Simulation mode: store payment as pending, no real API call
+  if (SIMULATION_MODE) {
+    simulatedPayments.set(referenceId, {
+      status: 'pending',
+      amount,
+      payerPhone,
+      createdAt: Date.now(),
+    });
+    console.log(`[SIMULATION] Payment request stored: ${referenceId} (${amount} RWF to ${payerPhone})`);
+    return referenceId;
+  }
+
   const token = await getAccessToken();
   await axios.post(
     `${COLLECTION_BASE}/collection/v1_0/requesttopay`,
@@ -58,6 +75,16 @@ async function requestToPay({ referenceId, amount, payerPhone, payerMessage, pay
 }
 
 async function getPaymentStatus(referenceId) {
+  // Simulation mode: return simulated status
+  if (SIMULATION_MODE) {
+    const payment = simulatedPayments.get(referenceId);
+    if (!payment) {
+      return { status: 'NOT_FOUND', reason: 'Simulated payment not found' };
+    }
+    console.log(`[SIMULATION] Payment status check: ${referenceId} -> ${payment.status}`);
+    return { status: payment.status };
+  }
+
   const token = await getAccessToken();
   const { data } = await axios.get(
     `${COLLECTION_BASE}/collection/v1_0/requesttopay/${referenceId}`,
@@ -70,6 +97,30 @@ async function getPaymentStatus(referenceId) {
     }
   );
   return data;
+}
+
+// Simulation helpers
+function simulatePaymentSuccess(referenceId) {
+  const payment = simulatedPayments.get(referenceId);
+  if (!payment) return false;
+  payment.status = 'SUCCESSFUL';
+  simulatedPayments.set(referenceId, payment);
+  console.log(`[SIMULATION] Payment marked as successful: ${referenceId}`);
+  return true;
+}
+
+function simulatePaymentFailure(referenceId) {
+  const payment = simulatedPayments.get(referenceId);
+  if (!payment) return false;
+  payment.status = 'FAILED';
+  payment.reason = 'Simulated payment failure';
+  simulatedPayments.set(referenceId, payment);
+  console.log(`[SIMULATION] Payment marked as failed: ${referenceId}`);
+  return true;
+}
+
+function isSimulationMode() {
+  return SIMULATION_MODE;
 }
 
 // Used once during setup to create sandbox API user
@@ -101,4 +152,12 @@ async function getSandboxApiKey(uuid) {
   return { status, data };
 }
 
-module.exports = { requestToPay, getPaymentStatus, createSandboxUser, getSandboxApiKey };
+module.exports = {
+  requestToPay,
+  getPaymentStatus,
+  createSandboxUser,
+  getSandboxApiKey,
+  simulatePaymentSuccess,
+  simulatePaymentFailure,
+  isSimulationMode,
+};
