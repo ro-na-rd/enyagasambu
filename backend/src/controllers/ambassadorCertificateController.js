@@ -8,11 +8,19 @@ const REFERRAL_REWARD = 200;
 
 exports.getMyCertificate = async (req, res) => {
   try {
-    let [rows] = await pool.query(
-      'SELECT id, photo_url, cert_no, status, payment_ref, amount_rwf, issued_date, valid_until, created_at, updated_at FROM ambassador_certificates WHERE user_id = ? ORDER BY created_at DESC LIMIT 1',
+    const [[userRow]] = await pool.query(
+      'SELECT id, name, email, phone, coins, created_at AS registered_date FROM users WHERE id = ?',
       [req.user.id]
     );
 
+    let [rows] = await pool.query(
+      `SELECT ac.id, ac.photo_url, ac.cert_no, ac.status, ac.payment_ref, ac.amount_rwf,
+              ac.issued_date, ac.valid_until, ac.created_at, ac.updated_at
+       FROM ambassador_certificates ac WHERE ac.user_id = ? ORDER BY ac.created_at DESC LIMIT 1`,
+      [req.user.id]
+    );
+
+    let cert;
     if (rows.length === 0) {
       const [result] = await pool.query(
         'INSERT INTO ambassador_certificates (user_id, status) VALUES (?, ?)',
@@ -22,10 +30,20 @@ exports.getMyCertificate = async (req, res) => {
         'SELECT id, photo_url, cert_no, status, payment_ref, amount_rwf, issued_date, valid_until, created_at, updated_at FROM ambassador_certificates WHERE id = ?',
         [result.insertId]
       );
-      return res.json({ certificate: newCert });
+      cert = newCert;
+    } else {
+      cert = rows[0];
     }
 
-    return res.json({ certificate: rows[0] });
+    return res.json({
+      certificate: {
+        ...cert,
+        ambassador_name: userRow?.name || '',
+        ambassador_email: userRow?.email || '',
+        ambassador_phone: userRow?.phone || '',
+        ambassador_photo: cert.photo_url || null,
+      },
+    });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ message: 'Server error' });

@@ -2,19 +2,109 @@
 import { useEffect, useState, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import api from '@/lib/api';
-import { Award, Check } from '@/lib/icons';
+import { Award, Check, Lock, Download, Upload, Camera } from '@/lib/icons';
 
 const NAVY = '#0f1e42';
 const ORG = '#E85D04';
 
+function CertPreview({ name, photo, certNo, issued, validUntil }: { name: string; photo?: string | null; certNo?: string; issued: string; validUntil: string }) {
+  return (
+    <div className="relative bg-white rounded-xl overflow-hidden border border-gray-200 select-none"
+      style={{ userSelect: 'none', WebkitUserSelect: 'none' }}
+      onContextMenu={e => e.preventDefault()}>
+      {['tl','tr','bl','br'].map(p => {
+        const W=90,H=90; const pts:Record<string,string>={tl:`0,0 ${W},0 0,${H}`,tr:`${W},0 ${W},${H} 0,0`,bl:`0,0 0,${H} ${W},${H}`,br:`${W},0 0,${H} ${W},${H}`};
+        const css:Record<string,React.CSSProperties>={tl:{top:0,left:0},tr:{top:0,right:0},bl:{bottom:0,left:0},br:{bottom:0,right:0}};
+        return (
+          <svg key={p} width={W} height={H} viewBox={`0 0 ${W} ${H}`} style={{position:'absolute',zIndex:1,pointerEvents:'none',...css[p]}}>
+            <polygon points={pts[p]} fill={NAVY}/>
+            {[[W/2-20,12],[W/2,18],[W/2+10,30],[18,H/2-5],[28,H/2+8],[40,H/2-2]].map(([cx,cy],i)=><circle key={i} cx={cx} cy={cy} r="2.5" fill="rgba(255,255,255,0.35)"/>)}
+          </svg>
+        );
+      })}
+      <div className="absolute top-4 bottom-4 left-5 w-0.5 opacity-30" style={{background:`linear-gradient(180deg,${ORG},transparent 40%,transparent 60%,${ORG})`}}/>
+      <div className="absolute top-4 bottom-4 right-5 w-0.5 opacity-30" style={{background:`linear-gradient(180deg,${ORG},transparent 40%,transparent 60%,${ORG})`}}/>
+      <div className="relative z-10 p-8">
+        <div className="flex items-center gap-4 mb-6">
+          <div className="w-14 h-14 rounded-full flex items-center justify-center border-2" style={{borderColor:ORG,background:NAVY}}>
+            <span className="text-white text-2xl font-black">E</span>
+          </div>
+          <div>
+            <p className="font-extrabold text-lg leading-tight" style={{color:NAVY}}>E-NYAGASAMBU</p>
+            <p className="font-bold tracking-widest" style={{fontSize:10,color:ORG}}>DIGITAL MARKET PLACE</p>
+          </div>
+        </div>
+        <div className="text-center mb-6">
+          {photo && (
+            <div className="mb-4 flex justify-center">
+              <div className="w-24 h-24 rounded-full overflow-hidden border-4 shadow-lg" style={{borderColor:ORG}}>
+                <img src={photo} alt={name} className="w-full h-full object-cover" />
+              </div>
+            </div>
+          )}
+          <p className="text-xs text-gray-400 uppercase tracking-widest mb-1">Certificate of Appointment</p>
+          <p className="text-4xl font-extrabold" style={{color:NAVY}}>{name}</p>
+          <div className="w-32 h-0.5 mx-auto my-4" style={{background:`linear-gradient(90deg,transparent,${ORG},transparent)`}}/>
+          <p className="text-2xl font-black tracking-wide" style={{color:ORG}}>BRAND AMBASSADOR</p>
+          <p className="text-sm text-gray-500 mt-1">of E-Nyagasambu Digital Marketplace</p>
+        </div>
+        <div className="border-t border-dashed border-gray-200 pt-4 grid grid-cols-3 gap-4 text-center text-xs">
+          <div>
+            <p className="text-gray-400 mb-0.5">Certificate No.</p>
+            <p className="font-bold" style={{color:NAVY}}>{certNo || '—'}</p>
+          </div>
+          <div>
+            <p className="text-gray-400 mb-0.5">Issue Date</p>
+            <p className="font-bold" style={{color:NAVY}}>{issued}</p>
+          </div>
+          <div>
+            <p className="text-gray-400 mb-0.5">Valid Until</p>
+            <p className="font-bold" style={{color:NAVY}}>{validUntil}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CertWatermark() {
+  return (
+    <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-4 pointer-events-none"
+      style={{
+        background: 'rgba(255,255,255,0.55)',
+        backdropFilter: 'blur(2px)',
+        WebkitBackdropFilter: 'blur(2px)',
+      }}>
+      <div className="text-center rotate-[-25deg] opacity-60 select-none" style={{userSelect:'none',WebkitUserSelect:'none'}}>
+        {Array.from({length:8}).map((_,i)=>(
+          <p key={i} className="text-lg font-black tracking-[0.3em] text-gray-300" style={{lineHeight:2.2}}>PREVIEW</p>
+        ))}
+      </div>
+      <div className="absolute inset-0 flex items-center justify-center">
+        <div className="bg-black/60 backdrop-blur-sm rounded-2xl px-8 py-5 text-center shadow-2xl pointer-events-auto select-none"
+          style={{userSelect:'none',WebkitUserSelect:'none'}}>
+          <Lock size={36} className="mx-auto mb-2 text-white/80" />
+          <p className="text-white font-extrabold text-lg">Preview Only</p>
+          <p className="text-white/60 text-sm mt-1">Pay 2,000 RWF to unlock & download</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function AmbassadorCertificatePage() {
   const { user } = useAuth();
-  const [cert, setCert] = useState<{ cert_no?: string; status?: string; issued_date?: string; valid_until?: string } | null>(null);
+  const [cert, setCert] = useState<{
+    cert_no?: string; status?: string; issued_date?: string; valid_until?: string;
+    ambassador_name?: string; ambassador_photo?: string | null; photo_url?: string | null;
+  } | null>(null);
   const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
   const [phone, setPhone] = useState('');
   const [paying, setPaying] = useState(false);
   const [msg, setMsg] = useState('');
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   const fetchCert = async () => {
     try {
@@ -31,6 +121,25 @@ export default function AmbassadorCertificatePage() {
     return () => { if (pollRef.current) clearInterval(pollRef.current); };
   }, []);
 
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    setMsg('');
+    try {
+      const formData = new FormData();
+      formData.append('photo', file);
+      await api.post('/ambassador/certificate/upload-photo', formData);
+      setMsg('Photo uploaded successfully!');
+      await fetchCert();
+    } catch (err: unknown) {
+      setMsg((err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed to upload photo');
+    } finally {
+      setUploading(false);
+      if (fileRef.current) fileRef.current.value = '';
+    }
+  };
+
   const handlePay = async () => {
     if (!phone) return setMsg('Enter your MoMo phone number');
     setPaying(true);
@@ -41,9 +150,10 @@ export default function AmbassadorCertificatePage() {
       pollRef.current = setInterval(async () => {
         try {
           const { data: statusData } = await api.get(`/ambassador/certificate/payment-status/${data.referenceId}`);
-          if (statusData.status === 'paid') {
+          if (statusData.status === 'generated' || statusData.status === 'paid') {
             if (pollRef.current) clearInterval(pollRef.current);
-            setMsg('Payment successful! Waiting for admin to generate your certificate.');
+            if (statusData.status === 'generated') setMsg('Certificate is ready!');
+            else setMsg('Payment successful! Waiting for admin to generate your certificate.');
             await fetchCert();
             setPaying(false);
           } else if (statusData.status === 'failed') {
@@ -67,45 +177,81 @@ export default function AmbassadorCertificatePage() {
     ? new Date(cert.valid_until).toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' })
     : new Date(certYear + 1, new Date().getMonth(), new Date().getDate()).toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' });
 
+  const ambassadorName = cert?.ambassador_name || user?.name || 'Your Name';
+  const ambassadorPhoto = cert?.ambassador_photo || cert?.photo_url || null;
+
   if (loading) return (
     <div className="p-8 text-center"><p className="text-gray-400 animate-pulse">Loading...</p></div>
   );
 
-  const status = cert?.status || 'none';
+  const status = cert?.status || 'pending';
+  const isGenerated = status === 'generated';
+  const hasPhoto = !!ambassadorPhoto;
 
   return (
-    <div className="p-4 lg:p-8 max-w-3xl mx-auto">
+    <div className="p-4 lg:p-8 max-w-3xl mx-auto" onContextMenu={e => { if (!isGenerated) e.preventDefault(); }}>
       <h1 className="text-2xl font-bold text-gray-900 mb-1">My Certificate</h1>
-      <p className="text-sm text-gray-500 mb-6">Pay 2,000 RWF and receive your official ambassador certificate. Your name will be taken from your registration.</p>
+      <p className="text-sm text-gray-500 mb-6">
+        {isGenerated
+          ? 'Your official ambassador certificate is ready.'
+          : 'Upload your photo, then pay 2,000 RWF to unlock and download your official ambassador certificate.'}
+      </p>
 
       {msg && (
-        <div className="bg-blue-50 border border-blue-200 text-blue-800 text-sm rounded-lg px-4 py-3 mb-6">{msg}</div>
+        <div className={`text-sm rounded-lg px-4 py-3 mb-6 border ${
+          msg.includes('failed') || msg.includes('Failed')
+            ? 'bg-red-50 border-red-200 text-red-800'
+            : msg.includes('ready')
+            ? 'bg-green-50 border-green-200 text-green-800'
+            : 'bg-blue-50 border-blue-200 text-blue-800'
+        }`}>{msg}</div>
       )}
 
-      {/* Status indicator */}
-      <div className="flex items-center gap-2 mb-6 text-xs font-semibold">
-        {['pay', 'certificate'].map((s, i) => {
-          const steps = ['pay', 'certificate'];
-          const curIdx = status === 'generated' ? 1 : (status === 'paid' ? 1 : (status === 'pending' || status === 'none' ? 0 : 0));
-          const done = i <= curIdx;
-          return (
-            <div key={s} className="flex items-center gap-2">
-              <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${done ? 'text-white' : 'text-gray-400 bg-gray-200'}`}
-                style={done ? { background: s === 'certificate' && status === 'generated' ? ORG : NAVY } : {}}>
-                {done ? <Check size={12} /> : i + 1}
-              </span>
-              <span className={done ? 'text-gray-800' : 'text-gray-400'}>{s === 'pay' ? 'Pay' : 'Certificate'}</span>
-              {i < steps.length - 1 && <span className="text-gray-300 mx-1">—</span>}
-            </div>
-          );
-        })}
+      {/* Certificate Preview — always visible */}
+      <div className="relative mb-6">
+        <CertPreview
+          name={ambassadorName}
+          photo={ambassadorPhoto}
+          certNo={cert?.cert_no}
+          issued={issuedDisplay}
+          validUntil={validUntilDisplay}
+        />
+        {!isGenerated && <CertWatermark />}
       </div>
 
-      {/* Step 1: Pay */}
-      {status !== 'generated' && (
+      {/* Photo upload section (before payment) */}
+      {!isGenerated && status !== 'paid' && (
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 mb-4">
           <h2 className="text-sm font-bold uppercase tracking-wider text-gray-800 mb-4">
-            {status === 'paid' ? 'Payment Received' : '1. Pay 2,000 RWF'}
+            {hasPhoto ? 'Update Your Photo' : 'Upload Your Photo'}
+          </h2>
+          <p className="text-sm text-gray-600 mb-3">
+            {hasPhoto
+              ? 'You already have a photo. You can replace it or proceed to payment.'
+              : 'Upload a passport-style photo to appear on your certificate.'}
+          </p>
+          <div className="flex items-center gap-3">
+            <input ref={fileRef} type="file" accept="image/*" onChange={handlePhotoUpload}
+              className="hidden" />
+            <button onClick={() => fileRef.current?.click()} disabled={uploading}
+              className="text-sm px-5 py-2.5 rounded-lg text-white font-bold transition disabled:opacity-50 flex items-center gap-2"
+              style={{ background: NAVY }}>
+              {uploading ? 'Uploading...' : <><Camera size={16} /> {hasPhoto ? 'Change Photo' : 'Choose Photo'}</>}
+            </button>
+            {hasPhoto && (
+              <span className="text-xs text-green-600 flex items-center gap-1">
+                <Check size={14} /> Photo added
+              </span>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Payment section (hidden if already generated) */}
+      {!isGenerated && (
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 mb-4">
+          <h2 className="text-sm font-bold uppercase tracking-wider text-gray-800 mb-4">
+            {status === 'paid' ? 'Payment Received' : 'Unlock Your Certificate'}
           </h2>
           {status === 'paid' ? (
             <div className="bg-green-50 border border-green-200 text-green-800 text-sm rounded-lg px-4 py-3">
@@ -113,14 +259,14 @@ export default function AmbassadorCertificatePage() {
             </div>
           ) : (
             <>
-              <p className="text-sm text-gray-600 mb-3">Pay via MTN MoMo to get your certificate generated. Your name will be taken from your registration.</p>
+              <p className="text-sm text-gray-600 mb-3">Pay via MTN MoMo to unlock and download your certificate.</p>
               <div className="flex items-center gap-3">
                 <input type="tel" value={phone} onChange={e => setPhone(e.target.value)}
                   placeholder="078xxxxxxx" className="flex-1 border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#E85D04]/20" />
                 <button onClick={handlePay} disabled={paying}
-                  className="text-sm px-6 py-2.5 rounded-lg text-white font-bold transition disabled:opacity-50"
+                  className="text-sm px-6 py-2.5 rounded-lg text-white font-bold transition disabled:opacity-50 flex items-center gap-2"
                   style={{ background: ORG }}>
-                  {paying ? 'Processing...' : 'Pay 2,000 RWF'}
+                  {paying ? 'Processing...' : <><Lock size={14} /> Pay 2,000 RWF</>}
                 </button>
               </div>
             </>
@@ -128,48 +274,17 @@ export default function AmbassadorCertificatePage() {
         </div>
       )}
 
-      {/* Step 2: View Certificate */}
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
-        <h2 className="text-sm font-bold uppercase tracking-wider text-gray-800 mb-4">
-          {status === 'generated' ? '2. Your Certificate' : 'Certificate Preview'}
-        </h2>
-        {status === 'generated' ? (
-          <div>
-            <div className="bg-gray-50 rounded-lg p-6 border border-gray-200" id="cert-print-area">
-              <div className="text-center mb-6">
-                <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-2" style={{ background: NAVY }}>
-                  <span className="text-white text-2xl font-black">E</span>
-                </div>
-                <h3 className="text-lg font-extrabold" style={{ color: NAVY }}>E-NYAGASAMBU</h3>
-                <p className="text-xs" style={{ color: ORG }}>DIGITAL MARKET PLACE</p>
-              </div>
-              <div className="text-center mb-4">
-                <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Certificate of Appointment</p>
-                <p className="text-3xl font-bold" style={{ color: NAVY }}>{user?.name}</p>
-                <div className="w-24 h-1 mx-auto my-3" style={{ background: ORG }}></div>
-                <p className="text-lg font-bold" style={{ color: ORG }}>BRAND AMBASSADOR</p>
-                <p className="text-sm text-gray-500 mt-2">E-Nyagasambu Digital Marketplace</p>
-              </div>
-              <div className="border-t border-gray-200 pt-4 text-center text-xs text-gray-500 space-y-1">
-                <p><strong>Certificate No:</strong> {cert?.cert_no}</p>
-                <p><strong>Name:</strong> {user?.name}</p>
-                <p><strong>Issued:</strong> {issuedDisplay}</p>
-                <p><strong>Valid Until:</strong> {validUntilDisplay}</p>
-              </div>
-            </div>
-            <p className="text-xs text-gray-400 text-center mt-4">Only admin can print this certificate.</p>
-          </div>
-        ) : (
-          <div className="text-center py-8 text-gray-400">
-            <p className="text-4xl mb-3"><Award size={48} className="mx-auto text-gray-300" /></p>
-            <p className="text-sm">
-              {status === 'none' ? 'Pay 2,000 RWF to generate your certificate.' :
-               status === 'paid' ? 'Payment received. Certificate is being prepared.' :
-               'Certificate is being generated.'}
-            </p>
-          </div>
-        )}
-      </div>
+      {/* Download button — only when generated */}
+      {isGenerated && (
+        <div className="text-center">
+          <button onClick={() => window.print()}
+            className="inline-flex items-center gap-2 text-sm font-bold px-6 py-3 rounded-lg text-white transition hover:opacity-90"
+            style={{ background: ORG }}>
+            <Download size={16} /> Download Certificate
+          </button>
+          <p className="text-xs text-gray-400 mt-2">Print or save as PDF</p>
+        </div>
+      )}
     </div>
   );
 }
