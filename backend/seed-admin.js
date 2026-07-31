@@ -12,11 +12,14 @@ async function seed() {
     waitForConnections: true,
   });
 
-  const hash = await bcrypt.hash('admin123', 10);
+  const adminEmail = process.env.ADMIN_EMAIL || 'admin@nmo.com';
+  const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
+  const hash = await bcrypt.hash(adminPassword, 10);
 
   await pool.query(
-    `INSERT IGNORE INTO staff (username, email, password_hash, phone, role) VALUES (?, ?, ?, ?, ?)`,
-    ['admin', 'admin@nmo.com', hash, '250700000000', 'admin']
+    `INSERT INTO staff (username, email, password_hash, phone, role) VALUES (?, ?, ?, ?, ?)
+     ON DUPLICATE KEY UPDATE email = VALUES(email), password_hash = VALUES(password_hash), role = VALUES(role)`,
+    [adminEmail, adminEmail, hash, '250700000000', 'admin']
   );
 
   await pool.query(
@@ -25,7 +28,7 @@ async function seed() {
   );
 
   console.log('Default admin users seeded:');
-  console.log('  admin@nmo.com / admin123  (role: admin)');
+  console.log(`  ${adminEmail} / ${adminPassword}  (role: admin)`);
   console.log('  moderator@nmo.com / admin123  (role: moderator)');
 
   await pool.end();
