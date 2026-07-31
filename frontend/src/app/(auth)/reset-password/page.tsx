@@ -2,7 +2,7 @@
 import { useForm } from 'react-hook-form';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, useSyncExternalStore, Suspense } from 'react';
 import api from '@/lib/api';
 import { Lock, Eye, EyeOff, X, CheckCircle, Loader2, AlertTriangle } from '@/lib/icons';
 
@@ -17,12 +17,11 @@ function ResetPasswordForm() {
   const searchParams = useSearchParams();
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [mounted, setMounted] = useState(false);
+  const mounted = useSyncExternalStore(() => () => {}, () => true, () => false);
   const [showPassword, setShowPassword] = useState(false);
   const [capsLock, setCapsLock] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
     const token = searchParams.get('token');
     if (token) {
       setValue('token', token);

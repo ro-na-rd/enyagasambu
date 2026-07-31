@@ -189,20 +189,6 @@ export default function BrokerCertificatePage() {
   const [busy, setBusy] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('broker_photo');
-      if (saved) {
-        setPhoto(saved);
-        setPhotoStep(false);
-      }
-    }
-  }, []);
-
-  useEffect(() => {
-    if (user && !photoStep) fetchStatus();
-  }, [user, photoStep]);
-
   const uploadPhotoToBackend = async (dataUrl: string) => {
     try {
       const blob = await (await fetch(dataUrl)).blob();
@@ -215,12 +201,28 @@ export default function BrokerCertificatePage() {
   };
 
   const fetchStatus = async () => {
-    try {
-      const { data } = await api.get('/broker/certificate');
-      setCert(data.certificate);
-      setCertStatus(data.certificate?.status || null);
-    } catch { }
+    api.get('/broker/certificate')
+      .then(({ data }) => {
+        setCert(data.certificate);
+        setCertStatus(data.certificate?.status || null);
+      })
+      .catch(() => { });
   };
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const saved = localStorage.getItem('broker_photo');
+    if (saved) {
+      Promise.resolve().then(() => {
+        setPhoto(saved);
+        setPhotoStep(false);
+      });
+    }
+  }, []);
+
+  useEffect(() => {
+    if (user && !photoStep) fetchStatus();
+  }, [user, photoStep]);
 
   const handleSetPhoto = async (url: string) => {
     setPhoto(url);
@@ -331,7 +333,7 @@ export default function BrokerCertificatePage() {
             {!certStatus ? (
               <div className="space-y-4">
                 <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 rounded-lg px-4 py-3 text-sm">
-                  You haven't requested your broker certificate yet.
+                  You haven&apos;t requested your broker certificate yet.
                 </div>
                 <p className="text-sm text-gray-600">
                   Get your official Certified Broker ID card. The printing fee is <strong>2,000 RWF</strong>.

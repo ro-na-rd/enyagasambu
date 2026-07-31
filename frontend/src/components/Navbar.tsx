@@ -24,7 +24,7 @@ function ReadMeModal({ onClose }: { onClose: () => void }) {
         </div>
         <h3 className="font-bold text-sm mb-1" style={{ color: org }}>About E-Nyagasambu</h3>
         <p className="text-sm text-gray-600 mb-4 leading-relaxed">
-          E-Nyagasambu is Rwanda's digital marketplace platform connecting buyers, sellers, brokers
+          E-Nyagasambu is Rwanda&apos;s digital marketplace platform connecting buyers, sellers, brokers
           and ambassadors across all sectors — products, properties, vehicles, services and auctions.
         </p>
 

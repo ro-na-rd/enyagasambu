@@ -56,6 +56,14 @@ function ListingsContent() {
   const [loading, setLoading] = useState(true);
   const perPage = 60;
 
+  const filterKey = [category, type, search, tab].join('|');
+  const [lastFilterKey, setLastFilterKey] = useState(filterKey);
+  if (filterKey !== lastFilterKey) {
+    setLastFilterKey(filterKey);
+    setPage(1);
+    setLoading(true);
+  }
+
   useEffect(() => {
     api.get('/listings/categories').then(({ data }) => setCategories(data.categories));
   }, []);
@@ -63,12 +71,10 @@ function ListingsContent() {
   const currentTab = useMemo(() => TABS.find(t => t.key === tab) || null, [tab]);
 
   useEffect(() => {
-    setPage(1);
-  }, [category, type, search, tab]);
-
-  useEffect(() => {
-    if (currentTab?.key === 'adverts') { setLoading(false); return; }
-    setLoading(true);
+    if (currentTab?.key === 'adverts') {
+      Promise.resolve().then(() => setLoading(false));
+      return;
+    }
     const params = new URLSearchParams();
     if (currentTab?.type) params.set('type', currentTab.type);
     if (currentTab?.group && !category) params.set('group', currentTab.group);
@@ -77,9 +83,13 @@ function ListingsContent() {
     if (search) params.set('search', search);
     params.set('page', String(page));
     params.set('limit', String(perPage));
-    api.get(`/listings?${params}`).then(({ data }) => {
-      setListings(data.listings); setTotal(data.total);
-    }).finally(() => setLoading(false));
+    api.get(`/listings?${params}`)
+      .then(({ data }) => {
+        setListings(data.listings);
+        setTotal(data.total);
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
   }, [currentTab, category, type, search, page]);
 
   const switchTab = (key: string) => {
@@ -361,11 +371,11 @@ function ListingsContent() {
               </div>
               {total > perPage && !loading && (
                 <div className="flex items-center gap-1">
-                  <button onClick={() => setPage(p => Math.max(1, p - 1))}
+                  <button onClick={() => { setLoading(true); setPage(p => Math.max(1, p - 1)); }}
                     disabled={page <= 1}
                     className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 hover:border-gray-300 disabled:opacity-30 disabled:cursor-not-allowed transition text-sm">‹</button>
                   <span className="text-xs font-medium text-gray-500 px-2">{page} / {totalPages}</span>
-                  <button onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                  <button onClick={() => { setLoading(true); setPage(p => Math.min(totalPages, p + 1)); }}
                     disabled={page >= totalPages}
                     className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 hover:border-gray-300 disabled:opacity-30 disabled:cursor-not-allowed transition text-sm">›</button>
                 </div>

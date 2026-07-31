@@ -43,14 +43,10 @@ export default function AdminContentPage() {
   };
 
   const fetchItems = useCallback(async () => {
-    try {
-      const { data } = await api.get('/content');
-      setItems(data);
-    } catch {
-      flash('error', 'Failed to load content');
-    } finally {
-      setLoading(false);
-    }
+    api.get('/content')
+      .then(({ data }) => setItems(data))
+      .catch(() => flash('error', 'Failed to load content'))
+      .finally(() => setLoading(false));
   }, []);
 
   useEffect(() => { fetchItems(); }, [fetchItems]);

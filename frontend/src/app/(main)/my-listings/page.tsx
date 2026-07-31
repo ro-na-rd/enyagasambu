@@ -53,9 +53,9 @@ export default function MyListingsPage() {
   useEffect(() => {
     const stored = localStorage.getItem('phone_seller_token');
     if (stored) {
-      setToken(stored);
       api.get('/listings/phone-access/listings', { headers: { Authorization: `Bearer ${stored}` } })
         .then(({ data }) => {
+          setToken(stored);
           setListings(data.listings);
           setStep('listings');
           return api.get('/listings/categories');

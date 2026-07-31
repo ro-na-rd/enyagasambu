@@ -23,7 +23,6 @@ export default function AdminListingsPage() {
   const [fetching, setFetching] = useState(true);
 
   const load = (q = '', status = '') => {
-    setFetching(true);
     const params = new URLSearchParams();
     if (q) params.set('search', q);
     if (status) params.set('status', status);
@@ -63,12 +62,12 @@ export default function AdminListingsPage() {
         <div className="relative flex-1 min-w-[200px]">
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-600" />
           <input value={search} onChange={(e) => setSearch(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && load(search, statusFilter)}
+            onKeyDown={(e) => { if (e.key === 'Enter') { setFetching(true); load(search, statusFilter); } }}
             placeholder="Search listings…"
             className="border rounded-lg pl-9 pr-3 py-2 text-sm w-full"
             style={{ background: '#f6f8fa', borderColor: '#d0d7de', color: '#1a1a1a' }} />
         </div>
-        <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); load(search, e.target.value); }}
+        <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setFetching(true); load(search, e.target.value); }}
           className="border rounded-lg px-3 py-2 text-sm"
           style={{ background: '#f6f8fa', borderColor: '#d0d7de', color: '#1a1a1a' }}>
           <option value="">All Status</option>
@@ -77,7 +76,7 @@ export default function AdminListingsPage() {
           <option value="sold">Sold</option>
           <option value="expired">Expired</option>
         </select>
-        <button onClick={() => load(search, statusFilter)}
+        <button onClick={() => { setFetching(true); load(search, statusFilter); }}
           className="text-white text-sm font-semibold px-4 py-2 rounded-lg transition"
           style={{ background: ORG }}
           onMouseEnter={(e) => e.currentTarget.style.background = '#c44d00'}

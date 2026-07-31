@@ -326,7 +326,7 @@ export default function ListingCard({ listing }: { listing: Listing }) {
               <div>
                 <div className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-xl p-5 mb-3 text-center">
                   <CheckCircle size={32} className="mb-2 mx-auto" style={{ color: '#16a34a' }} />
-                  <p className="text-xs font-medium text-gray-600 mb-1">Seller's contact number</p>
+                  <p className="text-xs font-medium text-gray-600 mb-1">Seller&apos;s contact number</p>
                   <p className="text-2xl font-extrabold" style={{ color: NAVY }}>{sellerPhone || 'Not provided'}</p>
                   {unlockType === 'temporary' ? (
                     <div className="mt-3 inline-flex items-center gap-1.5 bg-white rounded-full px-3 py-1 shadow-sm">
@@ -356,7 +356,7 @@ export default function ListingCard({ listing }: { listing: Listing }) {
                 )}
                 <p className="text-sm font-semibold text-gray-800 mb-1">Enter your phone number</p>
                 <p className="text-xs text-gray-500 mb-3">
-                  Choose how to unlock the seller's contact — via coins or mobile money.
+                  Choose how to unlock the seller&apos;s contact — via coins or mobile money.
                 </p>
                 <div className="relative mb-3">
                   <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
@@ -387,7 +387,7 @@ export default function ListingCard({ listing }: { listing: Listing }) {
                   </div>
                 )}
                 <p className="text-xs text-gray-500 mb-3">
-                  Unlock the seller's contact via mobile money.
+                  Unlock the seller&apos;s contact via mobile money.
                 </p>
 
                 <button onClick={handleMomoInitiate} disabled={working}

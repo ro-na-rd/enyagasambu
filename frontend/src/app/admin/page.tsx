@@ -39,7 +39,7 @@ export default function AdminDashboardPage() {
   const chartRef = useRef<HTMLCanvasElement>(null);
   const chartInstance = useRef<ChartJS | null>(null);
 
-  useEffect(() => {setLoading(true);
+  useEffect(() => {
     api.get('/admin/stats')
       .then((s) => {
         setStats(s.data.stats);

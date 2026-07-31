@@ -106,7 +106,7 @@ export default function AboutPage() {
           Our <span style={{ color: '#3b82f6', fontWeight: 700 }}>Leadership</span> team
         </h2>
         <p className="text-sm text-gray-500 text-center mb-10">
-          The people driving E-Nyagasambu's vision forward
+          The people driving E-Nyagasambu&apos;s vision forward
         </p>
 
         {/* Our Team Members */}

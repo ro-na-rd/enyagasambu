@@ -47,7 +47,7 @@ exports.getCategories = async (req, res) => {
 };
 
 exports.getListings = async (req, res) => {
-  const { category, type, group, search, page = 1, limit = 20 } = req.query;
+  const { category, type, group, search, featured, page = 1, limit = 20 } = req.query;
   const offset = (parseInt(page) - 1) * parseInt(limit);
 
   let where = "l.status = 'active' AND l.expires_at > NOW()";
@@ -73,7 +73,7 @@ exports.getListings = async (req, res) => {
   try {
     const [rows] = await pool.query(
       `SELECT l.id, l.title, l.price, l.price_type, l.location, l.listing_type,
-              l.is_featured, l.created_at, l.expires_at,
+              l.is_featured, l.views, l.created_at, l.expires_at,
               c.name AS category_name, c.slug AS category_slug, c.type AS category_type,
               u.name AS seller_name,
               (SELECT image_url FROM listing_images WHERE listing_id = l.id AND is_primary = 1 LIMIT 1) AS primary_image
@@ -81,7 +81,7 @@ exports.getListings = async (req, res) => {
        JOIN categories c ON l.category_id = c.id
        JOIN users u ON l.user_id = u.id
        WHERE ${where}
-       ORDER BY l.is_featured DESC, l.created_at DESC
+       ORDER BY ${featured ? 'l.is_featured DESC, l.views DESC, l.created_at DESC' : 'l.is_featured DESC, l.created_at DESC'}
        LIMIT ? OFFSET ?`,
       [...params, parseInt(limit), offset]
     );
@@ -114,6 +114,8 @@ exports.getListing = async (req, res) => {
     );
 
     if (!listing) return res.status(404).json({ message: 'Listing not found' });
+
+    await pool.query('UPDATE listings SET views = views + 1 WHERE id = ?', [id]);
 
     const [images] = await pool.query(
       'SELECT id, image_url, is_primary FROM listing_images WHERE listing_id = ?',

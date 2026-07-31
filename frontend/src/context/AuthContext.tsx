@@ -36,31 +36,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const refreshUser = async () => {
     const token = localStorage.getItem('nmo_token');
     const payload = token ? decodeToken(token) : null;
-
-    if (payload?.is_staff) {
-      try {
-        const { data } = await api.get('/admin/auth/me');
-        setUser(data.user);
-      } catch {
-        setUser(null);
-      }
-    } else {
-      try {
-        const { data } = await api.get('/auth/me');
-        setUser(data.user);
-      } catch {
-        setUser(null);
-      }
+    if (!payload) return;
+    if (payload.is_staff) {
+      return api.get('/admin/auth/me')
+        .then(({ data }) => setUser(data.user))
+        .catch(() => setUser(null));
     }
+    return api.get('/auth/me')
+      .then(({ data }) => setUser(data.user))
+      .catch(() => setUser(null));
   };
 
   useEffect(() => {
-    const token = localStorage.getItem('nmo_token');
-    if (token) {
-      refreshUser().finally(() => setLoading(false));
-    } else {
-      setLoading(false);
-    }
+    refreshUser().finally(() => setLoading(false));
   }, []);
 
   const login = async (email: string, password: string, role?: string) => {

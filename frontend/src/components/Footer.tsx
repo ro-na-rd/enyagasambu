@@ -1,4 +1,5 @@
 'use client';
+import Link from 'next/link';
 import { useLanguage } from '@/context/LanguageContext';
 import { MapPin, Phone, Mail } from '@/lib/icons';
 
@@ -25,7 +26,7 @@ export default function Footer() {
         <div>
           <p className="font-bold mb-3 text-sm">{T.quickLinks}</p>
           <div className="flex flex-col gap-1.5 text-sm text-white/70">
-            <a href="/listings" className="hover:text-[#E85D04] transition">{T.allListings}</a>
+            <Link href="/listings" className="hover:text-[#E85D04] transition">{T.allListings}</Link>
             <a href="/login" className="hover:text-[#E85D04] transition">{T.signIn}</a>
             <a href="/register" className="hover:text-[#E85D04] transition">{T.register}</a>
             <a href="/coins" className="hover:text-[#E85D04] transition">{T.buyCoins}</a>

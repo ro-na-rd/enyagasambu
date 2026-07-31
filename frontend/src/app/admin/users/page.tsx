@@ -26,7 +26,6 @@ export default function AdminUsersPage() {
   const [grantAmount, setGrantAmount] = useState('');
 
   const load = (q = '', role = '') => {
-    setFetching(true);
     const params = new URLSearchParams();
     if (q) params.set('search', q);
     if (role) params.set('role', role);
@@ -74,13 +73,13 @@ export default function AdminUsersPage() {
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && load(search, roleFilter)}
+            onKeyDown={(e) => { if (e.key === 'Enter') { setFetching(true); load(search, roleFilter); } }}
             placeholder="Search by name, email or phone…"
             className="border rounded-lg pl-9 pr-3 py-2 text-sm w-full"
             style={{ background: '#f6f8fa', borderColor: '#d0d7de', color: '#1a1a1a' }}
           />
         </div>
-        <select value={roleFilter} onChange={(e) => { setRoleFilter(e.target.value); load(search, e.target.value); }}
+        <select value={roleFilter} onChange={(e) => { setRoleFilter(e.target.value); setFetching(true); load(search, e.target.value); }}
           className="border rounded-lg px-3 py-2 text-sm"
           style={{ background: '#f6f8fa', borderColor: '#d0d7de', color: '#1a1a1a' }}>
           <option value="">All Roles</option>
@@ -90,7 +89,7 @@ export default function AdminUsersPage() {
           <option value="ambassador">Ambassador</option>
           <option value="admin">Admin</option>
         </select>
-        <button onClick={() => load(search, roleFilter)}
+        <button onClick={() => { setFetching(true); load(search, roleFilter); }}
           className="text-white text-sm font-semibold px-4 py-2 rounded-lg transition"
           style={{ background: ORG }}
           onMouseEnter={(e) => e.currentTarget.style.background = '#c44d00'}

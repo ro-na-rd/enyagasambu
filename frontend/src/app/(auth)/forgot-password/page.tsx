@@ -1,7 +1,7 @@
 'use client';
 import { useForm } from 'react-hook-form';
 import Link from 'next/link';
-import { useState, useEffect } from 'react';
+import { useState, useSyncExternalStore } from 'react';
 import api from '@/lib/api';
 import { Mail, X, ArrowLeft, Loader2, CheckCircle } from '@/lib/icons';
 
@@ -14,9 +14,7 @@ export default function ForgotPasswordPage() {
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<ForgotForm>();
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => { setMounted(true); }, []);
+  const mounted = useSyncExternalStore(() => () => {}, () => true, () => false);
 
   const onSubmit = async (data: ForgotForm) => {
     setError('');

@@ -107,12 +107,10 @@ export default function AmbassadorCertificatePage() {
   const fileRef = useRef<HTMLInputElement>(null);
 
   const fetchCert = async () => {
-    try {
-      const { data } = await api.get('/ambassador/certificate');
-      setCert(data.certificate);
-    } catch { } finally {
-      setLoading(false);
-    }
+    api.get('/ambassador/certificate')
+      .then(({ data }) => setCert(data.certificate))
+      .catch(() => { })
+      .finally(() => setLoading(false));
   };
 
   useEffect(() => { fetchCert(); }, []);

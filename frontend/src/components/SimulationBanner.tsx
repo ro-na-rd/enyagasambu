@@ -16,18 +16,15 @@ export default function SimulationBanner({ referenceId, paymentType = 'listing',
   const [message, setMessage] = useState('');
   const [otpCode, setOtpCode] = useState('');
 
+  const checkSimulationMode = async () => {
+    api.get('/simulation/status')
+      .then(({ data }) => setIsSimulationMode(data.simulationMode))
+      .catch(() => setIsSimulationMode(false));
+  };
+
   useEffect(() => {
     checkSimulationMode();
   }, []);
-
-  const checkSimulationMode = async () => {
-    try {
-      const { data } = await api.get('/simulation/status');
-      setIsSimulationMode(data.simulationMode);
-    } catch {
-      setIsSimulationMode(false);
-    }
-  };
 
   const handleSimulateSuccess = async () => {
     if (!referenceId) return;
@@ -37,8 +34,8 @@ export default function SimulationBanner({ referenceId, paymentType = 'listing',
       await api.post('/simulation/success', { referenceId });
       setMessage('Payment simulated as successful!');
       onSuccess?.();
-    } catch (err: any) {
-      setMessage(err.response?.data?.message || 'Failed to simulate payment');
+    } catch (err) {
+      setMessage((err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed to simulate payment');
     } finally {
       setLoading(false);
     }
@@ -52,8 +49,8 @@ export default function SimulationBanner({ referenceId, paymentType = 'listing',
       await api.post('/simulation/failure', { referenceId });
       setMessage('Payment simulated as failed.');
       onFailure?.();
-    } catch (err: any) {
-      setMessage(err.response?.data?.message || 'Failed to simulate payment');
+    } catch (err) {
+      setMessage((err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed to simulate payment');
     } finally {
       setLoading(false);
     }
@@ -66,8 +63,8 @@ export default function SimulationBanner({ referenceId, paymentType = 'listing',
     try {
       const { data } = await api.get(`/simulation/otp?referenceId=${referenceId}&type=${paymentType}`);
       setOtpCode(data.code);
-    } catch (err: any) {
-      setOtpCode(err.response?.data?.message || 'No OTP available yet');
+    } catch (err) {
+      setOtpCode((err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'No OTP available yet');
     } finally {
       setLoading(false);
     }

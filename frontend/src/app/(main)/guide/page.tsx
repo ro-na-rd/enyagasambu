@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useRef } from 'react';
 import Link from 'next/link';
 import { Smartphone, FileText, List, Clock, Coins, Lock, CheckCircle, Store, Search, Unlock, Phone, CreditCard, Clock3, Star, Package, AlertOctagon, Award, User, MessageSquare, Info, MailOpen, Check } from '@/lib/icons';
 
@@ -186,8 +186,6 @@ export default function GuidePage() {
   const currentFlow = FLOWS.find(f => f.key === activeFlow)!;
   const steps = currentFlow.steps;
 
-  useEffect(() => { setActiveStep(0); }, [activeFlow]);
-
   const next = () => { if (activeStep < steps.length - 1) setActiveStep(s => s + 1); };
   const prev = () => { if (activeStep > 0) setActiveStep(s => s - 1); };
 
@@ -226,7 +224,7 @@ export default function GuidePage() {
           {FLOWS.map(f => (
             <button
               key={f.key}
-              onClick={() => setActiveFlow(f.key)}
+              onClick={() => { setActiveStep(0); setActiveFlow(f.key); }}
               className="flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-bold whitespace-nowrap transition-all duration-200 shrink-0"
               style={{
                 background: activeFlow === f.key ? `linear-gradient(135deg, ${ORG}, ${ORG}dd)` : '#ffffff',

@@ -2,7 +2,7 @@
 import { useForm } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useSyncExternalStore } from 'react';
 import api from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 import { Mail, Lock, Eye, EyeOff, X, AlertTriangle, Loader2 } from '@/lib/icons';
@@ -18,10 +18,9 @@ export default function LoginPage() {
   const { refreshUser, user, login: authLogin } = useAuth();
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [mounted, setMounted] = useState(false);
+  const mounted = useSyncExternalStore(() => () => {}, () => true, () => false);
   const [capsLock, setCapsLock] = useState(false);
 
-  useEffect(() => { setMounted(true); }, []);
   useEffect(() => { if (user) router.replace(getRedirectPath(user.role)); }, [user, router]);
 
   function getRedirectPath(role: string) {

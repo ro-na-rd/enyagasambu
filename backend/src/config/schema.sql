@@ -38,6 +38,7 @@ CREATE TABLE IF NOT EXISTS listings (
   listing_type ENUM('sell', 'rent', 'auction') DEFAULT 'sell',
   is_featured BOOLEAN DEFAULT FALSE,
   featured_until TIMESTAMP NULL,
+  views INT DEFAULT 0,
   expires_at TIMESTAMP,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,

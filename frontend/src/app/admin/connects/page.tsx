@@ -101,7 +101,6 @@ export default function AdminConnectsPage() {
   const [updatingId, setUpdatingId] = useState<number | null>(null);
 
   const load = useCallback((p = 1) => {
-    setFetching(true);
     const params = new URLSearchParams();
     params.set('page', String(p));
     if (search) params.set('search', search);
@@ -122,9 +121,9 @@ export default function AdminConnectsPage() {
 
   useEffect(() => { load(); }, []);
 
-  const handleSearch = () => { setPage(1); load(1); };
-  const handleFilter = () => { setPage(1); load(1); };
-  const handlePage = (p: number) => { setPage(p); load(p); };
+  const handleSearch = () => { setPage(1); setFetching(true); load(1); };
+  const handleFilter = () => { setPage(1); setFetching(true); load(1); };
+  const handlePage = (p: number) => { setPage(p); setFetching(true); load(p); };
 
   const handleSaleStatus = async (id: number, newStatus: string) => {
     setUpdatingId(id);

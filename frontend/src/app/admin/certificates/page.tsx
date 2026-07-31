@@ -38,19 +38,26 @@ export default function AdminCertificatesPage() {
   const endpoint = type === 'ambassador' ? '/admin/certificates' : '/admin/broker-certificates';
   const printEndpoint = type === 'ambassador' ? '/admin/certificates' : '/admin/broker-certificates';
 
+  const [prevType, setPrevType] = useState<CertType>(type);
+  if (prevType !== type) {
+    setPrevType(type);
+    setPage(1);
+    setDetail(null);
+  }
+
   const fetchCerts = async () => {
-    setLoading(true);
-    try {
-      const params: Record<string, string | number> = { page };
-      if (filter) params.status = filter;
-      const { data } = await api.get(endpoint, { params });
-      setCerts(data.certificates);
-      setTotal(data.total);
-      setPages(data.pages);
-    } catch { } finally { setLoading(false); }
+    const params: Record<string, string | number> = { page };
+    if (filter) params.status = filter;
+    api.get(endpoint, { params })
+      .then(({ data }) => {
+        setCerts(data.certificates);
+        setTotal(data.total);
+        setPages(data.pages);
+      })
+      .catch(() => { })
+      .finally(() => setLoading(false));
   };
 
-  useEffect(() => { setPage(1); setDetail(null); }, [type]);
   useEffect(() => { fetchCerts(); }, [page, filter, type]);
 
   const handleGenerate = async (id: number) => {
@@ -176,7 +183,7 @@ ${photoHtml}
       {/* Filter */}
       <div className="flex gap-2 mb-4 flex-wrap">
         {['', 'pending', 'paid', 'generated'].map(s => (
-          <button key={s} onClick={() => { setFilter(s); setPage(1); }}
+          <button key={s} onClick={() => { setLoading(true); setFilter(s); setPage(1); }}
             className={`text-xs font-semibold px-4 py-2 rounded-lg transition ${filter === s ? 'text-white' : 'text-gray-600 border'}`}
             style={filter === s
               ? { background: BRAND.orange }
@@ -313,11 +320,11 @@ ${photoHtml}
         {pages > 1 && (
           <div className="flex items-center justify-center gap-2 px-4 py-3 border-t border-gray-200"
             style={{ background: '#f0f2f5' }}>
-            <button disabled={page <= 1} onClick={() => setPage(p => p - 1)}
+            <button disabled={page <= 1} onClick={() => { setLoading(true); setPage(p => p - 1); }}
               className="text-xs px-3 py-1.5 rounded-lg border disabled:opacity-40"
               style={{ borderColor: '#d0d7de', color: '#6e7781', background: '#f6f8fa' }}>Prev</button>
             <span className="text-xs text-gray-600">Page {page} of {pages}</span>
-            <button disabled={page >= pages} onClick={() => setPage(p => p + 1)}
+            <button disabled={page >= pages} onClick={() => { setLoading(true); setPage(p => p + 1); }}
               className="text-xs px-3 py-1.5 rounded-lg border disabled:opacity-40"
               style={{ borderColor: '#d0d7de', color: '#6e7781', background: '#f6f8fa' }}>Next</button>
           </div>

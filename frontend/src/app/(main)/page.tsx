@@ -4,7 +4,7 @@ import { useLanguage } from '@/context/LanguageContext';
 import { useAuth } from '@/context/AuthContext';
 import { useEffect, useState } from 'react';
 import api from '@/lib/api';
-import { Package, Building2, Car, Users, Smartphone, List, Store, Gavel, User, Coins, Gift, Star, MapPin } from '@/lib/icons';
+import { Package, Building2, Car, Users, List, Store, Gavel, User, Coins, Gift, Star, MapPin } from '@/lib/icons';
 
 interface Listing {
   id: number;
@@ -12,8 +12,10 @@ interface Listing {
   price: number | null;
   price_type: string;
   category: string;
+  category_name?: string;
   location: string;
   type: string;
+  primary_image?: string | null;
   created_at: string;
 }
 
@@ -29,17 +31,6 @@ const STATS = [
   { iconKey: 'vehicles', num: '185+' },
   { iconKey: 'suppliers', num: '1,200+' },
 ] as const;
-
-const FEATURED_ICONS: Record<string, React.FC<{ size?: number }>> = {
-  phone: Smartphone,
-  motorcycle: Car,
-  grain: Package,
-};
-const FEATURED = [
-  { iconKey: 'phone', name: 'Samsung Galaxy A54 – 256GB',   price: '185,000 RWF',   loc: 'Kigali, Gasabo' },
-  { iconKey: 'motorcycle', name: 'Electric motorcycle – 2023',    price: '1,200,000 RWF', loc: 'Musanze' },
-  { iconKey: 'grain', name: 'Maize grain – 50 kg bag',       price: '18,500 RWF',    loc: 'Rwamagana' },
-];
 
 const FALLBACK_NOTICES = [
   { tag: 'Property', auction: false, text: '3-bedroom house for sale – Kimironko, Kigali. Modern finish, gated compound.',               date: '22 Jun 2026' },
@@ -74,10 +65,14 @@ export default function HomePage() {
   const { T } = useLanguage();
   const { user } = useAuth();
   const [recent, setRecent] = useState<Listing[]>([]);
+  const [featured, setFeatured] = useState<Listing[]>([]);
 
   useEffect(() => {
     api.get('/listings?limit=4')
       .then(r => setRecent((r.data.listings ?? r.data ?? []).slice(0, 4)))
+      .catch(() => {});
+    api.get('/listings?featured=1&limit=4')
+      .then(r => setFeatured((r.data.listings ?? r.data ?? []).slice(0, 4)))
       .catch(() => {});
   }, []);
 
@@ -191,25 +186,33 @@ export default function HomePage() {
           </div>
 
           {/* Featured Products */}
-          <section>
-            <SectionHeader title="Featured Products" href="/listings" linkLabel="See all →" />
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              {FEATURED.map(({ iconKey, name, price, loc }) => {
-                const Icon = FEATURED_ICONS[iconKey];
-                return (
-                <Link key={name} href="/listings"
-                  className="bg-white border border-gray-200 rounded-lg overflow-hidden hover:border-blue-300 transition block">
-                  <div className="h-28 flex items-center justify-center bg-gray-50" style={{ color: org }}><Icon size={40} /></div>
-                  <div className="p-2.5">
-                    <p className="text-sm text-gray-800 mb-1 leading-snug">{name}</p>
-                    <p className="text-sm font-medium" style={{ color: org }}>{price}</p>
-                    <p className="text-xs text-gray-500 mt-1 flex items-center gap-1"><MapPin size={12} /> {loc}</p>
-                  </div>
-                </Link>
-              );
-              })}
-            </div>
-          </section>
+          {featured.length > 0 && (
+            <section>
+              <SectionHeader title="Featured Products" href="/listings" linkLabel="See all →" />
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {featured.map(l => (
+                  <Link key={l.id} href={`/listings/${l.id}`}
+                    className="bg-white border border-gray-200 rounded-lg overflow-hidden hover:border-blue-300 transition block group flex flex-col">
+                    <div className="aspect-square flex items-center justify-center bg-gray-50 overflow-hidden">
+                      {l.primary_image ? (
+                        <img src={l.primary_image} alt={l.title}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                      ) : (
+                        <div style={{ color: org }}><Package size={40} /></div>
+                      )}
+                    </div>
+                    <div className="p-3 flex flex-col flex-1">
+                      <p className="text-sm text-gray-800 mb-1 leading-snug truncate">{l.title}</p>
+                      <p className="text-sm font-medium mt-auto" style={{ color: org }}>
+                        {l.price != null ? `${Number(l.price).toLocaleString()} RWF` : 'On request'}
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1 flex items-center gap-1"><MapPin size={12} /> {l.location || 'Kigali'}</p>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </section>
+          )}
 
           {/* Recent Listings & Notices */}
           <section>

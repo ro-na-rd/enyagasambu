@@ -17,7 +17,9 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const saved = localStorage.getItem('nmo_lang') as Lang | null;
-    if (saved && VALID_LANGS.includes(saved)) setLangState(saved);
+    if (saved && VALID_LANGS.includes(saved)) {
+      Promise.resolve(saved).then(setLangState);
+    }
   }, []);
 
   const setLang = (l: Lang) => {
