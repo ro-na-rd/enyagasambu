@@ -20,7 +20,7 @@ interface Step {
 const POST_STEPS: Step[] = [
   {
     title: 'Go to Create Listing',
-    desc: 'Tap "Post Listing" from the homepage or dashboard menu.',
+    desc: 'Tap "Post Listing" from the homepage or your account menu.',
     detail: 'You can post as a guest or as a registered user. No account is required to list.',
     icon: <FileText size={20} />,
   },

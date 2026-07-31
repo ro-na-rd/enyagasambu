@@ -136,7 +136,7 @@ export default function HomePage() {
 
           {/* My Account */}
           <SideCard title={<><List size={14} className="inline" /> My Account</>} titleBg={navy}>
-            <SideLink href={user ? '/dashboard' : '/login'}>
+            <SideLink href={user ? '/my-listings' : '/login'}>
               <span className="flex items-center gap-1.5"><User size={13} /> {user ? user.name.split(' ')[0] : `${T.signIn} / ${T.register}`}</span>
               <Chevron />
             </SideLink>

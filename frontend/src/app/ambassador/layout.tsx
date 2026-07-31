@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { LayoutDashboard, User, Link as LinkIcon, FileText, Gift, Award, Megaphone, TrendingUp, Settings, HelpCircle, LogOut, Menu, Bell, MessageCircle } from '@/lib/icons';
+import { LayoutDashboard, LogOut, Menu, Bell, MessageCircle, User, Link as LinkIcon, FileText, Gift, Award, Megaphone, TrendingUp, Settings, HelpCircle } from '@/lib/icons';
 
 const NAVY = '#0f1e42';
 const ORG = '#E85D04';
@@ -81,16 +81,7 @@ export default function AmbassadorLayout({ children }: { children: React.ReactNo
 
       {/* Sidebar - always fixed on desktop */}
       <aside className={`fixed inset-y-0 left-0 z-30 w-64 bg-white border-r border-gray-200 flex flex-col transition-transform duration-200 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
-        {/* Brand */}
-        <div className="px-5 py-5 border-b border-gray-100">
-          <Link href="/ambassador" className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-lg flex items-center justify-center text-white font-black text-sm" style={{ background: `linear-gradient(135deg, ${NAVY}, ${ORG})` }}>E</div>
-            <div>
-              <p className="font-bold text-sm leading-tight" style={{ color: NAVY }}>Ambassador</p>
-              <p className="text-[9px] font-bold tracking-widest uppercase" style={{ color: ORG }}>Program</p>
-            </div>
-          </Link>
-        </div>
+
 
         {/* User summary */}
         <div className="px-4 py-4 border-b border-gray-100 bg-gradient-to-r from-orange-50 to-blue-50">

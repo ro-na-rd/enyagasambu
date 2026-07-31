@@ -3,22 +3,12 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import api from '@/lib/api';
 import Link from 'next/link';
-import { User, Link as LinkIcon, FileText, Gift, Award, Megaphone, BarChart3, Settings, HelpCircle, Users, Check, Clock, Coins, Sparkles } from '@/lib/icons';
+import { Link as LinkIcon, FileText, Award, Users, Check, Clock, Coins, Sparkles } from '@/lib/icons';
 
 const NAVY = '#0f1e42';
 const ORG = '#E85D04';
 
-const ambassadorRoles = [
-  { href: '/ambassador/profile',    icon: <User size={20} />,  label: 'My Profile',        desc: 'Manage your account information and contact details', color: '#0f1e42' },
-  { href: '/ambassador/referrals',  icon: <LinkIcon size={20} />,  label: 'My Referrals',      desc: 'Refer ambassadors and earn RWF when they get certified', color: '#059669' },
-  { href: '/ambassador/activities', icon: <FileText size={20} />,  label: 'My Activities',     desc: 'Track your actions, events, and achievements', color: '#d97706' },
-  { href: '/ambassador/rewards',    icon: <Gift size={20} />,  label: 'Rewards & Earnings', desc: 'View your RWF earnings, bonuses, and reward history', color: '#E85D04' },
-  { href: '/ambassador/certificate',icon: <Award size={20} />,  label: 'My Certificate',    desc: 'Get your official ambassador certificate', color: '#7c3aed' },
-  { href: '/ambassador/announcements',icon: <Megaphone size={20} />,label: 'Announcements',     desc: 'Stay updated with latest news and program updates', color: '#0891b2' },
-  { href: '/ambassador/reports',    icon: <BarChart3 size={20} />,  label: 'Reports',           desc: 'View your performance reports and analytics', color: '#be123c' },
-  { href: '/ambassador/settings',   icon: <Settings size={20} />,  label: 'Settings',          desc: 'Configure your notification preferences', color: '#4b5563' },
-  { href: '/ambassador/help',       icon: <HelpCircle size={20} />,  label: 'Help & Support',    desc: 'FAQs, guides, and contact support team', color: '#1d4ed8' },
-];
+
 
 const certStatusConfig: Record<string, { label: string; icon: React.ReactNode; color: string; bg: string; action: string; href: string }> = {
   none:      { label: 'Not Requested', icon: <Award size={20} />, color: '#6b7280', bg: '#f3f4f6', action: 'Pay 2,000 RWF', href: '/ambassador/certificate' },
@@ -67,27 +57,7 @@ export default function AmbassadorDashboardPage() {
       {/* Welcome */}
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-900">Ambassador Dashboard</h1>
-        <p className="text-sm text-gray-500 mt-1">Welcome back, <strong>{user?.name}</strong> — manage your ambassador roles below.</p>
-      </div>
-
-      {/* Ambassador Roles - matching sidebar menu */}
-      <div className="mb-8">
-        <h2 className="text-sm font-bold uppercase tracking-wider text-gray-800 mb-4">Your Ambassador Roles</h2>
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
-          {ambassadorRoles.map((role) => (
-            <Link key={role.href} href={role.href}
-              className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 hover:shadow-md transition group flex items-start gap-3">
-              <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
-                style={{ background: `${role.color}15`, color: role.color }}>
-                {role.icon}
-              </div>
-              <div className="min-w-0">
-                <p className="text-sm font-semibold text-gray-800 group-hover:text-[#E85D04] transition">{role.label}</p>
-                <p className="text-xs text-gray-400 mt-0.5">{role.desc}</p>
-              </div>
-            </Link>
-          ))}
-        </div>
+        <p className="text-sm text-gray-500 mt-1">Welcome back, <strong>{user?.name}</strong></p>
       </div>
 
       {/* Stats cards */}

@@ -28,7 +28,7 @@ export default function LoginPage() {
     if (role === 'admin' || role === 'moderator' || role === 'staff') return '/admin';
     if (role === 'broker') return '/broker';
     if (role === 'ambassador') return '/ambassador';
-    return '/dashboard';
+    return '/my-listings';
   }
 
   const onSubmit = async (data: LoginForm) => {

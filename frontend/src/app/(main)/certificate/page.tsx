@@ -194,10 +194,10 @@ function CertContent() {
   });
   const [photoStep, setPhotoStep] = useState(!photo);
 
-  /* If someone hits /certificate?type=ambassador redirect them to dashboard */
+  /* If someone hits /certificate?type=ambassador redirect them to listings */
   const type = params.get('type');
   if (type === 'ambassador') {
-    if (typeof window !== 'undefined') window.location.replace('/dashboard');
+    if (typeof window !== 'undefined') window.location.replace('/my-listings');
     return null;
   }
 
@@ -225,7 +225,7 @@ function CertContent() {
             <div className="w-8 h-8 rounded-full text-white text-xs font-bold flex items-center justify-center" style={{ background: NAVY }}>E</div>
             <span className="font-semibold text-sm" style={{ color: NAVY }}>Broker ID Card — Photo Upload</span>
           </div>
-          <Link href="/dashboard" className="text-xs text-gray-400 hover:text-gray-600">← Dashboard</Link>
+          <Link href="/my-listings" className="text-xs text-gray-400 hover:text-gray-600">← My Listings</Link>
         </div>
         <PhotoUploadStep onPhoto={url => { setPhoto(url); setPhotoStep(false); localStorage.setItem('broker_photo', url); }} onSkip={() => { setPhotoStep(false); localStorage.removeItem('broker_photo'); }} />
       </div>
@@ -267,7 +267,7 @@ function CertContent() {
           style={{ color: NAVY, borderColor: NAVY }}>
           <Camera size={16} /> Change Photo
         </button>
-        <Link href="/dashboard" className="text-xs text-gray-400 hover:text-gray-600">← Dashboard</Link>
+        <Link href="/my-listings" className="text-xs text-gray-400 hover:text-gray-600">← My Listings</Link>
       </div>
 
       {/* Cards */}

@@ -339,6 +339,17 @@ CREATE TABLE IF NOT EXISTS renewal_tokens (
   FOREIGN KEY (listing_id) REFERENCES listings(id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS support_requests (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(100) NOT NULL,
+  email VARCHAR(150) NOT NULL,
+  phone VARCHAR(20),
+  subject VARCHAR(200) NOT NULL,
+  message TEXT NOT NULL,
+  status ENUM('pending', 'in_progress', 'resolved', 'closed') DEFAULT 'pending',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE TABLE IF NOT EXISTS content_pages (
   id INT AUTO_INCREMENT PRIMARY KEY,
   title VARCHAR(200) NOT NULL,

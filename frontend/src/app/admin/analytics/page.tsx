@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import api from '@/lib/api';
-import { Users, Package, Coins, BarChart3, TrendingUp, Activity } from '@/lib/icons';
+import { Users, Package, Coins, BarChart3, TrendingUp } from '@/lib/icons';
 
 const NAVY = '#0f1e42';
 const ORG = '#E85D04';
@@ -95,7 +95,7 @@ export default function AdminAnalyticsPage() {
                           }}
                           title={`${months[i]}: ${v}`}>
                           <div className="absolute -top-7 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-lg text-white text-[9px] font-bold opacity-0 group-hover/bar:opacity-100 transition-opacity whitespace-nowrap"
-                            style={{ background: '#f6f8fa' }}>
+                            style={{ background: '#0f1e42' }}>
                             {v.toLocaleString()}
                           </div>
                         </div>

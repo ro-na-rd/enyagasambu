@@ -4,7 +4,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
 import { useState } from 'react';
 import type { Lang } from '@/lib/translations';
-import { Search, UserPlus, Star, Heart, Users, Menu, Coins, LayoutDashboard, List, Gift, Wrench, LogOut } from '@/lib/icons';
+import { Search, UserPlus, Star, Heart, Users, Menu, Coins, List, Gift, Wrench, LogOut } from '@/lib/icons';
 
 const navy = '#0f1e42';
 const org  = '#E85D04';
@@ -105,11 +105,11 @@ export default function Navbar() {
       {/* ── TOP BAR ── */}
       <div className="text-white text-xs px-5 py-1.5 flex items-center gap-4" style={{ background: navy }}>
         <span className="mr-auto" style={{ opacity: 0.75, fontSize: 12 }}>{T.marketOnline}</span>
-        <a href="#" className="transition" style={{ color: '#cdd4f0' }}
+        <Link href="/support" className="transition" style={{ color: '#cdd4f0' }}
           onMouseEnter={e => (e.currentTarget.style.color = '#fff')}
           onMouseLeave={e => (e.currentTarget.style.color = '#cdd4f0')}>
           {T.support}
-        </a>
+        </Link>
         <Link href="/about" className="transition" style={{ color: '#cdd4f0' }}
           onMouseEnter={e => (e.currentTarget.style.color = '#fff')}
           onMouseLeave={e => (e.currentTarget.style.color = '#cdd4f0')}>
@@ -255,8 +255,7 @@ export default function Navbar() {
                   </button>
                   {menuOpen && (
                     <div className="absolute right-0 mt-2 bg-white rounded-xl shadow-xl overflow-hidden border border-gray-100 z-50" style={{ width: 220 }}>
-                      <Link href="/dashboard"      className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold hover:bg-gray-50 border-b" style={{ color: navy }} onClick={close}><LayoutDashboard size={15} /> My Dashboard</Link>
-                      <Link href="/my-listings"    className="flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-gray-50 text-gray-800" onClick={close}><List size={15} /> {T.myListings}</Link>
+                      <Link href="/my-listings"    className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold hover:bg-gray-50 border-b" style={{ color: navy }} onClick={close}><List size={15} /> {T.myListings}</Link>
                       <Link href="/coins"          className="flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-gray-50 text-gray-800" onClick={close}><Coins size={15} /> {T.coinsWallet}</Link>
                       <Link href="/subscriptions"  className="flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-gray-50 text-gray-800" onClick={close}><Star size={15} /> {T.sellerPlans}</Link>
                       <Link href="/referral"       className="flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-gray-50 text-gray-800" onClick={close}><Gift size={15} /> {T.referEarn}</Link>
@@ -279,7 +278,7 @@ export default function Navbar() {
       </div>
 
       {/* ── MAIN NAV ── */}
-      <nav className="px-5 flex items-center justify-between" style={{ background: navy }}>
+      <nav className="px-5 flex items-center justify-between sticky top-0 z-50" style={{ background: navy }}>
         <div className="flex">
           {NAV_LINKS.map(({ href, label, active }) => (
             <Link
@@ -319,7 +318,7 @@ export default function Navbar() {
       </nav>
 
       {/* ── CATEGORY PILLS ── */}
-      <div className="px-5 py-1.5 flex gap-2 flex-wrap" style={{ background: '#0f1e42', borderTop: '1px solid rgba(255,255,255,0.25)' }}>
+      <div className="px-5 py-1.5 flex gap-2 flex-wrap sticky z-40" style={{ background: '#0f1e42', borderTop: '1px solid rgba(255,255,255,0.25)', top: 44 }}>
         {CAT_LINKS.map(({ label, href, disabled }, i) => (
           disabled ? (
             <span

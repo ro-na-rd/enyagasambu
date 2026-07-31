@@ -2,7 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const { startRenewalScheduler } = require('./services/renewalScheduler');
-const { ensureBucket } = require('./services/s3Service');
+const { waitForS3, ensureBucket } = require('./services/s3Service');
 
 const app = express();
 
@@ -13,7 +13,11 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-ensureBucket();
+async function init() {
+  await waitForS3();
+  await ensureBucket();
+}
+init().catch(err => console.error('[S3] Initialization failed:', err.message));
 
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/auth/seller', require('./routes/sellerAuth'));
@@ -40,6 +44,7 @@ app.use('/api/likes', require('./routes/likes'));
 app.use('/api/comments', require('./routes/comments'));
 app.use('/api/content', require('./routes/content'));
 app.use('/api/simulation', require('./routes/simulation'));
+app.use('/api/support', require('./routes/support'));
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok', platform: 'NMO' }));
 

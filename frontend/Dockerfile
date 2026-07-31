@@ -1,5 +1,7 @@
 FROM node:20-bookworm AS builder
 ARG CACHE_BUST=1
+ARG NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 WORKDIR /app
 COPY package*.json ./
 RUN npm ci

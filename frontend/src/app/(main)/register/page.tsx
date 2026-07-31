@@ -38,7 +38,7 @@ function RegisterForm() {
         referral_code: data.referral_code || undefined,
       });
       localStorage.setItem('nmo_token', res.token);
-      window.location.href = '/dashboard';
+      window.location.href = '/my-listings';
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
       setError(msg || 'Registration failed. Please try again.');
