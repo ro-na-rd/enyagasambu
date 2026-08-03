@@ -27,6 +27,7 @@ export default function LoginPage() {
     if (role === 'admin' || role === 'moderator' || role === 'staff') return '/admin';
     if (role === 'broker') return '/broker';
     if (role === 'ambassador') return '/ambassador';
+    if (role === 'supplier') return '/supplier';
     return '/my-listings';
   }
 
@@ -234,6 +235,9 @@ background: 'rgba(0, 0, 0, 0.03)',
             <span style={{ color: 'rgba(0,0,0,0.1)' }}>|</span>
             <Link href="/broker/register" className="text-[11px] font-medium hover:underline transition-colors"
               style={{ color: 'rgba(0,0,0,0.25)' }}>Broker</Link>
+            <span style={{ color: 'rgba(0,0,0,0.1)' }}>|</span>
+            <Link href="/supplier/register" className="text-[11px] font-medium hover:underline transition-colors"
+              style={{ color: 'rgba(0,0,0,0.25)' }}>Supplier</Link>
           </div>
 
           {/* Footer */}

@@ -4,7 +4,7 @@ import { useAuth } from '@/context/AuthContext';
 import api from '@/lib/api';
 import Link from 'next/link';
 import { useLanguage } from '@/context/LanguageContext';
-import { ArrowLeft, Star, ChevronLeft, ChevronRight, Package, MapPin, Phone, Loader2, X, MessageCircle, Clock, CheckCircle, AlertCircle, RefreshCw, Heart, Send } from '@/lib/icons';
+import { ArrowLeft, Star, ChevronLeft, ChevronRight, Package, MapPin, Phone, Loader2, X, MessageCircle, Clock, CheckCircle, AlertCircle, RefreshCw, Heart, Send, AlertOctagon } from '@/lib/icons';
 import SimulationBanner from '@/components/SimulationBanner';
 
 interface ListingDetail {
@@ -73,6 +73,29 @@ export default function ListingDetailPage({ params }: { params: Promise<{ id: st
   const [commentText, setCommentText] = useState('');
   const [commentSubmitting, setCommentSubmitting] = useState(false);
   const [deletingCommentId, setDeletingCommentId] = useState<number | null>(null);
+
+  // Report
+  const [reportOpen, setReportOpen] = useState(false);
+  const [reportReason, setReportReason] = useState('');
+  const [reportDetails, setReportDetails] = useState('');
+  const [reportSubmitting, setReportSubmitting] = useState(false);
+  const [reportMsg, setReportMsg] = useState('');
+  const [reportSubmitted, setReportSubmitted] = useState(false);
+
+  const handleSubmitReport = async () => {
+    if (!reportReason) { setReportMsg('Please select a reason'); return; }
+    setReportMsg('');
+    setReportSubmitting(true);
+    try {
+      await api.post('/reports', { listingId: parseInt(id), reason: reportReason, details: reportDetails.trim() || undefined });
+      setReportSubmitted(true);
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed to submit report. Please try again.';
+      setReportMsg(msg);
+    } finally {
+      setReportSubmitting(false);
+    }
+  };
 
   useEffect(() => {
     api.get(`/listings/${id}`)
@@ -664,9 +687,84 @@ export default function ListingDetailPage({ params }: { params: Promise<{ id: st
                 )}
               </div>
             )}
+
+            {/* Report listing */}
+            {!isOwner && (
+              <div className="mt-5 pt-4 border-t border-gray-100">
+                <button onClick={() => { setReportOpen(true); setReportSubmitted(false); setReportMsg(''); setReportReason(''); setReportDetails(''); }}
+                  className="w-full text-sm font-medium text-gray-400 hover:text-red-500 transition flex items-center justify-center gap-1.5 py-2">
+                  <AlertOctagon size={15} /> Report this listing
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>
+
+      {/* Report modal */}
+      {reportOpen && (
+        <div className="fixed inset-0 z-[9998] bg-black/60 flex items-center justify-center p-4" onClick={() => setReportOpen(false)}>
+          <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl p-6" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                <AlertOctagon size={18} style={{ color: '#dc2626' }} /> Report Listing
+              </h3>
+              <button onClick={() => setReportOpen(false)} className="text-gray-400 hover:text-gray-600">
+                <X size={20} />
+              </button>
+            </div>
+
+            {reportSubmitted ? (
+              <div className="text-center py-8">
+                <div className="w-14 h-14 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-3">
+                  <CheckCircle size={28} style={{ color: '#059669' }} />
+                </div>
+                <p className="text-sm font-bold text-gray-800 mb-1">Report Submitted</p>
+                <p className="text-xs text-gray-500 mb-5">Our moderation team will review this listing.</p>
+                <button onClick={() => setReportOpen(false)}
+                  className="px-5 py-2.5 rounded-xl text-white text-sm font-bold"
+                  style={{ background: '#E85D04' }}>Done</button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-semibold mb-1.5 text-gray-500">Reason *</label>
+                  <select value={reportReason} onChange={(e) => setReportReason(e.target.value)}
+                    className="w-full rounded-xl px-4 py-2.5 text-sm bg-white border border-gray-200 outline-none focus:border-[#E85D04] transition">
+                    <option value="">Select a reason</option>
+                    <option value="spam">Spam</option>
+                    <option value="inappropriate">Inappropriate content</option>
+                    <option value="scam">Scam or fraud</option>
+                    <option value="misleading">Misleading information</option>
+                    <option value="illegal">Illegal content</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold mb-1.5 text-gray-500">Details (optional)</label>
+                  <textarea value={reportDetails} onChange={(e) => setReportDetails(e.target.value)} rows={4}
+                    placeholder="Add more details to help our team review..."
+                    className="w-full rounded-xl px-4 py-3 text-sm bg-white border border-gray-200 outline-none focus:border-[#E85D04] transition resize-y" />
+                </div>
+                {reportMsg && (
+                  <div className="flex items-center gap-2 text-sm rounded-xl px-4 py-3" style={{ background: reportSubmitted ? '#f0fdf4' : '#fef2f2', border: `1px solid ${reportSubmitted ? '#bbf7d0' : '#fecaca'}`, color: reportSubmitted ? '#059669' : '#dc2626' }}>
+                    <AlertCircle size={16} /> {reportMsg}
+                  </div>
+                )}
+                <button onClick={handleSubmitReport} disabled={reportSubmitting}
+                  className="w-full text-white font-bold py-3 rounded-xl text-sm transition hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-2"
+                  style={{ background: '#dc2626' }}>
+                  {reportSubmitting ? <Loader2 size={16} className="animate-spin" /> : <AlertOctagon size={16} />}
+                  {reportSubmitting ? 'Submitting...' : 'Submit Report'}
+                </button>
+                <Link href={`/support?listing=${id}`} className="block text-center text-xs font-medium text-gray-400 hover:text-gray-600 underline">
+                  Prefer a different issue? Contact support
+                </Link>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Lightbox */}
       {lightboxOpen && listing.images.length > 0 && (

@@ -1,89 +1,46 @@
 'use client';
 import Link from 'next/link';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import type { Lang } from '@/lib/translations';
-import { Search, UserPlus, Star, Heart, Users, Menu, Coins, List, Gift, Wrench, LogOut } from '@/lib/icons';
+import { Search, UserPlus, Star, Heart, Menu, Coins, List, Gift, Wrench, LogOut } from '@/lib/icons';
 
 const navy = '#0f1e42';
 const org  = '#E85D04';
 
-function ReadMeModal({ onClose }: { onClose: () => void }) {
-  const { T } = useLanguage();
+export default function Navbar() {
   return (
-    <div className="fixed inset-0 bg-black/60 z-[9999] flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-white rounded-2xl w-full max-w-lg max-h-[80vh] overflow-y-auto p-8 relative" onClick={e => e.stopPropagation()}>
-        <button onClick={onClose} className="absolute top-4 right-5 text-2xl text-gray-400 hover:text-gray-700">&times;</button>
-        <div className="flex items-center gap-3 mb-5 pb-4 border-b">
-          <div className="w-12 h-12 rounded-full flex items-center justify-center text-white font-black text-xl" style={{ background: navy }}>E</div>
-          <div>
-            <p className="font-extrabold text-lg leading-tight" style={{ color: navy }}>E-Nyagasambu</p>
-            <p className="text-[10px] font-bold tracking-widest uppercase" style={{ color: org }}>Digital Market Place</p>
-          </div>
-        </div>
-        <h3 className="font-bold text-sm mb-1" style={{ color: org }}>About E-Nyagasambu</h3>
-        <p className="text-sm text-gray-600 mb-4 leading-relaxed">
-          E-Nyagasambu is Rwanda&apos;s digital marketplace platform connecting buyers, sellers, brokers
-          and ambassadors across all sectors — products, properties, vehicles, services and auctions.
-        </p>
-
-        <h3 className="font-bold text-sm mb-1" style={{ color: org }}>How It Works</h3>
-        <ol className="text-sm text-gray-600 mb-4 list-decimal pl-5 space-y-1 leading-relaxed">
-          <li><strong>Register</strong> — create a free account and start buying &amp; selling.</li>
-          <li><strong>Top up Coins</strong> — buy coins via MTN MoMo or Airtel Money to unlock features.</li>
-          <li><strong>Post a Listing</strong> — costs 400 coins; add title, description, category, price, location and up to 6 photos.</li>
-          <li><strong>Browse &amp; Search</strong> — filter by category, location or keyword. Listings show public info (title, price, location, photos).</li>
-          <li><strong>Reveal Seller Contact</strong> — costs 300 coins + OTP phone verification to protect both parties.</li>
-          <li><strong>Boost a Listing</strong> — spend 200 coins to feature your listing for 7 days (appears at the top).</li>
-          <li><strong>Refer &amp; Earn</strong> — share your referral code; earn 200 RWF when a referred ambassador pays for their certificate.</li>
-          <li><strong>Seller Plans</strong> — subscribe for a monthly plan to reduce per-listing coin cost.</li>
-          <li><strong>Auction</strong> — submit items for timed public auction; bidders compete until the timer ends.</li>
-        </ol>
-
-        <h3 className="font-bold text-sm mb-1" style={{ color: org }}>Storage</h3>
-        <p className="text-sm text-gray-600 mb-4 leading-relaxed">
-          Listing images are uploaded to <strong>MinIO</strong> (S3-compatible object storage) and served via the <code className="bg-gray-100 px-1 rounded">nmo-images</code> bucket.
-          Each upload generates a unique URL stored in the database. Images are publicly accessible via the MinIO endpoint.
-        </p>
-
-        <h3 className="font-bold text-sm mb-1" style={{ color: org }}>Tech Stack</h3>
-        <ul className="text-sm text-gray-600 mb-4 list-disc pl-5 space-y-1">
-          <li><strong>Frontend</strong> — Next.js 15 (App Router), Tailwind CSS, TypeScript</li>
-          <li><strong>Backend</strong> — Node.js, Express.js, MySQL (via mysql2)</li>
-          <li><strong>Auth</strong> — JWT tokens stored in localStorage</li>
-          <li><strong>Payments</strong> — MTN MoMo &amp; Airtel Money (coin top-up)</li>
-          <li><strong>OTP</strong> — SMS verification before seller contact is revealed</li>
-        </ul>
-
-        <h3 className="font-bold text-sm mb-1" style={{ color: org }}>User Roles</h3>
-        <ul className="text-sm text-gray-600 list-disc pl-5 space-y-1">
-          <li><strong>Buyer</strong> — browse, search, reveal contacts</li>
-          <li><strong>Seller</strong> — post &amp; manage listings, boost, subscribe</li>
-          <li><strong>Staff</strong> — moderate listings and users</li>
-          <li><strong>Admin</strong> — full platform control</li>
-          <li><strong>Ambassador</strong> — promote the platform, earn referral rewards</li>
-        </ul>
-      </div>
-    </div>
+    <Suspense fallback={<NavbarView pathname={null} tab={null} />}>
+      <NavbarInner />
+    </Suspense>
   );
 }
 
-export default function Navbar() {
+function NavbarInner() {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  return <NavbarView pathname={pathname} tab={searchParams.get('tab') || ''} />;
+}
+
+function NavbarView({ pathname, tab }: { pathname: string | null; tab: string | null }) {
   const { user, logout }   = useAuth();
   const { lang, setLang, T } = useLanguage();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [readme,   setReadme]   = useState(false);
   const close = () => setMenuOpen(false);
 
+  const activeKey = pathname === '/listings' ? (tab === '' ? 'products' : tab) : null;
+  const isListings = pathname === '/listings';
+
   const NAV_LINKS = [
-    { href: '/listings?category=products',       label: T.products,        active: true },
-    { href: '/listings?category=properties',     label: T.properties },
-    { href: '/listings?category=rent',           label: 'Rent' },
-    { href: '/listings?category=vehicles',       label: T.vehicles },
-    { href: '/listings?category=services',       label: T.services },
-    { href: '/listings?category=auction',        label: T.auction },
-    { href: '/listings?category=adverts',        label: T.adverts },
+    { key: 'products',    href: '/listings?tab=products',    label: T.products },
+    { key: 'properties',  href: '/listings?tab=properties',  label: T.properties },
+    { key: 'rent',        href: '/listings?tab=rent',        label: 'Rent' },
+    { key: 'vehicles',    href: '/listings?tab=vehicles',    label: T.vehicles },
+    { key: 'services',    href: '/listings?tab=services',    label: T.services },
+    { key: 'auction',     href: '/listings?tab=auction',     label: T.auction },
+    { key: 'adverts',     href: '/listings?tab=adverts',     label: T.adverts },
   ];
 
   const CAT_LINKS: { label: string; href: string; disabled?: boolean }[] = [
@@ -100,8 +57,6 @@ export default function Navbar() {
 
   return (
     <>
-      {readme && <ReadMeModal onClose={() => setReadme(false)} />}
-
       {/* ── TOP BAR ── */}
       <div className="text-white text-xs px-5 py-1.5 flex items-center gap-4" style={{ background: navy }}>
         <span className="mr-auto" style={{ opacity: 0.75, fontSize: 12 }}>{T.marketOnline}</span>
@@ -220,10 +175,6 @@ export default function Navbar() {
               <Heart size={13} />
               {T.donate}
             </Link>
-            <button onClick={() => setReadme(true)} className="flex items-center gap-1 transition hover:opacity-70 cursor-pointer" style={{ color: navy, background: 'none', border: 'none', padding: 0, font: 'inherit' }}>
-              <Users size={13} />
-              Support with us
-            </button>
 
             {/* Post to sell — always visible */}
             <Link href="/listings/create"
@@ -280,28 +231,31 @@ export default function Navbar() {
       {/* ── MAIN NAV ── */}
       <nav className="px-5 flex items-center justify-between sticky top-0 z-50" style={{ background: navy }}>
         <div className="flex">
-          {NAV_LINKS.map(({ href, label, active }) => (
-            <Link
-              key={label}
-              href={href}
-              className="text-sm px-4 py-3 transition block"
-              style={{
-                color:        '#cdd4f0',
-                borderBottom: active ? `3px solid ${org}` : '3px solid transparent',
-                textDecoration: 'none',
-              }}
-              onMouseEnter={e => {
-                e.currentTarget.style.color = '#fff';
-                e.currentTarget.style.borderBottomColor = org;
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.color = '#cdd4f0';
-                e.currentTarget.style.borderBottomColor = active ? org : 'transparent';
-              }}
-            >
-              {label}
-            </Link>
-          ))}
+          {NAV_LINKS.map(({ key, href, label }) => {
+            const isActive = key === activeKey;
+            return (
+              <Link
+                key={key}
+                href={href}
+                className="text-sm px-4 py-3 transition block"
+                style={{
+                  color:        '#cdd4f0',
+                  borderBottom: isActive ? `3px solid ${org}` : '3px solid transparent',
+                  textDecoration: 'none',
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.color = '#fff';
+                  e.currentTarget.style.borderBottomColor = org;
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.color = '#cdd4f0';
+                  e.currentTarget.style.borderBottomColor = isActive ? org : 'transparent';
+                }}
+              >
+                {label}
+              </Link>
+            );
+          })}
         </div>
         <div className="flex items-center gap-5">
           <Link href="/broker/register" className="text-sm py-3 transition" style={{ color: '#cdd4f0', textDecoration: 'none' }}
@@ -318,6 +272,7 @@ export default function Navbar() {
       </nav>
 
       {/* ── CATEGORY PILLS ── */}
+      {!isListings && (
       <div className="px-5 py-1.5 flex gap-2 flex-wrap sticky z-40" style={{ background: '#0f1e42', borderTop: '1px solid rgba(255,255,255,0.25)', top: 44 }}>
         {CAT_LINKS.map(({ label, href, disabled }, i) => (
           disabled ? (
@@ -357,6 +312,7 @@ export default function Navbar() {
           )
         ))}
       </div>
+      )}
     </>
   );
 }

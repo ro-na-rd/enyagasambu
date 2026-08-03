@@ -452,6 +452,18 @@ export default function GuidePage() {
             <Link href="/register" className="text-xs font-semibold hover:underline" style={{ color: ORG }}>
               Create Account
             </Link>
+            <span className="text-gray-300">|</span>
+            <Link href="/terms" className="text-xs font-semibold hover:underline" style={{ color: ORG }}>
+              Terms of Use
+            </Link>
+            <span className="text-gray-300">|</span>
+            <Link href="/privacy" className="text-xs font-semibold hover:underline" style={{ color: ORG }}>
+              Privacy Policy
+            </Link>
+            <span className="text-gray-300">|</span>
+            <Link href="/faq" className="text-xs font-semibold hover:underline" style={{ color: ORG }}>
+              FAQ
+            </Link>
           </div>
         </div>
       </div>

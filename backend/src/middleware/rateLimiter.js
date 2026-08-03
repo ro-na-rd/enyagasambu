@@ -44,4 +44,16 @@ const passwordResetLimiter = createLimiter({
   message: 'Too many password reset requests. Please try again later.',
 });
 
-module.exports = { loginLimiter, otpLimiter, passwordResetLimiter };
+const revealLimiter = createLimiter({
+  windowMs: 60 * 60 * 1000,
+  max: 5,
+  message: 'Too many contact reveal requests. Please try again later.',
+});
+
+const verifyOtpLimiter = createLimiter({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: 'Too many OTP verification attempts. Please try again later.',
+});
+
+module.exports = { loginLimiter, otpLimiter, passwordResetLimiter, revealLimiter, verifyOtpLimiter };

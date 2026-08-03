@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS users (
   phone VARCHAR(20),
   password_hash VARCHAR(255) NOT NULL,
   coins INT DEFAULT 0,
-  role ENUM('user', 'seller', 'admin', 'broker', 'ambassador') DEFAULT 'user',
+  role ENUM('user', 'seller', 'admin', 'broker', 'ambassador', 'supplier') DEFAULT 'user',
   is_verified BOOLEAN DEFAULT FALSE,
   can_post_free BOOLEAN DEFAULT FALSE,
   referral_code VARCHAR(20) UNIQUE,
@@ -98,6 +98,7 @@ CREATE TABLE IF NOT EXISTS otp_codes (
   code VARCHAR(6) NOT NULL,
   expires_at TIMESTAMP NOT NULL,
   used BOOLEAN DEFAULT FALSE,
+  attempts INT DEFAULT 0,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
   FOREIGN KEY (listing_id) REFERENCES listings(id) ON DELETE CASCADE
@@ -201,7 +202,7 @@ CREATE TABLE IF NOT EXISTS payments (
   provider ENUM('mtn','airtel','bank') NOT NULL,
   amount_rwf INT NOT NULL,
   status ENUM('pending','verified','confirmed','failed','refunded') DEFAULT 'pending',
-  provider_ref VARCHAR(100),
+  provider_ref VARCHAR(100) UNIQUE,
   listing_id INT,
   payload TEXT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -215,6 +216,7 @@ CREATE TABLE IF NOT EXISTS payment_otps (
   code VARCHAR(6) NOT NULL,
   expires_at TIMESTAMP NOT NULL,
   verified BOOLEAN DEFAULT FALSE,
+  attempts INT DEFAULT 0,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (payment_id) REFERENCES payments(id) ON DELETE CASCADE
 );
@@ -226,6 +228,7 @@ CREATE TABLE IF NOT EXISTS seller_otps (
   code VARCHAR(6) NOT NULL,
   expires_at TIMESTAMP NOT NULL,
   used BOOLEAN DEFAULT FALSE,
+  attempts INT DEFAULT 0,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
@@ -237,6 +240,7 @@ CREATE TABLE IF NOT EXISTS staff_otps (
   code VARCHAR(6) NOT NULL,
   expires_at TIMESTAMP NOT NULL,
   used BOOLEAN DEFAULT FALSE,
+  attempts INT DEFAULT 0,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (staff_id) REFERENCES staff(id) ON DELETE CASCADE
 );
@@ -298,6 +302,7 @@ CREATE TABLE IF NOT EXISTS contact_access_payments (
   otp_code VARCHAR(6),
   otp_expires_at TIMESTAMP NULL,
   otp_verified BOOLEAN DEFAULT FALSE,
+  otp_attempts INT DEFAULT 0,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   FOREIGN KEY (listing_id) REFERENCES listings(id) ON DELETE CASCADE,
@@ -345,10 +350,41 @@ CREATE TABLE IF NOT EXISTS support_requests (
   name VARCHAR(100) NOT NULL,
   email VARCHAR(150) NOT NULL,
   phone VARCHAR(20),
+  category ENUM('payment', 'listing', 'access', 'other') DEFAULT 'other',
   subject VARCHAR(200) NOT NULL,
   message TEXT NOT NULL,
+  listing_id INT NULL,
   status ENUM('pending', 'in_progress', 'resolved', 'closed') DEFAULT 'pending',
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (listing_id) REFERENCES listings(id) ON DELETE SET NULL
+);
+
+CREATE TABLE IF NOT EXISTS listing_reports (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  listing_id INT NOT NULL,
+  reporter_id INT NULL,
+  reason ENUM('spam', 'inappropriate', 'scam', 'misleading', 'illegal', 'other') NOT NULL,
+  details TEXT,
+  status ENUM('open', 'reviewing', 'actioned', 'dismissed') DEFAULT 'open',
+  resolved_by INT NULL,
+  resolved_at TIMESTAMP NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (listing_id) REFERENCES listings(id) ON DELETE CASCADE,
+  FOREIGN KEY (reporter_id) REFERENCES users(id) ON DELETE SET NULL,
+  FOREIGN KEY (resolved_by) REFERENCES staff(id) ON DELETE SET NULL
+);
+
+CREATE TABLE IF NOT EXISTS supplier_profiles (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL UNIQUE,
+  business_name VARCHAR(200),
+  business_phone VARCHAR(20),
+  business_location VARCHAR(200),
+  description TEXT,
+  verified BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS content_pages (

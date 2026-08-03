@@ -6,7 +6,7 @@ import Link from 'next/link';
 import {
   LayoutDashboard, Users, Package, Folder, FileText, Award, BarChart3,
   Activity, Ticket, Settings, User, LogOut, Bell, Menu, X, ChevronRight,
-  Shield, Sparkles, AlertOctagon, Medal, UserPlus, Link as LinkIcon
+  Shield, Sparkles, AlertOctagon, Medal, UserPlus, Store, Link as LinkIcon
 } from '@/lib/icons';
 
 const BRAND = {
@@ -28,6 +28,7 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { href: '/admin', icon: <LayoutDashboard size={18} />, label: 'Dashboard' },
   { href: '/admin/users', icon: <Users size={18} />, label: 'Users' },
+  { href: '/admin/suppliers', icon: <Store size={18} />, label: 'Suppliers' },
   { href: '/admin/listings', icon: <Package size={18} />, label: 'Listings' },
   { href: '/admin/categories', icon: <Folder size={18} />, label: 'Categories' },
   { href: '/admin/certificates', icon: <Award size={18} />, label: 'Certificates' },

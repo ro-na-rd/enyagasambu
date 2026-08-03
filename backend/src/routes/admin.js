@@ -5,6 +5,7 @@ const ctrl = require('../controllers/adminController');
 // Read-only: staff + admin can access
 router.get('/stats',           authenticate, requireStaff, ctrl.getStats);
 router.get('/users',           authenticate, requireStaff, ctrl.getUsers);
+router.get('/suppliers',       authenticate, requireStaff, ctrl.listSuppliers);
 router.get('/listings',        authenticate, requireStaff, ctrl.getAdminListings);
 router.get('/promos',          authenticate, requireStaff, ctrl.getPromos);
 router.get('/participants',    authenticate, requireStaff, ctrl.getParticipants);
@@ -16,6 +17,7 @@ router.put('/profile',         authenticate, requireStaff, ctrl.updateProfile);
 
 // Mutations: admin only
 router.patch('/users/:id/role',  authenticate, requireAdmin, ctrl.updateUserRole);
+router.patch('/suppliers/:id/verify', authenticate, requireAdmin, ctrl.verifySupplier);
 router.post('/users/:id/coins',  authenticate, requireAdmin, ctrl.grantCoins);
 router.patch('/users/:id/free-posting', authenticate, requireAdmin, ctrl.toggleFreePosting);
 router.delete('/listings/:id',   authenticate, requireAdmin, ctrl.deleteListing);

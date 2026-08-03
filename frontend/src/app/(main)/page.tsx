@@ -25,12 +25,7 @@ const STATS_ICONS: Record<string, React.FC<{ size?: number }>> = {
   vehicles: Car,
   suppliers: Users,
 };
-const STATS = [
-  { iconKey: 'products', num: '2,480+' },
-  { iconKey: 'properties', num: '340+' },
-  { iconKey: 'vehicles', num: '185+' },
-  { iconKey: 'suppliers', num: '1,200+' },
-] as const;
+const STAT_KEYS = ['products', 'properties', 'vehicles', 'suppliers'] as const;
 
 const FALLBACK_NOTICES = [
   { tag: 'Property', auction: false, text: '3-bedroom house for sale – Kimironko, Kigali. Modern finish, gated compound.',               date: '22 Jun 2026' },
@@ -66,6 +61,7 @@ export default function HomePage() {
   const { user } = useAuth();
   const [recent, setRecent] = useState<Listing[]>([]);
   const [featured, setFeatured] = useState<Listing[]>([]);
+  const [stats, setStats] = useState<Record<string, number>>({ products: 0, properties: 0, vehicles: 0, suppliers: 0 });
 
   useEffect(() => {
     api.get('/listings?limit=4')
@@ -74,9 +70,17 @@ export default function HomePage() {
     api.get('/listings?featured=1&limit=4')
       .then(r => setFeatured((r.data.listings ?? r.data ?? []).slice(0, 4)))
       .catch(() => {});
+    api.get('/stats')
+      .then(r => setStats(r.data.stats ?? {}))
+      .catch(() => {});
   }, []);
 
   const suppliersLabel: Record<string, string> = { en: 'Suppliers', fr: 'Fournisseurs', rw: 'Abatanga' };
+
+  const STATS = STAT_KEYS.map((key) => ({
+    iconKey: key,
+    num: `${(stats[key] ?? 0).toLocaleString('en-US')}+`,
+  }));
 
   return (
     <div>

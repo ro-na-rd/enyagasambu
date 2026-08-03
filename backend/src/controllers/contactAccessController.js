@@ -6,6 +6,7 @@ const { sendSms } = require('../services/smsService');
 
 const ACCESS_FEE = 300;
 const OTP_TTL_MINUTES = 5;
+const MAX_OTP_ATTEMPTS = 3;
 
 function normalizePhone(phone) {
   return phone ? phone.replace(/\s+/g, '') : '';
@@ -185,9 +186,16 @@ exports.verifyOtp = async (req, res) => {
       return res.status(400).json({ message: 'Payment has not been verified yet' });
     }
 
-    if (!payment.otp_code || payment.otp_code !== code) {
+    if (payment.otp_attempts >= MAX_OTP_ATTEMPTS) {
       await conn.rollback();
-      return res.status(400).json({ message: 'Invalid verification code' });
+      return res.status(429).json({ message: 'Too many incorrect attempts. Request a new code.', locked: true });
+    }
+
+    if (!payment.otp_code || payment.otp_code !== code) {
+      await conn.query('UPDATE contact_access_payments SET otp_attempts = otp_attempts + 1 WHERE id = ?', [payment.id]);
+      await conn.rollback();
+      const remaining = MAX_OTP_ATTEMPTS - (payment.otp_attempts + 1);
+      return res.status(400).json({ message: remaining > 0 ? `Invalid verification code. ${remaining} attempt(s) remaining.` : 'Invalid verification code. Too many attempts.' });
     }
 
     if (payment.otp_expires_at && new Date(payment.otp_expires_at) < new Date()) {

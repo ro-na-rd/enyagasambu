@@ -4,6 +4,7 @@ exports.getStats = async (req, res) => {
   try {
     const [[{ totalUsers }]] = await pool.query('SELECT COUNT(*) AS totalUsers FROM users');
     const [[{ totalSellers }]] = await pool.query("SELECT COUNT(*) AS totalSellers FROM users WHERE role = 'seller'");
+    const [[{ totalSuppliers }]] = await pool.query("SELECT COUNT(*) AS totalSuppliers FROM users WHERE role = 'supplier'");
     const [[{ totalBrokers }]] = await pool.query("SELECT COUNT(*) AS totalBrokers FROM users WHERE role = 'broker'");
     const [[{ totalAmbassadors }]] = await pool.query("SELECT COUNT(*) AS totalAmbassadors FROM users WHERE role = 'ambassador'");
     const [[{ activeListings }]] = await pool.query("SELECT COUNT(*) AS activeListings FROM listings WHERE status = 'active' AND expires_at > NOW()");
@@ -15,6 +16,8 @@ exports.getStats = async (req, res) => {
     const [[{ coinsFromBoosts }]] = await pool.query("SELECT COALESCE(SUM(ABS(amount)), 0) AS coinsFromBoosts FROM coin_transactions WHERE type = 'boost_fee'");
     const [[{ pendingBrokerCerts }]] = await pool.query("SELECT COUNT(*) AS pendingBrokerCerts FROM broker_certificates WHERE status IN ('pending','paid')");
     const [[{ pendingAmbassadorCerts }]] = await pool.query("SELECT COUNT(*) AS pendingAmbassadorCerts FROM ambassador_certificates WHERE status IN ('pending','paid')");
+    const [[{ openReports }]] = await pool.query("SELECT COUNT(*) AS openReports FROM listing_reports WHERE status IN ('open','reviewing')");
+    const [[{ totalReports }]] = await pool.query('SELECT COUNT(*) AS totalReports FROM listing_reports');
 
     const [recentUsers] = await pool.query(
       'SELECT id, name, email, coins, role, created_at FROM users ORDER BY created_at DESC LIMIT 5'
@@ -26,7 +29,7 @@ exports.getStats = async (req, res) => {
     );
 
     return res.json({
-      stats: { totalUsers, totalSellers, totalBrokers, totalAmbassadors, activeListings, disabledListings, totalListings, totalUnlocks, coinsEarned, coinsFromListings, coinsFromBoosts, pendingBrokerCerts, pendingAmbassadorCerts },
+      stats: { totalUsers, totalSellers, totalSuppliers, totalBrokers, totalAmbassadors, activeListings, disabledListings, totalListings, totalUnlocks, coinsEarned, coinsFromListings, coinsFromBoosts, pendingBrokerCerts, pendingAmbassadorCerts, openReports, totalReports },
       recentUsers,
       recentListings,
     });
@@ -80,15 +83,63 @@ exports.toggleFreePosting = async (req, res) => {
 exports.updateUserRole = async (req, res) => {
   const { id } = req.params;
   const { role } = req.body;
-  if (!['user', 'seller', 'admin', 'broker', 'ambassador'].includes(role)) {
+  if (!['user', 'seller', 'admin', 'broker', 'ambassador', 'supplier'].includes(role)) {
     return res.status(400).json({ message: 'Invalid role' });
   }
   if (parseInt(id) === req.user.id) return res.status(400).json({ message: 'Cannot change your own role' });
   try {
     await pool.query('UPDATE users SET role = ? WHERE id = ?', [role, id]);
+    if (role === 'supplier') {
+      const [profiles] = await pool.query('SELECT id FROM supplier_profiles WHERE user_id = ?', [id]);
+      if (profiles.length === 0) {
+        await pool.query('INSERT INTO supplier_profiles (user_id) VALUES (?)', [id]);
+      }
+    }
     return res.json({ message: 'Role updated' });
   } catch (err) {
     console.error(err);
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
+
+exports.listSuppliers = async (req, res) => {
+  const { verified } = req.query;
+  try {
+    let where = '1=1';
+    const params = [];
+    if (verified === 'true' || verified === 'false') {
+      where += ' AND sp.verified = ?';
+      params.push(verified === 'true' ? 1 : 0);
+    }
+    const [rows] = await pool.query(
+      `SELECT u.id, u.name, u.email, u.phone, u.created_at,
+              sp.business_name, sp.business_phone, sp.business_location, sp.description, sp.verified
+       FROM users u
+       JOIN supplier_profiles sp ON sp.user_id = u.id
+       WHERE ${where}
+       ORDER BY u.created_at DESC`,
+      params
+    );
+    return res.json({ suppliers: rows });
+  } catch (err) {
+    console.error('[Admin listSuppliers error]', err);
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
+
+exports.verifySupplier = async (req, res) => {
+  const { id } = req.params;
+  const { verified } = req.body;
+  if (typeof verified !== 'boolean') return res.status(400).json({ message: 'verified boolean required' });
+  try {
+    const [result] = await pool.query(
+      'UPDATE supplier_profiles SET verified = ? WHERE user_id = ?',
+      [verified ? 1 : 0, id]
+    );
+    if (result.affectedRows === 0) return res.status(404).json({ message: 'Supplier not found' });
+    return res.json({ message: verified ? 'Supplier verified' : 'Supplier unverified' });
+  } catch (err) {
+    console.error('[Admin verifySupplier error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };

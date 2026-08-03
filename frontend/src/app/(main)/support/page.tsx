@@ -1,8 +1,8 @@
 'use client';
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import api from '@/lib/api';
 import { MessageCircle, Mail, Phone, Send, MapPin, Clock, CheckCircle, Loader2, AlertCircle } from '@/lib/icons';
-import Link from 'next/link';
 
 const NAVY = '#0f1e42';
 const ORG = '#E85D04';
@@ -22,7 +22,17 @@ const FAQS = [
 ];
 
 export default function SupportPage() {
-  const [form, setForm] = useState({ name: '', email: '', phone: '', subject: '', message: '' });
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-white" />}>
+      <SupportContent />
+    </Suspense>
+  );
+}
+
+function SupportContent() {
+  const searchParams = useSearchParams();
+  const listingFromQuery = searchParams.get('listing');
+  const [form, setForm] = useState({ name: '', email: '', phone: '', category: '', subject: '', message: '', listingId: listingFromQuery || '' });
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
@@ -36,9 +46,12 @@ export default function SupportPage() {
     setError('');
     setSubmitting(true);
     try {
-      await api.post('/support', form);
+      await api.post('/support', {
+        ...form,
+        listingId: form.listingId ? parseInt(form.listingId) : undefined,
+      });
       setSuccess(true);
-      setForm({ name: '', email: '', phone: '', subject: '', message: '' });
+      setForm({ name: '', email: '', phone: '', category: '', subject: '', message: '', listingId: '' });
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed to submit. Please try again.';
       setError(msg);
@@ -123,6 +136,11 @@ export default function SupportPage() {
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-4">
+                {form.listingId && (
+                  <div className="flex items-center gap-2 text-sm rounded-xl px-4 py-3" style={{ background: '#fff7ed', border: '1px solid #fed7aa', color: '#c2410c' }}>
+                    <AlertCircle size={16} /> You are requesting help about listing #{form.listingId}.
+                  </div>
+                )}
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-semibold mb-1.5 text-gray-500">Full Name *</label>
@@ -140,29 +158,33 @@ export default function SupportPage() {
 
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-semibold mb-1.5 text-gray-500">Phone</label>
-                    <input name="phone" value={form.phone} onChange={handleChange}
+                    <label className="block text-xs font-semibold mb-1.5 text-gray-500">Phone *</label>
+                    <input name="phone" value={form.phone} onChange={handleChange} required
                       className="w-full rounded-xl px-4 py-3 text-sm bg-white border border-gray-200 outline-none focus:border-[#E85D04] transition"
                       placeholder="+250 7XX XXX XXX" />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold mb-1.5 text-gray-500">Subject *</label>
-                    <select name="subject" value={form.subject} onChange={handleChange} required
+                    <label className="block text-xs font-semibold mb-1.5 text-gray-500">Category *</label>
+                    <select name="category" value={form.category} onChange={handleChange} required
                       className="w-full rounded-xl px-4 py-3 text-sm bg-white border border-gray-200 outline-none focus:border-[#E85D04] transition">
-                      <option value="">Select a topic</option>
-                      <option value="Account Help">Account Help</option>
-                      <option value="Listing Issue">Listing Issue</option>
-                      <option value="Payment Problem">Payment Problem</option>
-                      <option value="Coin Purchase">Coin Purchase</option>
-                      <option value="Ambassador Program">Ambassador Program</option>
-                      <option value="Technical Support">Technical Support</option>
-                      <option value="Other">Other</option>
+                      <option value="">Select a category</option>
+                      <option value="payment">Payment</option>
+                      <option value="listing">Listing</option>
+                      <option value="access">Contact Access</option>
+                      <option value="other">Other</option>
                     </select>
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold mb-1.5 text-gray-500">Message *</label>
+                  <label className="block text-xs font-semibold mb-1.5 text-gray-500">Subject</label>
+                  <input name="subject" value={form.subject} onChange={handleChange}
+                    className="w-full rounded-xl px-4 py-3 text-sm bg-white border border-gray-200 outline-none focus:border-[#E85D04] transition"
+                    placeholder="Short summary of your issue (optional)" />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold mb-1.5 text-gray-500">Description *</label>
                   <textarea name="message" value={form.message} onChange={handleChange} required rows={5}
                     className="w-full rounded-xl px-4 py-3 text-sm bg-white border border-gray-200 outline-none focus:border-[#E85D04] transition resize-y"
                     placeholder="Describe your issue or question in detail..." />

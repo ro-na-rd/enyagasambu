@@ -1,14 +1,18 @@
 const pool = require('../config/db');
 
+const CATEGORIES = ['payment', 'listing', 'access', 'other'];
+
 exports.submit = async (req, res) => {
-  const { name, email, phone, subject, message } = req.body;
-  if (!name || !email || !subject || !message) {
-    return res.status(400).json({ message: 'Name, email, subject and message are required' });
+  const { name, email, phone, category, subject, message, listingId } = req.body;
+  if (!name || !email || !message) {
+    return res.status(400).json({ message: 'Name, email and message are required' });
   }
+  const resolvedCategory = category && CATEGORIES.includes(category) ? category : 'other';
   try {
     await pool.query(
-      `INSERT INTO support_requests (name, email, phone, subject, message) VALUES (?, ?, ?, ?, ?)`,
-      [name, email, phone || null, subject, message]
+      `INSERT INTO support_requests (name, email, phone, category, subject, message, listing_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [name, email, phone || null, resolvedCategory, subject || resolvedCategory, message, listingId || null]
     );
     res.status(201).json({ message: 'Support request submitted successfully' });
   } catch (err) {
@@ -20,7 +24,10 @@ exports.submit = async (req, res) => {
 exports.list = async (req, res) => {
   try {
     const [rows] = await pool.query(
-      'SELECT * FROM support_requests ORDER BY created_at DESC'
+      `SELECT sr.*, l.title AS listing_title
+       FROM support_requests sr
+       LEFT JOIN listings l ON l.id = sr.listing_id
+       ORDER BY sr.created_at DESC`
     );
     res.json(rows);
   } catch (err) {

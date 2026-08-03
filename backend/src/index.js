@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const { startRenewalScheduler } = require('./services/renewalScheduler');
+const { startExpiryScheduler } = require('./services/expiryScheduler');
 const { waitForS3, ensureBucket } = require('./services/s3Service');
 
 const app = express();
@@ -33,6 +34,9 @@ app.use('/api/referrals', require('./routes/referrals'));
 app.use('/api/subscriptions', require('./routes/subscriptions'));
 app.use('/api/auth/broker', require('./routes/brokerAuth'));
 app.use('/api/auth/ambassador', require('./routes/ambassadorAuth'));
+app.use('/api/auth/supplier', require('./routes/supplierAuth'));
+app.use('/api/suppliers', require('./routes/suppliers'));
+app.use('/api/reports', require('./routes/reports'));
 app.use('/api/broker/certificate', require('./routes/brokerCertificate'));
 app.use('/api/ambassador/certificate', require('./routes/ambassadorCertificate'));
 app.use('/api/admin/certificates', require('./routes/adminCertificates'));
@@ -45,6 +49,7 @@ app.use('/api/comments', require('./routes/comments'));
 app.use('/api/content', require('./routes/content'));
 app.use('/api/simulation', require('./routes/simulation'));
 app.use('/api/support', require('./routes/support'));
+app.use('/api/stats', require('./routes/stats'));
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok', platform: 'NMO' }));
 
@@ -59,4 +64,5 @@ app.use((err, req, res, _next) => {
 
 const PORT = process.env.PORT || 5000;
 startRenewalScheduler();
+startExpiryScheduler();
 app.listen(PORT, () => console.log(`NMO API running on port ${PORT}`));

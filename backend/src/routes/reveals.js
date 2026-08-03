@@ -1,13 +1,14 @@
 const router = require('express').Router();
 const { body, param } = require('express-validator');
+const { revealLimiter, verifyOtpLimiter } = require('../middleware/rateLimiter');
 const { initiateReveal, confirmReveal, checkReveal } = require('../controllers/revealController');
 
-router.post('/initiate', [
+router.post('/initiate', revealLimiter, [
   body('listing_id').isInt().withMessage('listing_id is required'),
   body('buyer_phone').trim().notEmpty().withMessage('buyer_phone is required'),
 ], initiateReveal);
 
-router.post('/confirm', [
+router.post('/confirm', verifyOtpLimiter, [
   body('referenceId').trim().notEmpty().withMessage('referenceId is required'),
 ], confirmReveal);
 

@@ -72,24 +72,53 @@ exports.verifyOtp = async (req, res) => {
 
   const normalizedPhone = normalizePhone(phone);
   const conn = await pool.getConnection();
+  const MAX_ATTEMPTS = 3;
 
   try {
-    const [[otpRow]] = await conn.query(
-      `SELECT o.id, u.id AS user_id, u.phone, u.role
+    const [[latest]] = await conn.query(
+      `SELECT o.id, o.attempts, u.id AS user_id, u.phone, u.role
        FROM seller_otps o
        JOIN users u ON u.id = o.user_id
-       WHERE o.phone = ? AND o.code = ? AND o.used = 0 AND o.expires_at > NOW()
+       WHERE o.phone = ? AND o.used = 0
        ORDER BY o.created_at DESC LIMIT 1`,
-      [normalizedPhone, code]
+      [normalizedPhone]
+    );
+
+    if (!latest) {
+      return res.status(400).json({ message: 'No active OTP found. Request a new code.' });
+    }
+
+    if (latest.attempts >= MAX_ATTEMPTS) {
+      return res.status(429).json({
+        message: 'Too many incorrect attempts. Please request a new code.',
+        locked: true,
+      });
+    }
+
+    const [[otpRow]] = await conn.query(
+      `SELECT o.id
+       FROM seller_otps o
+       WHERE o.id = ? AND o.code = ? AND o.used = 0 AND o.expires_at > NOW()`,
+      [latest.id, code]
     );
 
     if (!otpRow) {
-      return res.status(400).json({ message: 'Invalid or expired OTP' });
+      const [[expired]] = await conn.query(
+        'SELECT id FROM seller_otps WHERE id = ? AND expires_at <= NOW()',
+        [latest.id]
+      );
+      await conn.query('UPDATE seller_otps SET attempts = attempts + 1 WHERE id = ?', [latest.id]);
+      if (expired) {
+        return res.status(400).json({ message: 'OTP expired. Request a new code.' });
+      }
+      return res.status(400).json({
+        message: `Invalid OTP. ${MAX_ATTEMPTS - (latest.attempts + 1)} attempt(s) remaining.`,
+      });
     }
 
     await conn.query('UPDATE seller_otps SET used = 1 WHERE id = ?', [otpRow.id]);
 
-    const [[user]] = await conn.query('SELECT id, phone, role FROM users WHERE id = ?', [otpRow.user_id]);
+    const [[user]] = await conn.query('SELECT id, phone, role FROM users WHERE id = ?', [latest.user_id]);
     const token = await signSessionToken(user);
     return res.json({ token, user: { id: user.id, phone: user.phone, role: 'seller' } });
   } catch (err) {

@@ -43,6 +43,13 @@ const requireAmbassador = (req, res, next) => {
   next();
 };
 
+const requireSupplier = (req, res, next) => {
+  if (req.user?.role !== 'supplier') {
+    return res.status(403).json({ message: 'Supplier access required' });
+  }
+  next();
+};
+
 const authenticateOptional = (req, res, next) => {
   const header = req.headers.authorization;
   if (!header || !header.startsWith('Bearer ')) {
@@ -77,4 +84,4 @@ const authenticatePhoneSeller = (req, res, next) => {
   }
 };
 
-module.exports = { authenticate, authenticateOptional, authenticatePhoneSeller, requireAdmin, requireStaff, requireBroker, requireAmbassador };
+module.exports = { authenticate, authenticateOptional, authenticatePhoneSeller, requireAdmin, requireStaff, requireBroker, requireAmbassador, requireSupplier };

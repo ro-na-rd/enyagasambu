@@ -92,13 +92,6 @@ function ListingsContent() {
       .finally(() => setLoading(false));
   }, [currentTab, category, type, search, page]);
 
-  const switchTab = (key: string) => {
-    const p = new URLSearchParams();
-    if (key) p.set('tab', key);
-    if (search) p.set('search', search);
-    router.push(`/listings?${p}`);
-  };
-
   const setFilter = (key: string, value: string) => {
     const p = new URLSearchParams(searchParams.toString());
     if (value) p.set(key, value); else p.delete(key);
@@ -127,25 +120,6 @@ function ListingsContent() {
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Horizontal Tab Bar */}
-      <div className="flex overflow-x-auto gap-1 bg-white rounded-2xl shadow-sm border border-gray-100 p-1.5 sticky top-16 z-40">
-        {tabLabels.map(({ key, label, icon }) => {
-          const active = tab === key || (!tab && key === 'products');
-          return (
-            <button key={key} onClick={() => switchTab(key)}
-              className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold whitespace-nowrap transition-all duration-200 ${
-                active
-                  ? 'text-white shadow-md'
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-              }`}
-              style={active ? { background: `linear-gradient(135deg, ${NAVY}, ${ORG})` } : {}}>
-              <span className="text-base">{icon}</span>
-              <span>{label}</span>
-            </button>
-          );
-        })}
-      </div>
-
       {currentTab?.key === 'adverts' ? (
         /* ─── ADVERTS TAB ─── */
         <div className="space-y-8">
@@ -305,7 +279,7 @@ function ListingsContent() {
         /* ─── LISTINGS GRID ─── */
         <div className="flex flex-col lg:flex-row gap-6">
           <aside className="lg:w-56 shrink-0">
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 lg:sticky lg:top-36">
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 lg:sticky lg:top-16">
               <div className="flex items-center gap-2 mb-4 pb-3 border-b border-gray-100">
                 <SlidersHorizontal size={16} />
                 <span className="text-sm font-bold text-gray-800">Filters</span>

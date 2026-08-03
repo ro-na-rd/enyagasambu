@@ -3,6 +3,7 @@ const pool = require('../config/db');
 const { sendSms } = require('../services/smsService');
 
 const OTP_TTL_MINUTES = 5;
+const MAX_OTP_ATTEMPTS = 3;
 
 function normalizePhone(phone) {
   return phone ? phone.replace(/\s+/g, '') : '';
@@ -101,6 +102,21 @@ exports.verifyPaymentOtp = async (req, res) => {
     );
 
     if (!otp) {
+      const [[lastOtp]] = await conn.query(
+        'SELECT id FROM payment_otps WHERE payment_id = ? AND verified = 0 ORDER BY id DESC LIMIT 1',
+        [payment.id]
+      );
+      if (lastOtp) {
+        await conn.query('UPDATE payment_otps SET attempts = attempts + 1 WHERE id = ?', [lastOtp.id]);
+        const [[withAttempts]] = await conn.query(
+          'SELECT attempts FROM payment_otps WHERE id = ?',
+          [lastOtp.id]
+        );
+        if (withAttempts.attempts >= MAX_OTP_ATTEMPTS) {
+          await conn.rollback();
+          return res.status(429).json({ message: 'Too many incorrect attempts. Request a new code.', locked: true });
+        }
+      }
       const [[expiredOtp]] = await conn.query(
         'SELECT id FROM payment_otps WHERE payment_id = ? AND code = ? AND verified = 0',
         [payment.id, code]

@@ -59,6 +59,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } else if (role === 'ambassador') {
       const res = await api.post('/auth/ambassador/login', { email, password });
       data = res.data;
+    } else if (role === 'supplier') {
+      const res = await api.post('/auth/supplier/login', { email, password });
+      data = res.data;
     } else {
       const res = await api.post('/auth/login', { email, password });
       data = res.data;
