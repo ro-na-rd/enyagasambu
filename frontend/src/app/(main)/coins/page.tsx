@@ -126,12 +126,12 @@ export default function CoinsPage() {
       <p className="text-gray-500 text-sm mb-6">Coins are used to post listings (400), unlock contacts (300), and boost listings (200).</p>
 
       {/* Balance */}
-      <div className="text-white rounded-2xl p-6 mb-8 flex items-center justify-between" style={{ background: 'linear-gradient(135deg, #0f1e42 0%, #E85D04 100%)' }}>
+      <div className="text-white rounded-2xl p-6 mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4" style={{ background: 'linear-gradient(135deg, #0f1e42 0%, #E85D04 100%)' }}>
         <div>
           <p className="text-orange-200 text-sm">Current Balance</p>
           <p className="text-4xl font-bold mt-1"><Coins size={28} /> {user?.coins ?? 0}</p>
         </div>
-        <div className="text-right text-sm text-orange-200 space-y-0.5">
+        <div className="text-left sm:text-right text-sm text-orange-200 space-y-0.5">
           <p>Post listing = 400 coins</p>
           <p>Unlock contact = 300 coins</p>
           <p>Boost listing = 200 coins</p>

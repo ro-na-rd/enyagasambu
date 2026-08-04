@@ -168,7 +168,7 @@ export default function BrokerLayout({ children }: { children: React.ReactNode }
                 <span className="absolute top-1 right-1 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">3</span>
               </button>
               {notifOpen && (
-                <div className="absolute right-0 top-full mt-1 w-80 bg-white rounded-xl shadow-lg border border-gray-100 z-50" onClick={(e) => e.stopPropagation()}>
+                <div className="fixed right-4 top-16 w-[calc(100vw-32px)] max-w-[320px] z-50 bg-white rounded-xl shadow-lg border border-gray-100 lg:absolute lg:right-0 lg:top-full lg:mt-1 lg:w-80 lg:max-w-none" onClick={(e) => e.stopPropagation()}>
                   <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
                     <span className="text-sm font-bold text-gray-800">Notifications</span>
                     <span className="text-xs text-gray-400">3 new</span>
@@ -202,7 +202,7 @@ export default function BrokerLayout({ children }: { children: React.ReactNode }
                 <span className="absolute top-1 right-1 w-4 h-4 bg-orange-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">2</span>
               </button>
               {msgOpen && (
-                <div className="absolute right-0 top-full mt-1 w-80 bg-white rounded-xl shadow-lg border border-gray-100 z-50" onClick={(e) => e.stopPropagation()}>
+                <div className="fixed right-4 top-16 w-[calc(100vw-32px)] max-w-[320px] z-50 bg-white rounded-xl shadow-lg border border-gray-100 lg:absolute lg:right-0 lg:top-full lg:mt-1 lg:w-80 lg:max-w-none" onClick={(e) => e.stopPropagation()}>
                   <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
                     <span className="text-sm font-bold text-gray-800">Messages</span>
                     <span className="text-xs text-gray-400">2 unread</span>

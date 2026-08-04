@@ -163,7 +163,7 @@ export default function AmbassadorLayout({ children }: { children: React.ReactNo
                 </div>
               </button>
               {profileOpen && (
-                <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-50" onClick={(e) => e.stopPropagation()}>
+                <div className="fixed right-4 top-16 w-[calc(100vw-32px)] max-w-[320px] z-50 bg-white rounded-xl shadow-lg border border-gray-100 py-2 lg:absolute lg:right-0 lg:top-full lg:mt-1 lg:w-48 lg:max-w-none" onClick={(e) => e.stopPropagation()}>
                   <Link href="/ambassador/profile" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">My Profile</Link>
                   <Link href="/ambassador/settings" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">Settings</Link>
                   <hr className="my-1 border-gray-100" />

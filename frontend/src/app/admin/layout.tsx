@@ -190,7 +190,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   style={{ background: BRAND.orange }}>3</span>
               </button>
               {notifOpen && (
-                <div className="absolute right-0 top-full mt-2 w-80 bg-[#ffffff] rounded-2xl shadow-2xl border border-gray-200 z-50 overflow-hidden"
+                <div className="fixed right-4 top-16 w-[calc(100vw-32px)] max-w-[320px] z-50 bg-[#ffffff] rounded-2xl shadow-2xl border border-gray-200 overflow-hidden lg:absolute lg:right-0 lg:top-full lg:mt-2 lg:w-80 lg:max-w-none"
                   onClick={(e) => e.stopPropagation()}>
                   <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
                     <span className="text-sm font-bold text-gray-900">Notifications</span>

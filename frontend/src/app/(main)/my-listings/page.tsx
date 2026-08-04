@@ -260,12 +260,12 @@ export default function MyListingsPage() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-10">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">My Listings</h1>
           <p className="text-sm text-gray-500">{phone} &middot; {listings.length} listing{listings.length !== 1 ? 's' : ''}</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Link href="/listings/create" className="text-white text-sm font-semibold px-4 py-2.5 rounded-lg transition" style={{ background: ORG }}>
             + New Listing
           </Link>
@@ -296,14 +296,14 @@ export default function MyListingsPage() {
               : l.status === 'active' ? 'bg-green-100 text-green-700'
               : 'bg-gray-100 text-gray-600';
             return (
-              <div key={l.id} className="bg-white rounded-xl shadow-sm flex items-center gap-4 p-4">
+              <div key={l.id} className="bg-white rounded-xl shadow-sm flex flex-wrap items-center gap-4 p-4">
                 <Link href={`/listings/${l.id}`} className="h-16 w-16 rounded-lg bg-gray-100 overflow-hidden shrink-0 block">
                   {l.primary_image
                     ? <img src={l.primary_image} alt="" className="w-full h-full object-cover" />
                     : <div className="w-full h-full flex items-center justify-center"><Package size={24} className="opacity-30" /></div>
                   }
                 </Link>
-                <div className="flex-1 min-w-0">
+                <div className="flex-1 basis-48 min-w-0">
                   <Link href={`/listings/${l.id}`} className="font-semibold text-gray-900 truncate block hover:underline" style={{ color: NAVY }}>{l.title}</Link>
                   <p className="text-xs text-gray-500">{l.category_name} &middot; {l.location || 'Kigali'}</p>
                   <div className="flex items-center gap-2 mt-1">

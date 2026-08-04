@@ -5,7 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
 import { Suspense, useState } from 'react';
 import type { Lang } from '@/lib/translations';
-import { Search, UserPlus, Star, Heart, Menu, Coins, List, Gift, Wrench, LogOut } from '@/lib/icons';
+import { Search, UserPlus, Star, Heart, Menu, X, Coins, List, Gift, Wrench, LogOut } from '@/lib/icons';
 
 const navy = '#0f1e42';
 const org  = '#E85D04';
@@ -24,11 +24,36 @@ function NavbarInner() {
   return <NavbarView pathname={pathname} tab={searchParams.get('tab') || ''} />;
 }
 
+function SearchForm({ placeholder, onDone }: { placeholder: string; onDone?: () => void }) {
+  return (
+    <form action="/listings" method="GET" onSubmit={onDone}
+      className="flex items-center overflow-hidden w-full"
+      style={{ border: `2px solid ${navy}`, borderRadius: 4 }}>
+      <input
+        name="search"
+        placeholder={placeholder}
+        className="flex-1 px-3 py-1.5 text-sm outline-none min-w-0"
+        style={{ background: '#fff', color: '#333', border: 'none' }}
+      />
+      <button
+        type="submit"
+        className="flex items-center justify-center px-3 py-2 shrink-0"
+        style={{ background: navy, border: 'none', cursor: 'pointer' }}
+      >
+        <Search size={16} color="#fff" strokeWidth={2.5} />
+      </button>
+    </form>
+  );
+}
+
 function NavbarView({ pathname, tab }: { pathname: string | null; tab: string | null }) {
   const { user, logout }   = useAuth();
   const { lang, setLang, T } = useLanguage();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [catsOpen, setCatsOpen] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const close = () => setMenuOpen(false);
+  const closeMobile = () => setMobileOpen(false);
 
   const activeKey = pathname === '/listings' ? (tab === '' ? 'products' : tab) : null;
   const isListings = pathname === '/listings';
@@ -58,8 +83,8 @@ function NavbarView({ pathname, tab }: { pathname: string | null; tab: string | 
   return (
     <>
       {/* ── TOP BAR ── */}
-      <div className="text-white text-xs px-5 py-1.5 flex items-center gap-4" style={{ background: navy }}>
-        <span className="mr-auto" style={{ opacity: 0.75, fontSize: 12 }}>{T.marketOnline}</span>
+      <div className="text-white text-xs px-3 sm:px-5 py-1.5 flex items-center gap-3 sm:gap-4 flex-wrap" style={{ background: navy }}>
+        <span className="mr-auto hidden sm:inline" style={{ opacity: 0.75, fontSize: 12 }}>{T.marketOnline}</span>
         <Link href="/support" className="transition" style={{ color: '#cdd4f0' }}
           onMouseEnter={e => (e.currentTarget.style.color = '#fff')}
           onMouseLeave={e => (e.currentTarget.style.color = '#cdd4f0')}>
@@ -71,7 +96,7 @@ function NavbarView({ pathname, tab }: { pathname: string | null; tab: string | 
           {T.about}
         </Link>
         {user
-          ? <span style={{ color: 'rgba(255,255,255,0.7)' }}>{user.name.split(' ')[0]}</span>
+          ? <span className="hidden sm:inline" style={{ color: 'rgba(255,255,255,0.7)' }}>{user.name.split(' ')[0]}</span>
           : <Link href="/login" className="transition" style={{ color: '#cdd4f0' }}
               onMouseEnter={e => (e.currentTarget.style.color = '#fff')}
               onMouseLeave={e => (e.currentTarget.style.color = '#cdd4f0')}>
@@ -102,14 +127,14 @@ function NavbarView({ pathname, tab }: { pathname: string | null; tab: string | 
 
       {/* ── MAIN HEADER — white bg + orange bottom border ── */}
       <div
-        className="bg-white px-5 py-2.5 flex items-center justify-between"
+        className="bg-white px-3 sm:px-5 py-2.5 flex items-center justify-between gap-2"
         style={{ borderBottom: `2px solid ${org}` }}
       >
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-3 shrink-0">
-          <div className="rounded-full bg-white flex items-center justify-center overflow-hidden"
-            style={{ width: 54, height: 54, border: `2px solid ${org}` }}>
-            <svg viewBox="0 0 200 200" width="50" height="50" xmlns="http://www.w3.org/2000/svg">
+        <Link href="/" className="flex items-center gap-2 sm:gap-3 shrink-0 min-w-0">
+          <div className="rounded-full bg-white flex items-center justify-center overflow-hidden shrink-0"
+            style={{ width: 44, height: 44, border: `2px solid ${org}` }}>
+            <svg viewBox="0 0 200 200" width="40" height="40" xmlns="http://www.w3.org/2000/svg">
               <path d="M100,10 A90,90 0 0,1 190,100" fill="none" stroke={org} strokeWidth="5" strokeLinecap="round"/>
               <circle cx="100" cy="100" r="86" fill="none" stroke={navy} strokeWidth="3" strokeDasharray="5 3"/>
               <text x="18" y="148" fontFamily="Arial Black,Arial" fontSize="128" fontWeight="900" fill={navy}>E</text>
@@ -129,72 +154,57 @@ function NavbarView({ pathname, tab }: { pathname: string | null; tab: string | 
               <line x1="176" y1="122" x2="165" y2="158" stroke={navy} strokeWidth="1.5" strokeDasharray="4 3"/>
             </svg>
           </div>
-          <div>
-            <h1 className="font-medium text-xl leading-tight" style={{ color: navy }}>
+          <div className="min-w-0">
+            <h1 className="font-medium text-lg sm:text-xl leading-tight truncate" style={{ color: navy }}>
               <span style={{ color: org }}>E</span>-Nyagasambu
             </h1>
-            <p className="font-bold uppercase" style={{ fontSize: 10, color: org, letterSpacing: '2px' }}>
+            <p className="font-bold uppercase hidden sm:block" style={{ fontSize: 10, color: org, letterSpacing: '2px' }}>
               Digital Market Place
             </p>
           </div>
         </Link>
 
         {/* Header right: search + links */}
-        <div className="flex flex-col items-end gap-2">
-
-          {/* Search bar — navy border, navy button */}
-          <form action="/listings" method="GET"
-            className="flex items-center overflow-hidden"
-            style={{ border: `2px solid ${navy}`, borderRadius: 4, width: 360 }}>
-            <input
-              name="search"
-              placeholder={T.searchPlaceholder}
-              className="flex-1 px-3 py-1.5 text-sm outline-none min-w-0"
-              style={{ background: '#fff', color: '#333', border: 'none' }}
-            />
-            <button
-              type="submit"
-              className="flex items-center justify-center px-3 py-2 shrink-0"
-              style={{ background: navy, border: 'none', cursor: 'pointer' }}
-            >
-              <Search size={16} color="#fff" strokeWidth={2.5} />
-            </button>
-          </form>
+        <div className="flex items-center gap-2 sm:gap-3 md:flex-col md:items-end">
+          {/* Search bar — desktop only; mobile search lives in the hamburger menu */}
+          <div className="hidden md:flex w-full" style={{ maxWidth: 360 }}>
+            <SearchForm placeholder={T.searchPlaceholder} />
+          </div>
 
           {/* Header links row */}
-          <div className="flex items-center gap-3" style={{ fontSize: 12 }}>
-            <Link href="/register" className="flex items-center gap-1 transition hover:opacity-70" style={{ color: navy, textDecoration: 'none' }}>
+          <div className="flex items-center gap-2 sm:gap-3" style={{ fontSize: 12 }}>
+            <Link href="/register" className="hidden lg:flex items-center gap-1 transition hover:opacity-70" style={{ color: navy, textDecoration: 'none' }}>
               <UserPlus size={13} />
               Supplier registration
             </Link>
-            <Link href="/register" className="flex items-center gap-1 transition hover:opacity-70" style={{ color: navy, textDecoration: 'none' }}>
+            <Link href="/register" className="hidden lg:flex items-center gap-1 transition hover:opacity-70" style={{ color: navy, textDecoration: 'none' }}>
               <Star size={13} />
               Ambassador registration
             </Link>
-            <Link href="/coins" className="flex items-center gap-1 transition hover:opacity-70" style={{ color: navy, textDecoration: 'none' }}>
+            <Link href="/coins" className="hidden lg:flex items-center gap-1 transition hover:opacity-70" style={{ color: navy, textDecoration: 'none' }}>
               <Heart size={13} />
               {T.donate}
             </Link>
 
             {/* Post to sell — always visible */}
             <Link href="/listings/create"
-              className="text-white text-xs font-semibold px-4 py-1.5 rounded transition hover:opacity-90"
+              className="text-white text-xs font-semibold px-3 sm:px-4 py-1.5 rounded transition hover:opacity-90 whitespace-nowrap"
               style={{ background: org }}>
               + Posting
             </Link>
 
-            {/* My Listings — always visible */}
+            {/* My Listings */}
             <Link href="/my-listings"
-              className="text-xs font-semibold px-4 py-1.5 rounded transition hover:opacity-80"
+              className="hidden sm:flex text-xs font-semibold px-3 sm:px-4 py-1.5 rounded transition hover:opacity-80 whitespace-nowrap"
               style={{ color: navy, border: `1px solid ${navy}`, textDecoration: 'none' }}>
               My Listings
             </Link>
 
             {/* Auth controls (logged in) */}
             {user && (
-              <div className="flex items-center gap-2 ml-1 pl-2" style={{ borderLeft: '1px solid #ddd' }}>
+              <div className="flex items-center gap-2 ml-0.5 pl-2" style={{ borderLeft: '1px solid #ddd' }}>
                 <Link href="/coins"
-                  className="text-xs px-2 py-1 rounded flex items-center gap-1"
+                  className="text-xs px-2 py-1 rounded flex items-center gap-1 whitespace-nowrap"
                   style={{ background: '#0f1e42', color: '#fff' }}>
                   <Coins size={13} /> {user.coins}
                 </Link>
@@ -205,7 +215,7 @@ function NavbarView({ pathname, tab }: { pathname: string | null; tab: string | 
                     {user.name.split(' ')[0]} <span style={{ fontSize: 9 }}>▾</span>
                   </button>
                   {menuOpen && (
-                    <div className="absolute right-0 mt-2 bg-white rounded-xl shadow-xl overflow-hidden border border-gray-100 z-50" style={{ width: 220 }}>
+                    <div className="absolute right-0 mt-2 bg-white rounded-xl shadow-xl overflow-hidden border border-gray-100 z-50" style={{ width: 220, maxWidth: 'calc(100vw - 24px)' }}>
                       <Link href="/my-listings"    className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold hover:bg-gray-50 border-b" style={{ color: navy }} onClick={close}><List size={15} /> {T.myListings}</Link>
                       <Link href="/coins"          className="flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-gray-50 text-gray-800" onClick={close}><Coins size={15} /> {T.coinsWallet}</Link>
                       <Link href="/subscriptions"  className="flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-gray-50 text-gray-800" onClick={close}><Star size={15} /> {T.sellerPlans}</Link>
@@ -224,15 +234,169 @@ function NavbarView({ pathname, tab }: { pathname: string | null; tab: string | 
                 </div>
               </div>
             )}
+
+            {/* Hamburger — mobile only */}
+            <button
+              onClick={() => setMobileOpen(o => !o)}
+              className="md:hidden flex items-center justify-center cursor-pointer transition hover:opacity-70"
+              aria-label="Menu"
+              style={{ background: 'none', border: 'none', color: navy, padding: '4px' }}
+            >
+              {mobileOpen ? <X size={24} /> : <Menu size={24} />}
+            </button>
           </div>
         </div>
       </div>
 
-      {/* ── MAIN NAV ── */}
-      <nav className="px-5 flex items-center justify-between sticky top-0 z-50" style={{ background: navy }}>
+      {/* ── MOBILE MENU ── */}
+      {mobileOpen && (
+        <div className="md:hidden bg-white border-b border-gray-100 shadow-lg max-h-[calc(100vh-120px)] overflow-y-auto">
+          <div className="px-4 py-3 space-y-4">
+            <SearchForm placeholder={T.searchPlaceholder} onDone={closeMobile} />
+
+            {/* Nav links */}
+            <nav className="flex flex-col">
+              {NAV_LINKS.map(({ key, href, label }) => (
+                <Link key={key} href={href} onClick={closeMobile}
+                  className="py-2.5 text-sm flex items-center justify-between"
+                  style={{ color: key === activeKey ? org : navy, fontWeight: key === activeKey ? 700 : 500, textDecoration: 'none' }}>
+                  {label}
+                  {key === 'adverts' && <span style={{ fontSize: 9 }}>▾</span>}
+                </Link>
+              ))}
+            </nav>
+
+            {/* Adverts categories */}
+            <div className="pt-3 border-t border-gray-100">
+              <p className="text-[11px] font-bold uppercase tracking-widest text-gray-400 mb-2">{T.allCategories}</p>
+              <div className="flex flex-wrap gap-1.5">
+                {CAT_LINKS.map(({ label, href, disabled }) => (
+                  disabled ? (
+                    <span key={label} className="text-xs px-2.5 py-1 rounded border border-gray-200 text-gray-300 cursor-not-allowed">
+                      {label}
+                    </span>
+                  ) : (
+                    <Link key={label} href={href} onClick={closeMobile}
+                      className="text-xs px-2.5 py-1 rounded border transition"
+                      style={{ borderColor: org, color: org, textDecoration: 'none' }}>
+                      {label}
+                    </Link>
+                  )
+                ))}
+              </div>
+            </div>
+
+            {/* Quick links */}
+            <div className="flex flex-col gap-1 pt-3 border-t border-gray-100">
+              <Link href="/register" onClick={closeMobile} className="py-1.5 text-sm" style={{ color: navy, textDecoration: 'none' }}>
+                <UserPlus size={13} className="inline mr-1" style={{ verticalAlign: '-2px' }} /> Supplier registration
+              </Link>
+              <Link href="/register" onClick={closeMobile} className="py-1.5 text-sm" style={{ color: navy, textDecoration: 'none' }}>
+                <Star size={13} className="inline mr-1" style={{ verticalAlign: '-2px' }} /> Ambassador registration
+              </Link>
+              <Link href="/coins" onClick={closeMobile} className="py-1.5 text-sm" style={{ color: navy, textDecoration: 'none' }}>
+                <Heart size={13} className="inline mr-1" style={{ verticalAlign: '-2px' }} /> {T.donate}
+              </Link>
+              <Link href="/my-listings" onClick={closeMobile} className="py-1.5 text-sm" style={{ color: navy, textDecoration: 'none' }}>
+                <List size={13} className="inline mr-1" style={{ verticalAlign: '-2px' }} /> My Listings
+              </Link>
+              <Link href="/broker/register" onClick={closeMobile} className="py-1.5 text-sm" style={{ color: navy, textDecoration: 'none' }}>
+                {T.brokerPortal}
+              </Link>
+              <Link href="/listings" onClick={closeMobile} className="py-1.5 text-sm" style={{ color: navy, textDecoration: 'none' }}>
+                {T.allSuppliers}
+              </Link>
+            </div>
+
+            {/* Auth + language */}
+            <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+              {user ? (
+                <button onClick={() => { logout(); closeMobile(); }}
+                  className="flex items-center gap-2 text-sm text-red-600 cursor-pointer" style={{ background: 'none', border: 'none', font: 'inherit' }}>
+                  <LogOut size={15} /> {T.signOut}
+                </button>
+              ) : (
+                <Link href="/login" onClick={closeMobile} className="text-sm font-semibold" style={{ color: org, textDecoration: 'none' }}>
+                  {T.signIn}
+                </Link>
+              )}
+              <div className="flex gap-1.5">
+                {(['en', 'fr', 'rw'] as Lang[]).map(code => (
+                  <button key={code} onClick={() => setLang(code)}
+                    className="transition text-[11px] font-semibold cursor-pointer px-2 py-0.5 rounded"
+                    style={{ border: `1px solid ${lang === code ? navy : '#cdd4f0'}`, background: lang === code ? navy : 'transparent', color: lang === code ? '#fff' : '#6b7280' }}>
+                    {code.toUpperCase()}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── MAIN NAV (desktop) ── */}
+      <nav className="hidden md:flex px-5 items-center justify-between sticky top-0 z-50" style={{ background: navy }}>
         <div className="flex">
           {NAV_LINKS.map(({ key, href, label }) => {
             const isActive = key === activeKey;
+            if (key === 'adverts') {
+              return (
+                <div
+                  key={key}
+                  className="relative"
+                  onMouseEnter={() => setCatsOpen(true)}
+                  onMouseLeave={() => setCatsOpen(false)}
+                >
+                  <Link
+                    href={href}
+                    className="text-sm px-4 py-3 transition block flex items-center gap-1"
+                    style={{
+                      color:        '#cdd4f0',
+                      borderBottom: (isActive || catsOpen) ? `3px solid ${org}` : '3px solid transparent',
+                      textDecoration: 'none',
+                    }}
+                    onMouseEnter={e => {
+                      e.currentTarget.style.color = '#fff';
+                      e.currentTarget.style.borderBottomColor = org;
+                    }}
+                    onMouseLeave={e => {
+                      e.currentTarget.style.color = '#cdd4f0';
+                      e.currentTarget.style.borderBottomColor = (isActive || catsOpen) ? org : 'transparent';
+                    }}
+                    onClick={() => setCatsOpen(o => !o)}
+                  >
+                    {label} <span style={{ fontSize: 9 }}>▾</span>
+                  </Link>
+                  {catsOpen && (
+                    <div className="absolute left-0 top-full bg-white rounded-b-lg shadow-2xl border border-gray-100 z-50 py-2 min-w-56 max-h-[calc(100vh-80px)] overflow-y-auto">
+                      {CAT_LINKS.map(({ label: cLabel, href: cHref, disabled }) => (
+                        disabled ? (
+                          <span
+                            key={cLabel}
+                            className="block px-4 py-2 text-sm text-gray-400 cursor-not-allowed"
+                            title="Coming soon"
+                          >
+                            {cLabel}
+                          </span>
+                        ) : (
+                          <Link
+                            key={cLabel}
+                            href={cHref}
+                            className="block px-4 py-2 text-sm text-gray-700 transition"
+                            style={{ textDecoration: 'none' }}
+                            onMouseEnter={e => { e.currentTarget.style.background = '#fff4ec'; e.currentTarget.style.color = org; }}
+                            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#374151'; }}
+                            onClick={() => setCatsOpen(false)}
+                          >
+                            {cLabel}
+                          </Link>
+                        )
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            }
             return (
               <Link
                 key={key}
@@ -257,7 +421,7 @@ function NavbarView({ pathname, tab }: { pathname: string | null; tab: string | 
             );
           })}
         </div>
-        <div className="flex items-center gap-5">
+        <div className="flex items-center gap-5 shrink-0">
           <Link href="/broker/register" className="text-sm py-3 transition" style={{ color: '#cdd4f0', textDecoration: 'none' }}
             onMouseEnter={e => (e.currentTarget.style.color = '#fff')}
             onMouseLeave={e => (e.currentTarget.style.color = '#cdd4f0')}>
@@ -271,9 +435,9 @@ function NavbarView({ pathname, tab }: { pathname: string | null; tab: string | 
         </div>
       </nav>
 
-      {/* ── CATEGORY PILLS ── */}
+      {/* ── CATEGORY PILLS (desktop) ── */}
       {!isListings && (
-      <div className="px-5 py-1.5 flex gap-2 flex-wrap sticky z-40" style={{ background: '#0f1e42', borderTop: '1px solid rgba(255,255,255,0.25)', top: 44 }}>
+      <div className="hidden md:flex px-5 py-1.5 gap-2 flex-wrap sticky z-40" style={{ background: '#0f1e42', borderTop: '1px solid rgba(255,255,255,0.25)', top: 44 }}>
         {CAT_LINKS.map(({ label, href, disabled }, i) => (
           disabled ? (
             <span

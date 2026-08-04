@@ -95,11 +95,11 @@ export default function HomePage() {
         <form
           action="/listings"
           method="GET"
-          className="flex max-w-xl mx-auto rounded overflow-hidden shadow-2xl"
+          className="flex flex-col sm:flex-row max-w-xl mx-auto rounded overflow-hidden shadow-2xl"
         >
           <select
             name="category"
-            className="px-3 py-3 text-sm border-r border-gray-200 outline-none shrink-0"
+            className="px-3 py-3 text-sm border-r border-b sm:border-b-0 border-gray-200 outline-none shrink-0 bg-white"
             style={{ color: '#333', background: '#fff' }}
           >
             <option value="">{T.allCategories}</option>
@@ -109,19 +109,21 @@ export default function HomePage() {
             <option value="services">{T.services}</option>
             <option value="auction">{T.auction}</option>
           </select>
-          <input
-            name="search"
-            placeholder={T.whatLookingFor}
-            className="flex-1 px-4 py-3 text-sm outline-none min-w-0"
-            style={{ color: '#333', background: '#fff' }}
-          />
-          <button
-            type="submit"
-            className="text-white font-semibold px-6 py-3 text-sm shrink-0 transition hover:opacity-90"
-            style={{ background: org }}
-          >
-            {T.searchArrow}
-          </button>
+          <div className="flex flex-1 min-w-0">
+            <input
+              name="search"
+              placeholder={T.whatLookingFor}
+              className="flex-1 px-4 py-3 text-sm outline-none min-w-0"
+              style={{ color: '#333', background: '#fff' }}
+            />
+            <button
+              type="submit"
+              className="text-white font-semibold px-6 py-3 text-sm shrink-0 transition hover:opacity-90"
+              style={{ background: org }}
+            >
+              {T.searchArrow}
+            </button>
+          </div>
         </form>
       </section>
 

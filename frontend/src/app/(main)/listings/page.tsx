@@ -54,6 +54,7 @@ function ListingsContent() {
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const perPage = 60;
 
   const filterKey = [category, type, search, tab].join('|');
@@ -277,8 +278,17 @@ function ListingsContent() {
         </div>
       ) : (
         /* ─── LISTINGS GRID ─── */
-        <div className="flex flex-col lg:flex-row gap-6">
-          <aside className="lg:w-56 shrink-0">
+        <div className="flex flex-col gap-6">
+          {/* Mobile filters toggle */}
+          <button onClick={() => setFiltersOpen(o => !o)}
+            className="lg:hidden flex items-center gap-2 w-full bg-white rounded-xl border border-gray-200 shadow-sm px-4 py-2.5 text-sm font-semibold transition"
+            style={{ color: NAVY }}>
+            <SlidersHorizontal size={16} style={{ color: ORG }} />
+            {T.category}
+            <span className="ml-auto text-gray-400">{filtersOpen ? '−' : '+'}</span>
+          </button>
+
+          <aside className={`${filtersOpen ? 'block' : 'hidden'} lg:block lg:w-56 shrink-0`}>
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 lg:sticky lg:top-16">
               <div className="flex items-center gap-2 mb-4 pb-3 border-b border-gray-100">
                 <SlidersHorizontal size={16} />
@@ -334,9 +344,9 @@ function ListingsContent() {
           </aside>
 
           <div className="flex-1 min-w-0">
-            <div className="flex items-center justify-between mb-5">
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-5">
               <div>
-                <h1 className="text-xl font-bold text-gray-900">
+                <h1 className="text-lg sm:text-xl font-bold text-gray-900">
                   {search ? <span>Results for &ldquo;{search}&rdquo;</span> : tabLabels.find(t => t.key === tab)?.label || 'Browse Listings'}
                 </h1>
                 <p className="text-sm text-gray-500 mt-0.5">
@@ -381,7 +391,7 @@ function ListingsContent() {
                   {listings.map((l) => <ListingCard key={l.id} listing={l} />)}
                 </div>
                 {totalPages > 1 && (
-                  <div className="flex items-center justify-center gap-2 mt-10">
+                  <div className="flex flex-wrap items-center justify-center gap-2 mt-10">
                     <button onClick={() => setPage(1)} disabled={page <= 1}
                       className="px-3 py-1.5 text-xs rounded-lg border border-gray-200 hover:border-gray-300 disabled:opacity-30 disabled:cursor-not-allowed">First</button>
                     <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page <= 1}

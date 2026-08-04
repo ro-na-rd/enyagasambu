@@ -265,16 +265,16 @@ export default function ListingCard({ listing }: { listing: Listing }) {
             </h3>
           </Link>
 
-          <p className="text-lg font-extrabold" style={{ color: ORG }}>
+          <p className="text-base sm:text-lg font-extrabold truncate" style={{ color: ORG }} title={priceLabel}>
             {priceLabel}
           </p>
 
-          <div className="flex items-center justify-between mt-2.5">
-            <p className="text-xs text-gray-400 flex items-center gap-1.5">
-              <MapPin size={12} />
-              {listing.location || 'Kigali'}
+          <div className="flex items-center justify-between gap-2 mt-2.5">
+            <p className="text-xs text-gray-400 flex items-center gap-1.5 min-w-0">
+              <MapPin size={12} className="shrink-0" />
+              <span className="truncate">{listing.location || 'Kigali'}</span>
             </p>
-            <p className="text-[10px] text-gray-400 font-medium">
+            <p className="text-[10px] text-gray-400 font-medium truncate shrink-0 max-w-[45%]">
               {listing.seller_name}
             </p>
           </div>

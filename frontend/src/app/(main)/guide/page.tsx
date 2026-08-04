@@ -440,7 +440,7 @@ export default function GuidePage() {
           <p className="text-xs mb-3" style={{ color: 'rgba(0,0,0,0.4)' }}>
             Need more help?
           </p>
-          <div className="flex items-center justify-center gap-4">
+          <div className="flex items-center justify-center gap-2 sm:gap-4 flex-wrap px-4">
             <Link href="/about" className="text-xs font-semibold hover:underline" style={{ color: ORG }}>
               About Us
             </Link>
