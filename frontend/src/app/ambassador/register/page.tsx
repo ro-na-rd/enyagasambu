@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useState } from 'react';
 import api from '@/lib/api';
+import AuthRegisterLayout from '@/components/AuthRegisterLayout';
 
 const NAVY = '#0f1e42';
 const ORG = '#E85D04';
@@ -41,23 +42,20 @@ export default function AmbassadorRegisterPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-10"
-      style={{ background: 'linear-gradient(135deg, #0f1e4211 0%, #E85D0411 100%)' }}>
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
-
-        <div className="flex items-center gap-2 mb-6">
-          <div className="w-9 h-9 rounded-lg flex items-center justify-center text-white font-black text-base"
-            style={{ background: `linear-gradient(135deg, ${NAVY}, ${ORG})` }}>E</div>
-          <div>
-            <p className="font-extrabold text-sm leading-tight" style={{ color: NAVY }}>Ambassador Portal</p>
-            <p className="text-[9px] font-bold tracking-widest uppercase" style={{ color: ORG }}>Program</p>
-          </div>
+    <AuthRegisterLayout badge="Ambassador Program">
+      <div className="flex items-center gap-2 mb-6">
+        <div className="w-9 h-9 rounded-lg flex items-center justify-center text-white font-black text-base"
+          style={{ background: `linear-gradient(135deg, ${NAVY}, ${ORG})` }}>E</div>
+        <div>
+          <p className="font-extrabold text-sm leading-tight" style={{ color: NAVY }}>Ambassador Portal</p>
+          <p className="text-[9px] font-bold tracking-widest uppercase" style={{ color: ORG }}>Program</p>
         </div>
+      </div>
 
-        <h1 className="text-2xl font-bold mb-1" style={{ color: NAVY }}>Join as Ambassador</h1>
-        <p className="text-gray-500 text-sm mb-6">Register to earn rewards by referring users.</p>
+      <h1 className="text-2xl font-bold mb-1" style={{ color: NAVY }}>Join as Ambassador</h1>
+      <p className="text-gray-500 text-sm mb-6">Register to earn rewards by referring users.</p>
 
-        {error && <div className="bg-red-50 text-red-700 text-sm rounded-lg px-4 py-3 mb-4 border border-red-100">{error}</div>}
+      {error && <div className="bg-red-50 text-red-700 text-sm rounded-lg px-4 py-3 mb-4 border border-red-100">{error}</div>}
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div>
@@ -112,7 +110,6 @@ export default function AmbassadorRegisterPage() {
           Already have an account?{' '}
           <Link href="/ambassador/login" className="font-semibold hover:underline" style={{ color: ORG }}>Sign In</Link>
         </p>
-      </div>
-    </div>
+    </AuthRegisterLayout>
   );
 }

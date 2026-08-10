@@ -105,7 +105,7 @@ exports.getListing = async (req, res) => {
   try {
     const [[listing]] = await pool.query(
       `SELECT l.*, c.name AS category_name, c.slug AS category_slug, c.type AS category_type,
-              u.name AS seller_name, u.id AS seller_id
+              u.name AS seller_name, u.id AS seller_id, u.role AS seller_role
        FROM listings l
        JOIN categories c ON l.category_id = c.id
        JOIN users u ON l.user_id = u.id

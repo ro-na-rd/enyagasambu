@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useState } from 'react';
 import api from '@/lib/api';
+import AuthRegisterLayout from '@/components/AuthRegisterLayout';
 
 interface BrokerRegisterForm {
   name: string;
@@ -36,14 +37,11 @@ export default function BrokerRegisterPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-10"
-      style={{ background: 'linear-gradient(135deg, #0f1e4211 0%, #E85D0411 100%)' }}>
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
+    <AuthRegisterLayout badge="Broker Program">
+      {error && <div className="bg-red-50 text-red-700 text-sm rounded-lg px-4 py-3 mb-4 border border-red-100">{error}</div>}
 
         <h1 className="text-2xl font-bold mb-1" style={{ color: '#0f1e42' }}>Register as Broker</h1>
         <p className="text-gray-500 text-sm mb-6">Create your broker account to start managing properties and clients.</p>
-
-        {error && <div className="bg-red-50 text-red-700 text-sm rounded-lg px-4 py-3 mb-4 border border-red-100">{error}</div>}
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div>
@@ -93,7 +91,6 @@ export default function BrokerRegisterPage() {
           Already have an account?{' '}
           <Link href="/broker/login" className="font-semibold hover:underline" style={{ color: '#E85D04' }}>Sign In</Link>
         </p>
-      </div>
-    </div>
+    </AuthRegisterLayout>
   );
 }

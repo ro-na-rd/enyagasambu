@@ -1,6 +1,8 @@
 'use client';
 import Link from 'next/link';
 import { Target, Eye, Diamond } from '@/lib/icons';
+import { useLanguage } from '@/context/LanguageContext';
+import { roleMap } from '@/lib/translations';
 
 const navy = '#0f1e42';
 const org  = '#E85D04';
@@ -29,6 +31,86 @@ const BOARD: Member[] = [
   { name: 'Board Member 4', role: 'Board Secretary',           initials: 'B4', color: '#374151' },
 ];
 
+interface RegisteredPerson {
+  name: string;
+  role: string;
+  initials: string;
+  color: string;
+  status: string;
+}
+
+const BROKERS: RegisteredPerson[] = [
+  { name: 'Mukamana Aline',    role: 'Certified Broker',     initials: 'MA', color: '#1a6b3a', status: 'Verified' },
+  { name: 'Habimana Jean',     role: 'Property Broker',      initials: 'HJ', color: '#0a6494', status: 'Verified' },
+  { name: 'Uwase Divine',      role: 'Vehicle Broker',       initials: 'UD', color: '#7c3a8a', status: 'Pending' },
+  { name: 'Nsengimana Eric',   role: 'General Broker',       initials: 'NE', color: '#c04a00', status: 'Verified' },
+  { name: 'Ingabire Sandrine', role: 'Trade Broker',         initials: 'IS', color: '#0f1e42', status: 'Pending' },
+];
+
+const AMBASSADORS: RegisteredPerson[] = [
+  { name: 'Niyonzima Patrick', role: 'Regional Ambassador', initials: 'NP', color: '#1a6b3a', status: 'Verified' },
+  { name: 'Umutesi Grace',     role: 'Community Ambassador', initials: 'UG', color: '#7c3a8a', status: 'Verified' },
+  { name: 'Kwizera Samuel',    role: 'Regional Ambassador', initials: 'KS', color: '#0a6494', status: 'Verified' },
+  { name: 'Mukandayisenga Jo', role: 'Community Ambassador', initials: 'MJ', color: '#c04a00', status: 'Pending' },
+  { name: 'Bizimana Claude',   role: 'Regional Ambassador', initials: 'BC', color: '#0f1e42', status: 'Pending' },
+];
+
+const SUPPLIERS: RegisteredPerson[] = [
+  { name: 'Gasana Enterprises', role: 'Verified Supplier', initials: 'GE', color: '#0a6494', status: 'Verified' },
+  { name: 'Nyiransabimana Ltd', role: 'Product Supplier',   initials: 'NL', color: '#1a6b3a', status: 'Verified' },
+  { name: 'Munyaneza Traders',  role: 'Service Supplier',   initials: 'MT', color: '#c04a00', status: 'Pending' },
+  { name: 'Uwimana Farm Fresh', role: 'Farm Produce',       initials: 'UF', color: '#7c3a8a', status: 'Verified' },
+  { name: 'Kagame Hardware',    role: 'Building Materials', initials: 'KH', color: '#0f1e42', status: 'Pending' },
+];
+
+const REGISTERED: RegisteredPerson[] = [...BROKERS, ...AMBASSADORS, ...SUPPLIERS];
+
+function AvatarStack({ people, label, accent, count, countLabel, link, linkLabel }: {
+  people: RegisteredPerson[];
+  label: string;
+  accent: string;
+  count: number;
+  countLabel: string;
+  link: string;
+  linkLabel: string;
+}) {
+  const shown = people.slice(0, 4);
+  const extra = count - shown.length;
+
+  return (
+    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 flex flex-col">
+      <div className="flex items-center -space-x-3 mb-4">
+        {shown.map((p, i) => (
+          <span
+            key={`${p.initials}-${i}`}
+            className="w-12 h-12 rounded-full border-2 border-white flex items-center justify-center text-white font-bold text-xs shadow-sm"
+            style={{ background: p.color, zIndex: shown.length - i }}
+          >
+            {p.initials}
+          </span>
+        ))}
+        {extra > 0 && (
+          <span
+            className="w-12 h-12 rounded-full border-2 border-white flex items-center justify-center text-xs font-semibold shadow-sm"
+            style={{ background: '#e5e7eb', color: '#374151' }}
+          >
+            +{extra}
+          </span>
+        )}
+      </div>
+
+      <p className="font-bold text-sm mb-0.5" style={{ color: '#111827' }}>{label}</p>
+      <p className="text-xs mb-4" style={{ color: accent }}>{count} {countLabel}</p>
+
+      <div className="mt-auto">
+        <Link href={link} className="text-xs font-bold transition hover:opacity-80" style={{ color: accent }}>
+          {linkLabel} →
+        </Link>
+      </div>
+    </div>
+  );
+}
+
 function Avatar({ member }: { member: Member }) {
   return (
     <div className="flex flex-col items-center text-center">
@@ -54,47 +136,52 @@ function Avatar({ member }: { member: Member }) {
 }
 
 export default function AboutPage() {
+  const { T, lang } = useLanguage();
+  const tr = (s: string) => roleMap[s]?.[lang] ?? s;
+
+  const LEAD = LEADERSHIP.map(m => ({ ...m, role: tr(m.role) }));
+  const BOD  = BOARD.map(m => ({ ...m, role: tr(m.role) }));
+
+  const steps = [
+    { step: '01', title: T.aboutStep1Title, desc: T.aboutStep1Desc },
+    { step: '02', title: T.aboutStep2Title, desc: T.aboutStep2Desc },
+    { step: '03', title: T.aboutStep3Title, desc: T.aboutStep3Desc },
+    { step: '04', title: T.aboutStep4Title, desc: T.aboutStep4Desc },
+    { step: '05', title: T.aboutStep5Title, desc: T.aboutStep5Desc },
+    { step: '06', title: T.aboutStep6Title, desc: T.aboutStep6Desc },
+  ];
+
   return (
     <div className="min-h-screen bg-white">
 
       {/* ── Hero ── */}
       <section className="text-white py-16 px-4"
         style={{ background: `linear-gradient(135deg, ${navy} 60%, ${org} 100%)` }}>
-        <div className="max-w-4xl mx-auto text-center">
-          <h1 className="text-4xl font-extrabold mb-4 leading-tight">About E-Nyagasambu</h1>
+        <div className="max-w-6xl mx-auto">
+          <h1 className="text-4xl font-extrabold mb-4 leading-tight text-center">{T.aboutTitle}</h1>
 
-          <div className="text-base opacity-90 max-w-2xl mx-auto leading-relaxed mb-8 text-left space-y-4">
-            <p>
-              E-Nyagasambu is a Rwanda-based e-commerce and digital marketplace platform that connects
-              buyers, sellers, and service providers directly. Our mission is to simplify commerce by
-              creating a trusted space where businesses and individuals can offer products and services
-              without relying on intermediaries or brokers.
-            </p>
-            <p>
-              By bringing service providers and customers together on a single platform, E-Nyagasambu
-              helps sellers reach more clients, increase visibility, and grow their businesses while
-              enabling customers to find quality products and services quickly and conveniently.
-            </p>
-            <p>
-              We are committed to promoting transparency, affordability, and accessibility in the
-              digital economy by fostering direct connections between service providers and service
-              seekers across Rwanda.
-            </p>
+          <div className="text-base opacity-90 leading-relaxed mb-8 space-y-4 text-left">
+            <p>{T.aboutIntro1}</p>
+            <p>{T.aboutIntro2}</p>
+            <p>{T.aboutIntro3}</p>
           </div>
 
         </div>
       </section>
 
       {/* ── Mission ── */}
-      <section className="max-w-4xl mx-auto px-6 py-12 grid sm:grid-cols-3 gap-6 text-center">
+      <section className="max-w-6xl mx-auto px-6 py-12 grid sm:grid-cols-3 gap-10 text-center">
         {[
-          { icon: <Target size={32} />, title: 'Our Mission',  text: "Digitise Rwanda's local markets and empower every entrepreneur to trade online safely and efficiently." },
-          { icon: <Eye size={32} />, title: 'Our Vision',   text: "To be East Africa's most trusted digital marketplace, driving economic inclusion for all." },
-          { icon: <Diamond size={32} />, title: 'Our Values',   text: 'Transparency, Trust, Innovation and Community — at the heart of everything we build.' },
+          { icon: <Target size={32} />, title: T.aboutMission, text: T.aboutMissionText },
+          { icon: <Eye size={32} />, title: T.aboutVision, text: T.aboutVisionText },
+          { icon: <Diamond size={32} />, title: T.aboutValues, text: T.aboutValuesText },
         ].map(({ icon, title, text }) => (
-          <div key={title} className="bg-gray-50 rounded-xl p-6 border border-gray-100">
-            <div className="mb-3">{icon}</div>
-            <h3 className="font-bold text-sm mb-2" style={{ color: navy }}>{title}</h3>
+          <div key={title} className="bg-gray-50 rounded-2xl p-8 border border-gray-100 shadow-sm flex flex-col items-center">
+            <div className="mb-4 w-16 h-16 rounded-full flex items-center justify-center text-white"
+              style={{ background: `linear-gradient(135deg, ${navy}, ${org})` }}>
+              {icon}
+            </div>
+            <h3 className="font-bold text-base mb-3" style={{ color: navy }}>{title}</h3>
             <p className="text-sm text-gray-500 leading-relaxed">{text}</p>
           </div>
         ))}
@@ -103,20 +190,20 @@ export default function AboutPage() {
       {/* ── Leadership Team ── */}
       <section className="py-12 px-6" style={{ background: '#fafbff' }}>
         <h2 className="text-2xl font-medium text-center mb-2" style={{ color: '#111827' }}>
-          Our <span style={{ color: '#3b82f6', fontWeight: 700 }}>Leadership</span> team
+          {T.aboutLeadershipTitle}
         </h2>
         <p className="text-sm text-gray-500 text-center mb-10">
-          The people driving E-Nyagasambu&apos;s vision forward
+          {T.aboutLeadershipSub}
         </p>
 
         {/* Our Team Members */}
-        <div className="max-w-5xl mx-auto mb-6">
-          <h3 className="text-sm font-semibold uppercase tracking-widest mb-8 text-center"
+        <div className="max-w-6xl mx-auto mb-6">
+          <h3 className="text-sm font-semibold uppercase tracking-widest mb-8"
             style={{ color: org }}>
-            Our Team Members
+            {T.aboutTeamMembers}
           </h3>
-          <div className="flex flex-wrap justify-center gap-10">
-            {LEADERSHIP.map(m => <Avatar key={m.name} member={m} />)}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-x-8 gap-y-12">
+            {LEAD.map(m => <Avatar key={m.name} member={m} />)}
           </div>
         </div>
       </section>
@@ -124,36 +211,48 @@ export default function AboutPage() {
       {/* ── Board Members ── */}
       <section className="py-12 px-6 bg-white">
         <h2 className="text-2xl font-medium text-center mb-2" style={{ color: '#111827' }}>
-          Our <span style={{ color: navy, fontWeight: 700 }}>Board</span> Members
+          {T.aboutBoardTitle}
         </h2>
         <p className="text-sm text-gray-500 text-center mb-10">
-          Guiding E-Nyagasambu with expertise and governance
+          {T.aboutBoardSub}
         </p>
 
-        <div className="max-w-4xl mx-auto flex flex-wrap justify-center gap-10">
-          {BOARD.map(m => <Avatar key={m.name} member={m} />)}
+        <div className="max-w-6xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-x-8 gap-y-12">
+          {BOD.map(m => <Avatar key={m.name} member={m} />)}
         </div>
 
         <p className="text-center text-xs text-gray-400 mt-8 italic">
-          Board member profiles and photos will be updated shortly.
+          {T.aboutBoardNote}
         </p>
+      </section>
+
+      {/* ── Registered Brokers & Ambassadors ── */}
+      <section className="py-12 px-6" style={{ background: '#fafbff' }}>
+        <div className="max-w-6xl mx-auto">
+          <h2 className="text-2xl font-medium mb-2 text-center" style={{ color: '#111827' }}>
+            {T.aboutRegisteredTitle}
+          </h2>
+          <p className="text-sm text-gray-500 mb-10 text-center">
+            {T.aboutRegisteredSub}
+          </p>
+
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
+            <AvatarStack people={BROKERS}     label={T.aboutRegBrokers}     accent={org}     count={BROKERS.length}     countLabel={T.aboutRegistered} link="/broker/register"    linkLabel={T.aboutBecomeBroker} />
+            <AvatarStack people={AMBASSADORS} label={T.aboutRegAmbassadors} accent="#3b82f6" count={AMBASSADORS.length} countLabel={T.aboutRegistered} link="/ambassador/register" linkLabel={T.aboutBecomeAmbassador} />
+            <AvatarStack people={SUPPLIERS}   label={T.aboutRegSuppliers}   accent="#1a6b3a" count={SUPPLIERS.length}   countLabel={T.aboutRegistered} link="/supplier/register"  linkLabel={T.aboutBecomeSupplier} />
+            <AvatarStack people={REGISTERED}  label={T.aboutRegMembers}     accent="#7c3a8a" count={REGISTERED.length}  countLabel={T.aboutRegistered} link="/register"           linkLabel={T.aboutRegisterNow} />
+          </div>
+        </div>
       </section>
 
       {/* ── How it works summary ── */}
       <section className="py-12 px-6" style={{ background: '#fafbff' }}>
         <div className="max-w-4xl mx-auto">
           <h2 className="text-xl font-semibold mb-8 text-center" style={{ color: navy }}>
-            How E-Nyagasambu Works
+            {T.aboutHowTitle}
           </h2>
           <div className="grid sm:grid-cols-2 gap-5">
-            {[
-              { step: '01', title: 'Register & Start Selling',    desc: 'Create a free account and start buying &amp; selling instantly.' },
-              { step: '02', title: 'Post a Listing',             desc: 'Costs 400 coins. Add photos, price, location and description.' },
-              { step: '03', title: 'Browse & Search',            desc: 'Filter by category, keyword or location across all sectors.' },
-              { step: '04', title: 'Reveal Seller Contact',      desc: 'Costs 300 coins + OTP verification to protect both parties.' },
-              { step: '05', title: 'Boost & Feature',            desc: '200 coins boosts your listing to the top for 7 days.' },
-              { step: '06', title: 'Refer & Earn',               desc: 'Share your code — earn 200 RWF when a referred ambassador pays for their certificate.' },
-            ].map(({ step, title, desc }) => (
+            {steps.map(({ step, title, desc }) => (
               <div key={step} className="flex gap-4 bg-white rounded-xl p-5 border border-gray-100">
                 <div className="text-xl font-black shrink-0 mt-0.5" style={{ color: org }}>{step}</div>
                 <div>
@@ -168,7 +267,7 @@ export default function AboutPage() {
 
       {/* ── Partners ── */}
       <section className="py-10 px-6 bg-white border-t border-gray-100">
-        <p className="text-xs text-gray-400 text-center mb-6 uppercase tracking-widest font-semibold">Our Partners</p>
+        <p className="text-xs text-gray-400 text-center mb-6 uppercase tracking-widest font-semibold">{T.aboutPartners}</p>
         <div className="flex flex-wrap justify-center items-center gap-8 max-w-4xl mx-auto">
           {[
             { name: 'RDB',       logo: '/partners/rdb.jpg',       bg: '#fff' },
@@ -193,16 +292,16 @@ export default function AboutPage() {
       {/* ── CTA ── */}
       <section className="py-10 text-center text-white"
         style={{ background: `linear-gradient(135deg, ${navy}, ${org})` }}>
-        <h3 className="text-xl font-semibold mb-3">Ready to join E-Nyagasambu?</h3>
+        <h3 className="text-xl font-semibold mb-3">{T.aboutCtaTitle}</h3>
         <div className="flex gap-3 justify-center flex-wrap">
           <Link href="/register"
             className="bg-white font-bold px-6 py-2.5 rounded text-sm transition hover:opacity-90"
             style={{ color: navy }}>
-            Register Now →
+            {T.aboutCtaRegister} →
           </Link>
           <Link href="/listings"
             className="border border-white text-white font-medium px-6 py-2.5 rounded text-sm transition hover:bg-white/10">
-            Browse Listings
+            {T.aboutCtaBrowse}
           </Link>
         </div>
       </section>

@@ -2,14 +2,14 @@
 import { useForm } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { useState, useEffect, useSyncExternalStore } from 'react';
+import { useState, useEffect } from 'react';
 import api from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
+import AuthRegisterLayout from '@/components/AuthRegisterLayout';
 import { Mail, Lock, Eye, EyeOff, X, AlertTriangle, Loader2 } from '@/lib/icons';
 
 interface LoginForm { email: string; password: string; }
 
-const NAVY = '#0f1e42';
 const ORG = '#E85D04';
 
 export default function LoginPage() {
@@ -18,7 +18,6 @@ export default function LoginPage() {
   const { refreshUser, user, login: authLogin } = useAuth();
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const mounted = useSyncExternalStore(() => () => {}, () => true, () => false);
   const [capsLock, setCapsLock] = useState(false);
 
   useEffect(() => { if (user) router.replace(getRedirectPath(user.role)); }, [user, router]);
@@ -53,55 +52,10 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen relative overflow-hidden flex items-center justify-center"
-      style={{ background: '#f8fafc' }}>
+    <AuthRegisterLayout badge="Sign In">
 
-      {/* ── Back to Home ── */}
-      <Link href="/"
-        className="absolute top-6 left-6 z-20 flex items-center gap-2 text-sm font-semibold transition-all duration-200 hover:opacity-70"
-        style={{ color: 'rgba(0,0,0,0.4)' }}>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M19 12H5" /><polyline points="12 19 5 12 12 5" />
-        </svg>
-        Home
-      </Link>
-
-      {/* ── Animated gradient background ── */}
-      <div className="absolute inset-0">
-        <div className="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] rounded-full opacity-10"
-          style={{ background: `radial-gradient(circle, ${NAVY}, transparent 70%)`, animation: 'float 8s ease-in-out infinite' }} />
-        <div className="absolute bottom-[-15%] right-[-5%] w-[500px] h-[500px] rounded-full opacity-10"
-          style={{ background: `radial-gradient(circle, ${ORG}, transparent 70%)`, animation: 'float 10s ease-in-out infinite reverse' }} />
-        <div className="absolute top-[40%] right-[20%] w-[300px] h-[300px] rounded-full opacity-5"
-          style={{ background: `radial-gradient(circle, #7c3aed, transparent 70%)`, animation: 'float 12s ease-in-out infinite' }} />
-
-        {/* Grid overlay */}
-        <div className="absolute inset-0 opacity-[0.03]"
-          style={{
-            backgroundImage: 'linear-gradient(rgba(0,0,0,.08) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,.08) 1px, transparent 1px)',
-            backgroundSize: '40px 40px',
-          }} />
-
-        {/* Glow line at bottom */}
-        <div className="absolute bottom-0 left-0 right-0 h-px"
-          style={{ background: `linear-gradient(90deg, transparent, ${ORG}66, transparent)` }} />
-      </div>
-
-      {/* ── Login card ── */}
-      <div className={`relative z-10 w-full max-w-md mx-4 transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-8 scale-95'}`}>
-
-        {/* Top accent bar */}
-        <div className="h-1 rounded-t-2xl" style={{ background: `linear-gradient(90deg, ${NAVY}, ${ORG})` }} />
-
-        <div className="rounded-b-2xl p-8 sm:p-10"
-          style={{
-            background: '#ffffff',
-            border: '1px solid rgba(0, 0, 0, 0.08)',
-            boxShadow: '0 25px 60px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(0, 0, 0, 0.05)',
-          }}>
-
-          {/* Logo */}
-          <div className="flex items-center justify-center gap-3 mb-8">
+      {/* Logo */}
+      <div className="flex items-center justify-center gap-3 mb-8">
             <div className="w-11 h-11 rounded-xl flex items-center justify-center"
               style={{ background: `linear-gradient(135deg, ${ORG}, ${ORG}cc)`, boxShadow: `0 4px 20px ${ORG}44` }}>
               <span className="text-gray-900 font-black text-lg">E</span>
@@ -244,9 +198,6 @@ background: 'rgba(0, 0, 0, 0.03)',
           <p className="text-center text-[10px] mt-7" style={{ color: 'rgba(0,0,0,0.25)' }}>
             &copy; {new Date().getFullYear()} E-Nyagasambu Ltd. All rights reserved.
           </p>
-        </div>
-      </div>
-
-    </div>
+    </AuthRegisterLayout>
   );
 }

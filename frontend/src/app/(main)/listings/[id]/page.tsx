@@ -4,7 +4,7 @@ import { useAuth } from '@/context/AuthContext';
 import api from '@/lib/api';
 import Link from 'next/link';
 import { useLanguage } from '@/context/LanguageContext';
-import { ArrowLeft, Star, ChevronLeft, ChevronRight, Package, MapPin, Phone, Loader2, X, MessageCircle, Clock, CheckCircle, AlertCircle, RefreshCw, Heart, Send, AlertOctagon } from '@/lib/icons';
+import { ArrowLeft, Star, ChevronLeft, ChevronRight, Package, MapPin, Phone, Loader2, X, MessageCircle, Clock, CheckCircle, AlertCircle, RefreshCw, Heart, Send, AlertOctagon, Link as LinkIcon } from '@/lib/icons';
 
 interface ListingDetail {
   id: number;
@@ -18,6 +18,7 @@ interface ListingDetail {
   category_name: string;
   seller_name: string;
   seller_id: number;
+  seller_role?: string;
   status: string;
   is_featured: boolean;
   expires_at: string;
@@ -82,6 +83,25 @@ export default function ListingDetailPage({ params }: { params: Promise<{ id: st
   const [reportMsg, setReportMsg] = useState('');
   const [reportSubmitted, setReportSubmitted] = useState(false);
 
+  // Copy link
+  const [copyState, setCopyState] = useState<'idle' | 'copied' | 'failed'>('idle');
+  const [copyTooltip, setCopyTooltip] = useState(false);
+  const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleCopyLink = async () => {
+    const url = `${window.location.origin}/listings/${id}`;
+    let ok = false;
+    try {
+      await navigator.clipboard.writeText(url);
+      ok = true;
+    } catch {
+      ok = false;
+    }
+    setCopyState(ok ? 'copied' : 'failed');
+    if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
+    copyTimerRef.current = setTimeout(() => setCopyState('idle'), 2000);
+  };
+
   const handleSubmitReport = async () => {
     if (!reportReason) { setReportMsg('Please select a reason'); return; }
     setReportMsg('');
@@ -125,6 +145,7 @@ export default function ListingDetailPage({ params }: { params: Promise<{ id: st
     return () => {
       if (pollRef.current) clearInterval(pollRef.current);
       if (otpTimerRef.current) clearInterval(otpTimerRef.current);
+      if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
     };
   }, []);
 
@@ -500,6 +521,29 @@ export default function ListingDetailPage({ params }: { params: Promise<{ id: st
               <div>
                 <p className="text-[10px] font-bold uppercase tracking-wider text-gray-500">Posted</p>
                 <p className="text-sm font-semibold text-gray-800 mt-0.5">{new Date(listing.created_at).toLocaleDateString()}</p>
+              </div>
+              <div
+                className="relative flex items-center justify-between gap-2 col-span-2 mt-1 pt-3 border-t border-gray-200"
+                onMouseEnter={() => setCopyTooltip(true)}
+                onMouseLeave={() => setCopyTooltip(false)}
+              >
+                <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500">{T.copyLink}</span>
+                <button
+                  type="button"
+                  onClick={handleCopyLink}
+                  aria-label={copyState === 'copied' ? T.linkCopied : T.copyLink}
+                  className="w-9 h-9 flex items-center justify-center rounded-full text-gray-600 hover:bg-gray-200 hover:text-gray-800 active:scale-95 transition-all"
+                >
+                  <LinkIcon size={19} strokeWidth={1.75} style={{ color: copyState === 'copied' ? '#16a34a' : undefined }} />
+                </button>
+                {(copyTooltip || copyState !== 'idle') && (
+                  <div
+                    role="status"
+                    className="absolute top-full right-0 mt-2 px-2.5 py-1 rounded-lg text-[11px] font-medium text-white bg-gray-900 shadow-lg whitespace-nowrap z-20"
+                  >
+                    {copyState === 'copied' ? T.linkCopied : copyState === 'failed' ? T.copyFailed : T.copyLink}
+                  </div>
+                )}
               </div>
             </div>
 

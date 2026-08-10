@@ -6,9 +6,14 @@ import { useLanguage } from '@/context/LanguageContext';
 import { Suspense, useState } from 'react';
 import type { Lang } from '@/lib/translations';
 import { Search, UserPlus, Star, Heart, Menu, X, Coins, List, Gift, Wrench, LogOut, BadgeCheck } from '@/lib/icons';
+import { categoryMap } from '@/lib/translations';
 
 const navy = '#0f1e42';
 const org  = '#E85D04';
+
+function catLabel(slug: string, lang: 'en' | 'fr' | 'rw') {
+  return categoryMap[slug]?.[lang] ?? categoryMap[slug]?.en ?? slug;
+}
 
 export default function Navbar() {
   return (
@@ -61,7 +66,7 @@ function NavbarView({ pathname, tab }: { pathname: string | null; tab: string | 
   const NAV_LINKS = [
     { key: 'products',    href: '/listings?tab=products',    label: T.products },
     { key: 'properties',  href: '/listings?tab=properties',  label: T.properties },
-    { key: 'rent',        href: '/listings?tab=rent',        label: 'Rent' },
+    { key: 'rent',        href: '/listings?tab=rent',        label: T.rent },
     { key: 'vehicles',    href: '/listings?tab=vehicles',    label: T.vehicles },
     { key: 'services',    href: '/listings?tab=services',    label: T.services },
     { key: 'auction',     href: '/listings?tab=auction',     label: T.auction },
@@ -71,13 +76,13 @@ function NavbarView({ pathname, tab }: { pathname: string | null; tab: string | 
   const CAT_LINKS: { label: string; href: string; disabled?: boolean }[] = [
     { label: T.allCategories,    href: '/listings' },
     { label: T.electronics,      href: '/listings?category=electronics' },
-    { label: 'Food & Beverage',  href: '/listings?category=food-beverage' },
+    { label: catLabel('food-beverage', lang), href: '/listings?category=food-beverage' },
     { label: T.clothing,         href: '/listings?category=clothing' },
     { label: T.construction,     href: '/listings?category=construction' },
     { label: T.health,           href: '/listings?category=health' },
     { label: T.education,        href: '/listings?category=education' },
-    { label: 'Farmer Product',   href: '/listings?category=farmer-product' },
-    { label: 'Supply Chain',     href: '/listings?category=supply-chain' },
+    { label: catLabel('farmer-product', lang), href: '/listings?category=farmer-product' },
+    { label: catLabel('supply-chain', lang),   href: '/listings?category=supply-chain' },
   ];
 
   return (
@@ -98,7 +103,7 @@ function NavbarView({ pathname, tab }: { pathname: string | null; tab: string | 
         <Link href="/certificates" className="transition" style={{ color: '#cdd4f0' }}
           onMouseEnter={e => (e.currentTarget.style.color = '#fff')}
           onMouseLeave={e => (e.currentTarget.style.color = '#cdd4f0')}>
-          Certificates
+          {T.certificates}
         </Link>
         {user
           ? <span className="hidden sm:inline" style={{ color: 'rgba(255,255,255,0.7)' }}>{user.name.split(' ')[0]}</span>
@@ -164,7 +169,7 @@ function NavbarView({ pathname, tab }: { pathname: string | null; tab: string | 
               <span style={{ color: org }}>E</span>-Nyagasambu
             </h1>
             <p className="font-bold uppercase hidden sm:block" style={{ fontSize: 10, color: org, letterSpacing: '2px' }}>
-              Digital Market Place
+              {T.digitalMarketPlace}
             </p>
           </div>
         </Link>
@@ -178,13 +183,13 @@ function NavbarView({ pathname, tab }: { pathname: string | null; tab: string | 
 
           {/* Header links row */}
           <div className="flex items-center gap-2 sm:gap-3" style={{ fontSize: 12 }}>
-            <Link href="/register" className="hidden lg:flex items-center gap-1 transition hover:opacity-70" style={{ color: navy, textDecoration: 'none' }}>
+            <Link href="/supplier/register" className="hidden lg:flex items-center gap-1 transition hover:opacity-70" style={{ color: navy, textDecoration: 'none' }}>
               <UserPlus size={13} />
-              Supplier registration
+              {T.supplierRegistration}
             </Link>
-            <Link href="/register" className="hidden lg:flex items-center gap-1 transition hover:opacity-70" style={{ color: navy, textDecoration: 'none' }}>
+            <Link href="/ambassador/register" className="hidden lg:flex items-center gap-1 transition hover:opacity-70" style={{ color: navy, textDecoration: 'none' }}>
               <Star size={13} />
-              Ambassador registration
+              {T.ambassadorRegistration}
             </Link>
             <Link href="/donate" className="hidden lg:flex items-center gap-1 transition hover:opacity-70" style={{ color: navy, textDecoration: 'none' }}>
               <Heart size={13} />
@@ -195,14 +200,14 @@ function NavbarView({ pathname, tab }: { pathname: string | null; tab: string | 
             <Link href="/listings/create"
               className="text-white text-xs font-semibold px-3 sm:px-4 py-1.5 rounded transition hover:opacity-90 whitespace-nowrap"
               style={{ background: org }}>
-              + Posting
+              {T.navPosting}
             </Link>
 
             {/* My Listings */}
             <Link href="/my-listings"
               className="hidden sm:flex text-xs font-semibold px-3 sm:px-4 py-1.5 rounded transition hover:opacity-80 whitespace-nowrap"
               style={{ color: navy, border: `1px solid ${navy}`, textDecoration: 'none' }}>
-              My Listings
+              {T.myListings}
             </Link>
 
             {/* Auth controls (logged in) */}
@@ -293,20 +298,20 @@ function NavbarView({ pathname, tab }: { pathname: string | null; tab: string | 
 
             {/* Quick links */}
             <div className="flex flex-col gap-1 pt-3 border-t border-gray-100">
-              <Link href="/register" onClick={closeMobile} className="py-1.5 text-sm" style={{ color: navy, textDecoration: 'none' }}>
-                <UserPlus size={13} className="inline mr-1" style={{ verticalAlign: '-2px' }} /> Supplier registration
+              <Link href="/supplier/register" onClick={closeMobile} className="py-1.5 text-sm" style={{ color: navy, textDecoration: 'none' }}>
+                <UserPlus size={13} className="inline mr-1" style={{ verticalAlign: '-2px' }} /> {T.supplierRegistration}
               </Link>
-              <Link href="/register" onClick={closeMobile} className="py-1.5 text-sm" style={{ color: navy, textDecoration: 'none' }}>
-                <Star size={13} className="inline mr-1" style={{ verticalAlign: '-2px' }} /> Ambassador registration
+              <Link href="/ambassador/register" onClick={closeMobile} className="py-1.5 text-sm" style={{ color: navy, textDecoration: 'none' }}>
+                <Star size={13} className="inline mr-1" style={{ verticalAlign: '-2px' }} /> {T.ambassadorRegistration}
               </Link>
               <Link href="/donate" onClick={closeMobile} className="py-1.5 text-sm" style={{ color: navy, textDecoration: 'none' }}>
                 <Heart size={13} className="inline mr-1" style={{ verticalAlign: '-2px' }} /> {T.donate}
               </Link>
               <Link href="/certificates" onClick={closeMobile} className="py-1.5 text-sm" style={{ color: navy, textDecoration: 'none' }}>
-                <BadgeCheck size={13} className="inline mr-1" style={{ verticalAlign: '-2px' }} /> Certificates
+                <BadgeCheck size={13} className="inline mr-1" style={{ verticalAlign: '-2px' }} /> {T.certificates}
               </Link>
               <Link href="/my-listings" onClick={closeMobile} className="py-1.5 text-sm" style={{ color: navy, textDecoration: 'none' }}>
-                <List size={13} className="inline mr-1" style={{ verticalAlign: '-2px' }} /> My Listings
+                <List size={13} className="inline mr-1" style={{ verticalAlign: '-2px' }} /> {T.myListings}
               </Link>
               <Link href="/broker/register" onClick={closeMobile} className="py-1.5 text-sm" style={{ color: navy, textDecoration: 'none' }}>
                 {T.brokerPortal}

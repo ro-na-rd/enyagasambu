@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import api from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
+import AuthRegisterLayout from '@/components/AuthRegisterLayout';
 import { Store, Loader2, AlertCircle, CheckCircle } from '@/lib/icons';
 
 const NAVY = '#0f1e42';
@@ -54,17 +55,14 @@ export default function SupplierRegisterPage() {
   const inputCls = "w-full rounded-xl pl-4 pr-4 py-3 text-sm bg-white border border-gray-200 outline-none focus:border-[#E85D04] transition";
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4" style={{ background: `linear-gradient(135deg, ${NAVY} 60%, ${ORG} 100%)` }}>
-      <div className="w-full max-w-lg">
-        <div className="h-1 rounded-t-2xl" style={{ background: `linear-gradient(90deg, ${NAVY}, ${ORG})` }} />
-        <div className="rounded-b-2xl p-8" style={{ background: '#ffffff', boxShadow: '0 25px 60px rgba(0,0,0,0.2)' }}>
-          <div className="text-center mb-6">
-            <div className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-3" style={{ background: `linear-gradient(135deg, ${NAVY}, ${ORG})` }}>
-              <Store size={22} style={{ color: '#fff' }} />
-            </div>
-            <h1 className="text-xl font-extrabold text-gray-900">Supplier Registration</h1>
-            <p className="text-sm text-gray-500 mt-1">Register your business to sell to the E-Nyagasambu marketplace</p>
-          </div>
+    <AuthRegisterLayout badge="Supplier Program">
+      <div className="text-center mb-6">
+        <div className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-3" style={{ background: `linear-gradient(135deg, ${NAVY}, ${ORG})` }}>
+          <Store size={22} style={{ color: '#fff' }} />
+        </div>
+        <h1 className="text-xl font-extrabold text-gray-900">Supplier Registration</h1>
+        <p className="text-sm text-gray-500 mt-1">Register your business to sell to the E-Nyagasambu marketplace</p>
+      </div>
 
           {success && (
             <div className="flex items-center gap-2 text-sm rounded-xl px-4 py-3 mb-4" style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', color: '#059669' }}>
@@ -135,8 +133,6 @@ export default function SupplierRegisterPage() {
             Already have an account?{' '}
             <Link href="/login" className="font-semibold hover:underline" style={{ color: ORG }}>Sign in</Link>
           </p>
-        </div>
-      </div>
-    </div>
+    </AuthRegisterLayout>
   );
 }
