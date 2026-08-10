@@ -69,6 +69,7 @@ const t = {
     // Top bar
     marketOnline: 'Nyagasambu Market Online',
     support: 'Support',
+    chatWithUs: 'Chat with us',
     about: 'About',
     signIn: 'Sign In',
     // Navbar
@@ -358,6 +359,7 @@ const t = {
   fr: {
     marketOnline: 'Marché en Ligne de Nyagasambu',
     support: 'Assistance',
+    chatWithUs: 'Discutez avec nous',
     about: 'À propos',
     signIn: 'Connexion',
     products: 'Produits',
@@ -633,6 +635,7 @@ const t = {
   rw: {
     marketOnline: 'Isoko ya Nyagasambu kuri Interineti',
     support: 'Ubufasha',
+    chatWithUs: 'Ganira natwe',
     about: 'Ibyacu',
     signIn: 'Injira',
     products: 'Ibicuruzwa',

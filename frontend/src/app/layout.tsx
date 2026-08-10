@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { AuthProvider } from '@/context/AuthContext';
 import { LanguageProvider } from '@/context/LanguageContext';
+import WhatsAppButton from '@/components/WhatsAppButton';
 
 export const metadata: Metadata = {
   title: 'NMO – Nyagasambu Market Online',
@@ -20,6 +21,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <LanguageProvider>
         <AuthProvider>
           {children}
+          <WhatsAppButton />
         </AuthProvider>
         </LanguageProvider>
       </body>
