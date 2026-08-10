@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import Link from 'next/link';
 import api from '@/lib/api';
-import { Package, Store, Car, CheckCircle, Handshake, Users, Clock, CreditCard, Coins, FileText, TrendingUp, User, Sparkles, Award } from '@/lib/icons';
+import { Package, Store, Car, CheckCircle, Handshake, Users, Clock, CreditCard, Coins, FileText, TrendingUp, User, Award } from '@/lib/icons';
 
 const NAVY = '#0f1e42';
 const ORG = '#E85D04';
@@ -36,6 +36,11 @@ export default function BrokerDashboardPage() {
   const [cert, setCert] = useState<{ status: string; cert_no?: string; amount_rwf?: number; type_name?: string; type_price?: number } | null>(null);
   const [certLoading, setCertLoading] = useState(true);
   const [statsData, setStatsData] = useState<BrokerStats | null>(null);
+  const [report, setReport] = useState<{
+    byMonth: { label: string; count: number }[];
+    recentClients: { id: number; name: string; created_at: string }[];
+    recentLeads: { id: number; buyer_name: string; created_at: string }[];
+  } | null>(null);
 
   useEffect(() => {
     api.get('/broker/certificate').then(({ data }) => {
@@ -46,6 +51,12 @@ export default function BrokerDashboardPage() {
   useEffect(() => {
     api.get('/broker/stats').then(({ data }) => {
       setStatsData(data.stats || null);
+    }).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    api.get('/broker/reports').then(({ data }) => {
+      setReport(data || null);
     }).catch(() => {});
   }, []);
 
@@ -68,13 +79,23 @@ export default function BrokerDashboardPage() {
     { href: '/broker/reports', icon: <TrendingUp size={24} />, label: 'Reports', desc: 'Download performance', color: '#fef2f2' },
   ];
 
+  const relTime = (iso: string) => {
+    try {
+      const d = new Date(iso);
+      const now = new Date();
+      const diff = Math.floor((now.getTime() - d.getTime()) / 86400000);
+      if (diff === 0) return 'Today';
+      if (diff === 1) return 'Yesterday';
+      return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    } catch { return ''; }
+  };
+
   const recentActivities = [
-    { action: 'New client registered: Jean-Pierre Kagame', time: '2 hours ago', icon: <User size={16} /> },
-    { action: 'Property listing approved: 3-Bedroom in Kacyiru', time: '5 hours ago', icon: <CheckCircle size={16} /> },
-    { action: 'Commission credited: RWF 150 from sale #1024', time: 'Yesterday', icon: <Coins size={16} /> },
-    { action: 'New lead from website: Kigali Office Space', time: 'Yesterday', icon: <FileText size={16} /> },
-    { action: 'Deal closed: Toyota Hilux 2020 - Kigali', time: '2 days ago', icon: <Sparkles size={16} /> },
-  ];
+    ...(report?.recentClients || []).map((c) => ({ action: `New client registered: ${c.name}`, at: c.created_at, time: relTime(c.created_at), icon: <User size={16} /> })),
+    ...(report?.recentLeads || []).map((l) => ({ action: `New lead: ${l.buyer_name}`, at: l.created_at, time: relTime(l.created_at), icon: <FileText size={16} /> })),
+  ].sort((a, b) => new Date(b.at) - new Date(a.at)).slice(0, 6);
+
+  const monthMax = Math.max(1, ...(report?.byMonth || []).map((m) => m.count));
 
   return (
     <div className="p-4 lg:p-8">
@@ -174,21 +195,18 @@ export default function BrokerDashboardPage() {
 
         {/* Monthly Performance */}
         <div className="lg:col-span-1">
-          <h2 className="text-sm font-bold uppercase tracking-wider text-gray-800 mb-3">Monthly Performance</h2>
+          <h2 className="text-sm font-bold uppercase tracking-wider text-gray-800 mb-3">Listing Activity</h2>
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
             <div className="flex items-end gap-2 h-32 mb-2">
-              {[
-                { label: 'Jan', value: 65 }, { label: 'Feb', value: 45 }, { label: 'Mar', value: 80 },
-                { label: 'Apr', value: 55 }, { label: 'May', value: 90 }, { label: 'Jun', value: 70 },
-              ].map((bar) => (
+              {(report?.byMonth || []).map((bar) => (
                 <div key={bar.label} className="flex-1 flex flex-col items-center gap-1">
-                  <span className="text-[10px] font-semibold text-gray-600">{bar.value}%</span>
-                  <div className="w-full rounded-md transition-all" style={{ height: `${bar.value}%`, background: `linear-gradient(to top, ${NAVY}, ${ORG})`, minHeight: 4 }} />
+                  <span className="text-[10px] font-semibold text-gray-600">{bar.count}</span>
+                  <div className="w-full rounded-md transition-all" style={{ height: `${Math.max(4, Math.round((bar.count / monthMax) * 100))}%`, background: `linear-gradient(to top, ${NAVY}, ${ORG})`, minHeight: 4 }} />
                   <span className="text-[9px] text-gray-400">{bar.label}</span>
                 </div>
               ))}
             </div>
-            <p className="text-xs text-gray-400 text-center">6-month performance trend</p>
+            <p className="text-xs text-gray-400 text-center">Listings created over the last 6 months</p>
           </div>
         </div>
 
