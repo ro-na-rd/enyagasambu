@@ -1,40 +1,69 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { CreditCard, Search } from '@/lib/icons';
+import api from '@/lib/api';
 
 const NAVY = '#0f1e42';
 const ORG = '#E85D04';
 
-const initialTransactions = [
-  { id: '#T1024', client: 'Jean-Pierre Kagame', property: '3-Bedroom House Kacyiru', amount: 'RWF 85,000', status: 'Completed', date: '15 Jun 2026' },
-  { id: '#T1023', client: 'Claire Niyonzima', property: 'Toyota Hilux 2020', amount: 'RWF 28,000', status: 'Completed', date: '1 Jun 2026' },
-  { id: '#T1022', client: 'Alice Uwimana', property: 'Commercial Plot Gishushu', amount: 'RWF 120,000', status: 'Pending', date: '10 Jun 2026' },
-  { id: '#T1021', client: 'Bob Mugisha', property: '2-Bedroom Nyarutarama', amount: 'RWF 55,000', status: 'In Progress', date: '20 May 2026' },
-  { id: '#T1020', client: 'Jean-Pierre Kagame', property: 'Office Space Kigali Heights', amount: 'RWF 200,000', status: 'Pending', date: '5 May 2026' },
-];
+interface Transaction {
+  id: string;
+  type: string;
+  client: string;
+  property: string;
+  amount: number;
+  status: string;
+  date: string;
+}
+
+interface TxStats {
+  total: number;
+  volume: number;
+  completed: number;
+  pending: number;
+}
+
+const fmtRWF = (n: number) => 'RWF ' + Number(n || 0).toLocaleString('en-US');
 
 const statusColors: Record<string, string> = {
   Completed: 'bg-green-50 text-green-700 border-green-200',
   Pending: 'bg-yellow-50 text-yellow-700 border-yellow-200',
   'In Progress': 'bg-blue-50 text-blue-700 border-blue-200',
+  Refunded: 'bg-gray-100 text-gray-600 border-gray-200',
+  Failed: 'bg-red-50 text-red-700 border-red-200',
 };
 
-const stats = [
-  { label: 'Total Transactions', value: '5', color: NAVY },
-  { label: 'Total Volume', value: 'RWF 488,000', color: ORG },
-  { label: 'Completed', value: '2', color: '#059669' },
-  { label: 'Pending', value: '3', color: '#d97706' },
-];
+const fmtDate = (d: string) => {
+  const dt = new Date(d);
+  if (isNaN(dt.getTime())) return d;
+  return dt.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+};
 
 export default function BrokerTransactionsPage() {
-  const [txns] = useState(initialTransactions);
+  const [txns, setTxns] = useState<Transaction[]>([]);
+  const [statsData, setStatsData] = useState<TxStats | null>(null);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+
+  useEffect(() => {
+    api.get('/broker/transactions').then(({ data }) => {
+      setTxns(data.transactions || []);
+      setStatsData(data.stats || null);
+    }).catch(() => {}).finally(() => setLoading(false));
+  }, []);
 
   const filtered = txns.filter((t) =>
     t.id.toLowerCase().includes(search.toLowerCase()) ||
     t.client.toLowerCase().includes(search.toLowerCase()) ||
     t.property.toLowerCase().includes(search.toLowerCase())
   );
+
+  const stats = [
+    { label: 'Total Transactions', value: String(statsData?.total ?? 0), color: NAVY },
+    { label: 'Total Volume', value: fmtRWF(statsData?.volume ?? 0), color: ORG },
+    { label: 'Completed', value: String(statsData?.completed ?? 0), color: '#059669' },
+    { label: 'Pending', value: String(statsData?.pending ?? 0), color: '#d97706' },
+  ];
 
   return (
     <div className="p-4 lg:p-8 animate-fadeInUp">
@@ -81,18 +110,22 @@ export default function BrokerTransactionsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {filtered.map((t) => (
+              {loading ? (
+                <tr><td colSpan={6} className="px-4 py-8 text-center text-sm text-gray-400">Loading transactions...</td></tr>
+              ) : filtered.length === 0 ? (
+                <tr><td colSpan={6} className="px-4 py-8 text-center text-sm text-gray-400">No transactions found.</td></tr>
+              ) : filtered.map((t) => (
                 <tr key={t.id} className="hover:bg-gray-50 transition">
                   <td className="px-4 py-3.5 font-mono text-xs font-semibold" style={{ color: NAVY }}>{t.id}</td>
                   <td className="px-4 py-3.5 text-gray-700">{t.client}</td>
                   <td className="px-4 py-3.5 text-gray-500">{t.property}</td>
-                  <td className="px-4 py-3.5 font-bold" style={{ color: NAVY }}>{t.amount}</td>
+                  <td className="px-4 py-3.5 font-bold" style={{ color: NAVY }}>{fmtRWF(t.amount)}</td>
                   <td className="px-4 py-3.5">
-                    <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-full border ${statusColors[t.status]}`}>
+                    <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-full border ${statusColors[t.status] || statusColors.Pending}`}>
                       {t.status}
                     </span>
                   </td>
-                  <td className="px-4 py-3.5 text-gray-400 text-xs">{t.date}</td>
+                  <td className="px-4 py-3.5 text-gray-400 text-xs">{fmtDate(t.date)}</td>
                 </tr>
               ))}
             </tbody>

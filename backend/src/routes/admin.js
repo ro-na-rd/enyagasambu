@@ -11,6 +11,7 @@ router.get('/promos',          authenticate, requireStaff, ctrl.getPromos);
 router.get('/participants',    authenticate, requireStaff, ctrl.getParticipants);
 router.get('/revenue-chart',   authenticate, requireStaff, ctrl.getRevenueChart);
 router.get('/connects',            authenticate, requireStaff, ctrl.getConnects);
+router.get('/donations',           authenticate, requireStaff, ctrl.getDonations);
 router.get('/connects/export',     authenticate, requireStaff, ctrl.exportConnects);
 router.patch('/connects/:id/sale-status', authenticate, requireAdmin, ctrl.updateContactSaleStatus);
 router.put('/profile',         authenticate, requireStaff, ctrl.updateProfile);

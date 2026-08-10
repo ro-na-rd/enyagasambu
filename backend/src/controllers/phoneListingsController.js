@@ -96,7 +96,7 @@ exports.verifyAccess = async (req, res) => {
     );
 
     const [listings] = await pool.query(
-      `SELECT l.id, l.title, l.price, l.price_type, l.listing_type, l.status, l.expires_at, l.created_at,
+      `SELECT l.id, l.title, l.price, l.price_type, l.currency, l.listing_type, l.status, l.expires_at, l.created_at,
               c.name AS category_name,
               (SELECT image_url FROM listing_images WHERE listing_id = l.id AND is_primary = 1 LIMIT 1) AS primary_image
        FROM listings l
@@ -117,7 +117,7 @@ exports.verifyAccess = async (req, res) => {
 exports.getListings = async (req, res) => {
   try {
     const [listings] = await pool.query(
-      `SELECT l.id, l.title, l.description, l.price, l.price_type, l.listing_type, l.location,
+      `SELECT l.id, l.title, l.description, l.price, l.price_type, l.currency, l.listing_type, l.location,
               l.status, l.is_featured, l.expires_at, l.created_at,
               c.name AS category_name, c.id AS category_id,
               (SELECT image_url FROM listing_images WHERE listing_id = l.id AND is_primary = 1 LIMIT 1) AS primary_image
@@ -156,10 +156,10 @@ exports.updateListing = async (req, res) => {
       return res.status(404).json({ message: 'Listing not found' });
     }
 
-    const { title, description, price, price_type, location, category_id } = req.body;
+    const { title, description, price, price_type, currency, location, category_id } = req.body;
     await conn.query(
-      'UPDATE listings SET title = ?, description = ?, price = ?, price_type = ?, location = ?, category_id = ? WHERE id = ?',
-      [title, description || null, price || null, price_type || 'fixed', location || null, category_id, id]
+      'UPDATE listings SET title = ?, description = ?, price = ?, price_type = ?, currency = ?, location = ?, category_id = ? WHERE id = ?',
+      [title, description || null, price || null, price_type || 'fixed', currency || 'RWF', location || null, category_id, id]
     );
 
     if (req.files?.length) {

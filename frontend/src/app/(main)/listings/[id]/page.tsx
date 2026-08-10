@@ -5,7 +5,6 @@ import api from '@/lib/api';
 import Link from 'next/link';
 import { useLanguage } from '@/context/LanguageContext';
 import { ArrowLeft, Star, ChevronLeft, ChevronRight, Package, MapPin, Phone, Loader2, X, MessageCircle, Clock, CheckCircle, AlertCircle, RefreshCw, Heart, Send, AlertOctagon } from '@/lib/icons';
-import SimulationBanner from '@/components/SimulationBanner';
 
 interface ListingDetail {
   id: number;
@@ -13,6 +12,7 @@ interface ListingDetail {
   description: string;
   price: number | null;
   price_type: string;
+  currency?: string;
   location: string;
   listing_type: string;
   category_name: string;
@@ -39,7 +39,7 @@ const ORG = '#E85D04';
 const NAVY = '#0f1e42';
 const CONTACT_FEE = 300;
 
-type ContactStep = 'idle' | 'enter_phone' | 'payment_pending' | 'otp_entry' | 'unlocked';
+type ContactStep = 'enter_phone' | 'payment_pending' | 'otp_entry' | 'unlocked';
 
 export default function ListingDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -52,7 +52,7 @@ export default function ListingDetailPage({ params }: { params: Promise<{ id: st
   const [lightboxOpen, setLightboxOpen] = useState(false);
 
   // Contact access flow
-  const [contactStep, setContactStep] = useState<ContactStep>('idle');
+  const [contactStep, setContactStep] = useState<ContactStep>('enter_phone');
   const [phone, setPhone] = useState('');
   const [referenceId, setReferenceId] = useState('');
   const [otpCode, setOtpCode] = useState('');
@@ -268,7 +268,7 @@ export default function ListingDetailPage({ params }: { params: Promise<{ id: st
   };
 
   const resetContactFlow = () => {
-    setContactStep('idle');
+    setContactStep('enter_phone');
     setPhone('');
     setOtpCode('');
     setReferenceId('');
@@ -310,7 +310,7 @@ export default function ListingDetailPage({ params }: { params: Promise<{ id: st
   }
 
   const priceLabel = listing.price
-    ? `${Number(listing.price).toLocaleString()} RWF${listing.price_type === 'per_day' ? '/day' : listing.price_type === 'per_month' ? '/mo' : ''}`
+    ? `${Number(listing.price).toLocaleString()} ${listing.currency || 'RWF'}${listing.price_type === 'per_day' ? '/day' : listing.price_type === 'per_month' ? '/mo' : ''}`
     : T.priceOnRequest;
   const isExpired = new Date(listing.expires_at) < new Date();
   const isOwner = user?.id === listing.seller_id;
@@ -574,46 +574,31 @@ export default function ListingDetailPage({ params }: { params: Promise<{ id: st
                       </div>
                     )}
 
-                    {/* Step 1: Enter phone number */}
-                    {contactStep === 'idle' && (
-                      <div>
-                        <p className="text-sm text-gray-600 mb-3">
-                          Pay <strong className="text-orange-600">{CONTACT_FEE} RWF</strong> via MTN MoMo or Airtel Money to unlock the seller&apos;s phone number, WhatsApp, and call options.
-                        </p>
-                        <button onClick={() => setContactStep('enter_phone')}
-                          disabled={isExpired}
-                          className="w-full text-white font-bold py-3 rounded-xl text-sm hover:shadow-lg hover:scale-[1.01] active:scale-[0.99] transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                          style={{ background: `linear-gradient(135deg, ${NAVY}, ${ORG})` }}>
-                          <Phone size={16} />
-                          Get Seller Contact
-                        </button>
-                      </div>
-                    )}
-
-                    {/* Step 2: Enter phone for MoMo payment */}
+                    {/* Enter phone for MoMo payment */}
                     {contactStep === 'enter_phone' && (
                       <div>
-                        <p className="text-sm font-semibold text-gray-800 mb-1">Enter your Mobile Money number</p>
+                        <p className="text-sm text-gray-600 mb-3">
+                          Pay <strong className="text-orange-600">{CONTACT_FEE} RWF</strong> via MTN MoMo to unlock the seller&apos;s phone number, WhatsApp, and call options.
+                        </p>
                         <p className="text-xs text-gray-500 mb-3">A payment request of <strong className="text-orange-600">{CONTACT_FEE} RWF</strong> will be sent to this number.</p>
                         <div className="relative mb-3">
                           <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
                             <Phone size={16} />
                           </div>
                           <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && !working && handleInitiatePayment()}
                             placeholder="+250 7XX XXX XXX"
                             className="w-full border border-gray-300 rounded-xl pl-10 pr-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#E85D04]/30 focus:border-[#E85D04] transition" />
                         </div>
-                        <button onClick={handleInitiatePayment} disabled={working}
+                        <button onClick={handleInitiatePayment} disabled={working || isExpired}
                           className="w-full text-white font-bold py-3 rounded-xl text-sm hover:shadow-lg disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition"
                           style={{ background: `linear-gradient(135deg, ${NAVY}, ${ORG})` }}>
                           {working ? (
                             <><Loader2 size={16} className="animate-spin" /> Sending request...</>
                           ) : (
-                            <>Pay {CONTACT_FEE} RWF</>
+                            <>Pay {CONTACT_FEE} RWF & Unlock</>
                           )}
                         </button>
-                        <button onClick={resetContactFlow}
-                          className="w-full text-gray-500 text-sm py-2 mt-1 hover:underline">Cancel</button>
                       </div>
                     )}
 
@@ -636,19 +621,6 @@ export default function ListingDetailPage({ params }: { params: Promise<{ id: st
                           className="text-gray-500 text-sm py-2 mt-3 hover:underline">Cancel</button>
                       </div>
                     )}
-                    <SimulationBanner
-                      referenceId={referenceId}
-                      paymentType="contact"
-                      onSuccess={() => {
-                        if (pollRef.current) clearInterval(pollRef.current);
-                        startPaymentPolling(referenceId);
-                      }}
-                      onFailure={() => {
-                        if (pollRef.current) clearInterval(pollRef.current);
-                        setContactError('Payment failed. Please try again.');
-                        setContactStep('enter_phone');
-                      }}
-                    />
 
                     {/* Step 4: Enter OTP */}
                     {contactStep === 'otp_entry' && (
@@ -682,7 +654,6 @@ export default function ListingDetailPage({ params }: { params: Promise<{ id: st
                           className="w-full text-gray-500 text-sm py-2 mt-1 hover:underline">Cancel</button>
                       </div>
                     )}
-                    <SimulationBanner referenceId={referenceId} paymentType="contact" />
                   </div>
                 )}
               </div>

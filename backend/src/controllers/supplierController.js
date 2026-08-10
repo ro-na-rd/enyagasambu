@@ -19,7 +19,7 @@ exports.listSuppliers = async (req, res) => {
 exports.myListings = async (req, res) => {
   try {
     const [rows] = await pool.query(
-      `SELECT id, title, description, price, price_type, location, status, listing_type, expires_at, created_at
+      `SELECT id, title, description, price, price_type, currency, location, status, listing_type, expires_at, created_at
        FROM listings WHERE user_id = ?
        ORDER BY created_at DESC`,
       [req.user.id]

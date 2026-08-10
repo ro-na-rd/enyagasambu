@@ -1,7 +1,5 @@
 const AfricasTalking = require('africastalking');
 
-const SIMULATION_MODE = process.env.PAYMENT_SIMULATION === 'true';
-
 let at, sms;
 try {
   at = AfricasTalking({
@@ -14,13 +12,6 @@ try {
 }
 
 async function sendSms(phone, message) {
-  // In simulation mode, log the message instead of sending SMS
-  if (SIMULATION_MODE) {
-    console.log(`[SIMULATION SMS] To: ${phone}`);
-    console.log(`[SIMULATION SMS] Message: ${message}`);
-    return { status: 'simulated' };
-  }
-
   if (!sms) return;
   if (!phone) throw new Error('Phone number required for SMS');
   const normalized = phone.replace(/\s+/g, '');

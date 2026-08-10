@@ -40,17 +40,6 @@ export default function BrokerRegisterPage() {
       style={{ background: 'linear-gradient(135deg, #0f1e4211 0%, #E85D0411 100%)' }}>
       <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
 
-        <div className="flex items-center gap-2 mb-6">
-          <div className="w-9 h-9 rounded-lg flex items-center justify-center text-white font-black text-base"
-            style={{ background: 'linear-gradient(135deg, #0f1e42, #E85D04)' }}>E</div>
-          <div>
-            <p className="font-extrabold text-sm leading-tight" style={{ color: '#0f1e42' }}>
-              Broker Portal
-            </p>
-            <p className="text-[9px] font-bold tracking-widest uppercase" style={{ color: '#E85D04' }}>E-Nyagasambu</p>
-          </div>
-        </div>
-
         <h1 className="text-2xl font-bold mb-1" style={{ color: '#0f1e42' }}>Register as Broker</h1>
         <p className="text-gray-500 text-sm mb-6">Create your broker account to start managing properties and clients.</p>
 

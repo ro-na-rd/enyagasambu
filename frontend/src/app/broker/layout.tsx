@@ -1,14 +1,38 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import api from '@/lib/api';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { LayoutDashboard, User, BadgeCheck, Users, Home, CreditCard, DollarSign, FileText, MessageCircle, TrendingUp, Bell, Settings, HelpCircle, LogOut, Menu } from '@/lib/icons';
+import {
+  LayoutDashboard, User, BadgeCheck, Users, Home, CreditCard, DollarSign, FileText,
+  MessageCircle, TrendingUp, Bell, Settings, HelpCircle, LogOut, Menu, X, Award,
+} from '@/lib/icons';
 
 const NAVY = '#0f1e42';
 const ORG = '#E85D04';
 
-const menuIcons: Record<string, React.FC<{ size?: number }>> = {
+interface NavItem {
+  href: string;
+  iconKey: keyof typeof menuIcons;
+  label: string;
+  badge?: string;
+}
+
+interface NavGroup {
+  title: string;
+  items: NavItem[];
+}
+
+interface Conversation {
+  key: string;
+  name: string;
+  lastMessage: string;
+  lastAt: string;
+  unread: number;
+}
+
+const menuIcons = {
   dashboard: LayoutDashboard,
   profile: User,
   certificate: BadgeCheck,
@@ -24,20 +48,55 @@ const menuIcons: Record<string, React.FC<{ size?: number }>> = {
   help: HelpCircle,
 };
 
-const menuItems = [
-  { href: '/broker',            iconKey: 'dashboard', label: 'Dashboard' },
-  { href: '/broker/profile',    iconKey: 'profile', label: 'My Profile' },
-  { href: '/broker/certificate', iconKey: 'certificate', label: 'My Certificate' },
-  { href: '/broker/clients',    iconKey: 'clients', label: 'My Clients' },
-  { href: '/broker/listings',   iconKey: 'listings', label: 'My Properties/Listings' },
-  { href: '/broker/transactions', iconKey: 'transactions', label: 'Transactions' },
-  { href: '/broker/commissions', iconKey: 'commissions', label: 'Commission & Earnings' },
-  { href: '/broker/leads',      iconKey: 'leads', label: 'Leads' },
-  { href: '/broker/messages',   iconKey: 'messages', label: 'Messages' },
-  { href: '/broker/reports',    iconKey: 'reports', label: 'Reports' },
-  { href: '/broker/notifications', iconKey: 'notifications', label: 'Notifications' },
-  { href: '/broker/settings',   iconKey: 'settings', label: 'Settings' },
-  { href: '/broker/help',       iconKey: 'help', label: 'Help & Support' },
+const NAV_GROUPS: NavGroup[] = [
+  {
+    title: 'Overview',
+    items: [
+      { href: '/broker', iconKey: 'dashboard', label: 'Dashboard' },
+      { href: '/broker/profile', iconKey: 'profile', label: 'My Profile' },
+    ],
+  },
+  {
+    title: 'Verification',
+    items: [
+      { href: '/broker/certificate', iconKey: 'certificate', label: 'My Certificate', badge: 'Paid' },
+    ],
+  },
+  {
+    title: 'Portfolio',
+    items: [
+      { href: '/broker/clients', iconKey: 'clients', label: 'My Clients' },
+      { href: '/broker/listings', iconKey: 'listings', label: 'Properties / Listings' },
+    ],
+  },
+  {
+    title: 'Finance',
+    items: [
+      { href: '/broker/transactions', iconKey: 'transactions', label: 'Transactions' },
+      { href: '/broker/commissions', iconKey: 'commissions', label: 'Commission & Earnings' },
+    ],
+  },
+  {
+    title: 'Engagement',
+    items: [
+      { href: '/broker/leads', iconKey: 'leads', label: 'Leads' },
+      { href: '/broker/messages', iconKey: 'messages', label: 'Messages' },
+    ],
+  },
+  {
+    title: 'Insights',
+    items: [
+      { href: '/broker/reports', iconKey: 'reports', label: 'Reports' },
+    ],
+  },
+  {
+    title: 'Account',
+    items: [
+      { href: '/broker/notifications', iconKey: 'notifications', label: 'Notifications' },
+      { href: '/broker/settings', iconKey: 'settings', label: 'Settings' },
+      { href: '/broker/help', iconKey: 'help', label: 'Help & Support' },
+    ],
+  },
 ];
 
 export default function BrokerLayout({ children }: { children: React.ReactNode }) {
@@ -46,8 +105,35 @@ export default function BrokerLayout({ children }: { children: React.ReactNode }
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
-  const [notifOpen, setNotifOpen] = useState(false);
   const [msgOpen, setMsgOpen] = useState(false);
+
+  const [msgConvs, setMsgConvs] = useState<Conversation[]>([]);
+
+  useEffect(() => {
+    if (!user) return;
+    let active = true;
+    const load = () => {
+      api.get('/broker/messages/conversations')
+        .then(({ data }) => { if (active) setMsgConvs(data.conversations || []); })
+        .catch(() => {});
+    };
+    load();
+    const t = setInterval(load, 30000);
+    return () => { active = false; clearInterval(t); };
+  }, [user]);
+
+  const unreadMsgs = msgConvs.reduce((sum, c) => sum + (c.unread || 0), 0);
+
+  const convTime = (iso: string) => {
+    try {
+      const d = new Date(iso);
+      const now = new Date();
+      const diff = Math.floor((now.getTime() - d.getTime()) / 86400000);
+      if (diff === 0) return 'Today';
+      if (diff === 1) return 'Yesterday';
+      return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
+    } catch { return ''; }
+  };
 
   const isLoginPage = pathname === '/broker/login' || pathname === '/broker/register';
 
@@ -57,7 +143,7 @@ export default function BrokerLayout({ children }: { children: React.ReactNode }
   }, [user, loading, router, isLoginPage]);
 
   useEffect(() => {
-    const close = () => { setProfileOpen(false); setNotifOpen(false); setMsgOpen(false); };
+    const close = () => { setProfileOpen(false); setMsgOpen(false); };
     window.addEventListener('click', close);
     return () => window.removeEventListener('click', close);
   }, []);
@@ -79,6 +165,15 @@ export default function BrokerLayout({ children }: { children: React.ReactNode }
 
   const initials = user.name?.split(' ').map((p: string) => p[0]).join('').toUpperCase().slice(0, 2) || 'B';
 
+  const isActive = (href: string) => {
+    if (href === '/broker') return pathname === '/broker';
+    return pathname?.startsWith(href);
+  };
+
+  const pageTitle = pathname === '/broker'
+    ? 'Dashboard'
+    : (pathname.split('/').pop()?.replace(/-/g, ' ') || '');
+
   return (
     <div className="h-screen overflow-hidden flex" style={{ background: '#f0f2f6' }}>
 
@@ -90,48 +185,58 @@ export default function BrokerLayout({ children }: { children: React.ReactNode }
       {/* Sidebar - always fixed on desktop */}
       <aside className={`fixed inset-y-0 left-0 z-30 w-64 bg-white border-r border-gray-200 flex flex-col transition-transform duration-200 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
         {/* Brand */}
-        <div className="px-5 py-5 border-b border-gray-100">
-          <Link href="/broker" className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-lg flex items-center justify-center text-white font-black text-sm" style={{ background: `linear-gradient(135deg, ${NAVY}, ${ORG})` }}>E</div>
-            <div>
-              <p className="font-bold text-sm leading-tight" style={{ color: NAVY }}>E-Nyagasambu</p>
-              <p className="text-[9px] font-bold tracking-widest uppercase" style={{ color: ORG }}>Broker Portal</p>
-            </div>
-          </Link>
+        <div className="px-4 py-4 border-b border-gray-100 flex items-center justify-end">
+          <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-gray-400 hover:text-gray-600">
+            <X size={18} />
+          </button>
         </div>
 
         {/* User summary */}
-        <div className="px-4 py-4 border-b border-gray-100 bg-gradient-to-r from-orange-50 to-blue-50">
+        <div className="px-4 py-3 border-b border-gray-100 bg-gradient-to-r from-orange-50 to-blue-50">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm shrink-0 shadow-sm" style={{ background: NAVY }}>
               {initials}
             </div>
             <div className="min-w-0">
               <p className="text-sm font-bold text-gray-900 truncate">{user.name}</p>
-              <p className="text-[10px] text-gray-500">Broker</p>
+              <p className="text-[10px] text-gray-500 flex items-center gap-1">
+                <Award size={11} style={{ color: ORG }} /> Broker
+              </p>
             </div>
           </div>
         </div>
 
-        {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto py-3 px-3 space-y-0.5">
-          {menuItems.map(({ href, iconKey, label }) => {
-            const active = pathname === href;
-            const Icon = menuIcons[iconKey];
-            return (
-              <Link key={href} href={href}
-                onClick={() => setSidebarOpen(false)}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition ${
-                  active
-                    ? 'font-semibold' + ' bg-orange-50 text-[#E85D04]'
-                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                }`}>
-                <Icon size={18} />
-                <span>{label}</span>
-                {active && <span className="ml-auto w-1.5 h-1.5 rounded-full" style={{ background: ORG }} />}
-              </Link>
-            );
-          })}
+        {/* Navigation - grouped by section */}
+        <nav className="flex-1 overflow-y-auto py-3 px-3 space-y-4">
+          {NAV_GROUPS.map(group => (
+            <div key={group.title}>
+              <p className="px-3 mb-1 text-[10px] font-bold uppercase tracking-widest text-gray-400">{group.title}</p>
+              <div className="space-y-0.5">
+                {group.items.map(({ href, iconKey, label, badge }) => {
+                  const active = isActive(href);
+                  const Icon = menuIcons[iconKey];
+                  return (
+                    <Link key={href} href={href}
+                      onClick={() => setSidebarOpen(false)}
+                      className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition ${
+                        active
+                          ? 'font-semibold bg-orange-50 text-[#E85D04]'
+                          : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                      }`}>
+                      <Icon size={18} />
+                      <span className="flex-1 truncate">{label}</span>
+                      {badge && (
+                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: `${ORG}18`, color: ORG }}>
+                          {badge}
+                        </span>
+                      )}
+                      {active && <span className="w-1.5 h-1.5 rounded-full" style={{ background: ORG }} />}
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
         </nav>
 
         {/* Logout */}
@@ -153,76 +258,43 @@ export default function BrokerLayout({ children }: { children: React.ReactNode }
               <Menu size={20} />
             </button>
             <div className="hidden sm:flex items-center gap-2 text-sm text-gray-400">
-              <span className="text-gray-900 font-medium capitalize">
-                {pathname === '/broker' ? 'Dashboard' : pathname.split('/').pop()?.replace(/-/g, ' ') || ''}
-              </span>
+              <span className="text-gray-900 font-medium capitalize">{pageTitle}</span>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Notifications Dropdown */}
-            <div className="relative">
-              <button onClick={(e) => { e.stopPropagation(); setProfileOpen(false); setNotifOpen(!notifOpen); }}
-                className="relative p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition" title="Notifications">
-                <Bell size={20} />
-                <span className="absolute top-1 right-1 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">3</span>
-              </button>
-              {notifOpen && (
-                <div className="fixed right-4 top-16 w-[calc(100vw-32px)] max-w-[320px] z-50 bg-white rounded-xl shadow-lg border border-gray-100 lg:absolute lg:right-0 lg:top-full lg:mt-1 lg:w-80 lg:max-w-none" onClick={(e) => e.stopPropagation()}>
-                  <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-                    <span className="text-sm font-bold text-gray-800">Notifications</span>
-                    <span className="text-xs text-gray-400">3 new</span>
-                  </div>
-                  <div className="max-h-64 overflow-y-auto">
-                    {[
-                      { text: 'New lead: David Habimana interested in 3-Bedroom House', time: '5 min ago' },
-                      { text: 'Listing approved: 3-Bedroom House Kacyiru', time: '2 hours ago' },
-                      { text: 'Commission of RWF 4,250 has been credited', time: '1 day ago' },
-                    ].map((n, i) => (
-                      <div key={i} className="flex items-start gap-3 px-4 py-3 border-b border-gray-50 last:border-b-0 hover:bg-gray-50 transition cursor-pointer">
-                        <div className="w-8 h-8 rounded-full bg-orange-50 flex items-center justify-center text-sm shrink-0"><Bell size={16} /></div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm text-gray-700 leading-snug">{n.text}</p>
-                          <p className="text-xs text-gray-400 mt-0.5">{n.time}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  <Link href="/broker/notifications" className="block text-center text-xs font-semibold text-[#E85D04] py-3 border-t border-gray-100 hover:bg-gray-50 rounded-b-xl">
-                    View All Notifications
-                  </Link>
-                </div>
-              )}
-            </div>
             {/* Messages Dropdown */}
             <div className="relative">
               <button onClick={(e) => { e.stopPropagation(); setProfileOpen(false); setMsgOpen(!msgOpen); }}
                 className="relative p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition" title="Messages">
                 <MessageCircle size={20} />
-                <span className="absolute top-1 right-1 w-4 h-4 bg-orange-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">2</span>
+                {unreadMsgs > 0 && (
+                  <span className="absolute top-1 right-1 w-4 h-4 bg-orange-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">{unreadMsgs}</span>
+                )}
               </button>
               {msgOpen && (
                 <div className="fixed right-4 top-16 w-[calc(100vw-32px)] max-w-[320px] z-50 bg-white rounded-xl shadow-lg border border-gray-100 lg:absolute lg:right-0 lg:top-full lg:mt-1 lg:w-80 lg:max-w-none" onClick={(e) => e.stopPropagation()}>
                   <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
                     <span className="text-sm font-bold text-gray-800">Messages</span>
-                    <span className="text-xs text-gray-400">2 unread</span>
+                    <span className="text-xs text-gray-400">{unreadMsgs} unread</span>
                   </div>
                   <div className="max-h-64 overflow-y-auto">
-                    {[
-                      { from: 'David Habimana', subject: 'Inquiry about 3-Bedroom House', time: 'Today' },
-                      { from: 'Eva Uwase', subject: 'Commercial Plot Pricing', time: 'Yesterday' },
-                      { from: 'Admin Team', subject: 'Broker Verification Update', time: '2 days ago' },
-                    ].map((m, i) => (
-                      <div key={i} className="flex items-start gap-3 px-4 py-3 border-b border-gray-50 last:border-b-0 hover:bg-gray-50 transition cursor-pointer">
-                        <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-white text-xs font-bold shrink-0" style={{ background: NAVY }}>
-                          {m.from.charAt(0)}
+                    {msgConvs.length === 0 ? (
+                      <p className="text-xs text-gray-400 text-center py-8">No conversations yet</p>
+                    ) : msgConvs.map((c) => (
+                      <Link key={c.key} href="/broker/messages" className="flex items-start gap-3 px-4 py-3 border-b border-gray-50 last:border-b-0 hover:bg-gray-50 transition">
+                        <div className="w-8 h-8 rounded-full bg-orange-50 flex items-center justify-center text-[#E85D04] font-bold text-xs shrink-0">
+                          {(c.name || '?').charAt(0).toUpperCase()}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-semibold text-gray-800">{m.from}</p>
-                          <p className="text-xs text-gray-600 mt-0.5">{m.subject}</p>
-                          <p className="text-xs text-gray-400 mt-0.5">{m.time}</p>
+                          <p className="text-sm font-semibold text-gray-800 truncate">{c.name}</p>
+                          <p className="text-xs text-gray-600 truncate">{c.lastMessage}</p>
+                          <p className="text-xs text-gray-400 mt-0.5">{convTime(c.lastAt)}</p>
                         </div>
-                      </div>
+                        {c.unread > 0 && (
+                          <span className="min-w-4 h-4 px-1 bg-[#E85D04] text-white text-[9px] font-bold rounded-full flex items-center justify-center shrink-0">{c.unread}</span>
+                        )}
+                      </Link>
                     ))}
                   </div>
                   <Link href="/broker/messages" className="block text-center text-xs font-semibold text-[#E85D04] py-3 border-t border-gray-100 hover:bg-gray-50 rounded-b-xl">

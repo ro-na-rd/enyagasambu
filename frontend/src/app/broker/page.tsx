@@ -16,10 +16,26 @@ const authorizedServices = [
   { label: 'Customer Support', desc: 'Assist clients through transactions', icon: <Handshake size={20} /> },
 ];
 
+interface BrokerStats {
+  totalClients: number;
+  clientsThisMonth: number;
+  activeListings: number;
+  activeThisWeek: number;
+  pendingListings: number;
+  completedDeals: number;
+  dealsThisQuarter: number;
+  pendingTransactions: number;
+  totalCommission: number;
+  commissionThisMonth: number;
+}
+
+const fmtRWF = (n: number) => 'RWF ' + Number(n || 0).toLocaleString('en-US');
+
 export default function BrokerDashboardPage() {
   const { user } = useAuth();
-  const [cert, setCert] = useState<{ status: string; cert_no?: string; amount_rwf?: number } | null>(null);
+  const [cert, setCert] = useState<{ status: string; cert_no?: string; amount_rwf?: number; type_name?: string; type_price?: number } | null>(null);
   const [certLoading, setCertLoading] = useState(true);
+  const [statsData, setStatsData] = useState<BrokerStats | null>(null);
 
   useEffect(() => {
     api.get('/broker/certificate').then(({ data }) => {
@@ -27,13 +43,22 @@ export default function BrokerDashboardPage() {
     }).catch(() => {}).finally(() => setCertLoading(false));
   }, []);
 
+  useEffect(() => {
+    api.get('/broker/stats').then(({ data }) => {
+      setStatsData(data.stats || null);
+    }).catch(() => {});
+  }, []);
+
+  const certPrice = cert?.amount_rwf ?? cert?.type_price ?? 2000;
+  const fmtPrice = Number(certPrice).toLocaleString('en-US');
+
   const stats = [
-    { label: 'Total Clients', value: '24', icon: <Users size={24} />, color: NAVY, bg: '#eef2ff', change: '+3 this month' },
-    { label: 'Active Listings', value: '12', icon: <Store size={24} />, color: '#059669', bg: '#ecfdf5', change: '+2 this week' },
-    { label: 'Pending Listings', value: '5', icon: <Clock size={24} />, color: '#d97706', bg: '#fffbeb', change: 'Awaiting approval' },
-    { label: 'Completed Deals', value: '18', icon: <CheckCircle size={24} />, color: '#0f1e42', bg: '#f0f2f6', change: 'This quarter' },
-    { label: 'Pending Transactions', value: '7', icon: <CreditCard size={24} />, color: '#dc2626', bg: '#fef2f2', change: 'Need attention' },
-    { label: 'Total Commission', value: 'RWF 2,450', icon: <Coins size={24} />, color: ORG, bg: '#fff7ed', change: '+RWF 320 this month' },
+    { label: 'Total Clients', value: String(statsData?.totalClients ?? 0), icon: <Users size={24} />, color: NAVY, bg: '#eef2ff', change: `+${statsData?.clientsThisMonth ?? 0} this month` },
+    { label: 'Active Listings', value: String(statsData?.activeListings ?? 0), icon: <Store size={24} />, color: '#059669', bg: '#ecfdf5', change: `+${statsData?.activeThisWeek ?? 0} this week` },
+    { label: 'Pending Listings', value: String(statsData?.pendingListings ?? 0), icon: <Clock size={24} />, color: '#d97706', bg: '#fffbeb', change: 'Awaiting renewal' },
+    { label: 'Completed Deals', value: String(statsData?.completedDeals ?? 0), icon: <CheckCircle size={24} />, color: '#0f1e42', bg: '#f0f2f6', change: `+${statsData?.dealsThisQuarter ?? 0} this quarter` },
+    { label: 'Pending Transactions', value: String(statsData?.pendingTransactions ?? 0), icon: <CreditCard size={24} />, color: '#dc2626', bg: '#fef2f2', change: 'Need attention' },
+    { label: 'Total Commission', value: fmtRWF(statsData?.totalCommission ?? 0), icon: <Coins size={24} />, color: ORG, bg: '#fff7ed', change: `+${fmtRWF(statsData?.commissionThisMonth ?? 0)} this month` },
   ];
 
   const quickActions = [
@@ -61,35 +86,37 @@ export default function BrokerDashboardPage() {
 
       {/* Certificate Status */}
       <div className="mb-6">
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 flex items-center justify-between">
-          <div className="flex items-center gap-4">
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-4 min-w-0">
             <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#0f1e42] to-[#E85D04] flex items-center justify-center shrink-0"><Award size={24} /></div>
-            <div>
-              <p className="text-sm font-bold text-gray-800">Broker Certificate</p>
+            <div className="min-w-0">
+              <p className="text-sm font-bold text-gray-800">
+                {cert?.type_name ? `${cert.type_name} Certificate` : 'Broker Certificate'}
+              </p>
               {certLoading ? (
                 <p className="text-xs text-gray-400 mt-1">Loading...</p>
               ) : cert ? (
                 <>
                   <p className="text-xs text-gray-500 mt-0.5">
-                    Status: <span className={`font-semibold ${cert.status === 'active' || cert.status === 'approved' ? 'text-green-600' : 'text-amber-600'}`}>{cert.status}</span>
+                    Status: <span className={`font-semibold capitalize ${cert.status === 'generated' ? 'text-green-600' : 'text-amber-600'}`}>{cert.status}</span>
                     {cert.cert_no && <span className="ml-2">No: {cert.cert_no}</span>}
                   </p>
-                  {cert.status !== 'active' && cert.status !== 'approved' && (
+                  {cert.status !== 'generated' && (
                     <Link href="/broker/certificate" className="text-xs font-semibold text-[#E85D04] hover:underline mt-1 inline-block">Complete Payment →</Link>
                   )}
                 </>
               ) : (
                 <>
-                  <p className="text-xs text-gray-500 mt-0.5">Not yet purchased. Get certified to unlock all brokerage services.</p>
-                  <Link href="/broker/certificate" className="text-xs font-semibold text-[#E85D04] hover:underline mt-1 inline-block">Pay Now (RWF 25,000) →</Link>
+                  <p className="text-xs text-gray-500 mt-0.5">Get your official ID card. Fee: <strong>RWF {fmtPrice}</strong>.</p>
+                  <Link href="/broker/certificate" className="text-xs font-semibold text-[#E85D04] hover:underline mt-1 inline-block">Get Certified (RWF {fmtPrice}) →</Link>
                 </>
               )}
             </div>
           </div>
-          {cert?.status === 'active' || cert?.status === 'approved' ? (
-            <span className="text-[10px] font-medium text-green-600 bg-green-50 px-3 py-1 rounded-full">Active ✓</span>
+          {cert?.status === 'generated' ? (
+            <span className="text-[10px] font-medium text-green-600 bg-green-50 px-3 py-1 rounded-full shrink-0">Ready ✓</span>
           ) : (
-            <Link href="/broker/certificate" className="text-xs font-medium text-white bg-gradient-to-r from-[#0f1e42] to-[#E85D04] px-4 py-2 rounded-lg hover:opacity-90 transition">Pay Now</Link>
+            <Link href="/broker/certificate" className="text-xs font-medium text-white bg-gradient-to-r from-[#0f1e42] to-[#E85D04] px-4 py-2 rounded-lg hover:opacity-90 transition shrink-0">Pay Now</Link>
           )}
         </div>
       </div>

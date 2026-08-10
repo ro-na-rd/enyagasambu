@@ -13,6 +13,7 @@ interface MyListing {
   description: string | null;
   price: number | null;
   price_type: string;
+  currency: string;
   location: string | null;
   status: string;
   listing_type: string;
@@ -88,7 +89,7 @@ export default function SupplierListingsPage() {
               {l.description && <p className="text-xs text-gray-500 mt-1.5 line-clamp-2">{l.description}</p>}
               <div className="flex items-center justify-between mt-4">
                 {l.price != null
-                  ? <span className="text-sm font-extrabold" style={{ color: ORG }}>{Number(l.price).toLocaleString()} RWF</span>
+                  ? <span className="text-sm font-extrabold" style={{ color: ORG }}>{Number(l.price).toLocaleString()} {l.currency || 'RWF'}</span>
                   : <span className="text-sm font-bold text-gray-400">{l.listing_type}</span>}
                 {l.location && (
                   <span className="flex items-center gap-1 text-xs text-gray-400"><MapPin size={11} /> {l.location}</span>

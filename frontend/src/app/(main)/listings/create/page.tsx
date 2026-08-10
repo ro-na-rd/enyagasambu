@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import { useLanguage } from '@/context/LanguageContext';
 import api from '@/lib/api';
 import { Smartphone, Clock, CheckCircle, Sparkles } from '@/lib/icons';
-import SimulationBanner from '@/components/SimulationBanner';
 
 interface CreateForm {
   title: string;
@@ -13,6 +12,7 @@ interface CreateForm {
   category_id: string;
   listing_type: 'sell' | 'rent';
   price: string;
+  currency: string;
   location: string;
 }
 
@@ -39,8 +39,9 @@ export default function CreateListingPage() {
   const [publishing, setPublishing] = useState(false);
   const [otpResendCooldown, setOtpResendCooldown] = useState(0);
   const [postSuccess, setPostSuccess] = useState(false);
+  const [negotiable, setNegotiable] = useState(false);
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<CreateForm>({
-    defaultValues: { listing_type: 'sell' },
+    defaultValues: { listing_type: 'sell', currency: 'RWF' },
   });
 
   useEffect(() => {
@@ -67,7 +68,7 @@ export default function CreateListingPage() {
     setError('');
     const form = new FormData();
     Object.entries(data).forEach(([k, v]) => form.append(k, v));
-    form.append('price_type', 'fixed');
+    form.append('price_type', negotiable ? 'negotiable' : 'fixed');
     form.append('guest_name', sellerName.trim());
     form.append('guest_phone', sellerPhone.trim());
     images.forEach((f) => form.append('images', f));
@@ -93,7 +94,7 @@ export default function CreateListingPage() {
     setError('');
     const form = new FormData();
     Object.entries(data).forEach(([k, v]) => form.append(k, v));
-    form.append('price_type', 'fixed');
+    form.append('price_type', negotiable ? 'negotiable' : 'fixed');
     form.append('guest_name', sellerName.trim());
     form.append('guest_phone', sellerPhone.trim());
     form.append('duration_days', String(durationDays));
@@ -204,7 +205,6 @@ export default function CreateListingPage() {
           </button>
           <p className="text-xs text-gray-400">{T.afterPayingConfirm}</p>
         </div>
-        <SimulationBanner referenceId={referenceId} paymentType="listing" />
       </div>
     );
   }
@@ -219,19 +219,6 @@ export default function CreateListingPage() {
           <h2 className="text-xl font-bold text-gray-900">{T.confirmingPayment}</h2>
           <p className="text-gray-500 text-sm">{T.confirmingPaymentDesc}</p>
         </div>
-        <SimulationBanner
-          referenceId={referenceId}
-          paymentType="listing"
-          onSuccess={() => {
-            if (pollRef.current) clearInterval(pollRef.current);
-            confirmPayment();
-          }}
-          onFailure={() => {
-            if (pollRef.current) clearInterval(pollRef.current);
-            setError('Payment failed. Please try again.');
-            setStep('form');
-          }}
-        />
       </div>
     );
   }
@@ -275,7 +262,6 @@ export default function CreateListingPage() {
             {otpResendCooldown > 0 ? T.resendIn(otpResendCooldown) : T.resendCode}
           </button>
         </div>
-        <SimulationBanner referenceId={referenceId} paymentType="listing" />
       </div>
     );
   }
@@ -362,15 +348,48 @@ export default function CreateListingPage() {
           </div>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">{T.priceRWF}</label>
-          <input
-            type="number"
-            {...register('price')}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none"
-            placeholder={T.leaveBlankIfNegotiable}
-          />
+        <div className="grid grid-cols-1 sm:grid-cols-[1fr_140px] gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{T.priceLabel} {!negotiable && <span className="text-red-500">*</span>}</label>
+            <input
+              type="number"
+              {...register('price', { validate: v => (!negotiable && !v ? 'Price is required when not negotiable' : undefined) })}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none"
+              placeholder={negotiable ? T.leaveBlankIfNegotiable : 'Enter price'}
+            />
+            {errors.price && <p className="text-red-500 text-xs mt-1">{errors.price.message}</p>}
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{T.currencyLabel}</label>
+            <select
+              {...register('currency')}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none"
+            >
+              {['RWF', 'USD', 'EUR', 'GBP', 'KES', 'TZS', 'UGX', 'ZAR', 'XAF', 'CHF', 'CAD', 'AUD'].map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
+          </div>
         </div>
+          <div className="mt-2">
+            <label className="block text-sm font-medium text-gray-700 mb-1">{T.priceType}</label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setNegotiable(false)}
+                className={`border rounded-lg px-3 py-2.5 text-sm font-medium transition ${!negotiable ? 'border-[#E85D04] bg-orange-50 text-[#E85D04]' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}
+              >
+                {T.notNegotiable}
+              </button>
+              <button
+                type="button"
+                onClick={() => setNegotiable(true)}
+                className={`border rounded-lg px-3 py-2.5 text-sm font-medium transition ${negotiable ? 'border-[#E85D04] bg-orange-50 text-[#E85D04]' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}
+              >
+                {T.negotiable}
+              </button>
+            </div>
+          </div>
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">{T.locationField}</label>

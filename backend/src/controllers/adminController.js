@@ -268,13 +268,13 @@ exports.getRevenueChart = async (req, res) => {
 };
 
 exports.createListing = async (req, res) => {
-  const { title, description, price, category_id, location, listing_type } = req.body;
+  const { title, description, price, currency, category_id, location, listing_type } = req.body;
   if (!title || !category_id) return res.status(400).json({ message: 'Title and category are required' });
   try {
     const [result] = await pool.query(
-      `INSERT INTO listings (user_id, category_id, title, description, price, location, listing_type, status, expires_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, 'active', DATE_ADD(NOW(), INTERVAL 30 DAY))`,
-      [req.user.id, category_id, title, description || null, price || null, location || null, listing_type || 'sell']
+      `INSERT INTO listings (user_id, category_id, title, description, price, currency, location, listing_type, status, expires_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'active', DATE_ADD(NOW(), INTERVAL 30 DAY))`,
+      [req.user.id, category_id, title, description || null, price || null, currency || 'RWF', location || null, listing_type || 'sell']
     );
     return res.status(201).json({ message: 'Listing created', id: result.insertId });
   } catch (err) {
@@ -558,6 +558,15 @@ exports.updateContactSaleStatus = async (req, res) => {
       const [[row]] = await pool.query('SELECT listing_id FROM contact_unlocks WHERE id = ?', [id]);
       if (row) {
         await pool.query("UPDATE listings SET status = 'sold' WHERE id = ?", [row.listing_id]);
+        const [[owner]] = await pool.query('SELECT user_id, role FROM listings l JOIN users u ON u.id = l.user_id WHERE l.id = ?', [row.listing_id]);
+        if (owner && owner.role === 'broker') {
+          try {
+            const { recordCommission } = require('../services/brokerCommissionService');
+            await recordCommission(pool, owner.user_id, row.listing_id);
+          } catch (err) {
+            console.error('[Commission record error]', err);
+          }
+        }
       }
     }
     return res.json({ message: 'Sale status updated', sale_status });
@@ -668,6 +677,58 @@ exports.updateProfile = async (req, res) => {
     return res.json({ message: 'Profile updated' });
   } catch (err) {
     console.error(err);
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
+
+exports.getDonations = async (req, res) => {
+  const { page = 1, search, status, method } = req.query;
+  const limit = 20;
+  const offset = (parseInt(page) - 1) * limit;
+
+  try {
+    let where = '1=1';
+    const params = [];
+    if (search) {
+      where += ' AND (donor_name LIKE ? OR donor_phone LIKE ? OR donor_email LIKE ? OR reference_id LIKE ?)';
+      params.push(`%${search}%`, `%${search}%`, `%${search}%`, `%${search}%`);
+    }
+    if (status) {
+      where += ' AND d.status = ?';
+      params.push(status);
+    }
+    if (method) {
+      where += ' AND d.method = ?';
+      params.push(method);
+    }
+
+    const [donations] = await pool.query(
+      `SELECT d.*, u.name AS account_name
+       FROM donations d
+       LEFT JOIN users u ON d.user_id = u.id
+       WHERE ${where}
+       ORDER BY d.created_at DESC LIMIT ? OFFSET ?`,
+      [...params, limit, offset]
+    );
+
+    const [[{ total }]] = await pool.query(
+      `SELECT COUNT(*) AS total FROM donations d WHERE ${where}`,
+      params
+    );
+
+    const [[stats]] = await pool.query(
+      `SELECT
+         COALESCE(SUM(CASE WHEN d.status = 'confirmed' THEN d.amount_rwf END), 0) AS total_raised,
+         COALESCE(SUM(CASE WHEN d.status = 'confirmed' THEN 1 END), 0) AS confirmed_count,
+         COALESCE(SUM(CASE WHEN d.status = 'confirmed' AND d.method = 'momo' THEN 1 END), 0) AS momo_count,
+         COALESCE(SUM(CASE WHEN d.status = 'confirmed' AND d.method = 'card' THEN 1 END), 0) AS card_count,
+         COUNT(*) AS all_count
+       FROM donations d`
+    );
+
+    return res.json({ donations, total, page: parseInt(page), stats });
+  } catch (err) {
+    console.error('[Admin getDonations error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };

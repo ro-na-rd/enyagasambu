@@ -38,18 +38,23 @@ app.use('/api/auth/supplier', require('./routes/supplierAuth'));
 app.use('/api/suppliers', require('./routes/suppliers'));
 app.use('/api/reports', require('./routes/reports'));
 app.use('/api/broker/certificate', require('./routes/brokerCertificate'));
+app.use('/api/broker', require('./routes/broker'));
 app.use('/api/ambassador/certificate', require('./routes/ambassadorCertificate'));
+app.use('/api/supplier/certificate', require('./routes/supplierCertificate'));
 app.use('/api/admin/certificates', require('./routes/adminCertificates'));
 app.use('/api/admin/broker-certificates', require('./routes/adminBrokerCertificates'));
+app.use('/api/admin/supplier-certificates', require('./routes/adminSupplierCertificates'));
+app.use('/api/admin/certificate-types', require('./routes/adminCertificateTypes'));
+app.use('/api/certificate-types', require('./routes/certificateTypes'));
 app.use('/api/settings', require('./routes/settings'));
 app.use('/api/unlock', require('./routes/unlock'));
 app.use('/api/contact-access', require('./routes/contactAccess'));
 app.use('/api/likes', require('./routes/likes'));
 app.use('/api/comments', require('./routes/comments'));
 app.use('/api/content', require('./routes/content'));
-app.use('/api/simulation', require('./routes/simulation'));
 app.use('/api/support', require('./routes/support'));
 app.use('/api/stats', require('./routes/stats'));
+app.use('/api/donations', require('./routes/donations'));
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok', platform: 'NMO' }));
 

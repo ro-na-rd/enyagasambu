@@ -38,7 +38,7 @@ const PAGES = [
 <p>We may update these Terms of Use from time to time. Continued use of the Platform after changes are posted constitutes acceptance of the revised terms.</p>
 
 <h2>8. Contact</h2>
-<p>Questions about these terms can be sent to <strong>E-Nyagasambu@gmail.com</strong>.</p>
+<p>Questions about these terms can be sent to <strong>Enyagasambu@gmail.com</strong>.</p>
 `,
   },
   {
@@ -71,7 +71,7 @@ const PAGES = [
 <p>You may update your personal information through your account settings or by contacting us. You may also request deletion of your account and associated data.</p>
 
 <h2>7. Contact</h2>
-<p>For privacy inquiries, contact <strong>E-Nyagasambu@gmail.com</strong>.</p>
+<p>For privacy inquiries, contact <strong>Enyagasambu@gmail.com</strong>.</p>
 `,
   },
   {

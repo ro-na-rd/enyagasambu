@@ -6,6 +6,9 @@ import { Award, Check, Lock, Download, Upload, Camera } from '@/lib/icons';
 
 const NAVY = '#0f1e42';
 const ORG = '#E85D04';
+const DEFAULT_PRICE = 2000;
+
+const fmtRWF = (n: number) => 'RWF ' + Number(n || 0).toLocaleString('en-US');
 
 function CertPreview({ name, photo, certNo, issued, validUntil }: { name: string; photo?: string | null; certNo?: string; issued: string; validUntil: string }) {
   return (
@@ -67,7 +70,7 @@ function CertPreview({ name, photo, certNo, issued, validUntil }: { name: string
   );
 }
 
-function CertWatermark() {
+function CertWatermark({ price }: { price: number }) {
   return (
     <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-4 pointer-events-none"
       style={{
@@ -85,7 +88,7 @@ function CertWatermark() {
           style={{userSelect:'none',WebkitUserSelect:'none'}}>
           <Lock size={36} className="mx-auto mb-2 text-white/80" />
           <p className="text-white font-extrabold text-lg">Preview Only</p>
-          <p className="text-white/60 text-sm mt-1">Pay 2,000 RWF to unlock & download</p>
+          <p className="text-white/60 text-sm mt-1">Pay {fmtRWF(price)} to unlock & download</p>
         </div>
       </div>
     </div>
@@ -97,6 +100,7 @@ export default function AmbassadorCertificatePage() {
   const [cert, setCert] = useState<{
     cert_no?: string; status?: string; issued_date?: string; valid_until?: string;
     ambassador_name?: string; ambassador_photo?: string | null; photo_url?: string | null;
+    certificate_type_id?: number | null; type_price?: number | null;
   } | null>(null);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
@@ -143,7 +147,7 @@ export default function AmbassadorCertificatePage() {
     setPaying(true);
     setMsg('');
     try {
-      const { data } = await api.post('/ambassador/certificate/pay', { phone });
+      const { data } = await api.post('/ambassador/certificate/pay', { phone, certificateTypeId: cert?.certificate_type_id });
       setMsg('Payment request sent. Approve on your phone.');
       pollRef.current = setInterval(async () => {
         try {
@@ -177,6 +181,7 @@ export default function AmbassadorCertificatePage() {
 
   const ambassadorName = cert?.ambassador_name || user?.name || 'Your Name';
   const ambassadorPhoto = cert?.ambassador_photo || cert?.photo_url || null;
+  const certPrice = cert?.type_price ?? DEFAULT_PRICE;
 
   if (loading) return (
     <div className="p-8 text-center"><p className="text-gray-400 animate-pulse">Loading...</p></div>
@@ -192,7 +197,7 @@ export default function AmbassadorCertificatePage() {
       <p className="text-sm text-gray-500 mb-6">
         {isGenerated
           ? 'Your official ambassador certificate is ready.'
-          : 'Upload your photo, then pay 2,000 RWF to unlock and download your official ambassador certificate.'}
+          : `Upload your photo, then pay ${fmtRWF(certPrice)} to unlock and download your official ambassador certificate.`}
       </p>
 
       {msg && (
@@ -214,7 +219,7 @@ export default function AmbassadorCertificatePage() {
           issued={issuedDisplay}
           validUntil={validUntilDisplay}
         />
-        {!isGenerated && <CertWatermark />}
+        {!isGenerated && <CertWatermark price={certPrice} />}
       </div>
 
       {/* Photo upload section (before payment) */}
@@ -264,7 +269,7 @@ export default function AmbassadorCertificatePage() {
                 <button onClick={handlePay} disabled={paying}
                   className="text-sm px-6 py-2.5 rounded-lg text-white font-bold transition disabled:opacity-50 flex items-center gap-2"
                   style={{ background: ORG }}>
-                  {paying ? 'Processing...' : <><Lock size={14} /> Pay 2,000 RWF</>}
+                  {paying ? 'Processing...' : <><Lock size={14} /> Pay {fmtRWF(certPrice)}</>}
                 </button>
               </div>
             </>

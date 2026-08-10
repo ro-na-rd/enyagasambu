@@ -152,9 +152,9 @@ exports.verifyPaymentOtp = async (req, res) => {
     const durationDays = payload.duration_days || 3;
     const expiresAt = new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000);
     const [listingResult] = await conn.query(
-      `INSERT INTO listings (user_id, category_id, title, description, price, price_type, location, listing_type, expires_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [userId, payload.category_id, payload.title, payload.description, payload.price, payload.price_type, payload.location, payload.listing_type, expiresAt]
+      `INSERT INTO listings (user_id, category_id, title, description, price, price_type, currency, location, listing_type, expires_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [userId, payload.category_id, payload.title, payload.description, payload.price, payload.price_type, payload.currency || 'RWF', payload.location, payload.listing_type, expiresAt]
     );
 
     if (payload.images?.length) {

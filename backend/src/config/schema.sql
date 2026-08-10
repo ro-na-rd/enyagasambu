@@ -33,6 +33,7 @@ CREATE TABLE IF NOT EXISTS listings (
   description TEXT,
   price DECIMAL(12, 2),
   price_type ENUM('fixed', 'negotiable', 'per_day', 'per_month') DEFAULT 'fixed',
+  currency VARCHAR(10) DEFAULT 'RWF',
   location VARCHAR(200),
   status ENUM('active', 'expired', 'sold', 'deleted', 'disabled') DEFAULT 'active',
   listing_type ENUM('sell', 'rent', 'auction') DEFAULT 'sell',
@@ -245,6 +246,19 @@ CREATE TABLE IF NOT EXISTS staff_otps (
   FOREIGN KEY (staff_id) REFERENCES staff(id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS certificate_types (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  code VARCHAR(30) NOT NULL UNIQUE,
+  name VARCHAR(150) NOT NULL,
+  description TEXT DEFAULT NULL,
+  category ENUM('broker','ambassador','supplier') NOT NULL DEFAULT 'broker',
+  price_rwf INT NOT NULL DEFAULT 2000,
+  duration_years INT NOT NULL DEFAULT 1,
+  active TINYINT(1) DEFAULT 1,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
 CREATE TABLE IF NOT EXISTS ambassador_certificates (
   id INT AUTO_INCREMENT PRIMARY KEY,
   user_id INT NOT NULL,
@@ -253,13 +267,15 @@ CREATE TABLE IF NOT EXISTS ambassador_certificates (
   status ENUM('pending','paid','generated') DEFAULT 'pending',
   payment_ref VARCHAR(100) DEFAULT NULL,
   amount_rwf INT DEFAULT 2000,
+  certificate_type_id INT DEFAULT NULL,
   issued_date DATE DEFAULT NULL,
   valid_until DATE DEFAULT NULL,
   generated_by INT DEFAULT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-  FOREIGN KEY (generated_by) REFERENCES staff(id) ON DELETE SET NULL
+  FOREIGN KEY (generated_by) REFERENCES staff(id) ON DELETE SET NULL,
+  FOREIGN KEY (certificate_type_id) REFERENCES certificate_types(id) ON DELETE SET NULL
 );
 
 CREATE TABLE IF NOT EXISTS broker_certificates (
@@ -271,13 +287,49 @@ CREATE TABLE IF NOT EXISTS broker_certificates (
   status ENUM('pending','paid','generated') DEFAULT 'pending',
   payment_ref VARCHAR(100) DEFAULT NULL,
   amount_rwf INT DEFAULT 2000,
+  certificate_type_id INT DEFAULT NULL,
   issued_date DATE DEFAULT NULL,
   valid_until DATE DEFAULT NULL,
   generated_by INT DEFAULT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   FOREIGN KEY (broker_id) REFERENCES users(id) ON DELETE CASCADE,
-  FOREIGN KEY (generated_by) REFERENCES staff(id) ON DELETE SET NULL
+  FOREIGN KEY (generated_by) REFERENCES staff(id) ON DELETE SET NULL,
+  FOREIGN KEY (certificate_type_id) REFERENCES certificate_types(id) ON DELETE SET NULL
+);
+
+CREATE TABLE IF NOT EXISTS supplier_certificates (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL,
+  photo_url VARCHAR(500) DEFAULT NULL,
+  cert_no VARCHAR(50) UNIQUE DEFAULT NULL,
+  status ENUM('pending','paid','generated') DEFAULT 'pending',
+  payment_ref VARCHAR(100) DEFAULT NULL,
+  amount_rwf INT DEFAULT 2000,
+  certificate_type_id INT DEFAULT NULL,
+  issued_date DATE DEFAULT NULL,
+  valid_until DATE DEFAULT NULL,
+  generated_by INT DEFAULT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (generated_by) REFERENCES staff(id) ON DELETE SET NULL,
+  FOREIGN KEY (certificate_type_id) REFERENCES certificate_types(id) ON DELETE SET NULL
+);
+
+CREATE TABLE IF NOT EXISTS broker_messages (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  broker_id INT NOT NULL,
+  client_id INT DEFAULT NULL,
+  direction ENUM('inbound','outbound') NOT NULL,
+  sender_name VARCHAR(150) NOT NULL,
+  sender_email VARCHAR(150) DEFAULT NULL,
+  sender_phone VARCHAR(30) DEFAULT NULL,
+  body TEXT NOT NULL,
+  is_read TINYINT(1) DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (broker_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (client_id) REFERENCES broker_clients(id) ON DELETE SET NULL
 );
 
 CREATE TABLE IF NOT EXISTS platform_settings (
@@ -401,4 +453,25 @@ CREATE TABLE IF NOT EXISTS content_pages (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
   FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL
+);
+
+CREATE TABLE IF NOT EXISTS donations (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NULL,
+  donor_name VARCHAR(120) NOT NULL,
+  donor_email VARCHAR(150),
+  donor_phone VARCHAR(20),
+  amount_rwf INT NOT NULL,
+  method ENUM('momo', 'card') NOT NULL DEFAULT 'momo',
+  provider ENUM('mtn', 'airtel', 'bank') NULL,
+  status ENUM('pending', 'verified', 'confirmed', 'failed') DEFAULT 'pending',
+  reference_id VARCHAR(100) UNIQUE,
+  otp_code VARCHAR(6),
+  otp_expires_at TIMESTAMP NULL,
+  otp_attempts INT DEFAULT 0,
+  card_last4 VARCHAR(4),
+  card_brand VARCHAR(20),
+  message TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
 );

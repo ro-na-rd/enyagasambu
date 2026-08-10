@@ -3,7 +3,6 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import api from '@/lib/api';
 import { FileText, Smartphone, Package } from '@/lib/icons';
-import SimulationBanner from '@/components/SimulationBanner';
 
 interface Listing {
   id: number;
@@ -11,6 +10,7 @@ interface Listing {
   description: string;
   price: number | null;
   price_type: string;
+  currency?: string;
   listing_type: string;
   location: string;
   status: string;
@@ -38,7 +38,7 @@ export default function MyListingsPage() {
   const [error, setError] = useState('');
 
   const [editListing, setEditListing] = useState<Listing | null>(null);
-  const [editForm, setEditForm] = useState({ title: '', description: '', price: '', location: '', category_id: '' });
+  const [editForm, setEditForm] = useState({ title: '', description: '', price: '', currency: 'RWF', location: '', category_id: '', negotiable: false });
   const [editImages, setEditImages] = useState<File[]>([]);
   const [saving, setSaving] = useState(false);
 
@@ -102,21 +102,28 @@ export default function MyListingsPage() {
       title: l.title,
       description: l.description || '',
       price: l.price != null ? String(l.price) : '',
+      currency: l.currency || 'RWF',
       location: l.location || '',
       category_id: String(l.category_id),
+      negotiable: l.price_type === 'negotiable',
     });
     setEditImages([]);
   };
 
   const handleUpdate = async () => {
     if (!editListing) return;
+    if (!editForm.negotiable && !editForm.price.trim()) {
+      setError('Price is required when not negotiable');
+      return;
+    }
     setSaving(true); setError('');
     try {
       const form = new FormData();
       form.append('title', editForm.title);
       form.append('description', editForm.description);
       form.append('price', editForm.price);
-      form.append('price_type', editListing.price_type || 'fixed');
+      form.append('price_type', editForm.negotiable ? 'negotiable' : 'fixed');
+      form.append('currency', editForm.currency);
       form.append('location', editForm.location);
       form.append('category_id', editForm.category_id);
       editImages.forEach(f => form.append('images', f));
@@ -280,8 +287,6 @@ export default function MyListingsPage() {
 
       {error && <div className="bg-red-50 text-red-700 text-sm rounded-lg px-4 py-3 mb-4">{error}</div>}
 
-      <SimulationBanner referenceId={repostInfo?.referenceId} />
-
       {listings.length === 0 ? (
         <div className="text-center py-20 text-gray-500">
           <p className="text-5xl mb-4"><FileText size={48} /></p>
@@ -311,7 +316,7 @@ export default function MyListingsPage() {
                       {expired ? 'Expired' : l.status === 'active' ? 'Active' : l.status}
                     </span>
                     {l.price != null && (
-                      <span className="text-xs font-bold" style={{ color: ORG }}>{Number(l.price).toLocaleString()} RWF</span>
+                      <span className="text-xs font-bold" style={{ color: ORG }}>{Number(l.price).toLocaleString()} {l.currency || 'RWF'}</span>
                     )}
                   </div>
                 </div>
@@ -399,9 +404,31 @@ export default function MyListingsPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Price (RWF)</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Price {!editForm.negotiable && <span className="text-red-500">*</span>}</label>
                   <input type="number" value={editForm.price} onChange={e => setEditForm(p => ({ ...p, price: e.target.value }))}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none" placeholder="Leave blank if negotiable" />
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none" placeholder={editForm.negotiable ? 'Leave blank if negotiable' : 'Enter price'} />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Currency</label>
+                  <select value={editForm.currency} onChange={e => setEditForm(p => ({ ...p, currency: e.target.value }))}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none">
+                    {['RWF', 'USD', 'EUR', 'GBP', 'KES', 'TZS', 'UGX', 'ZAR', 'XAF', 'CHF', 'CAD', 'AUD'].map((c) => (
+                      <option key={c} value={c}>{c}</option>
+                    ))}
+                  </select>
+                  <div className="mt-2">
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Price Type</label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button type="button" onClick={() => setEditForm(p => ({ ...p, negotiable: false }))}
+                        className={`border rounded-lg px-3 py-2 text-xs font-medium transition ${!editForm.negotiable ? 'border-[#E85D04] bg-orange-50 text-[#E85D04]' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}>
+                        Not Negotiable
+                      </button>
+                      <button type="button" onClick={() => setEditForm(p => ({ ...p, negotiable: true }))}
+                        className={`border rounded-lg px-3 py-2 text-xs font-medium transition ${editForm.negotiable ? 'border-[#E85D04] bg-orange-50 text-[#E85D04]' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}>
+                        Negotiable
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
               <div>

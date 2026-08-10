@@ -1,14 +1,57 @@
 const pool = require('../config/db');
 const { uploadToS3 } = require('../services/s3Service');
 
-const CERT_PRICE = 2000;
+const DEFAULT_CERT_PRICE = 2000;
+
+async function resolveType(certificateTypeId, category) {
+  if (certificateTypeId) {
+    const [[type]] = await pool.query(
+      'SELECT id, code, name, price_rwf, duration_years FROM certificate_types WHERE id = ? AND active = 1',
+      [certificateTypeId]
+    );
+    if (!type) throw Object.assign(new Error('Certificate type not available'), { status: 400 });
+    return type;
+  }
+  const [[type]] = await pool.query(
+    'SELECT id, code, name, price_rwf, duration_years FROM certificate_types WHERE category = ? AND active = 1 ORDER BY price_rwf LIMIT 1',
+    [category]
+  );
+  if (type) return type;
+  return { id: null, code: 'BROKER', name: 'Certified Broker', price_rwf: DEFAULT_CERT_PRICE, duration_years: 1 };
+}
 
 exports.getMyCertificate = async (req, res) => {
   try {
     const [rows] = await pool.query(
-      'SELECT id, photo_url, cert_no, status, payment_ref, amount_rwf, issued_date, valid_until, created_at, updated_at FROM broker_certificates WHERE broker_id = ? ORDER BY created_at DESC LIMIT 1',
+      `SELECT bc.id, bc.photo_url, bc.cert_no, bc.status, bc.payment_ref, bc.amount_rwf, bc.certificate_type_id,
+              bc.issued_date, bc.valid_until, bc.created_at, bc.updated_at,
+              ct.name AS type_name, ct.code AS type_code, ct.price_rwf AS type_price, ct.duration_years AS type_duration
+       FROM broker_certificates bc
+       LEFT JOIN certificate_types ct ON bc.certificate_type_id = ct.id
+       WHERE bc.broker_id = ? ORDER BY bc.created_at DESC LIMIT 1`,
       [req.user.id]
     );
+
+    if (rows.length === 0) {
+      const type = await resolveType(null, 'broker');
+      const [result] = await pool.query(
+        'INSERT INTO broker_certificates (broker_id, status, amount_rwf, certificate_type_id) VALUES (?, ?, ?, ?)',
+        [req.user.id, 'pending', type.price_rwf, type.id]
+      );
+      const [
+        [certificate]
+      ] = await pool.query(
+        `SELECT bc.id, bc.photo_url, bc.cert_no, bc.status, bc.payment_ref, bc.amount_rwf, bc.certificate_type_id,
+                bc.issued_date, bc.valid_until, bc.created_at, bc.updated_at,
+                ct.name AS type_name, ct.code AS type_code, ct.price_rwf AS type_price, ct.duration_years AS type_duration
+         FROM broker_certificates bc
+         LEFT JOIN certificate_types ct ON bc.certificate_type_id = ct.id
+         WHERE bc.id = ?`,
+        [result.insertId]
+      );
+      return res.json({ certificate });
+    }
+
     return res.json({ certificate: rows[0] || null });
   } catch (err) {
     console.error(err);
@@ -45,7 +88,11 @@ exports.uploadPhoto = async (req, res) => {
 };
 
 exports.requestCertificate = async (req, res) => {
+  const { certificateTypeId } = req.body || {};
+
   try {
+    const type = await resolveType(certificateTypeId, 'broker');
+
     const [existing] = await pool.query(
       'SELECT id, status FROM broker_certificates WHERE broker_id = ? ORDER BY created_at DESC LIMIT 1',
       [req.user.id]
@@ -61,31 +108,34 @@ exports.requestCertificate = async (req, res) => {
       }
       if (cert.status === 'pending') {
         return res.json({
-          message: 'Certificate request already submitted. Pay 2,000 RWF to proceed.',
+          message: 'Certificate request already submitted. Pay to proceed.',
           certificateId: cert.id,
-          amount: CERT_PRICE,
+          amount: type.price_rwf,
+          certificateType: type,
         });
       }
     }
 
     const [result] = await pool.query(
-      'INSERT INTO broker_certificates (broker_id, status, amount_rwf) VALUES (?, ?, ?)',
-      [req.user.id, 'pending', CERT_PRICE]
+      'INSERT INTO broker_certificates (broker_id, status, amount_rwf, certificate_type_id) VALUES (?, ?, ?, ?)',
+      [req.user.id, 'pending', type.price_rwf, type.id]
     );
 
     return res.status(201).json({
-      message: 'Certificate request submitted. Please pay 2,000 RWF to proceed.',
+      message: 'Certificate request submitted. Please pay to proceed.',
       certificateId: result.insertId,
-      amount: CERT_PRICE,
+      amount: type.price_rwf,
+      certificateType: type,
     });
   } catch (err) {
     console.error(err);
+    if (err.status) return res.status(err.status).json({ message: err.message });
     return res.status(500).json({ message: 'Server error' });
   }
 };
 
 exports.confirmPayment = async (req, res) => {
-  const { phone } = req.body;
+  const { phone, certificateTypeId } = req.body || {};
   if (!phone) return res.status(400).json({ message: 'Phone number is required' });
 
   try {
@@ -100,20 +150,24 @@ exports.confirmPayment = async (req, res) => {
     if (cert.status === 'paid') return res.status(400).json({ message: 'Payment already confirmed' });
     if (cert.status !== 'pending') return res.status(400).json({ message: 'Invalid certificate status' });
 
+    const type = await resolveType(certificateTypeId, 'broker');
+    const amount = type.price_rwf || DEFAULT_CERT_PRICE;
     const paymentRef = `BROKER_CERT_${req.user.id}_${Date.now()}`;
 
     await pool.query(
-      'UPDATE broker_certificates SET payment_ref = ?, phone = ? WHERE id = ?',
-      [paymentRef, phone, cert.id]
+      'UPDATE broker_certificates SET payment_ref = ?, phone = ?, amount_rwf = ?, certificate_type_id = ? WHERE id = ?',
+      [paymentRef, phone, amount, type.id, cert.id]
     );
 
     return res.json({
-      message: 'Payment request submitted. Admin will confirm your payment of 2,000 RWF.',
+      message: `Payment request submitted. Admin will confirm your payment of ${Number(amount).toLocaleString('en-US')} RWF.`,
       referenceId: paymentRef,
       certificateId: cert.id,
+      amount,
     });
   } catch (err) {
     console.error(err);
+    if (err.status) return res.status(err.status).json({ message: err.message });
     return res.status(500).json({ message: 'Server error' });
   }
 };

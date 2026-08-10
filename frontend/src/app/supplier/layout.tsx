@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { LayoutDashboard, User, Home, Store, HelpCircle, LogOut, Menu, Bell } from '@/lib/icons';
+import { LayoutDashboard, User, Home, Store, HelpCircle, LogOut, Menu, Bell, Award } from '@/lib/icons';
 
 const NAVY = '#0f1e42';
 const ORG = '#E85D04';
@@ -12,6 +12,7 @@ const menuIcons: Record<string, React.FC<{ size?: number }>> = {
   dashboard: LayoutDashboard,
   profile: User,
   listings: Home,
+  certificate: Award,
   help: HelpCircle,
 };
 
@@ -19,6 +20,7 @@ const menuItems = [
   { href: '/supplier',        iconKey: 'dashboard', label: 'Dashboard' },
   { href: '/supplier/profile', iconKey: 'profile', label: 'My Profile' },
   { href: '/supplier/listings', iconKey: 'listings', label: 'My Listings' },
+  { href: '/supplier/certificate', iconKey: 'certificate', label: 'My Certificate' },
   { href: '/supplier/help',   iconKey: 'help', label: 'Help & Support' },
 ];
 

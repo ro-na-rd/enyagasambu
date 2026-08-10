@@ -50,17 +50,6 @@ export default function BrokerPhotoPage() {
       style={{ background: 'linear-gradient(135deg, #0f1e4211 0%, #E85D0411 100%)' }}>
       <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-8 border border-gray-100 text-center">
 
-        <div className="flex items-center gap-2 mb-6 justify-center">
-          <div className="w-9 h-9 rounded-lg flex items-center justify-center text-white font-black text-base"
-            style={{ background: 'linear-gradient(135deg, #0f1e42, #E85D04)' }}>E</div>
-          <div className="text-left">
-            <p className="font-extrabold text-sm leading-tight" style={{ color: '#0f1e42' }}>
-              Broker Portal
-            </p>
-            <p className="text-[9px] font-bold tracking-widest uppercase" style={{ color: '#E85D04' }}>E-Nyagasambu</p>
-          </div>
-        </div>
-
         <div className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4" style={{ background: NAVY }}>
           <Camera size={24} className="text-white" />
         </div>

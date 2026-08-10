@@ -72,7 +72,7 @@ exports.getListings = async (req, res) => {
 
   try {
     const [rows] = await pool.query(
-      `SELECT l.id, l.title, l.price, l.price_type, l.location, l.listing_type,
+      `SELECT l.id, l.title, l.price, l.price_type, l.currency, l.location, l.listing_type,
               l.is_featured, l.views, l.created_at, l.expires_at,
               c.name AS category_name, c.slug AS category_slug, c.type AS category_type,
               u.name AS seller_name,
@@ -213,13 +213,13 @@ exports.createListing = async (req, res) => {
       if (sub) durationDays = sub.listing_duration_days;
     }
 
-    const { title, description, price, price_type, location, listing_type, category_id } = req.body;
+    const { title, description, price, price_type, currency, location, listing_type, category_id } = req.body;
     const expiresAt = new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000);
 
     const [result] = await conn.query(
-      `INSERT INTO listings (user_id, category_id, title, description, price, price_type, location, listing_type, expires_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [userId, category_id, title, description, price || null, price_type || 'fixed', location, listing_type || 'sell', expiresAt]
+      `INSERT INTO listings (user_id, category_id, title, description, price, price_type, currency, location, listing_type, expires_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [userId, category_id, title, description, price || null, price_type || 'fixed', currency || 'RWF', location, listing_type || 'sell', expiresAt]
     );
 
     if (!isGuest && !isAdmin && !postingFree) {
@@ -255,7 +255,7 @@ exports.createListing = async (req, res) => {
 };
 
 exports.initiateListingPayment = async (req, res) => {
-  const { title, description, price, price_type, location, listing_type, category_id, duration_days = 3, provider = 'mtn' } = req.body;
+  const { title, description, price, price_type, currency, location, listing_type, category_id, duration_days = 3, provider = 'mtn' } = req.body;
   const errors = validationResult(req);
   if (!errors.isEmpty()) return res.status(422).json({ errors: errors.array() });
 
@@ -288,6 +288,7 @@ exports.initiateListingPayment = async (req, res) => {
     description,
     price: price || null,
     price_type: price_type || 'fixed',
+    currency: currency || 'RWF',
     location,
     listing_type: listing_type || 'sell',
     category_id,

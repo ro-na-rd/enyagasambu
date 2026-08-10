@@ -3,8 +3,25 @@ const { randomUUID: uuidv4 } = require('crypto');
 const { requestToPay, getPaymentStatus } = require('../services/momoService');
 const { uploadToS3 } = require('../services/s3Service');
 
-const CERT_PRICE = 2000;
+const DEFAULT_CERT_PRICE = 2000;
 const REFERRAL_REWARD = 200;
+
+async function resolveType(certificateTypeId) {
+  if (certificateTypeId) {
+    const [[type]] = await pool.query(
+      'SELECT id, code, name, price_rwf, duration_years FROM certificate_types WHERE id = ? AND active = 1',
+      [certificateTypeId]
+    );
+    if (!type) throw Object.assign(new Error('Certificate type not available'), { status: 400 });
+    return type;
+  }
+  const [[type]] = await pool.query(
+    'SELECT id, code, name, price_rwf, duration_years FROM certificate_types WHERE category = ? AND active = 1 ORDER BY price_rwf LIMIT 1',
+    ['ambassador']
+  );
+  if (type) return type;
+  return { id: null, code: 'AMBASSADOR', name: 'Brand Ambassador', price_rwf: DEFAULT_CERT_PRICE, duration_years: 1 };
+}
 
 exports.getMyCertificate = async (req, res) => {
   try {
@@ -15,19 +32,28 @@ exports.getMyCertificate = async (req, res) => {
 
     let [rows] = await pool.query(
       `SELECT ac.id, ac.photo_url, ac.cert_no, ac.status, ac.payment_ref, ac.amount_rwf,
-              ac.issued_date, ac.valid_until, ac.created_at, ac.updated_at
-       FROM ambassador_certificates ac WHERE ac.user_id = ? ORDER BY ac.created_at DESC LIMIT 1`,
+              ac.issued_date, ac.valid_until, ac.created_at, ac.updated_at, ac.certificate_type_id,
+              ct.name AS type_name, ct.code AS type_code, ct.price_rwf AS type_price, ct.duration_years AS type_duration
+       FROM ambassador_certificates ac
+       LEFT JOIN certificate_types ct ON ac.certificate_type_id = ct.id
+       WHERE ac.user_id = ? ORDER BY ac.created_at DESC LIMIT 1`,
       [req.user.id]
     );
 
     let cert;
     if (rows.length === 0) {
+      const type = await resolveType(null);
       const [result] = await pool.query(
-        'INSERT INTO ambassador_certificates (user_id, status) VALUES (?, ?)',
-        [req.user.id, 'pending']
+        'INSERT INTO ambassador_certificates (user_id, status, amount_rwf, certificate_type_id) VALUES (?, ?, ?, ?)',
+        [req.user.id, 'pending', type.price_rwf, type.id]
       );
       const [[newCert]] = await pool.query(
-        'SELECT id, photo_url, cert_no, status, payment_ref, amount_rwf, issued_date, valid_until, created_at, updated_at FROM ambassador_certificates WHERE id = ?',
+        `SELECT ac.id, ac.photo_url, ac.cert_no, ac.status, ac.payment_ref, ac.amount_rwf,
+                ac.issued_date, ac.valid_until, ac.created_at, ac.updated_at, ac.certificate_type_id,
+                ct.name AS type_name, ct.code AS type_code, ct.price_rwf AS type_price, ct.duration_years AS type_duration
+         FROM ambassador_certificates ac
+         LEFT JOIN certificate_types ct ON ac.certificate_type_id = ct.id
+         WHERE ac.id = ?`,
         [result.insertId]
       );
       cert = newCert;
@@ -79,10 +105,13 @@ exports.uploadPhoto = async (req, res) => {
 };
 
 exports.initiatePayment = async (req, res) => {
-  const { phone } = req.body;
+  const { phone, certificateTypeId } = req.body;
   if (!phone) return res.status(400).json({ message: 'Phone number required for MoMo payment' });
 
   try {
+    const type = await resolveType(certificateTypeId);
+    const amount = type.price_rwf || DEFAULT_CERT_PRICE;
+
     let [rows] = await pool.query(
       'SELECT id, status FROM ambassador_certificates WHERE user_id = ? ORDER BY created_at DESC LIMIT 1',
       [req.user.id]
@@ -91,8 +120,8 @@ exports.initiatePayment = async (req, res) => {
     let cert;
     if (rows.length === 0) {
       const [result] = await pool.query(
-        'INSERT INTO ambassador_certificates (user_id, status) VALUES (?, ?)',
-        [req.user.id, 'pending']
+        'INSERT INTO ambassador_certificates (user_id, status, amount_rwf, certificate_type_id) VALUES (?, ?, ?, ?)',
+        [req.user.id, 'pending', amount, type.id]
       );
       cert = { id: result.insertId, status: 'pending' };
     } else {
@@ -104,25 +133,27 @@ exports.initiatePayment = async (req, res) => {
     const referenceId = uuidv4();
 
     await pool.query(
-      'UPDATE ambassador_certificates SET payment_ref = ? WHERE id = ?',
-      [referenceId, cert.id]
+      'UPDATE ambassador_certificates SET payment_ref = ?, amount_rwf = ?, certificate_type_id = ? WHERE id = ?',
+      [referenceId, amount, type.id, cert.id]
     );
 
     await requestToPay({
       referenceId,
-      amount: CERT_PRICE,
+      amount,
       payerPhone: phone.replace(/\s+/g, ''),
       payerMessage: 'Ambassador Certificate Fee',
-      payeeNote: 'E-Nyagasambu Ambassador Certificate – 2,000 RWF',
+      payeeNote: `E-Nyagasambu ${type.name} Certificate – ${amount.toLocaleString('en-US')} RWF`,
     });
 
     return res.json({
       message: 'Payment request sent. Check your phone and approve the MoMo prompt.',
       referenceId,
       certificateId: cert.id,
+      amount,
     });
   } catch (err) {
     console.error('[Cert MoMo initiate error]', err?.response?.data || err.message);
+    if (err.status) return res.status(err.status).json({ message: err.message });
     return res.status(502).json({ message: 'Failed to reach MTN. Please try again.' });
   }
 };

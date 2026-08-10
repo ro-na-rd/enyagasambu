@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import api from '@/lib/api';
 import { FileText, Award, Search, Filter } from '@/lib/icons';
 import { SITE_DOMAIN } from '@/lib/config';
@@ -13,10 +14,11 @@ const BRAND = {
 };
 const BASE_URL = api.defaults.baseURL?.replace('/api', '') || 'http://localhost:5500';
 
-type CertType = 'ambassador' | 'broker';
+type CertType = 'ambassador' | 'broker' | 'supplier';
 const CERT_TYPES: { value: CertType; label: string }[] = [
   { value: 'ambassador', label: 'Ambassador Certificates' },
   { value: 'broker', label: 'Broker Certificates' },
+  { value: 'supplier', label: 'Supplier Certificates' },
 ];
 
 const statusBadge = (s: string) => {
@@ -26,17 +28,17 @@ const statusBadge = (s: string) => {
 
 export default function AdminCertificatesPage() {
   const [type, setType] = useState<CertType>('ambassador');
-  const [certs, setCerts] = useState<{ id: number; cert_no?: string; status: string; user_name: string; user_email: string; user_phone?: string; photo_url?: string; phone?: string; created_at: string; issued_date?: string; valid_until?: string }[]>([]);
+  const [certs, setCerts] = useState<{ id: number; cert_no?: string; status: string; user_name: string; user_email: string; user_phone?: string; photo_url?: string; phone?: string; created_at: string; issued_date?: string; valid_until?: string; amount_rwf?: number; type_name?: string; type_code?: string }[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [pages, setPages] = useState(1);
   const [filter, setFilter] = useState('');
   const [loading, setLoading] = useState(true);
-  const [detail, setDetail] = useState<{ id: number; cert_no?: string; status: string; user_name: string; user_email: string; user_phone?: string; photo_url?: string; broker_phone?: string; issued_date?: string; valid_until?: string; generated_by_name?: string } | null>(null);
+  const [detail, setDetail] = useState<{ id: number; cert_no?: string; status: string; user_name: string; user_email: string; user_phone?: string; photo_url?: string; broker_phone?: string; issued_date?: string; valid_until?: string; generated_by_name?: string; amount_rwf?: number; type_name?: string; type_code?: string } | null>(null);
   const [msg, setMsg] = useState('');
 
-  const endpoint = type === 'ambassador' ? '/admin/certificates' : '/admin/broker-certificates';
-  const printEndpoint = type === 'ambassador' ? '/admin/certificates' : '/admin/broker-certificates';
+  const endpoint = type === 'ambassador' ? '/admin/certificates' : type === 'broker' ? '/admin/broker-certificates' : '/admin/supplier-certificates';
+  const printEndpoint = endpoint;
 
   const [prevType, setPrevType] = useState<CertType>(type);
   if (prevType !== type) {
@@ -108,10 +110,16 @@ export default function AdminCertificatesPage() {
       ? `<img src="${BASE_URL}${c.photo_url}" style="width:100px;height:100px;border-radius:50%;object-fit:cover;border:3px solid ${BRAND.navy};margin:0 auto 16px;display:block;" />`
       : '';
 
-    const title = type === 'ambassador' ? 'BRAND AMBASSADOR' : 'CERTIFIED BROKER';
+    const title = type === 'ambassador' ? 'BRAND AMBASSADOR' : type === 'broker' ? 'CERTIFIED BROKER' : 'VERIFIED SUPPLIER';
     const description = type === 'ambassador'
       ? 'This certifies that the above-named individual has been officially appointed as a Brand Ambassador of E-Nyagasambu Digital Marketplace, in recognition of their dedication to promoting digital commerce and supporting local businesses.'
-      : 'This certifies that the above-named individual is a Certified Broker of E-Nyagasambu Digital Marketplace, authorized to facilitate transactions, connect buyers and sellers, and provide trusted marketplace services.';
+      : type === 'broker'
+      ? 'This certifies that the above-named individual is a Certified Broker of E-Nyagasambu Digital Marketplace, authorized to facilitate transactions, connect buyers and sellers, and provide trusted marketplace services.'
+      : 'This certifies that the above-named supplier has been officially verified on E-Nyagasambu Digital Marketplace, building buyer trust by confirming the authenticity of their supplier account and business.';
+    const heading = type === 'ambassador' ? 'CERTIFICATE OF APPOINTMENT' : 'CERTIFICATE OF VERIFICATION';
+    const businessHtml = type === 'supplier' && (c as { business_name?: string }).business_name
+      ? `<div style="text-align:center;font-size:20px;color:${BRAND.orange};font-weight:bold;margin-bottom:8px;">${(c as { business_name?: string }).business_name}</div>`
+      : '';
 
     printWin.document.write(`<!DOCTYPE html><html><head><title>Certificate - ${c.cert_no}</title>
 <style>
@@ -133,9 +141,10 @@ h2 { text-align: center; font-size: 36px; color: ${BRAND.navy}; margin: 8px 0; }
 <div class="cert">
 <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent('https://' + SITE_DOMAIN + '/verify/' + c.cert_no)}" style="position:absolute;top:20px;right:30px;width:80px;" />
 <h1>E-NYAGASAMBU LTD</h1>
-<h2>CERTIFICATE OF APPOINTMENT</h2>
+<h2>${heading}</h2>
 <div class="sub">${title}</div>
 ${photoHtml}
+${businessHtml}
 <div class="name">${c.user_name}</div>
 <div class="desc">${description}</div>
 <div class="details">
@@ -152,7 +161,7 @@ ${photoHtml}
 
   return (
     <div className="p-4 lg:p-8 animate-fadeInUp">
-      <div className="mb-6">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3 mb-1">
           <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: `${BRAND.orange}15` }}>
             <Award size={18} style={{ color: BRAND.orange }} />
@@ -162,6 +171,10 @@ ${photoHtml}
             <p className="text-sm text-gray-600 mt-0.5">{total} total</p>
           </div>
         </div>
+        <Link href="/admin/certificates/types" className="text-xs font-bold px-4 py-2 rounded-lg text-white transition hover:opacity-90"
+          style={{ background: `linear-gradient(135deg, ${BRAND.navy}, ${BRAND.navyLight})` }}>
+          Manage Certificate Types
+        </Link>
       </div>
 
       {msg && (
@@ -205,6 +218,10 @@ ${photoHtml}
               <div><span className="text-gray-600">Name:</span> <span className="font-semibold text-gray-800">{detail.user_name}</span></div>
               <div><span className="text-gray-600">Email:</span> <span className="text-gray-700">{detail.user_email}</span></div>
               <div><span className="text-gray-600">Phone:</span> <span className="text-gray-700">{detail.user_phone || '-'}</span></div>
+              {detail.type_name && <div><span className="text-gray-600">Type:</span> <span className="text-gray-700">{detail.type_name}</span></div>}
+              {typeof detail.amount_rwf === 'number' && (
+                <div><span className="text-gray-600">Fee:</span> <span className="text-gray-700 font-semibold">RWF {detail.amount_rwf.toLocaleString('en-US')}</span></div>
+              )}
               <div><span className="text-gray-600">Cert No:</span> <span className="text-gray-700">{detail.cert_no || '-'}</span></div>
               <div><span className="text-gray-600">Status:</span> <span className={statusBadge(detail.status)}>{detail.status}</span></div>
               <div><span className="text-gray-600">Issued:</span> <span className="text-gray-700">{detail.issued_date || '-'}</span></div>
@@ -253,6 +270,7 @@ ${photoHtml}
             <thead>
               <tr className="border-b border-gray-200" style={{ background: '#f0f2f5' }}>
                 <th className="px-4 py-3 text-left text-gray-500 text-xs uppercase font-semibold tracking-wider">Name</th>
+                <th className="px-4 py-3 text-left text-gray-500 text-xs uppercase font-semibold tracking-wider">Type</th>
                 <th className="px-4 py-3 text-left text-gray-500 text-xs uppercase font-semibold tracking-wider">Cert No</th>
                 <th className="px-4 py-3 text-center text-gray-500 text-xs uppercase font-semibold tracking-wider">Status</th>
                 <th className="px-4 py-3 text-center text-gray-500 text-xs uppercase font-semibold tracking-wider">Photo</th>
@@ -263,12 +281,21 @@ ${photoHtml}
             </thead>
             <tbody className="divide-y divide-gray-200">
               {loading ? (
-                <tr><td colSpan={type === 'broker' ? 7 : 6} className="text-center py-12 text-gray-600">Loading...</td></tr>
+                <tr><td colSpan={type === 'broker' ? 8 : 7} className="text-center py-12 text-gray-600">Loading...</td></tr>
               ) : certs.length === 0 ? (
-                <tr><td colSpan={type === 'broker' ? 7 : 6} className="text-center py-12 text-gray-600">No certificates found</td></tr>
+                <tr><td colSpan={type === 'broker' ? 8 : 7} className="text-center py-12 text-gray-600">No certificates found</td></tr>
               ) : certs.map(c => (
                 <tr key={c.id} className="hover:bg-gray-50 transition">
                   <td className="px-4 py-3.5 font-medium text-gray-800">{c.user_name}</td>
+                  <td className="px-4 py-3.5 text-gray-600 text-xs">
+                    {c.type_name ? (
+                      <span className="inline-flex items-center gap-1">
+                        <span className="text-gray-800 font-semibold">{c.type_name}</span>
+                        <span className="text-gray-400">·</span>
+                        <span className="font-mono">RWF {(c.amount_rwf ?? 0).toLocaleString('en-US')}</span>
+                      </span>
+                    ) : '-'}
+                  </td>
                   <td className="px-4 py-3.5 text-gray-500 font-mono text-xs">{c.cert_no || '-'}</td>
                   <td className="px-4 py-3.5 text-center"><span className={statusBadge(c.status)}>{c.status}</span></td>
                   <td className="px-4 py-3.5 text-center">

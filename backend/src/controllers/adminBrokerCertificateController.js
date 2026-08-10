@@ -19,9 +19,11 @@ exports.getCertificates = async (req, res) => {
     );
 
     const [rows] = await pool.query(
-      `SELECT bc.*, u.name AS user_name, u.email AS user_email, u.phone AS user_phone
+      `SELECT bc.*, u.name AS user_name, u.email AS user_email, u.phone AS user_phone,
+              ct.name AS type_name, ct.code AS type_code
        FROM broker_certificates bc
        JOIN users u ON bc.broker_id = u.id
+       LEFT JOIN certificate_types ct ON bc.certificate_type_id = ct.id
        WHERE ${where}
        ORDER BY bc.created_at DESC LIMIT ? OFFSET ?`,
       [...params, limit, offset]
@@ -40,10 +42,12 @@ exports.getCertificateDetail = async (req, res) => {
   try {
     const [[cert]] = await pool.query(
       `SELECT bc.*, u.name AS user_name, u.email AS user_email, u.phone AS user_phone,
-              bc.phone AS broker_phone, s.username AS generated_by_name
+              bc.phone AS broker_phone, s.username AS generated_by_name,
+              ct.name AS type_name, ct.code AS type_code
        FROM broker_certificates bc
        JOIN users u ON bc.broker_id = u.id
        LEFT JOIN staff s ON bc.generated_by = s.id
+       LEFT JOIN certificate_types ct ON bc.certificate_type_id = ct.id
        WHERE bc.id = ?`,
       [id]
     );

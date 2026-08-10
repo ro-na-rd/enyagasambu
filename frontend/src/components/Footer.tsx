@@ -116,7 +116,7 @@ export default function Footer() {
             <ul className="mt-4 space-y-2.5 text-sm text-white/70">
               <li className="flex items-center gap-2.5"><MapPin size={15} className="shrink-0 text-[#E85D04]" /> Kigali, Rwanda</li>
               <li className="flex items-center gap-2.5"><Phone size={15} className="shrink-0 text-[#E85D04]" /> 0786680301</li>
-              <li className="flex items-center gap-2.5"><Mail size={15} className="shrink-0 text-[#E85D04]" /> E-Nyagasambu@gmail.com</li>
+              <li className="flex items-center gap-2.5"><Mail size={15} className="shrink-0 text-[#E85D04]" /> Enyagasambu@gmail.com</li>
             </ul>
 
             <form onSubmit={subscribe} className="mt-6">

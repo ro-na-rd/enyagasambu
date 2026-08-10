@@ -3,13 +3,14 @@ import Link from 'next/link';
 import { useLanguage } from '@/context/LanguageContext';
 import { useEffect, useState, useRef, useCallback } from 'react';
 import api from '@/lib/api';
-import { Star, Package, MapPin, Phone, X, Lock, Unlock, CheckCircle, Coins, Loader2, Clock, Check, AlertCircle, RefreshCw } from '@/lib/icons';
+import { Star, Package, MapPin, Phone, X, CheckCircle, Loader2, Clock, Check, AlertCircle, RefreshCw } from '@/lib/icons';
 
 interface Listing {
   id: number;
   title: string;
   price: number | null;
   price_type: string;
+  currency?: string;
   location: string;
   listing_type: string;
   category_name: string;
@@ -23,7 +24,7 @@ const ORG = '#E85D04';
 const NAVY = '#0f1e42';
 const ACCESS_FEE = 300;
 
-type ConnectStep = 'idle' | 'enter_phone' | 'select_method' | 'payment_pending' | 'otp_entry' | 'unlocked';
+type ConnectStep = 'idle' | 'enter_phone' | 'payment_pending' | 'otp_entry' | 'unlocked';
 
 export default function ListingCard({ listing }: { listing: Listing }) {
   const { T } = useLanguage();
@@ -52,8 +53,9 @@ export default function ListingCard({ listing }: { listing: Listing }) {
     };
   }, []);
 
+  const currency = listing.currency || 'RWF';
   const priceLabel = listing.price != null
-    ? `${Number(listing.price).toLocaleString()} RWF${listing.price_type === 'per_day' ? '/day' : listing.price_type === 'per_month' ? '/mo' : ''}`
+    ? `${Number(listing.price).toLocaleString()} ${currency}${listing.price_type === 'per_day' ? '/day' : listing.price_type === 'per_month' ? '/mo' : ''}`
     : T.priceOnRequest;
 
   const handleConnectClick = () => {
@@ -126,7 +128,7 @@ export default function ListingCard({ listing }: { listing: Listing }) {
         } else if (data.status === 'failed') {
           if (pollRef.current) clearInterval(pollRef.current);
           setConnectError(data.message || 'Payment failed. Please try again.');
-          setStep('select_method');
+          setStep('enter_phone');
         }
       } catch {
         // Keep polling on transient errors
@@ -140,7 +142,7 @@ export default function ListingCard({ listing }: { listing: Listing }) {
     if (digits.length < 10) { setConnectError('Please enter the full phone number (at least 10 digits)'); return; }
     setConnectError('');
     setConnectSuccess('');
-    setStep('select_method');
+    handleMomoInitiate();
   };
 
   const handleMomoInitiate = async () => {
@@ -251,7 +253,7 @@ export default function ListingCard({ listing }: { listing: Listing }) {
             {listing.price != null && (
               <div className="absolute bottom-3 right-3 z-10">
                 <span className="text-xs font-extrabold text-white drop-shadow-lg">
-                  {formatPrice(listing.price)} RWF
+                  {formatPrice(listing.price)} {listing.currency || 'RWF'}
                 </span>
               </div>
             )}
@@ -356,7 +358,7 @@ export default function ListingCard({ listing }: { listing: Listing }) {
                 )}
                 <p className="text-sm font-semibold text-gray-800 mb-1">Enter your phone number</p>
                 <p className="text-xs text-gray-500 mb-3">
-                  Choose how to unlock the seller&apos;s contact — via coins or mobile money.
+                  A one-time payment of {ACCESS_FEE} RWF (MTN MoMo) will be sent to this number to unlock the seller&apos;s contact permanently.
                 </p>
                 <div className="relative mb-3">
                   <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
@@ -366,48 +368,23 @@ export default function ListingCard({ listing }: { listing: Listing }) {
                     type="tel"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && !working && handleProceedToMethod()}
                     placeholder="+250 7XX XXX XXX"
                     className="w-full border border-gray-300 rounded-xl pl-10 pr-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#E85D04]/30 focus:border-[#E85D04] transition"
                   />
                 </div>
                 <button
                   onClick={handleProceedToMethod}
-                  className="w-full text-white font-bold py-3 rounded-xl text-sm hover:shadow-lg hover:scale-[1.01] active:scale-[0.99] transition-all flex items-center justify-center gap-2"
+                  disabled={working}
+                  className="w-full text-white font-bold py-3 rounded-xl text-sm hover:shadow-lg hover:scale-[1.01] active:scale-[0.99] transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   style={{ background: `linear-gradient(135deg, ${NAVY}, ${ORG})` }}
                 >
-                  Continue
-                </button>
-              </div>
-            ) : step === 'select_method' ? (
-              <div>
-                {connectError && (
-                  <div className="bg-red-50 border border-red-200 rounded-xl p-3 mb-3 flex items-start gap-2">
-                    <AlertCircle size={14} className="text-red-500 mt-0.5 shrink-0" />
-                    <p className="text-xs text-red-700">{connectError}</p>
-                  </div>
-                )}
-                <p className="text-xs text-gray-500 mb-3">
-                  Unlock the seller&apos;s contact via mobile money.
-                </p>
-
-                <button onClick={handleMomoInitiate} disabled={working}
-                  className="w-full text-left border border-gray-200 rounded-xl p-4 mb-2 hover:border-orange-300 hover:bg-orange-50/50 transition disabled:opacity-60 flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-orange-50 to-orange-100 flex items-center justify-center shrink-0">
-                    <Phone size={20} style={{ color: ORG }} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold text-gray-800">Pay {ACCESS_FEE} RWF via MoMo</p>
-                    <p className="text-xs text-gray-500">Permanent unlock — no time limit</p>
-                  </div>
                   {working ? (
-                    <Loader2 size={18} className="animate-spin shrink-0" style={{ color: ORG }} />
+                    <><Loader2 size={16} className="animate-spin" /> Sending request...</>
                   ) : (
-                    <Lock size={16} className="shrink-0 text-gray-400" />
+                    <>Pay {ACCESS_FEE} RWF & Unlock</>
                   )}
                 </button>
-
-                <button onClick={() => setStep('enter_phone')}
-                  className="w-full text-gray-500 text-sm py-2 mt-1 hover:underline">Back</button>
               </div>
             ) : step === 'payment_pending' ? (
               <div className="text-center py-4">
@@ -423,7 +400,7 @@ export default function ListingCard({ listing }: { listing: Listing }) {
                   <Clock size={12} />
                   <span>Checking payment status...</span>
                 </div>
-                <button onClick={() => { if (pollRef.current) clearInterval(pollRef.current); setStep('select_method'); setConnectError(''); }}
+                <button onClick={() => { if (pollRef.current) clearInterval(pollRef.current); setStep('enter_phone'); setConnectError(''); }}
                   className="text-gray-500 text-sm py-2 mt-3 hover:underline">Cancel</button>
               </div>
             ) : step === 'otp_entry' ? (
@@ -464,7 +441,7 @@ export default function ListingCard({ listing }: { listing: Listing }) {
                     </button>
                   )}
                 </div>
-                <button onClick={() => { if (pollRef.current) clearInterval(pollRef.current); setStep('select_method'); setConnectError(''); }}
+                <button onClick={() => { if (pollRef.current) clearInterval(pollRef.current); setStep('enter_phone'); setConnectError(''); }}
                   className="w-full text-gray-500 text-sm py-2 mt-1 hover:underline">Cancel</button>
               </div>
             ) : (

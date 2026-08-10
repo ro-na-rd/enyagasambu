@@ -44,8 +44,11 @@ services:
     restart: on-failure
     ports:
       - "5500:5000"
+    volumes:
+      - ./backend/ca-avast.pem:/app/ca-avast.pem:ro
     environment:
       PORT: 5000
+      NODE_EXTRA_CA_CERTS: /app/ca-avast.pem
       DB_HOST: mysql
       DB_USER: root
       DB_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpassword}
@@ -64,9 +67,11 @@ services:
       AT_USERNAME: ${AT_USERNAME:-}
       AT_SENDER_ID: NMO
       MOMO_SUBSCRIPTION_KEY: ${MOMO_SUBSCRIPTION_KEY:-}
-      MOMO_ENV: sandbox
-      MOMO_COLLECTION_BASE: https://sandbox.momodeveloper.mtn.co.rw
-      MOMO_PROVISION_BASE: https://sandbox.momodeveloper.mtn.co.rw
+      MOMO_USER_ID: ${MOMO_USER_ID:-}
+      MOMO_API_KEY: ${MOMO_API_KEY:-}
+      MOMO_ENV: production
+      MOMO_COLLECTION_BASE: https://proxy.momoapi.mtn.com
+      MOMO_PROVISION_BASE: https://proxy.momoapi.mtn.com
       S3_ENDPOINT: http://minio:9000
       S3_ACCESS_KEY: ${MINIO_ROOT_USER:-minioadmin}
       S3_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin}

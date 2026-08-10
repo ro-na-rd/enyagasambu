@@ -5,7 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
 import { Suspense, useState } from 'react';
 import type { Lang } from '@/lib/translations';
-import { Search, UserPlus, Star, Heart, Menu, X, Coins, List, Gift, Wrench, LogOut } from '@/lib/icons';
+import { Search, UserPlus, Star, Heart, Menu, X, Coins, List, Gift, Wrench, LogOut, BadgeCheck } from '@/lib/icons';
 
 const navy = '#0f1e42';
 const org  = '#E85D04';
@@ -95,6 +95,11 @@ function NavbarView({ pathname, tab }: { pathname: string | null; tab: string | 
           onMouseLeave={e => (e.currentTarget.style.color = '#cdd4f0')}>
           {T.about}
         </Link>
+        <Link href="/certificates" className="transition" style={{ color: '#cdd4f0' }}
+          onMouseEnter={e => (e.currentTarget.style.color = '#fff')}
+          onMouseLeave={e => (e.currentTarget.style.color = '#cdd4f0')}>
+          Certificates
+        </Link>
         {user
           ? <span className="hidden sm:inline" style={{ color: 'rgba(255,255,255,0.7)' }}>{user.name.split(' ')[0]}</span>
           : <Link href="/login" className="transition" style={{ color: '#cdd4f0' }}
@@ -181,7 +186,7 @@ function NavbarView({ pathname, tab }: { pathname: string | null; tab: string | 
               <Star size={13} />
               Ambassador registration
             </Link>
-            <Link href="/coins" className="hidden lg:flex items-center gap-1 transition hover:opacity-70" style={{ color: navy, textDecoration: 'none' }}>
+            <Link href="/donate" className="hidden lg:flex items-center gap-1 transition hover:opacity-70" style={{ color: navy, textDecoration: 'none' }}>
               <Heart size={13} />
               {T.donate}
             </Link>
@@ -294,8 +299,11 @@ function NavbarView({ pathname, tab }: { pathname: string | null; tab: string | 
               <Link href="/register" onClick={closeMobile} className="py-1.5 text-sm" style={{ color: navy, textDecoration: 'none' }}>
                 <Star size={13} className="inline mr-1" style={{ verticalAlign: '-2px' }} /> Ambassador registration
               </Link>
-              <Link href="/coins" onClick={closeMobile} className="py-1.5 text-sm" style={{ color: navy, textDecoration: 'none' }}>
+              <Link href="/donate" onClick={closeMobile} className="py-1.5 text-sm" style={{ color: navy, textDecoration: 'none' }}>
                 <Heart size={13} className="inline mr-1" style={{ verticalAlign: '-2px' }} /> {T.donate}
+              </Link>
+              <Link href="/certificates" onClick={closeMobile} className="py-1.5 text-sm" style={{ color: navy, textDecoration: 'none' }}>
+                <BadgeCheck size={13} className="inline mr-1" style={{ verticalAlign: '-2px' }} /> Certificates
               </Link>
               <Link href="/my-listings" onClick={closeMobile} className="py-1.5 text-sm" style={{ color: navy, textDecoration: 'none' }}>
                 <List size={13} className="inline mr-1" style={{ verticalAlign: '-2px' }} /> My Listings

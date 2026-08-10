@@ -11,6 +11,7 @@ interface Listing {
   title: string;
   price: number | null;
   price_type: string;
+  currency: string;
   category: string;
   category_name?: string;
   location: string;
@@ -210,7 +211,7 @@ export default function HomePage() {
                     <div className="p-3 flex flex-col flex-1">
                       <p className="text-sm text-gray-800 mb-1 leading-snug truncate">{l.title}</p>
                       <p className="text-sm font-medium mt-auto" style={{ color: org }}>
-                        {l.price != null ? `${Number(l.price).toLocaleString()} RWF` : 'On request'}
+                        {l.price != null ? `${Number(l.price).toLocaleString()} ${l.currency || 'RWF'}` : 'On request'}
                       </p>
                       <p className="text-xs text-gray-500 mt-1 flex items-center gap-1"><MapPin size={12} /> {l.location || 'Kigali'}</p>
                     </div>
@@ -261,7 +262,7 @@ export default function HomePage() {
               <RegBtn href="/register" primary>Supplier Registration →</RegBtn>
               <RegBtn href="/ambassador/register" primary>Ambassador Portal →</RegBtn>
               <RegBtn href="/broker/register" primary>Broker Portal →</RegBtn>
-              <RegBtn href="/coins"    primary>Donate / Support →</RegBtn>
+              <RegBtn href="/donate"  primary>Donate / Support →</RegBtn>
             </div>
           </section>
         </div>

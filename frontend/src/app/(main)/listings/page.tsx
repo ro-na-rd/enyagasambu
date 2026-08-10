@@ -10,7 +10,7 @@ import { ShoppingCart, Store, List, Car, Wrench, Gavel, Megaphone, Package, User
 
 interface Listing {
   id: number; title: string; price: number | null; price_type: string;
-  location: string; listing_type: string; category_name: string;
+  currency?: string; location: string; listing_type: string; category_name: string;
   seller_name: string; primary_image: string | null; created_at: string;
 }
 interface Category { id: number; name: string; slug: string; type: string; }
@@ -54,7 +54,6 @@ function ListingsContent() {
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
-  const [filtersOpen, setFiltersOpen] = useState(false);
   const perPage = 60;
 
   const filterKey = [category, type, search, tab].join('|');
@@ -278,17 +277,8 @@ function ListingsContent() {
         </div>
       ) : (
         /* ─── LISTINGS GRID ─── */
-        <div className="flex flex-col gap-6">
-          {/* Mobile filters toggle */}
-          <button onClick={() => setFiltersOpen(o => !o)}
-            className="lg:hidden flex items-center gap-2 w-full bg-white rounded-xl border border-gray-200 shadow-sm px-4 py-2.5 text-sm font-semibold transition"
-            style={{ color: NAVY }}>
-            <SlidersHorizontal size={16} style={{ color: ORG }} />
-            {T.category}
-            <span className="ml-auto text-gray-400">{filtersOpen ? '−' : '+'}</span>
-          </button>
-
-          <aside className={`${filtersOpen ? 'block' : 'hidden'} lg:block lg:w-56 shrink-0`}>
+        <div className="flex flex-row gap-6">
+          <aside className="w-56 shrink-0">
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 lg:sticky lg:top-16">
               <div className="flex items-center gap-2 mb-4 pb-3 border-b border-gray-100">
                 <SlidersHorizontal size={16} />
@@ -432,10 +422,11 @@ export default function ListingsPage() {
         <ListingsContent />
       </Suspense>
       <Link href="/listings/create"
-        className="fixed bottom-8 right-8 z-50 w-16 h-16 rounded-full shadow-2xl flex items-center justify-center text-white text-3xl font-bold hover:scale-110 active:scale-95 transition-all duration-200 hover:shadow-orange-500/30 group"
+        className="fixed bottom-8 right-8 z-50 px-6 py-3.5 rounded-full shadow-2xl flex items-center gap-2 text-white text-sm font-bold hover:scale-105 active:scale-95 transition-all duration-200 hover:shadow-orange-500/30 group"
         style={{ background: `linear-gradient(135deg, ${NAVY}, ${ORG})` }}
         title="Create New Listing">
-        <span className="group-hover:rotate-90 transition-transform duration-300">+</span>
+        <span className="text-xl leading-none group-hover:rotate-90 transition-transform duration-300">+</span>
+        <span>Posting</span>
       </Link>
     </div>
   );
