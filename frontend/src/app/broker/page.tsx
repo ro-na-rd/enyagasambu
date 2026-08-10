@@ -93,7 +93,7 @@ export default function BrokerDashboardPage() {
   const recentActivities = [
     ...(report?.recentClients || []).map((c) => ({ action: `New client registered: ${c.name}`, at: c.created_at, time: relTime(c.created_at), icon: <User size={16} /> })),
     ...(report?.recentLeads || []).map((l) => ({ action: `New lead: ${l.buyer_name}`, at: l.created_at, time: relTime(l.created_at), icon: <FileText size={16} /> })),
-  ].sort((a, b) => new Date(b.at) - new Date(a.at)).slice(0, 6);
+  ].sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime()).slice(0, 6);
 
   const monthMax = Math.max(1, ...(report?.byMonth || []).map((m) => m.count));
 
