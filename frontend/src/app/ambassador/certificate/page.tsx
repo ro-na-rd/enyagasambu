@@ -10,59 +10,149 @@ const DEFAULT_PRICE = 2000;
 
 const fmtRWF = (n: number) => 'RWF ' + Number(n || 0).toLocaleString('en-US');
 
+function formatRecipientName(fullName: string) {
+  const parts = fullName.trim().split(/\s+/);
+  if (parts.length === 0 || !parts[0]) return { first: '', rest: '' };
+  const first = parts[0].toUpperCase();
+  const rest = parts
+    .slice(1)
+    .map(w => (w ? w.charAt(0).toUpperCase() + w.slice(1).toLowerCase() : ''))
+    .join(' ');
+  return { first, rest };
+}
+
 function CertPreview({ name, photo, certNo, issued, validUntil }: { name: string; photo?: string | null; certNo?: string; issued: string; validUntil: string }) {
+  const { first, rest } = formatRecipientName(name || '');
   return (
-    <div className="relative bg-white rounded-xl overflow-hidden border border-gray-200 select-none"
-      style={{ userSelect: 'none', WebkitUserSelect: 'none' }}
+    <div className="acert select-none" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}
       onContextMenu={e => e.preventDefault()}>
-      {['tl','tr','bl','br'].map(p => {
-        const W=90,H=90; const pts:Record<string,string>={tl:`0,0 ${W},0 0,${H}`,tr:`${W},0 ${W},${H} 0,0`,bl:`0,0 0,${H} ${W},${H}`,br:`${W},0 0,${H} ${W},${H}`};
-        const css:Record<string,React.CSSProperties>={tl:{top:0,left:0},tr:{top:0,right:0},bl:{bottom:0,left:0},br:{bottom:0,right:0}};
-        return (
-          <svg key={p} width={W} height={H} viewBox={`0 0 ${W} ${H}`} style={{position:'absolute',zIndex:1,pointerEvents:'none',...css[p]}}>
-            <polygon points={pts[p]} fill={NAVY}/>
-            {[[W/2-20,12],[W/2,18],[W/2+10,30],[18,H/2-5],[28,H/2+8],[40,H/2-2]].map(([cx,cy],i)=><circle key={i} cx={cx} cy={cy} r="2.5" fill="rgba(255,255,255,0.35)"/>)}
-          </svg>
-        );
-      })}
-      <div className="absolute top-4 bottom-4 left-5 w-0.5 opacity-30" style={{background:`linear-gradient(180deg,${ORG},transparent 40%,transparent 60%,${ORG})`}}/>
-      <div className="absolute top-4 bottom-4 right-5 w-0.5 opacity-30" style={{background:`linear-gradient(180deg,${ORG},transparent 40%,transparent 60%,${ORG})`}}/>
-      <div className="relative z-10 p-8">
-        <div className="flex items-center gap-4 mb-6">
-          <div className="w-14 h-14 rounded-full flex items-center justify-center border-2" style={{borderColor:ORG,background:NAVY}}>
-            <span className="text-white text-2xl font-black">E</span>
+      <div className="band top" />
+      <div className="band bottom" />
+      <div className="band left" />
+      <div className="band right" />
+      <div className="corner tl" />
+      <div className="corner br" />
+      <div className="swoosh one" />
+      <div className="swoosh two" />
+
+      <div className="inner">
+        {/* LEFT */}
+        <div className="left-col">
+          <div className="logo">
+            <div className="logo-mark">E</div>
+            <div className="logo-text">
+              <div className="name">E-NYAGASAMBU</div>
+              <div className="tag">DIGITAL MARKET PLACE</div>
+              <div className="url">www.enyagasambu.rw</div>
+            </div>
           </div>
-          <div>
-            <p className="font-extrabold text-lg leading-tight" style={{color:NAVY}}>E-NYAGASAMBU</p>
-            <p className="font-bold tracking-widest" style={{fontSize:10,color:ORG}}>DIGITAL MARKET PLACE</p>
-          </div>
-        </div>
-        <div className="text-center mb-6">
-          {photo && (
-            <div className="mb-4 flex justify-center">
-              <div className="w-24 h-24 rounded-full overflow-hidden border-4 shadow-lg" style={{borderColor:ORG}}>
-                <img src={photo} alt={name} className="w-full h-full object-cover" />
-              </div>
+
+          {photo ? (
+            <div className="photo">
+              <img src={photo} alt={name} />
+            </div>
+          ) : (
+            <div className="photo">
+              <span className="ph-text">AM-BASSADOR</span>
             </div>
           )}
-          <p className="text-xs text-gray-400 uppercase tracking-widest mb-1">Certificate of Appointment</p>
-          <p className="text-4xl font-extrabold" style={{color:NAVY}}>{name}</p>
-          <div className="w-32 h-0.5 mx-auto my-4" style={{background:`linear-gradient(90deg,transparent,${ORG},transparent)`}}/>
-          <p className="text-2xl font-black tracking-wide" style={{color:ORG}}>BRAND AMBASSADOR</p>
-          <p className="text-sm text-gray-500 mt-1">of E-Nyagasambu Digital Marketplace</p>
+
+          <div className="badge">
+            <span className="star">★</span>
+            <div className="line1">OFFICIAL</div>
+            <div className="line2">BRAND</div>
+            <div className="line3">AMBASSADOR</div>
+          </div>
+          <div className="ribbon">
+            <div className="tail" />
+            <div className="tail" />
+          </div>
         </div>
-        <div className="border-t border-dashed border-gray-200 pt-4 grid grid-cols-3 gap-4 text-center text-xs">
-          <div>
-            <p className="text-gray-400 mb-0.5">Certificate No.</p>
-            <p className="font-bold" style={{color:NAVY}}>{certNo || '—'}</p>
+
+        {/* CENTER */}
+        <div className="center-col">
+          <h1 className="cert-title">CERTIFICATE</h1>
+          <div className="cert-sub"><span className="dash" />OF APPOINTMENT<span className="dash" /></div>
+
+          <div className="awarded-to">This Certificate is Proudly Awarded To</div>
+
+          <div className="recipient-name">
+            <span className="first">{first}</span>
+            {rest ? ' ' + rest : ''}
           </div>
-          <div>
-            <p className="text-gray-400 mb-0.5">Issue Date</p>
-            <p className="font-bold" style={{color:NAVY}}>{issued}</p>
+
+          <div className="divider" />
+
+          <div className="appoint-line">For being officially appointed as a</div>
+          <div className="role">BRAND AMBASSADOR</div>
+          <div className="of-line">of E-Nyagasambu Digital Marketplace</div>
+
+          <p className="desc">
+            In recognition of your commitment to promoting digital commerce,
+            supporting local businesses, onboarding users, and representing
+            the values and mission of E-Nyagasambu.
+          </p>
+
+          <div className="meta-row">
+            <div className="meta-item">
+              <div className="label">📍 Authorized Territory</div>
+              <div className="val">Kigali City</div>
+            </div>
+            <div className="meta-item">
+              <div className="label">🗓 Issue Date</div>
+              <div className="val">{issued}</div>
+            </div>
+            <div className="meta-item">
+              <div className="label">🗓 Valid Until</div>
+              <div className="val">{validUntil}</div>
+            </div>
           </div>
-          <div>
-            <p className="text-gray-400 mb-0.5">Valid Until</p>
-            <p className="font-bold" style={{color:NAVY}}>{validUntil}</p>
+
+          <div className="signatures">
+            <div className="sig">
+              <div className="mark">Amina</div>
+              <div className="role-name">Platform Director</div>
+              <div>E-Nyagasambu Ltd</div>
+            </div>
+            <div className="seal">E-NYAGASAMBU<br />LTD · DIGITAL<br />MARKET PLACE</div>
+            <div className="sig">
+              <div className="mark">Jean</div>
+              <div className="role-name">Business Development Officer</div>
+              <div>E-Nyagasambu Ltd</div>
+            </div>
+          </div>
+        </div>
+
+        {/* RIGHT */}
+        <div className="right-col">
+          <div className="qr" />
+          <div className="qr-label">SCAN TO VERIFY</div>
+
+          <div className="info-block">
+            <div className="row">
+              <div className="label">Certificate No.</div>
+              <div className="badge-no">{certNo || '—'}</div>
+            </div>
+            <div className="row">
+              <div className="label">Issue Date</div>
+              <div className="value">{issued}</div>
+            </div>
+            <div className="row">
+              <div className="label">Valid Until</div>
+              <div className="value">{validUntil}</div>
+            </div>
+          </div>
+
+          <div className="responsibilities">
+            <h4>RESPONSIBILITIES</h4>
+            <ul>
+              <li>Promote E-Nyagasambu services</li>
+              <li>Recruit suppliers and vendors</li>
+              <li>Support user onboarding</li>
+              <li>Conduct awareness campaigns</li>
+              <li>Represent the platform professionally</li>
+              <li>Uphold E-Nyagasambu policies</li>
+            </ul>
           </div>
         </div>
       </div>
@@ -192,7 +282,7 @@ export default function AmbassadorCertificatePage() {
   const hasPhoto = !!ambassadorPhoto;
 
   return (
-    <div className="p-4 lg:p-8 max-w-3xl mx-auto" onContextMenu={e => { if (!isGenerated) e.preventDefault(); }}>
+    <div className="p-4 lg:p-8 max-w-5xl mx-auto" onContextMenu={e => { if (!isGenerated) e.preventDefault(); }}>
       <h1 className="text-2xl font-bold text-gray-900 mb-1">My Certificate</h1>
       <p className="text-sm text-gray-500 mb-6">
         {isGenerated
