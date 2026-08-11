@@ -76,9 +76,9 @@ function ResetPasswordForm() {
           }}>
 
           <div className="flex items-center justify-center gap-3 mb-8">
-            <div className="w-11 h-11 rounded-xl flex items-center justify-center"
-              style={{ background: `linear-gradient(135deg, ${ORG}, ${ORG}cc)`, boxShadow: `0 4px 20px ${ORG}44` }}>
-              <span className="text-gray-900 font-black text-lg">E</span>
+            <div className="w-11 h-11 rounded-xl flex items-center justify-center overflow-hidden"
+              style={{ boxShadow: `0 4px 20px ${ORG}44` }}>
+              <img src="/logo.jpg" alt="E-Nyagasambu" className="w-full h-full object-cover" />
             </div>
             <div>
               <span className="text-gray-900 font-extrabold text-lg tracking-tight block leading-tight">E-Nyagasambu</span>

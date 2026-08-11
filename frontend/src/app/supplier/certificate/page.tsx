@@ -29,8 +29,8 @@ function CertPreview({ name, businessName, photo, certNo, issued, validUntil }: 
       <div className="absolute top-4 bottom-4 right-5 w-0.5 opacity-30" style={{background:`linear-gradient(180deg,${ORG},transparent 40%,transparent 60%,${ORG})`}}/>
       <div className="relative z-10 p-8">
         <div className="flex items-center gap-4 mb-6">
-          <div className="w-14 h-14 rounded-full flex items-center justify-center border-2" style={{borderColor:ORG,background:NAVY}}>
-            <span className="text-white text-2xl font-black">E</span>
+          <div className="w-14 h-14 rounded-full flex items-center justify-center overflow-hidden border-2" style={{borderColor:ORG}}>
+            <img src="/logo.jpg" alt="E-Nyagasambu" className="w-full h-full object-cover" />
           </div>
           <div>
             <p className="font-extrabold text-lg leading-tight" style={{color:NAVY}}>E-NYAGASAMBU</p>

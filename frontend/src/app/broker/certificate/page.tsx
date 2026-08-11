@@ -5,10 +5,18 @@ import api from '@/lib/api';
 import { Lock, MapPin, Phone, Mail, Globe, Camera, Image, User, BadgeCheck, CheckCircle, Clock, Coins } from '@/lib/icons';
 import { SITE_DOMAIN } from '@/lib/config';
 
-const NAVY = '#0f1e42';
-const ORG = '#E85D04';
+const NAVY = '#0e1f4b';
+const NAVY_2 = '#132a63';
+const ORG = '#f2701c';
 
 function pad(n: number, l: number) { return String(n).padStart(l, '0'); }
+
+const formatName = (fullName: string) => {
+  const parts = (fullName || '').trim().split(/\s+/);
+  const first = parts[0]?.toUpperCase() || '';
+  const rest = parts.slice(1).map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+  return rest ? `${first} ${rest}` : first;
+};
 
 const fmtRWF = (n: number) => 'RWF ' + Number(n || 0).toLocaleString('en-US');
 
@@ -38,76 +46,59 @@ interface Certificate {
 function BrokerFront({ name, brokerId, district, phone, email, qr, photo }: {
   name: string; brokerId: string; district: string; phone: string; email: string; qr: string; photo: string | null;
 }) {
-  const W = 500, H = 300;
+  const W = 520, H = 300;
   return (
-    <div style={{ width: W, height: H, borderRadius: 12, overflow: 'hidden', position: 'relative', fontFamily: 'Arial,Helvetica,sans-serif', boxShadow: '0 8px 32px rgba(0,0,0,0.35)', flexShrink: 0 }}>
-      <div style={{ position: 'absolute', inset: 0, background: NAVY }} />
-      {/* Decorative white & orange geometry */}
-      <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none">
-        <polygon points={`300,0 ${W},0 ${W},${H} 185,${H}`} fill="rgba(232,93,4,0.5)" />
-        <line x1="300" y1="0" x2="185" y2={H} stroke="rgba(255,255,255,0.85)" strokeWidth="2.5" />
-        <circle cx={W - 60} cy={54} r={76} fill="rgba(255,255,255,0.06)" />
-        <circle cx={W - 60} cy={54} r={76} stroke="rgba(255,255,255,0.45)" strokeWidth="2" fill="none" />
-      </svg>
-      <div style={{ position: 'absolute', right: 8, top: 26, width: 112, height: 112, borderRadius: '50%', background: 'rgba(232,93,4,0.3)' }} />
-
-      <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: '18px 20px 14px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+    <div style={{ width: W, height: H, borderRadius: 22, overflow: 'hidden', position: 'relative', background: '#fff', fontFamily: "'Poppins', Arial, sans-serif", boxShadow: '0 22px 45px rgba(10,20,50,0.25)', flexShrink: 0 }}>
+      {/* Navy panel */}
+      <div style={{ position: 'absolute', top: 0, left: 0, bottom: 0, width: '64%', background: `linear-gradient(160deg, ${NAVY_2}, ${NAVY} 70%)`, clipPath: 'polygon(0 0,100% 0,78% 100%,0 100%)', padding: '26px 30px', color: '#fff', display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+          <div style={{ width: 34, height: 34, borderRadius: '50%', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fff', position: 'relative', flexShrink: 0 }}>
+            <img src="/logo.jpg" alt="E-Nyagasambu" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          </div>
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-              <div style={{ width: 38, height: 38, borderRadius: '50%', border: `2px solid ${ORG}`, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.1)', overflow: 'hidden', flexShrink: 0 }}>
-                <svg viewBox="0 0 38 38" width="36" height="36">
-                  <circle cx="19" cy="19" r="18" fill={NAVY} />
-                  <text x="2" y="29" fontSize="25" fontWeight="900" fontFamily="Arial Black,Arial" fill="#fff">E</text>
-                  <g transform="translate(18,14) scale(0.75)">
-                    <path d="M1 1h3.4l2.2 11.3a2 2 0 0 0 2 1.7h9.6a2 2 0 0 0 2-1.6L22.6 5.5H5" stroke={ORG} strokeWidth="2.2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-                    <circle cx="9" cy="17" r="1.3" stroke={ORG} strokeWidth="1.7" fill="none" />
-                    <circle cx="16" cy="17" r="1.3" stroke={ORG} strokeWidth="1.7" fill="none" />
-                  </g>
-                </svg>
-              </div>
-              <div>
-                <div style={{ fontSize: 11, fontWeight: 900, color: '#fff', letterSpacing: 1.5, lineHeight: 1.1 }}>E-NYAGASAMBU</div>
-                <div style={{ fontSize: 7, color: ORG, letterSpacing: 1.5, fontWeight: 700 }}>DIGITAL MARKET PLACE</div>
-              </div>
-            </div>
-            <div style={{ fontSize: 18, fontWeight: 900, color: ORG, letterSpacing: 1, lineHeight: 1 }}>CERTIFIED BROKER</div>
-          </div>
-          <div style={{ width: 88, height: 88, borderRadius: '50%', border: `3px solid ${ORG}`, background: 'rgba(255,255,255,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, overflow: 'hidden', marginRight: 2 }}>
-            {photo
-              ? <img src={photo} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-              : <User size={40} className="text-white/40" />
-            }
+            <div style={{ fontWeight: 800, fontSize: 14, letterSpacing: 0.5 }}>E-NYAGASAMBU</div>
+            <div style={{ fontSize: 7.5, fontWeight: 700, letterSpacing: 1.5, color: '#cfd6ec' }}>DIGITAL MARKET PLACE</div>
           </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <User size={14} className="text-white/60" />
-          <span style={{ fontSize: 20, fontWeight: 700, color: '#fff', letterSpacing: 0.3 }}>{name}</span>
+        <div style={{ color: ORG, fontWeight: 800, fontSize: 13, letterSpacing: 2, marginTop: 6 }}>CERTIFIED BROKER</div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 700, fontSize: 19, marginTop: 8 }}>
+          <User size={15} color={ORG} />
+          <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 240 }}>{formatName(name)}</span>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', rowGap: 5, columnGap: 8 }}>
+        <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 7 }}>
           {[
-            { icon: <BadgeCheck size={11} className="text-white/60" />, label: 'Broker ID', val: brokerId },
-            { icon: <MapPin size={11} className="text-white/60" />, label: 'District',  val: district },
-            { icon: <Phone size={11} className="text-white/60" />, label: 'Phone',     val: phone || 'N/A' },
-            { icon: <Mail size={11} className="text-white/60" />, label: 'Email',     val: email.length > 22 ? email.slice(0, 20) + '\u2026' : email },
-          ].map(({ icon, label, val }) => (
-            <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-              {icon}
-              <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.55)' }}>{label} :</span>
-              <span style={{ fontSize: 9.5, color: '#fff', fontWeight: 600 }}> {val}</span>
+            { ic: <BadgeCheck size={11} color={ORG} />, k: 'Broker ID', v: brokerId },
+            { ic: <MapPin size={11} color={ORG} />, k: 'District',  v: district },
+            { ic: <Phone size={11} color={ORG} />, k: 'Phone',     v: phone || 'N/A' },
+            { ic: <Mail size={11} color={ORG} />, k: 'Email',     v: email.length > 22 ? email.slice(0, 20) + '\u2026' : email },
+          ].map(({ ic, k, v }) => (
+            <div key={k} style={{ display: 'flex', alignItems: 'center', gap: 9, fontSize: 11.5 }}>
+              <span style={{ width: 20, height: 20, borderRadius: 6, background: 'rgba(255,255,255,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: ORG, flexShrink: 0 }}>{ic}</span>
+              <span style={{ color: '#c6cde6', minWidth: 52 }}>{k}</span>
+              <span style={{ fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>: {v}</span>
             </div>
           ))}
         </div>
+      </div>
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-          <div style={{ fontSize: 8, color: 'rgba(255,255,255,0.4)' }}>www.{SITE_DOMAIN}</div>
-          <div style={{ textAlign: 'center' }}>
-            <img src={qr} alt="QR" width={58} height={58} style={{ border: '2px solid rgba(255,255,255,0.3)', borderRadius: 4, display: 'block' }} />
-            <div style={{ fontSize: 7, color: 'rgba(255,255,255,0.4)', marginTop: 2, letterSpacing: 0.5 }}>SCAN TO VERIFY</div>
-          </div>
-        </div>
+      {/* Orange slice */}
+      <div style={{ position: 'absolute', top: 0, right: 0, bottom: 0, width: '20%', background: ORG, clipPath: 'polygon(35% 0,100% 0,100% 100%,0 100%)', opacity: 0.95 }} />
+
+      {/* Photo */}
+      <div style={{ position: 'absolute', top: 26, right: 74, width: 96, height: 96, borderRadius: '50%', border: `3px solid ${ORG}`, overflow: 'hidden', background: '#dfe3ef', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 3 }}>
+        {photo
+          ? <img src={photo} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          : <User size={54} color="#98a1bd" />
+        }
+      </div>
+
+      {/* QR */}
+      <div style={{ position: 'absolute', bottom: 20, right: 26, zIndex: 3, textAlign: 'center' }}>
+        <img src={qr} alt="QR" width={78} height={78} style={{ border: `4px solid ${ORG}`, borderRadius: 6, display: 'block' }} />
+        <div style={{ fontSize: 8, fontWeight: 700, color: NAVY, letterSpacing: 0.5, marginTop: 2 }}>SCAN TO VERIFY</div>
       </div>
     </div>
   );
@@ -116,41 +107,44 @@ function BrokerFront({ name, brokerId, district, phone, email, qr, photo }: {
 /* ── BROKER BACK CARD ──────────────────────────────────── */
 function BrokerBack({ qr }: { qr: string }) {
   return (
-    <div style={{ width: 500, height: 300, borderRadius: 12, overflow: 'hidden', background: '#fff', fontFamily: 'Arial,Helvetica,sans-serif', boxShadow: '0 8px 32px rgba(0,0,0,0.35)', flexShrink: 0, display: 'flex', flexDirection: 'column' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 20px' }}>
-        <span style={{ background: NAVY, color: '#fff', fontWeight: 900, fontSize: 12, letterSpacing: 2.5, padding: '6px 14px', borderRadius: 999 }}>AUTHORIZED SERVICES</span>
-        <div style={{ textAlign: 'center' }}>
-          <img src={qr} alt="QR" width={66} height={66} style={{ border: '1px solid #ddd', borderRadius: 4, display: 'block' }} />
-          <div style={{ fontSize: 7, color: '#bbb', marginTop: 2, letterSpacing: 0.5 }}>SCAN TO VERIFY</div>
-        </div>
-      </div>
-      <div style={{ flex: 1, display: 'flex', padding: '6px 20px 0' }}>
-        <div style={{ flex: 1 }}>
+    <div style={{ width: 520, height: 300, borderRadius: 22, overflow: 'hidden', background: '#fff', border: '1px solid #eee', fontFamily: "'Poppins', Arial, sans-serif", boxShadow: '0 22px 45px rgba(10,20,50,0.25)', flexShrink: 0, display: 'flex', flexDirection: 'column', padding: '26px 30px 0' }}>
+      <div style={{ alignSelf: 'flex-start', background: NAVY, color: '#fff', fontSize: 11, fontWeight: 700, letterSpacing: 1.5, padding: '7px 16px', borderRadius: 8, marginBottom: 16 }}>AUTHORIZED SERVICES</div>
+
+      <div style={{ display: 'flex', flex: 1, gap: 20 }}>
+        <div style={{ flex: 1.15, display: 'flex', flexDirection: 'column', gap: 10 }}>
           {['Product Brokerage', 'Property Brokerage', 'Vehicle Brokerage', 'Marketplace Verification', 'Customer Support'].map(s => (
-            <div key={s} style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 10 }}>
-              <div style={{ width: 20, height: 20, borderRadius: '50%', background: ORG, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <span style={{ color: '#fff', fontSize: 10, fontWeight: 900 }}>{'\u2713'}</span>
-              </div>
-              <span style={{ fontSize: 12.5, color: '#222' }}>{s}</span>
+            <div key={s} style={{ display: 'flex', alignItems: 'center', gap: 9, fontSize: 12, color: NAVY, fontWeight: 600 }}>
+              <span style={{ width: 16, height: 16, borderRadius: '50%', background: ORG, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, flexShrink: 0 }}>{'\u2713'}</span>
+              {s}
             </div>
           ))}
         </div>
-        <div style={{ width: 1, background: '#e5e7eb', margin: '0 16px' }} />
-        <div style={{ width: 180, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 14, paddingLeft: 16, borderLeft: '1px solid #eee' }}>
           {[
-            { icon: <Globe size={10} color={NAVY} />, label: 'Website',   val: `www.${SITE_DOMAIN}` },
-            { icon: <Mail size={10} color={NAVY} />, label: 'Email',     val: `info@${SITE_DOMAIN}` },
-            { icon: <Phone size={10} color={NAVY} />, label: 'Emergency', val: '0788 300 003' },
-          ].map(({ icon, label, val }) => (
-            <div key={label} style={{ marginBottom: 12 }}>
-              <div style={{ fontSize: 8.5, color: '#9ca3af', display: 'flex', alignItems: 'center', gap: 3 }}>{icon}<span>{label}</span></div>
-              <div style={{ fontSize: 10.5, color: NAVY, fontWeight: 700 }}>{val}</div>
+            { ic: <Globe size={15} color={NAVY} />, label: 'Website',   val: `www.${SITE_DOMAIN}` },
+            { ic: <Mail size={15} color={NAVY} />, label: 'Email',     val: `info@${SITE_DOMAIN}` },
+            { ic: <Phone size={15} color={NAVY} />, label: 'Emergency Contact', val: '+250 788 300 003' },
+          ].map(({ ic, label, val }) => (
+            <div key={label} style={{ display: 'flex', gap: 9, alignItems: 'flex-start' }}>
+              <span style={{ color: NAVY, marginTop: 1, flexShrink: 0 }}>{ic}</span>
+              <div>
+                <div style={{ fontSize: 10, color: '#5c6684', fontWeight: 600 }}>{label}</div>
+                <div style={{ fontSize: 11.5, color: NAVY, fontWeight: 700 }}>{val}</div>
+              </div>
             </div>
           ))}
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+          <img src={qr} alt="QR" width={72} height={72} style={{ border: `3px solid ${NAVY}`, borderRadius: 6, display: 'block' }} />
+          <div style={{ fontSize: 8, fontWeight: 700, color: NAVY, letterSpacing: 0.5 }}>SCAN TO VERIFY</div>
         </div>
       </div>
-      <div style={{ background: `linear-gradient(90deg, ${NAVY} 0%, ${NAVY} 55%, ${ORG} 100%)`, padding: '8px 20px', textAlign: 'center' }}>
-        <em style={{ color: '#fff', fontSize: 11, fontWeight: 600 }}>Building Trust. Connecting Opportunities. Growing Together.</em>
+
+      <div style={{ marginTop: 'auto', background: NAVY, color: ORG, textAlign: 'center', fontWeight: 700, fontSize: 11.5, letterSpacing: 0.4, padding: '11px 10px', position: 'relative', overflow: 'hidden' }}>
+        Building Trust. Connecting Opportunities. Growing Together.
+        <span style={{ position: 'absolute', right: -10, bottom: -10, width: 70, height: 70, background: ORG, opacity: 0.25, clipPath: 'polygon(40% 100%,100% 40%,100% 100%)' }} />
       </div>
     </div>
   );
@@ -399,7 +393,9 @@ export default function BrokerCertificatePage() {
     return (
       <div className="p-4 lg:p-8">
         <div className="flex items-center gap-2 mb-6">
-          <div className="w-8 h-8 rounded-full text-white text-xs font-bold flex items-center justify-center" style={{ background: NAVY }}>E</div>
+          <div className="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center" style={{ background: '#fff' }}>
+            <img src="/logo.jpg" alt="E-Nyagasambu" className="w-full h-full object-cover" />
+          </div>
           <span className="font-semibold text-sm" style={{ color: NAVY }}>Broker ID Card — Photo Upload</span>
         </div>
         <PhotoUploadStep

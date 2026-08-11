@@ -46,12 +46,19 @@ export default function Footer() {
           {/* Brand */}
           <div className="lg:col-span-4">
             <a href="/" className="inline-block">
-              <p className="text-2xl font-extrabold tracking-tight">
-                <span style={{ color: '#E85D04' }}>E-</span>Nyagasambu
-              </p>
-              <p style={{ color: '#E85D04' }} className="mt-1 text-[10px] font-bold uppercase tracking-[0.25em]">
-                {T.digitalMarketPlace}
-              </p>
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-full overflow-hidden shrink-0 border-2" style={{ borderColor: '#E85D04' }}>
+                  <img src="/logo.jpg" alt="E-Nyagasambu" className="w-full h-full object-cover" />
+                </div>
+                <div>
+                  <p className="text-2xl font-extrabold tracking-tight">
+                    <span style={{ color: '#E85D04' }}>E-</span>Nyagasambu
+                  </p>
+                  <p style={{ color: '#E85D04' }} className="mt-1 text-[10px] font-bold uppercase tracking-[0.25em]">
+                    {T.digitalMarketPlace}
+                  </p>
+                </div>
+              </div>
             </a>
             <p className="mt-4 max-w-sm text-sm leading-relaxed text-white/60">{T.footerDesc}</p>
             <div className="mt-6">

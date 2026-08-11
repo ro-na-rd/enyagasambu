@@ -47,8 +47,7 @@ export default function StaffDashboard() {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: '#f5f6fa' }}>
         <div className="text-center">
-          <div className="w-12 h-12 rounded-full mx-auto mb-3 flex items-center justify-center text-white font-black text-xl"
-            style={{ background: '#0f1e42' }}>E</div>
+          <div className="w-12 h-12 rounded-full mx-auto mb-3 flex items-center justify-center overflow-hidden"><img src="/logo.jpg" alt="E-Nyagasambu" className="w-full h-full object-cover" /></div>
           <p className="text-gray-500 text-sm">Loading Staff Dashboard…</p>
         </div>
       </div>

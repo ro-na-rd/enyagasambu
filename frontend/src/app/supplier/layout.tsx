@@ -49,7 +49,7 @@ export default function SupplierLayout({ children }: { children: React.ReactNode
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: '#f8f9fc' }}>
         <div className="text-center">
-          <div className="w-14 h-14 rounded-full mx-auto mb-4 flex items-center justify-center text-white font-black text-xl shadow-lg" style={{ background: `linear-gradient(135deg, ${NAVY}, ${ORG})` }}>E</div>
+          <div className="w-14 h-14 rounded-full mx-auto mb-4 flex items-center justify-center overflow-hidden shadow-lg"><img src="/logo.jpg" alt="E-Nyagasambu" className="w-full h-full object-cover" /></div>
           <p className="text-gray-500 text-sm animate-pulse">Loading supplier portal…</p>
         </div>
       </div>

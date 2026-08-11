@@ -140,25 +140,7 @@ function NavbarView({ pathname, tab }: { pathname: string | null; tab: string | 
         <Link href="/" className="flex items-center gap-2 sm:gap-3 shrink-0 min-w-0">
           <div className="rounded-full bg-white flex items-center justify-center overflow-hidden shrink-0"
             style={{ width: 44, height: 44, border: `2px solid ${org}` }}>
-            <svg viewBox="0 0 200 200" width="40" height="40" xmlns="http://www.w3.org/2000/svg">
-              <path d="M100,10 A90,90 0 0,1 190,100" fill="none" stroke={org} strokeWidth="5" strokeLinecap="round"/>
-              <circle cx="100" cy="100" r="86" fill="none" stroke={navy} strokeWidth="3" strokeDasharray="5 3"/>
-              <text x="18" y="148" fontFamily="Arial Black,Arial" fontSize="128" fontWeight="900" fill={navy}>E</text>
-              <circle cx="87"  cy="157" r="8" fill={org}/>
-              <circle cx="117" cy="157" r="8" fill={org}/>
-              <rect   x="71"   y="128" width="58" height="22" rx="4" fill={org}/>
-              <circle cx="168" cy="38"  r="14" fill="none" stroke={navy} strokeWidth="2.5"/>
-              <circle cx="168" cy="33"  r="5.5" fill={navy}/>
-              <path d="M158,44 Q168,53 178,44" fill={navy}/>
-              <circle cx="183" cy="108" r="14" fill="none" stroke={org} strokeWidth="2.5"/>
-              <circle cx="183" cy="103" r="5.5" fill={org}/>
-              <path d="M173,114 Q183,123 193,114" fill={org}/>
-              <circle cx="160" cy="172" r="14" fill="none" stroke={navy} strokeWidth="2.5"/>
-              <circle cx="160" cy="167" r="5.5" fill={navy}/>
-              <path d="M150,178 Q160,187 170,178" fill={navy}/>
-              <line x1="168" y1="52"  x2="176" y2="94"  stroke={navy} strokeWidth="1.5" strokeDasharray="4 3"/>
-              <line x1="176" y1="122" x2="165" y2="158" stroke={navy} strokeWidth="1.5" strokeDasharray="4 3"/>
-            </svg>
+            <img src="/logo.jpg" alt="E-Nyagasambu" className="w-full h-full object-cover" />
           </div>
           <div className="min-w-0">
             <h1 className="font-medium text-lg sm:text-xl leading-tight truncate" style={{ color: navy }}>

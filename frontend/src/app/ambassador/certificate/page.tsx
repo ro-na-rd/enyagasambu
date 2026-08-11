@@ -11,7 +11,6 @@ const DEFAULT_PRICE = 2000;
 
 const fmtRWF = (n: number) => 'RWF ' + Number(n || 0).toLocaleString('en-US');
 
-
 function CertWatermark({ price }: { price: number }) {
   return (
     <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-4 pointer-events-none"
