@@ -1,4 +1,5 @@
 const pool = require('../config/db');
+const { notifyAdmins } = require('../services/notificationService');
 
 const CATEGORIES = ['payment', 'listing', 'access', 'other'];
 
@@ -14,6 +15,7 @@ exports.submit = async (req, res) => {
        VALUES (?, ?, ?, ?, ?, ?, ?)`,
       [name, email, phone || null, resolvedCategory, subject || resolvedCategory, message, listingId || null]
     );
+    notifyAdmins('New support request', `${name} submitted a ${resolvedCategory} request.`, 'support');
     res.status(201).json({ message: 'Support request submitted successfully' });
   } catch (err) {
     console.error('[Support] submit error:', err);

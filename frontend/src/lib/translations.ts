@@ -73,6 +73,7 @@ const t = {
     about: 'About',
     signIn: 'Sign In',
     // Navbar
+    home: 'Home',
     products: 'Products',
     properties: 'Properties',
     vehicles: 'Vehicles',
@@ -362,6 +363,7 @@ const t = {
     chatWithUs: 'Discutez avec nous',
     about: 'À propos',
     signIn: 'Connexion',
+    home: 'Accueil',
     products: 'Produits',
     properties: 'Propriétés',
     vehicles: 'Véhicules',
@@ -638,6 +640,7 @@ const t = {
     chatWithUs: 'Ganira natwe',
     about: 'Ibyacu',
     signIn: 'Injira',
+    home: 'Urugo',
     products: 'Ibicuruzwa',
     properties: 'Inzu n\'Ubutaka',
     vehicles: 'Imodoka',

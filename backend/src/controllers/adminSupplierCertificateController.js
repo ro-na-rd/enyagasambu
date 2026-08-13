@@ -1,4 +1,5 @@
 const pool = require('../config/db');
+const { notifyUser } = require('../services/notificationService');
 
 exports.getCertificates = async (req, res) => {
   const { status, page = 1 } = req.query;
@@ -63,6 +64,8 @@ exports.generateCertificate = async (req, res) => {
       'UPDATE supplier_certificates SET status = ?, cert_no = ?, issued_date = ?, valid_until = ?, generated_by = ? WHERE id = ?',
       ['generated', certNo, issuedDate, validUntilStr, req.user.id, id]
     );
+
+    notifyUser(cert.user_id, 'Certificate generated', `Your supplier certificate ${certNo} is ready.`, 'certificate', '/supplier/certificate');
 
     return res.json({
       message: 'Certificate generated successfully',

@@ -8,6 +8,8 @@ import {
   LayoutDashboard, User, BadgeCheck, Users, Home, CreditCard, DollarSign, FileText,
   MessageCircle, TrendingUp, Bell, Settings, HelpCircle, LogOut, Menu, X, Award,
 } from '@/lib/icons';
+import NotificationBell from '@/components/NotificationBell';
+import { useUnreadCount } from '@/lib/useUnreadCount';
 
 const NAVY = '#0f1e42';
 const ORG = '#E85D04';
@@ -109,6 +111,8 @@ export default function BrokerLayout({ children }: { children: React.ReactNode }
 
   const [msgConvs, setMsgConvs] = useState<Conversation[]>([]);
 
+  const { count: notifCount, refresh: refreshNotifs } = useUnreadCount();
+
   useEffect(() => {
     if (!user) return;
     let active = true;
@@ -123,6 +127,18 @@ export default function BrokerLayout({ children }: { children: React.ReactNode }
   }, [user]);
 
   const unreadMsgs = msgConvs.reduce((sum, c) => sum + (c.unread || 0), 0);
+
+  useEffect(() => {
+    if (!user) return;
+    if (pathname === '/broker/messages') {
+      api.get('/broker/messages/conversations')
+        .then(({ data }) => setMsgConvs(data.conversations || []))
+        .catch(() => {});
+    }
+    if (pathname === '/broker/notifications') {
+      refreshNotifs();
+    }
+  }, [pathname, user, refreshNotifs]);
 
   const convTime = (iso: string) => {
     try {
@@ -215,6 +231,11 @@ export default function BrokerLayout({ children }: { children: React.ReactNode }
                 {group.items.map(({ href, iconKey, label, badge }) => {
                   const active = isActive(href);
                   const Icon = menuIcons[iconKey];
+                  const dynamicBadge = href === '/broker/messages' && unreadMsgs > 0
+                    ? String(unreadMsgs)
+                    : href === '/broker/notifications' && notifCount > 0
+                      ? String(notifCount)
+                      : badge;
                   return (
                     <Link key={href} href={href}
                       onClick={() => setSidebarOpen(false)}
@@ -225,9 +246,9 @@ export default function BrokerLayout({ children }: { children: React.ReactNode }
                       }`}>
                       <Icon size={18} />
                       <span className="flex-1 truncate">{label}</span>
-                      {badge && (
-                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: `${ORG}18`, color: ORG }}>
-                          {badge}
+                      {dynamicBadge && (
+                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full min-w-4 text-center" style={{ background: `${ORG}18`, color: ORG }}>
+                          {dynamicBadge}
                         </span>
                       )}
                       {active && <span className="w-1.5 h-1.5 rounded-full" style={{ background: ORG }} />}
@@ -263,6 +284,8 @@ export default function BrokerLayout({ children }: { children: React.ReactNode }
           </div>
 
           <div className="flex items-center gap-2">
+            <NotificationBell />
+
             {/* Messages Dropdown */}
             <div className="relative">
               <button onClick={(e) => { e.stopPropagation(); setProfileOpen(false); setMsgOpen(!msgOpen); }}

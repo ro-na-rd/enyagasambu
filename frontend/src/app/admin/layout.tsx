@@ -5,9 +5,11 @@ import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import {
   LayoutDashboard, Users, Package, Folder, FileText, Award, BarChart3,
-  Activity, Ticket, Settings, User, LogOut, Bell, Menu, X, ChevronRight,
-  Shield, Sparkles, AlertOctagon, Medal, UserPlus, Store, Link as LinkIcon, Heart
+  Activity, Ticket, Settings, LogOut, Menu, X, ChevronRight,
+  Medal, Store, Link as LinkIcon, Heart, Megaphone, Bell
 } from '@/lib/icons';
+import NotificationBell from '@/components/NotificationBell';
+import { useUnreadCount } from '@/lib/useUnreadCount';
 
 const BRAND = {
   navy: '#0f1e42',
@@ -38,6 +40,8 @@ const NAV_ITEMS: NavItem[] = [
   { href: '/admin/connects', icon: <LinkIcon size={18} />, label: 'Connects' },
   { href: '/admin/donations', icon: <Heart size={18} />, label: 'Donations' },
   { href: '/admin/promos', icon: <Ticket size={18} />, label: 'Promotions' },
+  { href: '/admin/announcements', icon: <Megaphone size={18} />, label: 'Announcements' },
+  { href: '/admin/notifications', icon: <Bell size={18} />, label: 'Notifications' },
   { href: '/admin/content', icon: <FileText size={18} />, label: 'Content' },
   { href: '/admin/settings', icon: <Settings size={18} />, label: 'Settings' },
 ];
@@ -47,7 +51,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const router = useRouter();
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [notifOpen, setNotifOpen] = useState(false);
+
+  const { count: notifCount, refresh: refreshNotifs } = useUnreadCount();
 
   const isLoginPage = pathname === '/admin/login';
 
@@ -59,10 +64,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }, [user, loading, router, isLoginPage]);
 
   useEffect(() => {
-    const close = () => setNotifOpen(false);
-    window.addEventListener('click', close);
-    return () => window.removeEventListener('click', close);
-  }, []);
+    if (pathname === '/admin/notifications') refreshNotifs();
+  }, [pathname, refreshNotifs]);
 
   if (isLoginPage) return <>{children}</>;
 
@@ -123,6 +126,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-0.5">
           {NAV_ITEMS.map(({ href, icon, label }) => {
             const active = isActive(href);
+            const dynamicBadge = href === '/admin/notifications' && notifCount > 0 ? String(notifCount) : null;
             return (
               <Link key={href} href={href} onClick={() => setSidebarOpen(false)}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium transition-all duration-200 group
@@ -137,7 +141,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   {icon}
                 </span>
                 <span>{label}</span>
-                {active && <span className="ml-auto w-1.5 h-1.5 rounded-full" style={{ background: BRAND.orange }} />}
+                {dynamicBadge && (
+                  <span className="ml-auto text-[9px] font-bold px-1.5 py-0.5 rounded-full min-w-4 text-center" style={{ background: `${BRAND.orange}`, color: '#fff' }}>
+                    {dynamicBadge}
+                  </span>
+                )}
+                {active && !dynamicBadge && <span className="ml-auto w-1.5 h-1.5 rounded-full" style={{ background: BRAND.orange }} />}
               </Link>
             );
           })}
@@ -183,42 +192,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </div>
 
           <div className="flex items-center gap-3">
-            {/* Notifications */}
-            <div className="relative">
-              <button onClick={(e) => { e.stopPropagation(); setNotifOpen(!notifOpen); }}
-                className="relative p-2.5 rounded-xl text-gray-500 hover:text-white hover:bg-gray-100 transition-all">
-                <Bell size={18} />
-                <span className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full text-[8px] font-bold text-white flex items-center justify-center"
-                  style={{ background: BRAND.orange }}>3</span>
-              </button>
-              {notifOpen && (
-                <div className="fixed right-4 top-16 w-[calc(100vw-32px)] max-w-[320px] z-50 bg-[#ffffff] rounded-2xl shadow-2xl border border-gray-200 overflow-hidden lg:absolute lg:right-0 lg:top-full lg:mt-2 lg:w-80 lg:max-w-none"
-                  onClick={(e) => e.stopPropagation()}>
-                  <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
-                    <span className="text-sm font-bold text-gray-900">Notifications</span>
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${BRAND.orange}20`, color: BRAND.orange }}>3 new</span>
-                  </div>
-                  <div className="max-h-72 overflow-y-auto">
-                    {[
-                      { text: 'New user registration: Jean Pierre', time: '5 min ago', type: 'user' },
-                      { text: 'Pending broker certificate request', time: '1 hour ago', type: 'cert' },
-                      { text: 'New listing reported: Spam detected', time: '3 hours ago', type: 'alert' },
-                    ].map((n, i) => (
-                      <div key={i} className="flex items-start gap-3 px-5 py-3.5 border-b border-gray-200 last:border-b-0 hover:bg-gray-50 transition cursor-pointer">
-                        <div className="w-8 h-8 rounded-xl flex items-center justify-center text-sm shrink-0"
-                          style={{ background: n.type === 'alert' ? 'rgba(218,54,51,0.15)' : n.type === 'cert' ? 'rgba(31,111,235,0.15)' : 'rgba(35,134,54,0.15)' }}>
-                          {n.type === 'alert' ? <AlertOctagon size={16} /> : n.type === 'cert' ? <Medal size={16} /> : <UserPlus size={16} />}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-[13px] text-gray-700 leading-snug">{n.text}</p>
-                          <p className="text-[11px] text-gray-700 mt-0.5">{n.time}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
+            <NotificationBell />
 
             {/* Profile */}
             <div className="flex items-center gap-2.5 pl-3 ml-1 border-l border-gray-200">

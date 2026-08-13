@@ -4,6 +4,8 @@ import Link from 'next/link';
 import api from '@/lib/api';
 import { FileText, Award, Search, Filter } from '@/lib/icons';
 import { SITE_DOMAIN } from '@/lib/config';
+import { buildAmbassadorCertPrintHtml } from '@/lib/ambassadorCertPrint';
+import AmbassadorCertificate from '@/components/AmbassadorCertificate';
 
 const BRAND = {
   navy: '#0f1e42',
@@ -106,17 +108,27 @@ export default function AdminCertificatesPage() {
     const valid = c.valid_until
       ? new Date(c.valid_until).toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' })
       : '-';
+
+    if (type === 'ambassador') {
+      printWin.document.write(buildAmbassadorCertPrintHtml({
+        name: c.user_name,
+        certNo: c.cert_no || certNo,
+        issued,
+        validUntil: valid,
+      }));
+      printWin.document.close();
+      return;
+    }
+
     const photoHtml = c.photo_url
       ? `<img src="${BASE_URL}${c.photo_url}" style="width:100px;height:100px;border-radius:50%;object-fit:cover;border:3px solid ${BRAND.navy};margin:0 auto 16px;display:block;" />`
       : '';
 
-    const title = type === 'ambassador' ? 'BRAND AMBASSADOR' : type === 'broker' ? 'CERTIFIED BROKER' : 'VERIFIED SUPPLIER';
-    const description = type === 'ambassador'
-      ? 'This certifies that the above-named individual has been officially appointed as a Brand Ambassador of E-Nyagasambu Digital Marketplace, in recognition of their dedication to promoting digital commerce and supporting local businesses.'
-      : type === 'broker'
+    const title = type === 'broker' ? 'CERTIFIED BROKER' : 'VERIFIED SUPPLIER';
+    const description = type === 'broker'
       ? 'This certifies that the above-named individual is a Certified Broker of E-Nyagasambu Digital Marketplace, authorized to facilitate transactions, connect buyers and sellers, and provide trusted marketplace services.'
       : 'This certifies that the above-named supplier has been officially verified on E-Nyagasambu Digital Marketplace, building buyer trust by confirming the authenticity of their supplier account and business.';
-    const heading = type === 'ambassador' ? 'CERTIFICATE OF APPOINTMENT' : 'CERTIFICATE OF VERIFICATION';
+    const heading = 'CERTIFICATE OF VERIFICATION';
     const businessHtml = type === 'supplier' && (c as { business_name?: string }).business_name
       ? `<div style="text-align:center;font-size:20px;color:${BRAND.orange};font-weight:bold;margin-bottom:8px;">${(c as { business_name?: string }).business_name}</div>`
       : '';
@@ -209,11 +221,26 @@ ${businessHtml}
       {/* Detail Modal */}
       {detail && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setDetail(null)}>
-          <div className="rounded-2xl max-w-lg w-full p-6 shadow-xl" style={{ background: '#ffffff', border: '1px solid rgba(0,0,0,0.08)' }} onClick={e => e.stopPropagation()}>
+          <div className={`rounded-2xl w-full p-6 shadow-xl overflow-y-auto max-h-[90vh] ${type === 'ambassador' ? 'max-w-4xl' : 'max-w-lg'}`} style={{ background: '#ffffff', border: '1px solid rgba(0,0,0,0.08)' }} onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-bold text-gray-900">Certificate Detail</h3>
               <button onClick={() => setDetail(null)} className="text-gray-600 hover:text-gray-700 text-xl">&times;</button>
             </div>
+            {type === 'ambassador' && (
+              <div className="mb-5 overflow-x-auto rounded-xl border border-gray-100 bg-gray-50 p-3">
+                <AmbassadorCertificate
+                  id={`admin-ambassador-cert-${detail.id}`}
+                  name={detail.user_name}
+                  certNo={detail.cert_no || `ENA-AMB-${new Date().getFullYear()}-0001`}
+                  issued={detail.issued_date
+                    ? new Date(detail.issued_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' })
+                    : new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' })}
+                  validUntil={detail.valid_until
+                    ? new Date(detail.valid_until).toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' })
+                    : new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' })}
+                />
+              </div>
+            )}
             <div className="space-y-3 text-sm">
               <div><span className="text-gray-600">Name:</span> <span className="font-semibold text-gray-800">{detail.user_name}</span></div>
               <div><span className="text-gray-600">Email:</span> <span className="text-gray-700">{detail.user_email}</span></div>

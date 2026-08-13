@@ -5,6 +5,7 @@ import api from '@/lib/api';
 import Link from 'next/link';
 import { useLanguage } from '@/context/LanguageContext';
 import { ArrowLeft, Star, ChevronLeft, ChevronRight, Package, MapPin, Phone, Loader2, X, MessageCircle, Clock, CheckCircle, AlertCircle, RefreshCw, Heart, Send, AlertOctagon, Link as LinkIcon } from '@/lib/icons';
+import StarRating from '@/components/StarRating';
 
 interface ListingDetail {
   id: number;
@@ -482,6 +483,10 @@ export default function ListingDetailPage({ params }: { params: Promise<{ id: st
             </div>
 
             <h1 className="text-xl font-bold text-gray-900 leading-tight">{listing.title}</h1>
+
+            <div className="mt-2">
+              <StarRating listingId={listing.id} size={20} isOwner={isOwner} />
+            </div>
 
             <p className="text-2xl font-extrabold mt-3" style={{ color: ORG }}>{priceLabel}</p>
 

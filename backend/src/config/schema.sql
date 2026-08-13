@@ -42,8 +42,17 @@ CREATE TABLE IF NOT EXISTS listings (
   views INT DEFAULT 0,
   expires_at TIMESTAMP,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  -- auction fields
+  auction_start TIMESTAMP NULL,
+  minimum_increment DECIMAL(12, 2) NOT NULL DEFAULT 500.00,
+  reserve_price DECIMAL(12, 2) NULL,
+  anti_sniping TINYINT(1) DEFAULT 0,
+  sniping_window INT DEFAULT 30,
+  highest_bid DECIMAL(12, 2) NULL,
+  highest_bidder_id INT NULL,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-  FOREIGN KEY (category_id) REFERENCES categories(id)
+  FOREIGN KEY (category_id) REFERENCES categories(id),
+  FOREIGN KEY (highest_bidder_id) REFERENCES users(id) ON DELETE SET NULL
 );
 
 CREATE TABLE IF NOT EXISTS listing_images (
@@ -341,7 +350,10 @@ CREATE TABLE IF NOT EXISTS platform_settings (
 
 INSERT IGNORE INTO platform_settings (setting_key, setting_value) VALUES
   ('posting_fee', '400'),
-  ('posting_free', 'false');
+  ('posting_free', 'false'),
+  ('auction_anti_sniping', 'false'),
+  ('auction_sniping_window', '30'),
+  ('auction_default_increment', '500');
 
 CREATE TABLE IF NOT EXISTS contact_access_payments (
   id INT AUTO_INCREMENT PRIMARY KEY,
@@ -367,6 +379,17 @@ CREATE TABLE IF NOT EXISTS listing_likes (
   user_id INT NOT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   UNIQUE KEY unique_like (listing_id, user_id),
+  FOREIGN KEY (listing_id) REFERENCES listings(id) ON DELETE CASCADE,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS listing_ratings (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  listing_id INT NOT NULL,
+  user_id INT NOT NULL,
+  stars TINYINT NOT NULL DEFAULT 5,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY unique_rating (listing_id, user_id),
   FOREIGN KEY (listing_id) REFERENCES listings(id) ON DELETE CASCADE,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
@@ -474,4 +497,55 @@ CREATE TABLE IF NOT EXISTS donations (
   message TEXT,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+);
+
+CREATE TABLE IF NOT EXISTS notifications (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NULL,
+  staff_id INT NULL,
+  title VARCHAR(200) NOT NULL,
+  message TEXT,
+  type VARCHAR(50) DEFAULT 'info',
+  link VARCHAR(255),
+  is_read BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (staff_id) REFERENCES staff(id) ON DELETE CASCADE,
+  INDEX idx_notif_user (user_id, is_read),
+  INDEX idx_notif_staff (staff_id, is_read)
+);
+
+CREATE TABLE IF NOT EXISTS announcements (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  title VARCHAR(200) NOT NULL,
+  body TEXT NOT NULL,
+  audience VARCHAR(20) DEFAULT 'all',
+  is_published BOOLEAN DEFAULT TRUE,
+  created_by INT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (created_by) REFERENCES staff(id) ON DELETE SET NULL,
+  INDEX idx_announce_audience (audience, is_published)
+);
+
+CREATE TABLE IF NOT EXISTS auction_bids (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  listing_id INT NOT NULL,
+  user_id INT NULL,
+  bidder_name VARCHAR(150) NOT NULL,
+  amount DECIMAL(12, 2) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (listing_id) REFERENCES listings(id) ON DELETE CASCADE,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
+  INDEX idx_auction_bid_listing (listing_id, amount),
+  INDEX idx_auction_bid_created (created_at)
+);
+
+CREATE TABLE IF NOT EXISTS auction_watches (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  listing_id INT NOT NULL,
+  user_id INT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY unique_watch (listing_id, user_id),
+  FOREIGN KEY (listing_id) REFERENCES listings(id) ON DELETE CASCADE,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );

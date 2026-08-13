@@ -4,7 +4,6 @@ import api from '@/lib/api';
 import { Package, Search, Filter } from '@/lib/icons';
 
 const ORG = '#E85D04';
-const NAVY = '#0f1e42';
 
 interface Listing { id: number; title: string; status: string; listing_type: string; is_featured: boolean; seller_name: string; category_name: string; created_at: string; }
 
@@ -13,6 +12,7 @@ const statusColors: Record<string, string> = {
   disabled: 'bg-red-500/10 text-red-400',
   sold: 'bg-blue-500/10 text-blue-400',
   expired: 'bg-gray-500/10 text-gray-500',
+  deleted: 'bg-red-500/10 text-red-400',
 };
 
 export default function AdminListingsPage() {
@@ -53,7 +53,7 @@ export default function AdminListingsPage() {
           </div>
           <div>
             <h1 className="text-xl font-bold text-gray-900">Listings <span className="text-gray-600 text-base font-normal">({total})</span></h1>
-            <p className="text-sm text-gray-600 mt-0.5">Manage all platform listings &mdash; activate, disable, or remove</p>
+            <p className="text-sm text-gray-600 mt-0.5">Manage all platform listings &mdash; activate, disable, mark as sold, or remove</p>
           </div>
         </div>
       </div>
@@ -126,11 +126,18 @@ export default function AdminListingsPage() {
                   <td className="px-4 py-3.5">
                     <div className="flex items-center gap-2 justify-center flex-wrap">
                       {l.status === 'active' ? (
-                        <button onClick={() => handleToggleStatus(l.id, 'disabled')}
-                          className="text-xs font-semibold hover:underline text-red-400 hover:text-red-300">Disable</button>
+                        <>
+                          <button onClick={() => handleToggleStatus(l.id, 'sold')}
+                            className="text-xs font-semibold hover:underline text-blue-400 hover:text-blue-300">Mark Sold</button>
+                          <button onClick={() => handleToggleStatus(l.id, 'disabled')}
+                            className="text-xs font-semibold hover:underline text-red-400 hover:text-red-300">Disable</button>
+                        </>
                       ) : l.status === 'disabled' ? (
                         <button onClick={() => handleToggleStatus(l.id, 'active')}
                           className="text-xs font-semibold hover:underline text-green-400 hover:text-green-300">Enable</button>
+                      ) : l.status === 'sold' ? (
+                        <button onClick={() => handleToggleStatus(l.id, 'active')}
+                          className="text-xs font-semibold hover:underline text-green-400 hover:text-green-300">Reactivate</button>
                       ) : null}
                       <button onClick={() => handleDelete(l.id)}
                         className="text-xs font-semibold hover:underline text-red-500 hover:text-red-400 ml-1">Delete</button>

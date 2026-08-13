@@ -34,7 +34,7 @@ export default function AmbassadorRegisterPage() {
         referral_code: data.referral_code || undefined,
       });
       localStorage.setItem('nmo_token', res.token);
-      window.location.href = '/ambassador';
+      window.location.href = '/ambassador/certificate';
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
       setError(msg || 'Registration failed. Please try again.');

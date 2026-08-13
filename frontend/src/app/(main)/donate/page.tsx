@@ -2,7 +2,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import api from '@/lib/api';
 import { useLanguage } from '@/context/LanguageContext';
-import { Heart, Phone, CreditCard, CheckCircle, Loader2, Users, Sparkles, Shield, Smartphone } from '@/lib/icons';
+import { Heart, Phone, CreditCard, CheckCircle, Loader2, Sparkles, Shield, Smartphone } from '@/lib/icons';
 
 const NAVY = '#0f1e42';
 const ORG = '#E85D04';
@@ -43,14 +43,12 @@ export default function DonatePage() {
   const [otpResendCooldown, setOtpResendCooldown] = useState(0);
   const [donationId, setDonationId] = useState<number | null>(null);
 
-  const [stats, setStats] = useState({ totalRaised: 0, donorCount: 0 });
   const [recent, setRecent] = useState<RecentDonor[]>([]);
 
   const effectiveAmount = customAmount ? parseInt(customAmount) : amount;
 
   const loadPublic = useCallback(() => {
     api.get('/donations').then(({ data }) => {
-      setStats({ totalRaised: data.totalRaised, donorCount: data.donorCount });
       setRecent(data.recent || []);
     }).catch(() => {});
   }, []);
@@ -209,19 +207,6 @@ export default function DonatePage() {
           </div>
           <h1 className="text-3xl sm:text-5xl font-extrabold text-white">{T.donateTitle}</h1>
           <p className="text-white/75 mt-4 max-w-2xl mx-auto text-sm sm:text-base">{T.donateSubtitle}</p>
-
-          <div className="mt-8 flex items-center justify-center gap-4 sm:gap-8 flex-wrap">
-            <div className="bg-white/10 backdrop-blur rounded-2xl px-6 py-4 border border-white/10">
-              <p className="text-[11px] uppercase tracking-widest text-white/60 font-semibold">{T.totalRaised}</p>
-              <p className="text-2xl sm:text-3xl font-extrabold text-white mt-1">{stats.totalRaised.toLocaleString()} RWF</p>
-            </div>
-            <div className="bg-white/10 backdrop-blur rounded-2xl px-6 py-4 border border-white/10">
-              <p className="text-[11px] uppercase tracking-widest text-white/60 font-semibold">{T.donorCount}</p>
-              <p className="text-2xl sm:text-3xl font-extrabold text-white mt-1 flex items-center justify-center gap-2">
-                <Users size={24} /> {stats.donorCount.toLocaleString()}
-              </p>
-            </div>
-          </div>
         </div>
       </div>
 

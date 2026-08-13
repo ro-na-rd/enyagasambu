@@ -1,5 +1,6 @@
 const pool = require('../config/db');
 const { uploadToS3 } = require('../services/s3Service');
+const { notifyAdmins, notifyUser } = require('../services/notificationService');
 
 const DEFAULT_CERT_PRICE = 2000;
 
@@ -120,6 +121,8 @@ exports.requestCertificate = async (req, res) => {
       'INSERT INTO broker_certificates (broker_id, status, amount_rwf, certificate_type_id) VALUES (?, ?, ?, ?)',
       [req.user.id, 'pending', type.price_rwf, type.id]
     );
+
+    notifyAdmins('New broker certificate request', `Broker ${req.user.email || req.user.id} requested a certificate.`, 'certificate', '/admin/broker-certificates');
 
     return res.status(201).json({
       message: 'Certificate request submitted. Please pay to proceed.',

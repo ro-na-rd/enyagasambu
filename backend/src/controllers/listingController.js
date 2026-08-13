@@ -5,6 +5,7 @@ const pool = require('../config/db');
 const { requestToPay, getPaymentStatus } = require('../services/momoService');
 const { sendSms } = require('../services/smsService');
 const { uploadToS3 } = require('../services/s3Service');
+const { notifyAdmins } = require('../services/notificationService');
 
 const LISTING_COST = 400;
 const CONNECT_COST = 300;
@@ -50,7 +51,7 @@ exports.getListings = async (req, res) => {
   const { category, type, group, search, featured, page = 1, limit = 20 } = req.query;
   const offset = (parseInt(page) - 1) * parseInt(limit);
 
-  let where = "l.status = 'active' AND l.expires_at > NOW()";
+  let where = "l.status IN ('active','sold','expired')";
   const params = [];
 
   if (category) {
@@ -72,11 +73,13 @@ exports.getListings = async (req, res) => {
 
   try {
     const [rows] = await pool.query(
-      `SELECT l.id, l.title, l.price, l.price_type, l.currency, l.location, l.listing_type,
+      `SELECT l.id, l.title, l.price, l.price_type, l.currency, l.location, l.listing_type, l.status,
               l.is_featured, l.views, l.created_at, l.expires_at,
               c.name AS category_name, c.slug AS category_slug, c.type AS category_type,
               u.name AS seller_name,
-              (SELECT image_url FROM listing_images WHERE listing_id = l.id AND is_primary = 1 LIMIT 1) AS primary_image
+              (SELECT image_url FROM listing_images WHERE listing_id = l.id AND is_primary = 1 LIMIT 1) AS primary_image,
+              (SELECT COUNT(*) FROM listing_ratings WHERE listing_id = l.id) AS rating_count,
+              (SELECT COALESCE(AVG(stars), 0) FROM listing_ratings WHERE listing_id = l.id) AS rating_avg
        FROM listings l
        JOIN categories c ON l.category_id = c.id
        JOIN users u ON l.user_id = u.id
@@ -105,7 +108,9 @@ exports.getListing = async (req, res) => {
   try {
     const [[listing]] = await pool.query(
       `SELECT l.*, c.name AS category_name, c.slug AS category_slug, c.type AS category_type,
-              u.name AS seller_name, u.id AS seller_id, u.role AS seller_role
+              u.name AS seller_name, u.id AS seller_id, u.role AS seller_role,
+              (SELECT COUNT(*) FROM listing_ratings WHERE listing_id = l.id) AS rating_count,
+              (SELECT COALESCE(AVG(stars), 0) FROM listing_ratings WHERE listing_id = l.id) AS rating_avg
        FROM listings l
        JOIN categories c ON l.category_id = c.id
        JOIN users u ON l.user_id = u.id
@@ -170,7 +175,7 @@ exports.createListing = async (req, res) => {
     if (req.user) {
       userId = req.user.id;
       isAdmin = req.user.role === 'admin';
-      [[user]] = await conn.query('SELECT coins, phone FROM users WHERE id = ? FOR UPDATE', [userId]);
+      [[user]] = await conn.query('SELECT name, coins, phone FROM users WHERE id = ? FOR UPDATE', [userId]);
     } else {
       const { guest_name, guest_phone } = req.body;
       if (!guest_name || !guest_phone) {
@@ -244,6 +249,16 @@ exports.createListing = async (req, res) => {
     }
 
     await conn.commit();
+
+    const sellerName = isGuest ? (req.body.guest_name || 'Guest') : (user?.name || 'Seller');
+    const listingTitle = title || 'a listing';
+    notifyAdmins(
+      'New listing posted',
+      `${sellerName} posted "${listingTitle}" (${listing_type || 'sell'}).`,
+      'info',
+      `/admin/listings?id=${result.insertId}`
+    );
+
     return res.status(201).json({ message: 'Listing created', listingId: result.insertId });
   } catch (err) {
     await conn.rollback();

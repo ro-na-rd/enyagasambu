@@ -5,7 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
 import { Suspense, useState } from 'react';
 import type { Lang } from '@/lib/translations';
-import { Search, UserPlus, Star, Heart, Menu, X, Coins, List, Gift, Wrench, LogOut, BadgeCheck } from '@/lib/icons';
+import { Search, UserPlus, Star, Heart, Menu, X, Coins, List, Gift, Wrench, LogOut, Home } from '@/lib/icons';
 import { categoryMap } from '@/lib/translations';
 
 const navy = '#0f1e42';
@@ -60,16 +60,17 @@ function NavbarView({ pathname, tab }: { pathname: string | null; tab: string | 
   const close = () => setMenuOpen(false);
   const closeMobile = () => setMobileOpen(false);
 
-  const activeKey = pathname === '/listings' ? (tab === '' ? 'products' : tab) : null;
+  const activeKey = pathname === '/' ? 'home' : pathname === '/listings' ? (tab === '' ? 'products' : tab) : pathname === '/auction' ? 'auction' : null;
   const isListings = pathname === '/listings';
 
   const NAV_LINKS = [
+    { key: 'home',        href: '/',                         label: T.home, icon: <Home size={16} /> },
     { key: 'products',    href: '/listings?tab=products',    label: T.products },
     { key: 'properties',  href: '/listings?tab=properties',  label: T.properties },
     { key: 'rent',        href: '/listings?tab=rent',        label: T.rent },
     { key: 'vehicles',    href: '/listings?tab=vehicles',    label: T.vehicles },
     { key: 'services',    href: '/listings?tab=services',    label: T.services },
-    { key: 'auction',     href: '/listings?tab=auction',     label: T.auction },
+    { key: 'auction',     href: '/auction',                 label: T.auction },
     { key: 'adverts',     href: '/listings?tab=adverts',     label: T.adverts },
   ];
 
@@ -99,11 +100,6 @@ function NavbarView({ pathname, tab }: { pathname: string | null; tab: string | 
           onMouseEnter={e => (e.currentTarget.style.color = '#fff')}
           onMouseLeave={e => (e.currentTarget.style.color = '#cdd4f0')}>
           {T.about}
-        </Link>
-        <Link href="/certificates" className="transition" style={{ color: '#cdd4f0' }}
-          onMouseEnter={e => (e.currentTarget.style.color = '#fff')}
-          onMouseLeave={e => (e.currentTarget.style.color = '#cdd4f0')}>
-          {T.certificates}
         </Link>
         {user
           ? <span className="hidden sm:inline" style={{ color: 'rgba(255,255,255,0.7)' }}>{user.name.split(' ')[0]}</span>
@@ -266,11 +262,11 @@ function NavbarView({ pathname, tab }: { pathname: string | null; tab: string | 
 
             {/* Nav links */}
             <nav className="flex flex-col">
-              {NAV_LINKS.map(({ key, href, label }) => (
+              {NAV_LINKS.map(({ key, href, label, icon }) => (
                 <Link key={key} href={href} onClick={closeMobile}
                   className="py-2.5 text-sm flex items-center justify-between"
                   style={{ color: key === activeKey ? org : navy, fontWeight: key === activeKey ? 700 : 500, textDecoration: 'none' }}>
-                  {label}
+                  <span className="flex items-center gap-2">{icon}{label}</span>
                   {key === 'adverts' && <span style={{ fontSize: 9 }}>▾</span>}
                 </Link>
               ))}
@@ -306,9 +302,6 @@ function NavbarView({ pathname, tab }: { pathname: string | null; tab: string | 
               </Link>
               <Link href="/donate" onClick={closeMobile} className="py-1.5 text-sm" style={{ color: navy, textDecoration: 'none' }}>
                 <Heart size={13} className="inline mr-1" style={{ verticalAlign: '-2px' }} /> {T.donate}
-              </Link>
-              <Link href="/certificates" onClick={closeMobile} className="py-1.5 text-sm" style={{ color: navy, textDecoration: 'none' }}>
-                <BadgeCheck size={13} className="inline mr-1" style={{ verticalAlign: '-2px' }} /> {T.certificates}
               </Link>
               <Link href="/my-listings" onClick={closeMobile} className="py-1.5 text-sm" style={{ color: navy, textDecoration: 'none' }}>
                 <List size={13} className="inline mr-1" style={{ verticalAlign: '-2px' }} /> {T.myListings}
@@ -350,7 +343,7 @@ function NavbarView({ pathname, tab }: { pathname: string | null; tab: string | 
       {/* ── MAIN NAV (desktop) ── */}
       <nav className="hidden md:flex px-5 items-center justify-between sticky top-0 z-50" style={{ background: navy }}>
         <div className="flex">
-          {NAV_LINKS.map(({ key, href, label }) => {
+          {NAV_LINKS.map(({ key, href, label, icon }) => {
             const isActive = key === activeKey;
             if (key === 'adverts') {
               return (
@@ -414,7 +407,7 @@ function NavbarView({ pathname, tab }: { pathname: string | null; tab: string | 
               <Link
                 key={key}
                 href={href}
-                className="text-sm px-4 py-3 transition block"
+                className="text-sm px-4 py-3 transition block flex items-center gap-1.5"
                 style={{
                   color:        '#cdd4f0',
                   borderBottom: isActive ? `3px solid ${org}` : '3px solid transparent',
@@ -429,6 +422,7 @@ function NavbarView({ pathname, tab }: { pathname: string | null; tab: string | 
                   e.currentTarget.style.borderBottomColor = isActive ? org : 'transparent';
                 }}
               >
+                {icon}
                 {label}
               </Link>
             );

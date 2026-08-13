@@ -1,4 +1,5 @@
 const pool = require('../config/db');
+const { notifyAdmins } = require('../services/notificationService');
 
 const REASONS = ['spam', 'inappropriate', 'scam', 'misleading', 'illegal', 'other'];
 
@@ -31,6 +32,8 @@ exports.createReport = async (req, res) => {
       'INSERT INTO listing_reports (listing_id, reporter_id, reason, details) VALUES (?, ?, ?, ?)',
       [listingId, reporterId, reason, details || null]
     );
+
+    notifyAdmins('Listing reported', `Listing #${listingId} was reported for ${reason}.`, 'alert', '/admin/reports');
 
     return res.status(201).json({ id: result.insertId, message: 'Report submitted. Our team will review it.' });
   } catch (err) {

@@ -2,6 +2,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const pool = require('../config/db');
 const { applyReferral } = require('./referralController');
+const { notifyAdmins } = require('../services/notificationService');
 
 const signToken = (user) =>
   jwt.sign(
@@ -38,6 +39,8 @@ exports.register = async (req, res) => {
 
     // Fetch actual coin balance (may have referral bonus)
     const [[user]] = await pool.query('SELECT coins FROM users WHERE id = ?', [result.insertId]);
+
+    notifyAdmins('New user registered', `${name} just created an account.`, 'user', '/admin/users');
 
     const token = signToken({ id: result.insertId, email, role: 'user' });
     return res.status(201).json({

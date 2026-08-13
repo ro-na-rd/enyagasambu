@@ -82,7 +82,7 @@ function RegisterForm() {
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">{T.referralCode}</label>
-          <input {...register('referral_code')} className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 focus:outline-none  uppercase" placeholder="e.g. AB12CD" />
+          <input {...register('referral_code')} className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 focus:outline-none uppercase" placeholder="e.g. AB12CD" />
         </div>
 
         <button type="submit" disabled={isSubmitting} className="w-full bg-[#E85D04] text-white font-semibold py-2.5 rounded-lg hover:bg-[#e05d00] transition disabled:opacity-60">

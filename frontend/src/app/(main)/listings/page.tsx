@@ -34,6 +34,23 @@ const typeFilters = [
   { value: 'rent', label: 'For Rent' },
 ];
 
+function CountUp({ target, suffix }: { target: number; suffix?: string }) {
+  const [value, setValue] = useState(0);
+  useEffect(() => {
+    let frame = 0;
+    const duration = 2000;
+    const start = performance.now();
+    const tick = (now: number) => {
+      const progress = Math.min((now - start) / duration, 1);
+      setValue(Math.floor(progress * target));
+      if (progress < 1) frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, [target]);
+  return <>{value.toLocaleString('en-US')}{suffix}</>;
+}
+
 const typeLabels: Record<string, string> = {
   product: 'Products',
   rental_property: 'Properties',
@@ -66,6 +83,13 @@ function ListingsContent() {
 
   useEffect(() => {
     api.get('/listings/categories').then(({ data }) => setCategories(data.categories));
+  }, []);
+
+  const [stats, setStats] = useState({ activeListings: 0, categories: 0, sellers: 0, productImages: 0 });
+  useEffect(() => {
+    api.get('/stats').then(({ data }) => {
+      if (data?.stats) setStats(data.stats);
+    }).catch(() => {});
   }, []);
 
   const currentTab = useMemo(() => TABS.find(t => t.key === tab) || null, [tab]);
@@ -141,14 +165,14 @@ function ListingsContent() {
           {/* Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
-              { value: '2,700+', label: 'Active Listings', icon: <Package size={30} />, color: '#E85D04' },
-              { value: '23', label: 'Categories', icon: <Store size={30} />, color: '#0f1e42' },
-              { value: '1,000+', label: 'Trusted Sellers', icon: <Users size={30} />, color: '#E85D04' },
-              { value: '6,500+', label: 'Product Images', icon: <Image size={30} />, color: '#0f1e42' },
+              { value: stats.activeListings, suffix: '+', label: 'Active Listings', icon: <Package size={30} />, color: '#E85D04' },
+              { value: stats.categories, suffix: '', label: 'Categories', icon: <Store size={30} />, color: '#0f1e42' },
+              { value: stats.sellers, suffix: '+', label: 'Trusted Sellers', icon: <Users size={30} />, color: '#E85D04' },
+              { value: stats.productImages, suffix: '+', label: 'Product Images', icon: <Image size={30} />, color: '#0f1e42' },
             ].map((s, i) => (
               <div key={i} className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 text-center">
                 <div className="text-3xl mb-1">{s.icon}</div>
-                <div className="text-2xl font-bold" style={{ color: s.color }}>{s.value}</div>
+                <div className="text-2xl font-bold" style={{ color: s.color }}><CountUp target={s.value} suffix={s.suffix} /></div>
                 <div className="text-xs text-gray-500 font-medium">{s.label}</div>
               </div>
             ))}
@@ -422,7 +446,7 @@ export default function ListingsPage() {
         <ListingsContent />
       </Suspense>
       <Link href="/listings/create"
-        className="fixed bottom-8 right-8 z-50 px-6 py-3.5 rounded-full shadow-2xl flex items-center gap-2 text-white text-sm font-bold hover:scale-105 active:scale-95 transition-all duration-200 hover:shadow-orange-500/30 group"
+        className="fixed bottom-24 right-8 z-50 px-6 py-3.5 rounded-full shadow-2xl flex items-center gap-2 text-white text-sm font-bold hover:scale-105 active:scale-95 transition-all duration-200 hover:shadow-orange-500/30 group"
         style={{ background: `linear-gradient(135deg, ${NAVY}, ${ORG})` }}
         title="Create New Listing">
         <span className="text-xl leading-none group-hover:rotate-90 transition-transform duration-300">+</span>

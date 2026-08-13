@@ -4,7 +4,7 @@ import { useLanguage } from '@/context/LanguageContext';
 import { useAuth } from '@/context/AuthContext';
 import { useEffect, useState } from 'react';
 import api from '@/lib/api';
-import { Package, Building2, Car, Users, List, Store, Gavel, User, Coins, Gift, Star, MapPin } from '@/lib/icons';
+import { Package, Building2, Car, Users, List, Store, Gavel, User, Coins, Gift, MapPin } from '@/lib/icons';
 
 interface Listing {
   id: number;
@@ -18,6 +18,15 @@ interface Listing {
   type: string;
   primary_image?: string | null;
   created_at: string;
+}
+
+interface Auction {
+  id: number;
+  title: string;
+  current_bid: number;
+  price: number | null;
+  currency: string;
+  ends_at: string;
 }
 
 const STATS_ICONS: Record<string, React.FC<{ size?: number }>> = {
@@ -62,6 +71,7 @@ export default function HomePage() {
   const { user } = useAuth();
   const [recent, setRecent] = useState<Listing[]>([]);
   const [featured, setFeatured] = useState<Listing[]>([]);
+  const [auctions, setAuctions] = useState<Auction[]>([]);
   const [stats, setStats] = useState<Record<string, number>>({ products: 0, properties: 0, vehicles: 0, suppliers: 0 });
 
   useEffect(() => {
@@ -70,6 +80,9 @@ export default function HomePage() {
       .catch(() => {});
     api.get('/listings?featured=1&limit=4')
       .then(r => setFeatured((r.data.listings ?? r.data ?? []).slice(0, 4)))
+      .catch(() => {});
+    api.get('/auctions?limit=5&sort=ending_soon')
+      .then(r => setAuctions((r.data.auctions ?? []).slice(0, 5)))
       .catch(() => {});
     api.get('/stats')
       .then(r => setStats(r.data.stats ?? {}))
@@ -166,8 +179,16 @@ export default function HomePage() {
           <SideCard title={<><Gavel size={14} className="inline" /> Live Auctions</>} titleBg={darkOrg}>
             <div className="p-3 text-sm">
               <p className="text-xs text-gray-500 mb-2">Ending soon</p>
-              <AuctionItem label="Toyota Land Cruiser 2018" price="45,000 RWF" time="2h 14m" />
-              <AuctionItem label="Commercial Plot – Musanze"  price="12M RWF"    time="5h 30m" />
+              {auctions.length === 0 ? (
+                <p className="text-xs text-gray-400 py-2">No live auctions right now.</p>
+              ) : (
+                auctions.map(a => (
+                  <AuctionItem key={a.id} href={`/auction/${a.id}`} label={a.title} price={a.current_bid ?? a.price} currency={a.currency} endTime={a.ends_at} />
+                ))
+              )}
+              <Link href="/auction" className="block text-center text-xs font-semibold mt-2 pt-2 border-t border-gray-100 transition hover:opacity-80" style={{ color: darkOrg }}>
+                View live auctions →
+              </Link>
             </div>
           </SideCard>
         </aside>
@@ -321,15 +342,32 @@ function Chevron() {
   return <span className="text-gray-400 text-xs">›</span>;
 }
 
-function AuctionItem({ label, price, time }: { label: string; price: string; time: string }) {
+function AuctionItem({ href, label, price, currency, endTime }: { href: string; label: string; price: number | null; currency: string; endTime: string }) {
+  const [timeLeft, setTimeLeft] = useState('');
+  useEffect(() => {
+    const tick = () => {
+      const diff = new Date(endTime).getTime() - Date.now();
+      if (diff <= 0) { setTimeLeft('Ended'); return; }
+      const s = Math.floor(diff / 1000);
+      const d = Math.floor(s / 86400);
+      const h = Math.floor((s % 86400) / 3600);
+      const m = Math.floor((s % 3600) / 60);
+      const sec = s % 60;
+      setTimeLeft(d > 0 ? `${d}d ${h}h` : h > 0 ? `${h}h ${m}m` : m > 0 ? `${m}m ${sec}s` : `${sec}s`);
+    };
+    tick();
+    const t = setInterval(tick, 1000);
+    return () => clearInterval(t);
+  }, [endTime]);
+
   return (
-    <div className="mb-3 last:mb-0">
-      <p className="text-gray-800 mb-0.5">{label}</p>
+    <Link href={href} className="block mb-3 last:mb-0 hover:opacity-80 transition">
+      <p className="text-gray-800 mb-0.5 line-clamp-1">{label}</p>
       <div className="flex justify-between text-xs">
-        <span className="font-medium" style={{ color: org }}>Current: {price}</span>
-        <span className="text-gray-500">{time}</span>
+        <span className="font-medium" style={{ color: org }}>Current: {(price ?? 0).toLocaleString('en-US')} {currency}</span>
+        <span className="text-gray-500">{timeLeft}</span>
       </div>
-    </div>
+    </Link>
   );
 }
 

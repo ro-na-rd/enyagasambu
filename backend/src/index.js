@@ -1,8 +1,11 @@
 require('dotenv').config();
+const http = require('http');
 const express = require('express');
 const cors = require('cors');
 const { startRenewalScheduler } = require('./services/renewalScheduler');
 const { startExpiryScheduler } = require('./services/expiryScheduler');
+const { startAuctionScheduler } = require('./services/auctionScheduler');
+const { initSocket } = require('./config/socket');
 const { waitForS3, ensureBucket } = require('./services/s3Service');
 
 const app = express();
@@ -50,11 +53,17 @@ app.use('/api/settings', require('./routes/settings'));
 app.use('/api/unlock', require('./routes/unlock'));
 app.use('/api/contact-access', require('./routes/contactAccess'));
 app.use('/api/likes', require('./routes/likes'));
+app.use('/api/ratings', require('./routes/ratings'));
 app.use('/api/comments', require('./routes/comments'));
 app.use('/api/content', require('./routes/content'));
 app.use('/api/support', require('./routes/support'));
 app.use('/api/stats', require('./routes/stats'));
 app.use('/api/donations', require('./routes/donations'));
+app.use('/api/notifications', require('./routes/notifications'));
+app.use('/api/announcements', require('./routes/announcements'));
+app.use('/api/auctions', require('./routes/auctions'));
+app.use('/api/ambassador', require('./routes/ambassadorActivities'));
+app.use('/api/admin/announcements', require('./routes/adminAnnouncements'));
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok', platform: 'NMO' }));
 
@@ -68,6 +77,9 @@ app.use((err, req, res, _next) => {
 });
 
 const PORT = process.env.PORT || 5000;
+const server = http.createServer(app);
+initSocket(server);
 startRenewalScheduler();
 startExpiryScheduler();
-app.listen(PORT, () => console.log(`NMO API running on port ${PORT}`));
+startAuctionScheduler();
+server.listen(PORT, () => console.log(`NMO API + Socket.IO running on port ${PORT}`));

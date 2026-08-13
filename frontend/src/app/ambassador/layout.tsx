@@ -3,7 +3,9 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { LayoutDashboard, LogOut, Menu, Bell, MessageCircle, User, Link as LinkIcon, FileText, Gift, Award, Megaphone, TrendingUp, Settings, HelpCircle } from '@/lib/icons';
+import { LayoutDashboard, LogOut, Menu, User, Link as LinkIcon, FileText, Gift, Award, Megaphone, TrendingUp, Settings, HelpCircle, Bell } from '@/lib/icons';
+import NotificationBell from '@/components/NotificationBell';
+import { useUnreadCount } from '@/lib/useUnreadCount';
 
 const NAVY = '#0f1e42';
 const ORG = '#E85D04';
@@ -19,6 +21,7 @@ const menuIcons: Record<string, React.FC<{ size?: number }>> = {
   reports: TrendingUp,
   settings: Settings,
   help: HelpCircle,
+  notifications: Bell,
 };
 
 const menuItems = [
@@ -30,6 +33,7 @@ const menuItems = [
   { href: '/ambassador/certificate', iconKey: 'certificate', label: 'My Certificate' },
   { href: '/ambassador/announcements', iconKey: 'announcements', label: 'Announcements' },
   { href: '/ambassador/reports',    iconKey: 'reports', label: 'Reports' },
+  { href: '/ambassador/notifications', iconKey: 'notifications', label: 'Notifications' },
   { href: '/ambassador/settings',   iconKey: 'settings', label: 'Settings' },
   { href: '/ambassador/help',       iconKey: 'help', label: 'Help & Support' },
 ];
@@ -40,6 +44,8 @@ export default function AmbassadorLayout({ children }: { children: React.ReactNo
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+
+  const { count: notifCount, refresh: refreshNotifs } = useUnreadCount();
 
   const isLoginPage = pathname === '/ambassador/login' || pathname === '/ambassador/register';
 
@@ -53,6 +59,10 @@ export default function AmbassadorLayout({ children }: { children: React.ReactNo
     window.addEventListener('click', close);
     return () => window.removeEventListener('click', close);
   }, []);
+
+  useEffect(() => {
+    if (pathname === '/ambassador/notifications') refreshNotifs();
+  }, [pathname, refreshNotifs]);
 
   if (isLoginPage) return <>{children}</>;
 
@@ -101,6 +111,7 @@ export default function AmbassadorLayout({ children }: { children: React.ReactNo
           {menuItems.map(({ href, iconKey, label }) => {
             const active = pathname === href;
             const Icon = menuIcons[iconKey];
+            const dynamicBadge = href === '/ambassador/notifications' && notifCount > 0 ? String(notifCount) : null;
             return (
               <Link key={href} href={href}
                 onClick={() => setSidebarOpen(false)}
@@ -110,7 +121,12 @@ export default function AmbassadorLayout({ children }: { children: React.ReactNo
                     : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                 }`}>
                 <Icon size={18} />
-                <span>{label}</span>
+                <span className="flex-1 truncate">{label}</span>
+                {dynamicBadge && (
+                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full min-w-4 text-center" style={{ background: `${ORG}18`, color: ORG }}>
+                    {dynamicBadge}
+                  </span>
+                )}
                 {active && <span className="ml-auto w-1.5 h-1.5 rounded-full" style={{ background: ORG }} />}
               </Link>
             );
@@ -143,14 +159,7 @@ export default function AmbassadorLayout({ children }: { children: React.ReactNo
           </div>
 
           <div className="flex items-center gap-2">
-            <button className="relative p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition" title="Notifications">
-              <Bell size={20} />
-              <span className="absolute top-1 right-1 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">2</span>
-            </button>
-            <button className="relative p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition" title="Messages">
-              <MessageCircle size={20} />
-              <span className="absolute top-1 right-1 w-4 h-4 bg-orange-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">1</span>
-            </button>
+            <NotificationBell />
             <div className="relative pl-2 ml-1 border-l border-gray-200">
               <button onClick={(e) => { e.stopPropagation(); setProfileOpen(!profileOpen); }}
                 className="flex items-center gap-2 hover:bg-gray-50 rounded-lg px-2 py-1 transition">

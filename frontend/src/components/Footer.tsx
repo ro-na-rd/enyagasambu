@@ -102,6 +102,7 @@ export default function Footer() {
                 { href: '/guide', label: T.gettingStarted },
                 { href: '/terms', label: T.termsOfUse },
                 { href: '/privacy', label: T.privacyPolicy },
+                { href: '/certificates', label: T.certificates },
               ].map((l) => (
                 <li key={l.href + l.label}>
                   <a href={l.href} className="text-white/70 transition hover:text-[#E85D04]">{l.label}</a>

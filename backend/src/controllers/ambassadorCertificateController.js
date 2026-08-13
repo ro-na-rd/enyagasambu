@@ -2,6 +2,7 @@ const pool = require('../config/db');
 const { randomUUID: uuidv4 } = require('crypto');
 const { requestToPay, getPaymentStatus } = require('../services/momoService');
 const { uploadToS3 } = require('../services/s3Service');
+const { notifyAdmins, notifyUser } = require('../services/notificationService');
 
 const DEFAULT_CERT_PRICE = 2000;
 const REFERRAL_REWARD = 200;
@@ -145,6 +146,8 @@ exports.initiatePayment = async (req, res) => {
       payeeNote: `E-Nyagasambu ${type.name} Certificate – ${amount.toLocaleString('en-US')} RWF`,
     });
 
+    notifyAdmins('New ambassador certificate payment', `Ambassador ${req.user.email || req.user.id} initiated a certificate payment of ${Number(amount).toLocaleString('en-US')} RWF.`, 'certificate', '/admin/certificates');
+
     return res.json({
       message: 'Payment request sent. Check your phone and approve the MoMo prompt.',
       referenceId,
@@ -194,6 +197,8 @@ exports.checkPayment = async (req, res) => {
         ['generated', certNo, issuedDate, validUntilStr, cert.id]
       );
 
+      notifyUser(req.user.id, 'Certificate generated', `Your ambassador certificate ${certNo} is ready.`, 'certificate', '/ambassador/certificate');
+
       // Credit referrer with 200 RWF if this user was referred and bonus not yet paid
       const [[referral]] = await pool.query(
         'SELECT referrer_id FROM referrals WHERE referred_id = ? AND bonus_paid = 0 LIMIT 1',
@@ -206,6 +211,7 @@ exports.checkPayment = async (req, res) => {
           [referral.referrer_id, REFERRAL_REWARD, `cert_referral_${req.user.id}`]
         );
         await pool.query('UPDATE referrals SET bonus_paid = 1 WHERE referrer_id = ? AND referred_id = ?', [referral.referrer_id, req.user.id]);
+        notifyUser(referral.referrer_id, 'Referral reward earned', `You earned ${REFERRAL_REWARD} RWF for referring a new ambassador.`, 'reward', '/ambassador/rewards');
       }
 
       return res.json({ status: 'generated', cert_no: certNo });

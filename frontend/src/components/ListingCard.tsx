@@ -4,6 +4,7 @@ import { useLanguage } from '@/context/LanguageContext';
 import { useEffect, useState, useRef, useCallback } from 'react';
 import api from '@/lib/api';
 import { Star, Package, MapPin, Phone, X, CheckCircle, Loader2, Clock, Check, AlertCircle, RefreshCw } from '@/lib/icons';
+import StarRating from '@/components/StarRating';
 
 interface Listing {
   id: number;
@@ -13,6 +14,7 @@ interface Listing {
   currency?: string;
   location: string;
   listing_type: string;
+  status?: string;
   category_name: string;
   seller_name: string;
   primary_image: string | null;
@@ -54,6 +56,7 @@ export default function ListingCard({ listing }: { listing: Listing }) {
   }, []);
 
   const currency = listing.currency || 'RWF';
+  const isSold = listing.status === 'sold' || listing.status === 'expired';
   const priceLabel = listing.price != null
     ? `${Number(listing.price).toLocaleString()} ${currency}${listing.price_type === 'per_day' ? '/day' : listing.price_type === 'per_month' ? '/mo' : ''}`
     : T.priceOnRequest;
@@ -232,6 +235,16 @@ export default function ListingCard({ listing }: { listing: Listing }) {
               </div>
             )}
 
+            {isSold && (
+              <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/40">
+                <img
+                  src="/assets/sold.png"
+                  alt="Sold"
+                  className="w-4/5 h-4/5 object-contain"
+                />
+              </div>
+            )}
+
             <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/40 to-transparent" />
 
             <div className="absolute bottom-3 left-3 z-10">
@@ -271,6 +284,10 @@ export default function ListingCard({ listing }: { listing: Listing }) {
             {priceLabel}
           </p>
 
+          <div className="mt-2">
+            <StarRating listingId={listing.id} />
+          </div>
+
           <div className="flex items-center justify-between gap-2 mt-2.5">
             <p className="text-xs text-gray-400 flex items-center gap-1.5 min-w-0">
               <MapPin size={12} className="shrink-0" />
@@ -284,11 +301,12 @@ export default function ListingCard({ listing }: { listing: Listing }) {
           <div className="mt-3.5">
             <button
               onClick={handleConnectClick}
-              className="w-full text-white text-xs font-bold py-2.5 rounded-xl transition-all duration-200 hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2"
-              style={{ background: `linear-gradient(135deg, ${NAVY}, ${ORG})` }}
+              disabled={isSold}
+              className="w-full text-white text-xs font-bold py-2.5 rounded-xl transition-all duration-200 hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+              style={{ background: isSold ? '#9ca3af' : `linear-gradient(135deg, ${NAVY}, ${ORG})` }}
             >
               <Phone size={14} strokeWidth={2.5} />
-              Connect with Seller
+              {isSold ? 'Sold Out' : 'Connect with Seller'}
             </button>
           </div>
         </div>

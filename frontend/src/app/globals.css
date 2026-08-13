@@ -110,6 +110,15 @@ select:focus {
 
 /* smooth entrance animations */
 
+@keyframes feedflash {
+    0% {
+        background-color: rgba(232, 93, 4, 0.22);
+    }
+    100% {
+        background-color: transparent;
+    }
+}
+
 @keyframes fadeInUp {
     from {
         opacity: 0;
