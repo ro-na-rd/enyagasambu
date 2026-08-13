@@ -270,20 +270,23 @@ export default function AboutPage() {
         <p className="text-xs text-gray-400 text-center mb-6 uppercase tracking-widest font-semibold">{T.aboutPartners}</p>
         <div className="flex flex-wrap justify-center items-center gap-8 max-w-4xl mx-auto">
           {[
-            { name: 'RDB',       logo: '/partners/rdb.jpg',       bg: '#fff' },
-            { name: 'BNR',       logo: '/partners/bnr.jpg',       bg: '#fff' },
-            { name: 'RRA',       logo: '/partners/rra.png',       bg: '#fff' },
-            { name: 'MINECOFIN', logo: '/partners/minecofin.svg', bg: '#f0f4f8' },
-            { name: 'RSSB',      logo: '/partners/rssb.jpg',      bg: '#fff' },
-            { name: 'RPPA',      logo: '/partners/rppa.jpg',      bg: '#fff' },
+            { name: 'KBL', logo: '/partners/kbl.png', bg: '#fff', label: 'Kigali Business Lab' },
           ].map(p => (
             <div key={p.name} className="flex flex-col items-center gap-2 group">
               <div className="rounded-xl overflow-hidden flex items-center justify-center border border-gray-100 transition group-hover:shadow-lg group-hover:border-gray-200"
                 style={{ width: 120, height: 64, background: p.bg, padding: 8 }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={p.logo} alt={p.name} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
+                <img src={p.logo} alt={p.label} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
               </div>
-              <span className="text-xs text-gray-500 font-semibold">{p.name}</span>
+              <span className="text-xs text-gray-500 font-semibold">{p.label}</span>
+            </div>
+          ))}
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={`slot-${i}`} className="flex flex-col items-center gap-2">
+              <div className="rounded-xl border-2 border-dashed border-gray-200 flex items-center justify-center"
+                style={{ width: 120, height: 64 }}>
+                <span className="text-xs text-gray-300 font-semibold">Partner</span>
+              </div>
             </div>
           ))}
         </div>

@@ -54,13 +54,9 @@ const SELL_LINKS = [
 ];
 
 const PARTNERS = [
-  { name: 'RDB',       logo: '/partners/rdb.jpg',       bg: '#fff' },
-  { name: 'BNR',       logo: '/partners/bnr.jpg',       bg: '#fff' },
-  { name: 'RRA',       logo: '/partners/rra.png',       bg: '#fff' },
-  { name: 'MINECOFIN', logo: '/partners/minecofin.svg', bg: '#f0f4f8' },
-  { name: 'RSSB',      logo: '/partners/rssb.jpg',      bg: '#fff' },
-  { name: 'RPPA',      logo: '/partners/rppa.jpg',      bg: '#fff' },
+  { name: 'KBL', logo: '/partners/kbl.png', bg: '#fff', label: 'Kigali Business Lab' },
 ];
+const EMPTY_PARTNER_SLOTS = 5;
 
 const navy  = '#0f1e42';
 const org   = '#E85D04';
@@ -298,9 +294,17 @@ export default function HomePage() {
               <div className="rounded-lg overflow-hidden flex items-center justify-center border border-gray-100 transition group-hover:shadow-md"
                 style={{ width: 90, height: 48, background: p.bg, padding: 6 }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={p.logo} alt={p.name} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
+                <img src={p.logo} alt={p.label} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
               </div>
-              <span className="text-[10px] text-gray-400 font-medium">{p.name}</span>
+              <span className="text-[10px] text-gray-400 font-medium">{p.label}</span>
+            </div>
+          ))}
+          {Array.from({ length: EMPTY_PARTNER_SLOTS }).map((_, i) => (
+            <div key={`slot-${i}`} className="flex flex-col items-center gap-1">
+              <div className="rounded-lg border-2 border-dashed border-gray-200 flex items-center justify-center"
+                style={{ width: 90, height: 48 }}>
+                <span className="text-[10px] text-gray-300 font-medium">Partner</span>
+              </div>
             </div>
           ))}
         </div>
