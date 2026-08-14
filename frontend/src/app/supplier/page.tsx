@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 import api from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 import Link from 'next/link';
-import { LayoutDashboard, Store, Home, BadgeCheck, Loader2, ArrowUpRight } from '@/lib/icons';
+import { LayoutDashboard, Store, Home, BadgeCheck, Loader2, ArrowUpRight, Mail, Phone, MapPin } from '@/lib/icons';
 
 const NAVY = '#0f1e42';
 const ORG = '#E85D04';
@@ -80,6 +80,41 @@ export default function SupplierDashboard() {
           {error}
         </div>
       )}
+
+      {/* User Profile Card */}
+      <div className="mb-6">
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 lg:p-8">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+            <div className="flex items-center gap-4">
+              <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#0f1e42] to-[#1a2952] flex items-center justify-center text-white font-bold text-2xl">
+                {profile?.name?.charAt(0).toUpperCase() || user?.name?.charAt(0).toUpperCase() || 'S'}
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900">{profile?.name || user?.name || 'Supplier'}</h2>
+                <p className="text-gray-500 mt-1">Supplier • {profile?.email || user?.email}</p>
+              </div>
+            </div>
+            <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
+              {profile?.phone && (
+                <div className="flex items-center gap-2">
+                  <Phone size={16} style={{ color: ORG }} />
+                  <span>{profile.phone}</span>
+                </div>
+              )}
+              <div className="flex items-center gap-2">
+                <Mail size={16} style={{ color: ORG }} />
+                <span>{profile?.email || user?.email}</span>
+              </div>
+              {profile?.business_location && (
+                <div className="flex items-center gap-2">
+                  <MapPin size={16} style={{ color: ORG }} />
+                  <span>{profile.business_location}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* Verification banner */}
       {!verified && (

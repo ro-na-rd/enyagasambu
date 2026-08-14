@@ -75,7 +75,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <div className="text-center">
           <div className="w-14 h-14 rounded-2xl mx-auto mb-4 flex items-center justify-center overflow-hidden"
             style={{ boxShadow: `0 8px 32px ${BRAND.orange}44` }}>
-            <img src="/logo.jpg" alt="E-Nyagasambu" className="w-full h-full object-cover" />
+            <img src="/logo.svg" alt="E-Nyagasambu" className="w-full h-full object-cover" />
           </div>
           <div className="flex gap-1 justify-center">
             {[0, 1, 2].map(i => (
@@ -111,7 +111,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <div className="px-5 py-5 flex items-center gap-3 border-b border-white/[0.05]">
           <div className="w-10 h-10 rounded-xl flex items-center justify-center overflow-hidden shrink-0"
             style={{ boxShadow: `0 4px 20px ${BRAND.orange}44` }}>
-            <img src="/logo.jpg" alt="E-Nyagasambu" className="w-full h-full object-cover" />
+            <img src="/logo.svg" alt="E-Nyagasambu" className="w-full h-full object-cover" />
           </div>
           <div className="min-w-0">
             <p className="font-bold text-[13px] text-white leading-tight tracking-tight">E-Nyagasambu</p>

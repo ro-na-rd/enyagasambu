@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect, useCallback } from 'react';
+import { useCurrency } from '@/context/CurrencyContext';
 import api from '@/lib/api';
 import { Loader2, AlertCircle, Coins, DollarSign, TrendingUp, CheckCircle, FileText } from '@/lib/icons';
 
@@ -25,8 +26,6 @@ interface Summary {
   closedDeals: number;
 }
 
-const fmtRWF = (n: number) => 'RWF ' + Number(n || 0).toLocaleString('en-US');
-
 function formatDate(iso: string) {
   try {
     return new Date(iso).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
@@ -36,6 +35,7 @@ function formatDate(iso: string) {
 }
 
 export default function BrokerCommissionsPage() {
+  const { format } = useCurrency();
   const [entries, setEntries] = useState<Entry[]>([]);
   const [summary, setSummary] = useState<Summary | null>(null);
   const [loading, setLoading] = useState(true);
@@ -58,9 +58,9 @@ export default function BrokerCommissionsPage() {
   useEffect(() => { fetchData(); }, [fetchData]);
 
   const cards = [
-    { label: 'Total Earned', value: fmtRWF(summary?.totalCommission ?? 0), icon: <Coins size={20} />, color: NAVY, bg: '#eef2ff' },
-    { label: 'This Month', value: fmtRWF(summary?.commissionThisMonth ?? 0), icon: <DollarSign size={20} />, color: ORG, bg: '#fff7ed' },
-    { label: 'This Quarter', value: fmtRWF(summary?.commissionThisQuarter ?? 0), icon: <TrendingUp size={20} />, color: '#059669', bg: '#ecfdf5' },
+    { label: 'Total Earned', value: format(summary?.totalCommission ?? 0), icon: <Coins size={20} />, color: NAVY, bg: '#eef2ff' },
+    { label: 'This Month', value: format(summary?.commissionThisMonth ?? 0), icon: <DollarSign size={20} />, color: ORG, bg: '#fff7ed' },
+    { label: 'This Quarter', value: format(summary?.commissionThisQuarter ?? 0), icon: <TrendingUp size={20} />, color: '#059669', bg: '#ecfdf5' },
     { label: 'Closed Deals', value: String(summary?.closedDeals ?? 0), icon: <CheckCircle size={20} />, color: '#0f1e42', bg: '#f0f2f6' },
   ];
 
@@ -121,8 +121,8 @@ export default function BrokerCommissionsPage() {
                     <td className="px-4 py-3 font-medium text-gray-900">{e.title}</td>
                     <td className="px-4 py-3 text-gray-500">{e.client_name || '—'}</td>
                     <td className="px-4 py-3 text-gray-500">{e.category_name || '—'}</td>
-                    <td className="px-4 py-3 text-gray-700">{e.price ? `${e.currency || 'RWF'} ${Number(e.price).toLocaleString()}` : '—'}</td>
-                    <td className="px-4 py-3 font-semibold text-green-700 whitespace-nowrap">+ {fmtRWF(e.amount_rwf)}</td>
+                    <td className="px-4 py-3 text-gray-700">{e.price ? format(Number(e.price)) : '—'}</td>
+                    <td className="px-4 py-3 font-semibold text-green-700 whitespace-nowrap">+ {format(e.amount_rwf)}</td>
                     <td className="px-4 py-3 text-gray-400 whitespace-nowrap">{formatDate(e.created_at)}</td>
                   </tr>
                 ))}

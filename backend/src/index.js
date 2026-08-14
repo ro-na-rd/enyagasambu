@@ -11,7 +11,7 @@ const { waitForS3, ensureBucket } = require('./services/s3Service');
 const app = express();
 
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:3000',
+  origin: (process.env.CLIENT_URL || 'http://localhost:3000').split(',').map((o) => o.trim()),
   credentials: true,
 }));
 app.use(express.json());

@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { useCurrency } from '@/context/CurrencyContext';
 import api from '@/lib/api';
 import { Check, Lock, Download, Camera } from '@/lib/icons';
 
@@ -30,7 +31,7 @@ function CertPreview({ name, businessName, photo, certNo, issued, validUntil }: 
       <div className="relative z-10 p-8">
         <div className="flex items-center gap-4 mb-6">
           <div className="w-14 h-14 rounded-full flex items-center justify-center overflow-hidden border-2" style={{borderColor:ORG}}>
-            <img src="/logo.jpg" alt="E-Nyagasambu" className="w-full h-full object-cover" />
+            <img src="/logo.svg" alt="E-Nyagasambu" className="w-full h-full object-cover" />
           </div>
           <div>
             <p className="font-extrabold text-lg leading-tight" style={{color:NAVY}}>E-NYAGASAMBU</p>

@@ -31,7 +31,7 @@ function BrokerFront({ name, brokerId, district, phone, email, qr, photo }: {
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
               <div style={{ width: 38, height: 38, borderRadius: '50%', border: `2px solid ${ORG}`, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fff', overflow: 'hidden', flexShrink: 0 }}>
-                <img src="/logo.jpg" alt="E-Nyagasambu" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <img src="/logo.svg" alt="E-Nyagasambu" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               </div>
               <div>
                 <div style={{ fontSize: 11, fontWeight: 900, color: '#fff', letterSpacing: 1.5, lineHeight: 1.1 }}>E-NYAGASAMBU</div>

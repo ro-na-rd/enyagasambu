@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { useCurrency } from '@/context/CurrencyContext';
 import api from '@/lib/api';
 import { Lock, MapPin, Phone, Mail, Globe, Camera, Image, User, BadgeCheck, CheckCircle, Clock, Coins, Check } from '@/lib/icons';
 import { SITE_DOMAIN } from '@/lib/config';
@@ -10,14 +11,6 @@ const ORG = '#f2701c';
 
 function pad(n: number, l: number) { return String(n).padStart(l, '0'); }
 
-const formatName = (fullName: string) => {
-  const parts = (fullName || '').trim().split(/\s+/);
-  const first = parts[0]?.toUpperCase() || '';
-  const rest = parts.slice(1).map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
-  return rest ? `${first} ${rest}` : first;
-};
-
-const fmtRWF = (n: number) => 'RWF ' + Number(n || 0).toLocaleString('en-US');
 
 interface CertType {
   id: number;
@@ -48,8 +41,8 @@ function BrokerFront({ name, brokerId, district, phone, email, qr, photo }: {
   const W = 520, H = 300;
   return (
     <div style={{ width: W, height: H, borderRadius: 18, overflow: 'hidden', position: 'relative', background: NAVY, fontFamily: "'Poppins', Arial, sans-serif", boxShadow: '0 22px 45px rgba(10,20,50,0.25)', flexShrink: 0 }}>
-      {/* skewed paper + orange panels */}
-      <div style={{ position: 'absolute', top: 0, right: -30, bottom: 0, width: '52%', background: '#f6f7fb', transform: 'skewX(-12deg)', transformOrigin: 'top right' }} />
+      {/* skewed panels */}
+      <div style={{ position: 'absolute', top: 0, right: -30, bottom: 0, width: '52%', background: NAVY, transform: 'skewX(-12deg)', transformOrigin: 'top right' }} />
       <div style={{ position: 'absolute', top: 0, right: -90, bottom: 0, width: '52%', background: ORG, transform: 'skewX(-12deg)', transformOrigin: 'top right' }} />
 
       {/* Content */}
@@ -70,7 +63,7 @@ function BrokerFront({ name, brokerId, district, phone, email, qr, photo }: {
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12 }}>
             <User size={17} color="#ffb585" />
-            <span style={{ fontWeight: 700, fontSize: 18, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 210 }}>{formatName(name)}</span>
+            <span style={{ fontWeight: 700, fontSize: 18, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 210 }}>Broker Name</span>
           </div>
 
           <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -103,7 +96,7 @@ function BrokerFront({ name, brokerId, district, phone, email, qr, photo }: {
             <div style={{ background: '#fff', borderRadius: 8, padding: 4, boxShadow: '0 4px 10px rgba(0,0,0,0.12)' }}>
               <img src={qr} alt="QR" width={54} height={54} style={{ display: 'block' }} />
             </div>
-            <div style={{ fontSize: 7, fontWeight: 700, color: NAVY, letterSpacing: 0.8, marginTop: 3 }}>SCAN TO VERIFY</div>
+            <div style={{ fontSize: 7, fontWeight: 700, color: '#ffb585', letterSpacing: 0.8, marginTop: 3 }}>SCAN TO VERIFY</div>
           </div>
         </div>
       </div>
@@ -242,7 +235,7 @@ function CatalogStep({ types, onSelect }: { types: CertType[]; onSelect: (t: Cer
                 </p>
               </div>
               <div className="text-right shrink-0">
-                <p className="text-lg font-extrabold" style={{ color: NAVY }}>{fmtRWF(t.price_rwf)}</p>
+                <p className="text-lg font-extrabold" style={{ color: NAVY }}>{format(t.price_rwf)}</p>
                 <span className="text-[11px] font-bold text-white px-3 py-1.5 rounded-lg inline-block" style={{ background: ORG }}>
                   Get Certified →
                 </span>
@@ -294,6 +287,7 @@ const statusMeta: Record<string, { label: string; color: string; bg: string }> =
 };
 
 export default function BrokerCertificatePage() {
+  const { format } = useCurrency();
   const { user, loading } = useAuth();
   const [photo, setPhoto] = useState<string | null>(null);
   const [photoStep, setPhotoStep] = useState(true);
@@ -513,7 +507,7 @@ export default function BrokerCertificatePage() {
                   <div>
                     <p className="text-sm font-bold text-gray-900">{selectedType.name}</p>
                     <p className="text-xs text-gray-500 mt-0.5">{selectedType.description}</p>
-                    <p className="text-sm font-extrabold mt-2" style={{ color: NAVY }}>{fmtRWF(selectedType.price_rwf)}</p>
+                    <p className="text-sm font-extrabold mt-2" style={{ color: NAVY }}>{format(selectedType.price_rwf)}</p>
                   </div>
                 </div>
                 <div className="flex gap-2">
@@ -530,7 +524,7 @@ export default function BrokerCertificatePage() {
                     className="text-white font-bold px-6 py-2.5 rounded-lg transition hover:opacity-90 text-sm flex-1"
                     style={{ background: ORG }}
                   >
-                    {busy ? 'Processing...' : `Request & Pay ${fmtRWF(selectedType.price_rwf)} →`}
+                    {busy ? 'Processing...' : `Request & Pay ${format(selectedType.price_rwf)} →`}
                   </button>
                 </div>
               </div>
@@ -548,7 +542,7 @@ export default function BrokerCertificatePage() {
                 {/* Pending: show payment instructions */}
                 {certStatus === 'pending' && (
                   <div className="space-y-4 border-t border-gray-100 pt-4">
-                    <p className="text-sm font-semibold text-gray-700">Pay {fmtRWF(price)} to proceed</p>
+                    <p className="text-sm font-semibold text-gray-700">Pay {format(price)} to proceed</p>
                     <div>
                       <label className="text-xs font-medium text-gray-500 block mb-1">Your phone number (MTN / Airtel)</label>
                       <div className="flex gap-2">

@@ -70,7 +70,7 @@ export default function AmbassadorLayout({ children }: { children: React.ReactNo
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: '#f8f9fc' }}>
         <div className="text-center">
-          <div className="w-14 h-14 rounded-full mx-auto mb-4 flex items-center justify-center overflow-hidden shadow-lg"><img src="/logo.jpg" alt="E-Nyagasambu" className="w-full h-full object-cover" /></div>
+          <div className="w-14 h-14 rounded-full mx-auto mb-4 flex items-center justify-center overflow-hidden shadow-lg"><img src="/logo.svg" alt="E-Nyagasambu" className="w-full h-full object-cover" /></div>
           <p className="text-gray-500 text-sm animate-pulse">Loading ambassador dashboard…</p>
         </div>
       </div>

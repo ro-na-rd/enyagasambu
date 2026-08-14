@@ -46,7 +46,7 @@ export default function AmbassadorRegisterPage() {
       <div className="flex items-center gap-2 mb-6">
         <div className="w-9 h-9 rounded-lg flex items-center justify-center overflow-hidden"
           style={{ boxShadow: `0 4px 14px ${ORG}33` }}>
-          <img src="/logo.jpg" alt="E-Nyagasambu" className="w-full h-full object-cover" />
+          <img src="/logo.svg" alt="E-Nyagasambu" className="w-full h-full object-cover" />
         </div>
         <div>
           <p className="font-extrabold text-sm leading-tight" style={{ color: NAVY }}>Ambassador Portal</p>

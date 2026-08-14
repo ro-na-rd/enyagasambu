@@ -28,7 +28,7 @@ export default function AmbassadorReferralsPage() {
     return (
       <div className="p-4 lg:p-8 animate-fadeInUp">
         <div className="text-center py-16">
-          <div className="w-10 h-10 rounded-xl mx-auto mb-3 flex items-center justify-center overflow-hidden"><img src="/logo.jpg" alt="E-Nyagasambu" className="w-full h-full object-cover" /></div>
+          <div className="w-10 h-10 rounded-xl mx-auto mb-3 flex items-center justify-center overflow-hidden"><img src="/logo.svg" alt="E-Nyagasambu" className="w-full h-full object-cover" /></div>
           <p className="text-gray-400 text-sm animate-pulse">Loading your referrals...</p>
         </div>
       </div>

@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import api from '@/lib/api';
 import Link from 'next/link';
-import { Link as LinkIcon, FileText, Award, Users, Check, Clock, Coins, Sparkles } from '@/lib/icons';
+import { Link as LinkIcon, FileText, Award, Users, Check, Clock, Coins, Sparkles, Mail, Phone, MapPin, User as UserIcon } from '@/lib/icons';
 
 const NAVY = '#0f1e42';
 const ORG = '#E85D04';
@@ -58,6 +58,39 @@ export default function AmbassadorDashboardPage() {
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-900">Ambassador Dashboard</h1>
         <p className="text-sm text-gray-500 mt-1">Welcome back, <strong>{user?.name}</strong></p>
+      </div>
+
+      {/* User Profile Card */}
+      <div className="mb-8">
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 lg:p-8">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+            <div className="flex items-center gap-4">
+              <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#E85D04] to-[#ff8a3d] flex items-center justify-center text-white font-bold text-2xl">
+                {user?.name?.charAt(0).toUpperCase()}
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900">{user?.name}</h2>
+                <p className="text-gray-500 mt-1">Brand Ambassador • {user?.email}</p>
+              </div>
+            </div>
+            <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
+              {user?.phone && (
+                <div className="flex items-center gap-2">
+                  <Phone size={16} style={{ color: ORG }} />
+                  <span>{user.phone}</span>
+                </div>
+              )}
+              <div className="flex items-center gap-2">
+                <Mail size={16} style={{ color: ORG }} />
+                <span>{user?.email}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <MapPin size={16} style={{ color: ORG }} />
+                <span>Kigali, Rwanda</span>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Stats cards */}

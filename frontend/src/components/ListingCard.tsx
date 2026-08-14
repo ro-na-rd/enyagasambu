@@ -1,6 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { useLanguage } from '@/context/LanguageContext';
+import { useCurrency } from '@/context/CurrencyContext';
 import { useEffect, useState, useRef, useCallback } from 'react';
 import api from '@/lib/api';
 import { Star, Package, MapPin, Phone, X, CheckCircle, Loader2, Clock, Check, AlertCircle, RefreshCw } from '@/lib/icons';
@@ -30,6 +31,7 @@ type ConnectStep = 'idle' | 'enter_phone' | 'payment_pending' | 'otp_entry' | 'u
 
 export default function ListingCard({ listing }: { listing: Listing }) {
   const { T } = useLanguage();
+  const { format } = useCurrency();
   const [showConnect, setShowConnect] = useState(false);
   const [step, setStep] = useState<ConnectStep>('idle');
   const [phone, setPhone] = useState('');
@@ -58,7 +60,7 @@ export default function ListingCard({ listing }: { listing: Listing }) {
   const currency = listing.currency || 'RWF';
   const isSold = listing.status === 'sold' || listing.status === 'expired';
   const priceLabel = listing.price != null
-    ? `${Number(listing.price).toLocaleString()} ${currency}${listing.price_type === 'per_day' ? '/day' : listing.price_type === 'per_month' ? '/mo' : ''}`
+    ? `${format(listing.price)}${listing.price_type === 'per_day' ? '/day' : listing.price_type === 'per_month' ? '/mo' : ''}`
     : T.priceOnRequest;
 
   const handleConnectClick = () => {
@@ -206,6 +208,10 @@ export default function ListingCard({ listing }: { listing: Listing }) {
     return price.toString();
   };
 
+  const formatPriceFull = (price: number) => {
+    return format(price);
+  };
+
   return (
     <>
       <div className="bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden group border border-gray-100 hover:border-orange-200 hover:-translate-y-0.5">
@@ -266,7 +272,7 @@ export default function ListingCard({ listing }: { listing: Listing }) {
             {listing.price != null && (
               <div className="absolute bottom-3 right-3 z-10">
                 <span className="text-xs font-extrabold text-white drop-shadow-lg">
-                  {formatPrice(listing.price)} {listing.currency || 'RWF'}
+                  {formatPriceFull(listing.price)}
                 </span>
               </div>
             )}
@@ -376,7 +382,7 @@ export default function ListingCard({ listing }: { listing: Listing }) {
                 )}
                 <p className="text-sm font-semibold text-gray-800 mb-1">Enter your phone number</p>
                 <p className="text-xs text-gray-500 mb-3">
-                  A one-time payment of {ACCESS_FEE} RWF (MTN MoMo) will be sent to this number to unlock the seller&apos;s contact permanently.
+                  A one-time payment of {formatPriceFull(ACCESS_FEE)} (MTN MoMo) will be sent to this number to unlock the seller&apos;s contact permanently.
                 </p>
                 <div className="relative mb-3">
                   <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
@@ -400,7 +406,7 @@ export default function ListingCard({ listing }: { listing: Listing }) {
                   {working ? (
                     <><Loader2 size={16} className="animate-spin" /> Sending request...</>
                   ) : (
-                    <>Pay {ACCESS_FEE} RWF & Unlock</>
+                    <>Pay {formatPriceFull(ACCESS_FEE)} & Unlock</>
                   )}
                 </button>
               </div>
@@ -411,7 +417,7 @@ export default function ListingCard({ listing }: { listing: Listing }) {
                 </div>
                 <p className="text-sm font-bold text-gray-800 mb-1">Waiting for payment</p>
                 <p className="text-xs text-gray-500 mb-3">
-                  A payment request of <strong>{ACCESS_FEE} RWF</strong> has been sent to <strong>{phone}</strong>.
+                  A payment request of <strong>{formatPriceFull(ACCESS_FEE)}</strong> has been sent to <strong>{phone}</strong>.
                 </p>
                 <p className="text-xs text-gray-400">Please approve the payment on your phone by entering your Mobile Money PIN.</p>
                 <div className="flex items-center justify-center gap-2 mt-4 text-xs text-gray-400">

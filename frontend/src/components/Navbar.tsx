@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
+import { useCurrency } from '@/context/CurrencyContext';
 import { Suspense, useState } from 'react';
 import type { Lang } from '@/lib/translations';
 import { Search, UserPlus, Star, Heart, Menu, X, Coins, List, Gift, Wrench, LogOut, Home } from '@/lib/icons';
@@ -54,9 +55,11 @@ function SearchForm({ placeholder, onDone }: { placeholder: string; onDone?: () 
 function NavbarView({ pathname, tab }: { pathname: string | null; tab: string | null }) {
   const { user, logout }   = useAuth();
   const { lang, setLang, T } = useLanguage();
+  const { currency, setCurrency, currencies } = useCurrency();
   const [menuOpen, setMenuOpen] = useState(false);
   const [catsOpen, setCatsOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [currOpen, setCurrOpen] = useState(false);
   const close = () => setMenuOpen(false);
   const closeMobile = () => setMobileOpen(false);
 
@@ -128,6 +131,40 @@ function NavbarView({ pathname, tab }: { pathname: string | null; tab: string | 
               {code.toUpperCase()}
             </button>
           ))}
+        </div>
+
+        {/* Currency dropdown */}
+        <div className="relative">
+          <button
+            onClick={() => setCurrOpen(!currOpen)}
+            className="transition text-[11px] font-semibold cursor-pointer"
+            style={{
+              border: '1px solid #cdd4f0',
+              background: currOpen ? '#fff' : 'transparent',
+              color: '#cdd4f0',
+              padding: '2px 8px',
+              borderRadius: 3,
+            }}
+          >
+            {currency}
+          </button>
+          {currOpen && (
+            <div
+              className="absolute right-0 top-full mt-1 z-50 bg-white rounded-lg shadow-lg border border-gray-200 py-1 min-w-[140px]"
+              onMouseLeave={() => setCurrOpen(false)}
+            >
+              {currencies.map(c => (
+                <button
+                  key={c.code}
+                  onClick={() => { setCurrency(c.code); setCurrOpen(false); }}
+                  className="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-50 transition"
+                  style={{ color: currency === c.code ? '#E85D04' : navy }}
+                >
+                  {c.symbol} {c.code} — {c.name}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 

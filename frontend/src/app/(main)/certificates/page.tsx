@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import api from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
+import { useCurrency } from '@/context/CurrencyContext';
 import { BadgeCheck, CheckCircle, Clock, Coins, Shield } from '@/lib/icons';
 
 const NAVY = '#0f1e42';
@@ -17,8 +18,6 @@ interface CertType {
   price_rwf: number;
   duration_years: number;
 }
-
-const fmtRWF = (n: number) => 'RWF ' + Number(n || 0).toLocaleString('en-US');
 
 const CATEGORY_META: Record<string, { title: string; icon: string }> = {
   broker: { title: 'For Brokers', icon: '🧑\u200D\u{1F4BC}' },
@@ -40,6 +39,7 @@ const actionFor = (category: string, userRole: string | undefined, isAuth: boole
 };
 
 export default function CertificatesCatalogPage() {
+  const { format } = useCurrency();
   const { user } = useAuth();
   const [types, setTypes] = useState<CertType[]>([]);
   const [loading, setLoading] = useState(true);
@@ -102,7 +102,7 @@ export default function CertificatesCatalogPage() {
                       <div className="flex items-center justify-between mt-5 pt-4 border-t border-gray-100">
                         <div>
                           <p className="text-[10px] uppercase tracking-wider text-gray-400 flex items-center gap-1"><Coins size={11} /> Paid certificate</p>
-                          <p className="text-lg font-extrabold" style={{ color: NAVY }}>{fmtRWF(t.price_rwf)}</p>
+                          <p className="text-lg font-extrabold" style={{ color: NAVY }}>{format(t.price_rwf)}</p>
                         </div>
                         <Link href={routeFor(t.category, user?.role, !!user)}
                           className="text-xs font-bold px-4 py-2.5 rounded-lg text-white transition hover:opacity-90 whitespace-nowrap"

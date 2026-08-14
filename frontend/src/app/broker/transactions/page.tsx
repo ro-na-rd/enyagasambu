@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
+import { useCurrency } from '@/context/CurrencyContext';
 import { CreditCard, Search } from '@/lib/icons';
 import api from '@/lib/api';
 
@@ -23,8 +24,6 @@ interface TxStats {
   pending: number;
 }
 
-const fmtRWF = (n: number) => 'RWF ' + Number(n || 0).toLocaleString('en-US');
-
 const statusColors: Record<string, string> = {
   Completed: 'bg-green-50 text-green-700 border-green-200',
   Pending: 'bg-yellow-50 text-yellow-700 border-yellow-200',
@@ -40,6 +39,7 @@ const fmtDate = (d: string) => {
 };
 
 export default function BrokerTransactionsPage() {
+  const { format } = useCurrency();
   const [txns, setTxns] = useState<Transaction[]>([]);
   const [statsData, setStatsData] = useState<TxStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -60,7 +60,7 @@ export default function BrokerTransactionsPage() {
 
   const stats = [
     { label: 'Total Transactions', value: String(statsData?.total ?? 0), color: NAVY },
-    { label: 'Total Volume', value: fmtRWF(statsData?.volume ?? 0), color: ORG },
+    { label: 'Total Volume', value: format(statsData?.volume ?? 0), color: ORG },
     { label: 'Completed', value: String(statsData?.completed ?? 0), color: '#059669' },
     { label: 'Pending', value: String(statsData?.pending ?? 0), color: '#d97706' },
   ];
@@ -119,7 +119,7 @@ export default function BrokerTransactionsPage() {
                   <td className="px-4 py-3.5 font-mono text-xs font-semibold" style={{ color: NAVY }}>{t.id}</td>
                   <td className="px-4 py-3.5 text-gray-700">{t.client}</td>
                   <td className="px-4 py-3.5 text-gray-500">{t.property}</td>
-                  <td className="px-4 py-3.5 font-bold" style={{ color: NAVY }}>{fmtRWF(t.amount)}</td>
+                  <td className="px-4 py-3.5 font-bold" style={{ color: NAVY }}>{format(t.amount)}</td>
                   <td className="px-4 py-3.5">
                     <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-full border ${statusColors[t.status] || statusColors.Pending}`}>
                       {t.status}

@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { AuthProvider } from '@/context/AuthContext';
 import { LanguageProvider } from '@/context/LanguageContext';
+import { CurrencyProvider } from '@/context/CurrencyContext';
 import WhatsAppButton from '@/components/WhatsAppButton';
 
 export const metadata: Metadata = {
@@ -19,10 +20,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="min-h-screen bg-gray-50 flex flex-col" suppressHydrationWarning>
         <LanguageProvider>
+        <CurrencyProvider>
         <AuthProvider>
           {children}
           <WhatsAppButton />
         </AuthProvider>
+        </CurrencyProvider>
         </LanguageProvider>
       </body>
     </html>

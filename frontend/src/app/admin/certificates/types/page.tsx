@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import api from '@/lib/api';
 import { Award, Plus, Edit3, Trash2, Check, X } from '@/lib/icons';
+import { useCurrency } from '@/context/CurrencyContext';
 
 const BRAND = {
   navy: '#0f1e42',
@@ -30,9 +31,8 @@ const CATEGORIES = [
 
 const emptyForm = { code: '', name: '', description: '', category: 'broker' as CertType['category'], price_rwf: 2000, duration_years: 1, active: 1 };
 
-const fmtRWF = (n: number) => 'RWF ' + Number(n || 0).toLocaleString('en-US');
-
 export default function AdminCertificateTypesPage() {
+  const { format } = useCurrency();
   const [types, setTypes] = useState<CertType[]>([]);
   const [loading, setLoading] = useState(true);
   const [msg, setMsg] = useState('');
@@ -198,7 +198,7 @@ export default function AdminCertificateTypesPage() {
                       {t.category}
                     </span>
                   </td>
-                  <td className="px-4 py-3.5 text-right font-bold text-gray-800">{fmtRWF(t.price_rwf)}</td>
+                  <td className="px-4 py-3.5 text-right font-bold text-gray-800">{format(t.price_rwf)}</td>
                   <td className="px-4 py-3.5 text-center text-gray-600">{t.duration_years} yr{t.duration_years > 1 ? 's' : ''}</td>
                   <td className="px-4 py-3.5 text-center">
                     <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full ${t.active ? 'bg-green-500/10 text-green-600' : 'bg-gray-500/10 text-gray-500'}`}>
