@@ -56,6 +56,7 @@ app.use('/api/likes', require('./routes/likes'));
 app.use('/api/ratings', require('./routes/ratings'));
 app.use('/api/comments', require('./routes/comments'));
 app.use('/api/content', require('./routes/content'));
+app.use('/api/site-content', require('./routes/siteContent'));
 app.use('/api/support', require('./routes/support'));
 app.use('/api/stats', require('./routes/stats'));
 app.use('/api/donations', require('./routes/donations'));

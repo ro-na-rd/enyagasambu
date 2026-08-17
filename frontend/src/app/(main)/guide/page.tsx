@@ -1,6 +1,7 @@
 'use client';
 import { useState, useRef } from 'react';
 import Link from 'next/link';
+import { useSiteContent } from '@/lib/useSiteContent';
 import { Smartphone, FileText, List, Clock, Coins, Lock, CheckCircle, Store, Search, Unlock, Phone, CreditCard, Clock3, Star, Package, AlertOctagon, Award, User, MessageSquare, Info, MailOpen, Check } from '@/lib/icons';
 
 const NAVY = '#0f1e42';
@@ -183,6 +184,7 @@ export default function GuidePage() {
   const [activeFlow, setActiveFlow] = useState<Flow>('post');
   const [activeStep, setActiveStep] = useState(0);
   const stepsEndRef = useRef<HTMLDivElement>(null);
+  const { get } = useSiteContent();
   const currentFlow = FLOWS.find(f => f.key === activeFlow)!;
   const steps = currentFlow.steps;
 
@@ -207,10 +209,10 @@ export default function GuidePage() {
         <div className="relative z-10 max-w-5xl mx-auto px-4 pt-12 pb-16 text-center">
           <img src="/assets/logo.png" alt="E-Nyagasambu" className="w-14 h-14 mx-auto mb-5 object-contain" />
           <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-3">
-            How It Works
+            {get('guide.hero_title', 'How It Works')}
           </h1>
           <p className="text-base max-w-lg mx-auto" style={{ color: 'rgba(0,0,0,0.5)' }}>
-            Step-by-step guide to posting listings, connecting with sellers, and making payments on E-Nyagasambu.
+            {get('guide.hero_subtitle', 'Step-by-step guide to posting listings, connecting with sellers, and making payments on E-Nyagasambu.')}
           </p>
         </div>
       </div>

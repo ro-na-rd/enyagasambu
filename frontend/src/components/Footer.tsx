@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
+import { useSiteContent } from '@/lib/useSiteContent';
 import { MapPin, Phone, Mail, CheckCircle } from '@/lib/icons';
 
 const socials = [
@@ -28,6 +29,7 @@ const socials = [
 
 export default function Footer() {
   const { T } = useLanguage();
+  const { get } = useSiteContent();
   const [email, setEmail] = useState('');
   const [subscribed, setSubscribed] = useState(false);
 
@@ -58,7 +60,7 @@ export default function Footer() {
                 </div>
               </div>
             </a>
-            <p className="mt-4 max-w-sm text-sm leading-relaxed text-white/60">{T.footerDesc}</p>
+            <p className="mt-4 max-w-sm text-sm leading-relaxed text-white/60">{get('footer.description', T.footerDesc)}</p>
             <div className="mt-6">
               <p className="text-xs font-semibold uppercase tracking-wider text-white/40">{T.followUs}</p>
               <div className="mt-3 flex gap-3">
@@ -120,14 +122,14 @@ export default function Footer() {
           <div className="lg:col-span-4">
             <p className="text-sm font-semibold uppercase tracking-wider text-white/40">{T.contact}</p>
             <ul className="mt-4 space-y-2.5 text-sm text-white/70">
-              <li className="flex items-center gap-2.5"><MapPin size={15} className="shrink-0 text-[#E85D04]" /> Kigali, Rwanda</li>
-              <li className="flex items-center gap-2.5"><Phone size={15} className="shrink-0 text-[#E85D04]" /> 0786680301</li>
-              <li className="flex items-center gap-2.5"><Mail size={15} className="shrink-0 text-[#E85D04]" /> Enyagasambu@gmail.com</li>
+              <li className="flex items-center gap-2.5"><MapPin size={15} className="shrink-0 text-[#E85D04]" /> {get('footer.address', 'Kigali, Rwanda')}</li>
+              <li className="flex items-center gap-2.5"><Phone size={15} className="shrink-0 text-[#E85D04]" /> {get('footer.phone', '0786680301')}</li>
+              <li className="flex items-center gap-2.5"><Mail size={15} className="shrink-0 text-[#E85D04]" /> {get('footer.email', 'Enyagasambu@gmail.com')}</li>
             </ul>
 
             <form onSubmit={subscribe} className="mt-6">
-              <p className="text-xs font-semibold uppercase tracking-wider text-white/40">{T.newsletter}</p>
-              <p className="mt-2 text-sm text-white/60">{T.newsletterDesc}</p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-white/40">{get('footer.newsletter_title', T.newsletter)}</p>
+              <p className="mt-2 text-sm text-white/60">{get('footer.newsletter_desc', T.newsletterDesc)}</p>
               {subscribed ? (
                 <div className="mt-3 flex items-center gap-2 rounded-lg bg-green-500/10 px-3 py-2.5 text-sm text-green-300 ring-1 ring-green-500/30">
                   <CheckCircle size={16} /> {T.subscribed}
@@ -159,7 +161,7 @@ export default function Footer() {
       {/* Bottom bar */}
       <div className="border-t border-white/10">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 px-4 py-5 text-xs text-white/50 sm:flex-row sm:px-6 lg:px-8">
-          <p>&copy; {new Date().getFullYear()} Nyagasambu Market Online (NMO). {T.allRights}.</p>
+          <p>&copy; {new Date().getFullYear()} {get('footer.rights_company', 'Nyagasambu Market Online (NMO)')}. {T.allRights}.</p>
           <div className="flex items-center gap-5">
             <a href="/terms" className="transition hover:text-[#E85D04]">{T.termsOfUse}</a>
             <a href="/privacy" className="transition hover:text-[#E85D04]">{T.privacyPolicy}</a>

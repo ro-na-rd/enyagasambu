@@ -4,6 +4,7 @@ import { useLanguage } from '@/context/LanguageContext';
 import { useAuth } from '@/context/AuthContext';
 import { useEffect, useState } from 'react';
 import api from '@/lib/api';
+import { useSiteContent } from '@/lib/useSiteContent';
 import { Package, Building2, Car, Users, List, Store, Gavel, User, Coins, Gift, MapPin } from '@/lib/icons';
 
 interface Listing {
@@ -64,6 +65,7 @@ const darkOrg = '#c04a00';
 
 export default function HomePage() {
   const { T } = useLanguage();
+  const { get } = useSiteContent();
   const { user } = useAuth();
   const [recent, setRecent] = useState<Listing[]>([]);
   const [featured, setFeatured] = useState<Listing[]>([]);
@@ -99,8 +101,8 @@ export default function HomePage() {
         className="text-white text-center py-10 px-4"
         style={{ background: `linear-gradient(135deg, ${navy} 60%, ${org} 100%)` }}
       >
-        <h2 className="text-2xl sm:text-3xl font-semibold mb-2">{T.welcomeTitle}</h2>
-        <p className="text-sm opacity-85 mb-6">{T.welcomeSubtitle}</p>
+        <h2 className="text-2xl sm:text-3xl font-semibold mb-2">{get('home.hero_title', T.welcomeTitle)}</h2>
+        <p className="text-sm opacity-85 mb-6">{get('home.hero_subtitle', T.welcomeSubtitle)}</p>
 
         <form
           action="/listings"
@@ -122,7 +124,7 @@ export default function HomePage() {
           <div className="flex flex-1 min-w-0">
             <input
               name="search"
-              placeholder={T.whatLookingFor}
+              placeholder={get('home.search_placeholder', T.whatLookingFor)}
               className="flex-1 px-4 py-3 text-sm outline-none min-w-0"
               style={{ color: '#333', background: '#fff' }}
             />
@@ -146,7 +148,7 @@ export default function HomePage() {
         <aside className="hidden md:flex flex-col gap-3 shrink-0" style={{ width: 240 }}>
 
           {/* My Account */}
-          <SideCard title={<><List size={14} className="inline" /> My Account</>} titleBg={navy}>
+          <SideCard title={<><List size={14} className="inline" /> {get('home.my_account_title', 'My Account')}</>} titleBg={navy}>
             <SideLink href={user ? '/my-listings' : '/login'}>
               <span className="flex items-center gap-1.5"><User size={13} /> {user ? user.name.split(' ')[0] : `${T.signIn} / ${T.register}`}</span>
               <Chevron />
@@ -163,7 +165,7 @@ export default function HomePage() {
           </SideCard>
 
           {/* Sell */}
-          <SideCard title={<><Store size={14} className="inline" /> Sell on E-Nyagasambu</>} titleBg={navy}>
+          <SideCard title={<><Store size={14} className="inline" /> {get('home.sell_card_title', 'Sell on E-Nyagasambu')}</>} titleBg={navy}>
             {SELL_LINKS.map(label => (
               <SideLink key={label} href="/listings/create">
                 <span>{label}</span><Chevron />
@@ -172,7 +174,7 @@ export default function HomePage() {
           </SideCard>
 
           {/* Live Auctions */}
-          <SideCard title={<><Gavel size={14} className="inline" /> Live Auctions</>} titleBg={darkOrg}>
+          <SideCard title={<><Gavel size={14} className="inline" /> {get('home.live_auctions_title', 'Live Auctions')}</>} titleBg={darkOrg}>
             <div className="p-3 text-sm">
               <p className="text-xs text-gray-500 mb-2">Ending soon</p>
               {auctions.length === 0 ? (
@@ -212,7 +214,7 @@ export default function HomePage() {
           {/* Featured Products */}
           {featured.length > 0 && (
             <section>
-              <SectionHeader title="Featured Products" href="/listings" linkLabel="See all →" />
+              <SectionHeader title={get('home.featured_title', 'Featured Products')} href="/listings" linkLabel="See all →" />
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 {featured.map(l => (
                   <Link key={l.id} href={`/listings/${l.id}`}
@@ -240,7 +242,7 @@ export default function HomePage() {
 
           {/* Recent Listings & Notices */}
           <section>
-            <SectionHeader title="Recent Listings & Notices" href="/listings" linkLabel="View all →" />
+            <SectionHeader title={get('home.recent_title', 'Recent Listings & Notices')} href="/listings" linkLabel="View all →" />
             <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
               {recent.length > 0
                 ? recent.map(l => (
@@ -270,9 +272,9 @@ export default function HomePage() {
 
           {/* Join E-Nyagasambu — Buyer / Seller CTA */}
           <section className="bg-white border border-gray-200 rounded-lg p-4">
-            <SectionHeader title="Join E-Nyagasambu" />
+            <SectionHeader title={get('home.join_title', 'Join E-Nyagasambu')} />
             <p className="text-sm text-gray-500 mb-3">
-              Register as a buyer, seller, broker or ambassador and grow your business digitally.
+              {get('home.join_desc', 'Register as a buyer, seller, broker or ambassador and grow your business digitally.')}
             </p>
             <div className="flex gap-2 flex-wrap">
               <RegBtn href="/register" primary>Buyer Registration →</RegBtn>
@@ -287,7 +289,7 @@ export default function HomePage() {
 
       {/* ── PARTNERS BAR ── */}
       <div className="bg-white border-t border-gray-200 px-6 py-4">
-        <p className="text-xs text-gray-400 uppercase tracking-widest mb-3 text-center">Our Partners</p>
+        <p className="text-xs text-gray-400 uppercase tracking-widest mb-3 text-center">{get('home.partners_title', 'Our Partners')}</p>
         <div className="flex flex-wrap justify-center items-center gap-6">
           {PARTNERS.map(p => (
             <div key={p.name} className="flex flex-col items-center gap-1 group">

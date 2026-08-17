@@ -1,5 +1,6 @@
 require('dotenv').config();
 const pool = require('../config/db');
+const { htmlToText } = require('../services/htmlToText');
 
 const PAGES = [
   {
@@ -115,19 +116,20 @@ async function run() {
   const authorId = admin ? admin.id : null;
 
   for (const page of PAGES) {
+    const content = htmlToText(page.content);
     const [existing] = await pool.query('SELECT id FROM content_pages WHERE slug = ?', [page.slug]);
     if (existing.length > 0) {
       await pool.query(
         `UPDATE content_pages SET title = ?, type = ?, content = ?, status = 'published',
          meta_description = ?, updated_by = ? WHERE slug = ?`,
-        [page.title, page.type, page.content, page.meta_description, authorId, page.slug]
+        [page.title, page.type, content, page.meta_description, authorId, page.slug]
       );
       console.log(`  [updated] ${page.slug}`);
     } else {
       await pool.query(
         `INSERT INTO content_pages (title, slug, type, content, status, meta_description, created_by, updated_by)
          VALUES (?, ?, ?, ?, 'published', ?, ?, ?)`,
-        [page.title, page.slug, page.type, page.content, page.meta_description, authorId, authorId]
+        [page.title, page.slug, page.type, content, page.meta_description, authorId, authorId]
       );
       console.log(`  [created] ${page.slug}`);
     }

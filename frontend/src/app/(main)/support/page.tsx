@@ -2,17 +2,11 @@
 import { Suspense, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import api from '@/lib/api';
+import { useSiteContent } from '@/lib/useSiteContent';
 import { MessageCircle, Mail, Phone, Send, MapPin, Clock, CheckCircle, Loader2, AlertCircle } from '@/lib/icons';
 
 const NAVY = '#0f1e42';
 const ORG = '#E85D04';
-
-const CONTACT_INFO = [
-  { icon: <MapPin size={18} />, label: 'Location', value: 'Kigali, Rwanda' },
-  { icon: <Phone size={18} />, label: 'Phone', value: '+250 788 000 000' },
-  { icon: <Mail size={18} />, label: 'Email', value: 'support@enyagasambu.rw' },
-  { icon: <Clock size={18} />, label: 'Hours', value: 'Mon–Fri, 8:00–17:00' },
-];
 
 const FAQS = [
   { q: 'How do I create a listing?', a: 'Click "Posting" in the top bar, fill in the details about your product or service, and pay 400 coins to publish.' },
@@ -31,11 +25,19 @@ export default function SupportPage() {
 
 function SupportContent() {
   const searchParams = useSearchParams();
+  const { get } = useSiteContent();
   const listingFromQuery = searchParams.get('listing');
   const [form, setForm] = useState({ name: '', email: '', phone: '', category: '', subject: '', message: '', listingId: listingFromQuery || '' });
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
+
+  const CONTACT_INFO = [
+    { icon: <MapPin size={18} />, label: 'Location', value: get('support.location', 'Kigali, Rwanda') },
+    { icon: <Phone size={18} />, label: 'Phone', value: get('support.phone', '+250 788 000 000') },
+    { icon: <Mail size={18} />, label: 'Email', value: get('support.email', 'support@enyagasambu.rw') },
+    { icon: <Clock size={18} />, label: 'Hours', value: get('support.hours', 'Mon–Fri, 8:00–17:00') },
+  ];
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setForm(f => ({ ...f, [e.target.name]: e.target.value }));

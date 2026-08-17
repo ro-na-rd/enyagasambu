@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import api from '@/lib/api';
 import { FileText, Loader2, AlertCircle, Info } from '@/lib/icons';
+import { stripHtml } from '@/lib/text';
 
 const NAVY = '#0f1e42';
 const ORG = '#E85D04';
@@ -45,7 +46,9 @@ export default function LegalPage({ slug, fallbackTitle }: { slug: string; fallb
                 <Info size={13} /> Last updated {new Date(page.updated_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
               </p>
             )}
-            <div className="legal-content" dangerouslySetInnerHTML={{ __html: page.content || '<p class="text-gray-400">No content yet.</p>' }} />
+            <div className="legal-content whitespace-pre-wrap leading-relaxed text-gray-700">
+              {stripHtml(page.content) || <span className="text-gray-400">No content yet.</span>}
+            </div>
           </div>
         ) : null}
       </div>

@@ -15,7 +15,6 @@ interface AmbassadorRegisterForm {
   phone: string;
   password: string;
   confirm: string;
-  referral_code: string;
 }
 
 export default function AmbassadorRegisterPage() {
@@ -31,7 +30,6 @@ export default function AmbassadorRegisterPage() {
         email: data.email,
         phone: data.phone,
         password: data.password,
-        referral_code: data.referral_code || undefined,
       });
       localStorage.setItem('nmo_token', res.token);
       window.location.href = '/ambassador/certificate';
@@ -91,13 +89,6 @@ export default function AmbassadorRegisterPage() {
               placeholder="••••••••" />
             {errors.confirm && <p className="text-red-500 text-xs mt-1">{errors.confirm.message}</p>}
           </div>
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1">Referral Code (optional)</label>
-            <input {...register('referral_code')}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 uppercase"
-              placeholder="e.g. AB12CD" />
-          </div>
-
           <button type="submit" disabled={isSubmitting}
             className="w-full text-white font-bold py-2.5 rounded-lg transition disabled:opacity-60"
             style={{ background: `linear-gradient(135deg, ${NAVY}, ${ORG})` }}>

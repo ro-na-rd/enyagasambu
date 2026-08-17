@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { Target, Eye, Diamond } from '@/lib/icons';
 import { useLanguage } from '@/context/LanguageContext';
 import { roleMap } from '@/lib/translations';
+import { useSiteContent } from '@/lib/useSiteContent';
 
 const navy = '#0f1e42';
 const org  = '#E85D04';
@@ -137,6 +138,7 @@ function Avatar({ member }: { member: Member }) {
 
 export default function AboutPage() {
   const { T, lang } = useLanguage();
+  const { get } = useSiteContent();
   const tr = (s: string) => roleMap[s]?.[lang] ?? s;
 
   const LEAD = LEADERSHIP.map(m => ({ ...m, role: tr(m.role) }));
@@ -158,12 +160,12 @@ export default function AboutPage() {
       <section className="text-white py-16 px-4"
         style={{ background: `linear-gradient(135deg, ${navy} 60%, ${org} 100%)` }}>
         <div className="max-w-6xl mx-auto">
-          <h1 className="text-4xl font-extrabold mb-4 leading-tight text-center">{T.aboutTitle}</h1>
+          <h1 className="text-4xl font-extrabold mb-4 leading-tight text-center">{get('about.title', T.aboutTitle)}</h1>
 
           <div className="text-base opacity-90 leading-relaxed mb-8 space-y-4 text-left">
-            <p>{T.aboutIntro1}</p>
-            <p>{T.aboutIntro2}</p>
-            <p>{T.aboutIntro3}</p>
+            <p>{get('about.intro_1', T.aboutIntro1)}</p>
+            <p>{get('about.intro_2', T.aboutIntro2)}</p>
+            <p>{get('about.intro_3', T.aboutIntro3)}</p>
           </div>
 
         </div>
@@ -172,9 +174,9 @@ export default function AboutPage() {
       {/* ── Mission ── */}
       <section className="max-w-6xl mx-auto px-6 py-12 grid sm:grid-cols-3 gap-10 text-center">
         {[
-          { icon: <Target size={32} />, title: T.aboutMission, text: T.aboutMissionText },
-          { icon: <Eye size={32} />, title: T.aboutVision, text: T.aboutVisionText },
-          { icon: <Diamond size={32} />, title: T.aboutValues, text: T.aboutValuesText },
+          { icon: <Target size={32} />, title: get('about.mission_title', T.aboutMission), text: get('about.mission_text', T.aboutMissionText) },
+          { icon: <Eye size={32} />, title: get('about.vision_title', T.aboutVision), text: get('about.vision_text', T.aboutVisionText) },
+          { icon: <Diamond size={32} />, title: get('about.values_title', T.aboutValues), text: get('about.values_text', T.aboutValuesText) },
         ].map(({ icon, title, text }) => (
           <div key={title} className="bg-gray-50 rounded-2xl p-8 border border-gray-100 shadow-sm flex flex-col items-center">
             <div className="mb-4 w-16 h-16 rounded-full flex items-center justify-center text-white"
@@ -249,7 +251,7 @@ export default function AboutPage() {
       <section className="py-12 px-6" style={{ background: '#fafbff' }}>
         <div className="max-w-4xl mx-auto">
           <h2 className="text-xl font-semibold mb-8 text-center" style={{ color: navy }}>
-            {T.aboutHowTitle}
+            {get('about.how_title', T.aboutHowTitle)}
           </h2>
           <div className="grid sm:grid-cols-2 gap-5">
             {steps.map(({ step, title, desc }) => (
@@ -267,7 +269,7 @@ export default function AboutPage() {
 
       {/* ── Partners ── */}
       <section className="py-10 px-6 bg-white border-t border-gray-100">
-        <p className="text-xs text-gray-400 text-center mb-6 uppercase tracking-widest font-semibold">{T.aboutPartners}</p>
+        <p className="text-xs text-gray-400 text-center mb-6 uppercase tracking-widest font-semibold">{get('about.partners_title', T.aboutPartners)}</p>
         <div className="flex flex-wrap justify-center items-center gap-8 max-w-4xl mx-auto">
           {[
             { name: 'KBL', logo: '/partners/kbl.png', bg: '#fff', label: 'Kigali Business Lab' },
@@ -295,7 +297,7 @@ export default function AboutPage() {
       {/* ── CTA ── */}
       <section className="py-10 text-center text-white"
         style={{ background: `linear-gradient(135deg, ${navy}, ${org})` }}>
-        <h3 className="text-xl font-semibold mb-3">{T.aboutCtaTitle}</h3>
+        <h3 className="text-xl font-semibold mb-3">{get('about.cta_title', T.aboutCtaTitle)}</h3>
         <div className="flex gap-3 justify-center flex-wrap">
           <Link href="/register"
             className="bg-white font-bold px-6 py-2.5 rounded text-sm transition hover:opacity-90"
