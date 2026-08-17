@@ -200,10 +200,6 @@ export default function AboutPage() {
 
         {/* Our Team Members */}
         <div className="max-w-6xl mx-auto mb-6">
-          <h3 className="text-sm font-semibold uppercase tracking-widest mb-8"
-            style={{ color: org }}>
-            {T.aboutTeamMembers}
-          </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-x-8 gap-y-12">
             {LEAD.map(m => <Avatar key={m.name} member={m} />)}
           </div>
