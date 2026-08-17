@@ -206,7 +206,7 @@ export default function SupplierCertificatePage() {
   const supplierPhoto = cert?.supplier_photo || cert?.photo_url || null;
   const businessName = cert?.business_name || null;
   const certPrice = cert?.type_price ?? DEFAULT_PRICE;
-  const certNo = cert?.cert_no || `ENA-SUP-${certYear}-${String(user.id).padStart(4, '0')}`;
+  const certNo = cert?.cert_no || `ENA-SUP-${certYear}-${String(user?.id ?? '').padStart(4, '0')}`;
 
   if (loading) return (
     <div className="p-8 text-center"><p className="text-gray-400 animate-pulse">Loading...</p></div>
