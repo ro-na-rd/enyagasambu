@@ -26,6 +26,7 @@ router.delete('/clients/:id', authenticate, requireBroker, clientsCtrl.deleteCli
 
 router.get('/listings', authenticate, requireBroker, listingsCtrl.getListings);
 router.post('/listings', authenticate, requireBroker, upload.array('images', 6), listingsCtrl.createListing);
+router.delete('/listings/:id', authenticate, requireBroker, listingsCtrl.deleteListing);
 router.get('/commissions', authenticate, requireBroker, commissionsCtrl.getCommissions);
 router.get('/leads', authenticate, requireBroker, leadsCtrl.getLeads);
 router.get('/reports', authenticate, requireBroker, reportsCtrl.getReport);

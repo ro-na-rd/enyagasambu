@@ -1,4 +1,6 @@
 const pool = require('../config/db');
+const { uploadToS3 } = require('../services/s3Service');
+const { notifyAdmins, notifyUser } = require('../services/notificationService');
 
 exports.getStats = async (req, res) => {
   try {
@@ -69,8 +71,14 @@ exports.getUsers = async (req, res) => {
 exports.toggleFreePosting = async (req, res) => {
   const { id } = req.params;
   try {
-    const [[user]] = await pool.query('SELECT can_post_free FROM users WHERE id = ?', [id]);
+    const [[user]] = await pool.query('SELECT can_post_free, role FROM users WHERE id = ?', [id]);
     if (!user) return res.status(404).json({ message: 'User not found' });
+    
+    // Ambassadors must always pay for posting - cannot grant free posting
+    if (user.role === 'ambassador') {
+      return res.status(400).json({ message: 'Ambassadors must pay for posting to maintain platform quality. Free posting cannot be granted to ambassadors.' });
+    }
+    
     const newVal = user.can_post_free ? 0 : 1;
     await pool.query('UPDATE users SET can_post_free = ? WHERE id = ?', [newVal, id]);
     return res.json({ can_post_free: !!newVal, message: newVal ? 'User can now post for free' : 'Free posting removed' });
@@ -195,12 +203,51 @@ exports.getAdminListings = async (req, res) => {
 
 exports.deleteListing = async (req, res) => {
   const { id } = req.params;
+  
+  const conn = await pool.getConnection();
   try {
-    await pool.query("UPDATE listings SET status = 'deleted' WHERE id = ?", [id]);
-    return res.json({ message: 'Listing removed' });
+    await conn.beginTransaction();
+
+    const [[listing]] = await conn.query(
+      `SELECT id, user_id, title, status FROM listings WHERE id = ?`,
+      [id]
+    );
+
+    if (!listing) {
+      await conn.rollback();
+      return res.status(404).json({ message: 'Listing not found' });
+    }
+
+    if (listing.status === 'deleted') {
+      await conn.rollback();
+      return res.status(400).json({ message: 'Listing already deleted' });
+    }
+
+    // Move to recycle bin
+    const restoreUntil = new Date();
+    restoreUntil.setDate(restoreUntil.getDate() + 30);
+
+    await conn.query('UPDATE listings SET status = ? WHERE id = ?', ['deleted', id]);
+
+    await conn.query(
+      `INSERT INTO recycle_bin (item_type, item_id, original_data, deleted_by, deleted_role, restore_until)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      ['listing', id, JSON.stringify(listing), req.user.id, req.user.role, restoreUntil]
+    );
+
+    await conn.commit();
+
+    return res.json({ 
+      message: 'Listing moved to recycle bin',
+      restore_until: restoreUntil,
+      auto_delete_after_days: 30
+    });
   } catch (err) {
-    console.error(err);
+    await conn.rollback();
+    console.error('[Admin delete listing error]', err);
     return res.status(500).json({ message: 'Server error' });
+  } finally {
+    conn.release();
   }
 };
 
@@ -268,18 +315,119 @@ exports.getRevenueChart = async (req, res) => {
 };
 
 exports.createListing = async (req, res) => {
+  const { title, description, price, currency, category_id, location, listing_type, images } = req.body;
+  if (!title || !category_id) return res.status(400).json({ message: 'Title and category are required' });
+  
+  const conn = await pool.getConnection();
+  try {
+    await conn.beginTransaction();
+    
+    // Validate category exists
+    const [[category]] = await conn.query('SELECT id FROM categories WHERE id = ?', [category_id]);
+    if (!category) {
+      await conn.rollback();
+      return res.status(400).json({ message: 'Invalid category' });
+    }
+    
+    // Admin always gets free posting and 90-day expiration (extended from 30 days)
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 90);
+    
+    const [result] = await conn.query(
+      `INSERT INTO listings (user_id, category_id, title, description, price, currency, location, listing_type, status, expires_at, is_featured)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, 1)`,
+      [req.user.id, category_id, title, description || null, price || null, currency || 'RWF', location || null, listing_type || 'sell', expiresAt]
+    );
+    
+    const listingId = result.insertId;
+    
+    // Handle images if provided
+    if (images && Array.isArray(images) && images.length > 0) {
+      const imageValues = images.map((imageUrl, index) => [listingId, imageUrl, index === 0]);
+      await conn.query('INSERT INTO listing_images (listing_id, image_url, is_primary) VALUES ?', [imageValues]);
+    }
+    
+    // Admin listings don't need renewal tokens (they're free and permanent)
+    
+    await conn.commit();
+    
+    // Notify relevant parties
+    notifyAdmins('New admin listing', `Admin created listing: ${title}`, 'listing', `/admin/listings`);
+    
+    return res.status(201).json({ 
+      message: 'Admin listing created successfully (free, featured, 90-day duration)', 
+      id: listingId,
+      expires_at: expiresAt,
+      is_featured: true
+    });
+  } catch (err) {
+    await conn.rollback();
+    console.error('[Admin createListing error]', err);
+    return res.status(500).json({ message: 'Server error' });
+  } finally {
+    conn.release();
+  }
+};
+
+exports.createListingWithFiles = async (req, res) => {
+  if (!req.files || req.files.length === 0) {
+    return res.status(400).json({ message: 'At least one image is required' });
+  }
+  
   const { title, description, price, currency, category_id, location, listing_type } = req.body;
   if (!title || !category_id) return res.status(400).json({ message: 'Title and category are required' });
+  
+  const conn = await pool.getConnection();
   try {
-    const [result] = await pool.query(
-      `INSERT INTO listings (user_id, category_id, title, description, price, currency, location, listing_type, status, expires_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'active', DATE_ADD(NOW(), INTERVAL 30 DAY))`,
-      [req.user.id, category_id, title, description || null, price || null, currency || 'RWF', location || null, listing_type || 'sell']
+    await conn.beginTransaction();
+    
+    // Validate category exists
+    const [[category]] = await conn.query('SELECT id FROM categories WHERE id = ?', [category_id]);
+    if (!category) {
+      await conn.rollback();
+      return res.status(400).json({ message: 'Invalid category' });
+    }
+    
+    // Upload all images to S3
+    const imageUrls = [];
+    for (const file of req.files) {
+      const { url } = await uploadToS3(file);
+      imageUrls.push(url);
+    }
+    
+    // Admin always gets free posting and 90-day expiration
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 90);
+    
+    const [result] = await conn.query(
+      `INSERT INTO listings (user_id, category_id, title, description, price, currency, location, listing_type, status, expires_at, is_featured)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, 1)`,
+      [req.user.id, category_id, title, description || null, price || null, currency || 'RWF', location || null, listing_type || 'sell', expiresAt]
     );
-    return res.status(201).json({ message: 'Listing created', id: result.insertId });
+    
+    const listingId = result.insertId;
+    
+    // Insert images
+    const imageValues = imageUrls.map((url, index) => [listingId, url, index === 0]);
+    await conn.query('INSERT INTO listing_images (listing_id, image_url, is_primary) VALUES ?', [imageValues]);
+    
+    await conn.commit();
+    
+    notifyAdmins('New admin listing', `Admin created listing with images: ${title}`, 'listing', `/admin/listings`);
+    
+    return res.status(201).json({ 
+      message: 'Admin listing created successfully with images (free, featured, 90-day duration)', 
+      id: listingId,
+      images: imageUrls,
+      expires_at: expiresAt,
+      is_featured: true
+    });
   } catch (err) {
-    console.error(err);
+    await conn.rollback();
+    console.error('[Admin createListingWithFiles error]', err);
     return res.status(500).json({ message: 'Server error' });
+  } finally {
+    conn.release();
   }
 };
 
@@ -730,5 +878,210 @@ exports.getDonations = async (req, res) => {
   } catch (err) {
     console.error('[Admin getDonations error]', err);
     return res.status(500).json({ message: 'Server error' });
+  }
+};
+
+exports.bulkUpdateListings = async (req, res) => {
+  const { ids, action, value } = req.body;
+  if (!ids || !Array.isArray(ids) || ids.length === 0) {
+    return res.status(400).json({ message: 'Listing IDs array required' });
+  }
+  if (!action) return res.status(400).json({ message: 'Action required' });
+
+  try {
+    let query, params;
+    const placeholders = ids.map(() => '?').join(',');
+    
+    switch (action) {
+      case 'status':
+        if (!['active', 'disabled', 'sold', 'expired'].includes(value)) {
+          return res.status(400).json({ message: 'Invalid status value' });
+        }
+        query = `UPDATE listings SET status = ? WHERE id IN (${placeholders})`;
+        params = [value, ...ids];
+        break;
+      case 'feature':
+        query = `UPDATE listings SET is_featured = ? WHERE id IN (${placeholders})`;
+        params = [value ? 1 : 0, ...ids];
+        break;
+      case 'extend':
+        const days = parseInt(value) || 30;
+        query = `UPDATE listings SET expires_at = DATE_ADD(expires_at, INTERVAL ? DAY) WHERE id IN (${placeholders})`;
+        params = [days, ...ids];
+        break;
+      case 'delete':
+        query = `UPDATE listings SET status = 'deleted' WHERE id IN (${placeholders})`;
+        params = ids;
+        break;
+      default:
+        return res.status(400).json({ message: 'Invalid action' });
+    }
+
+    const [result] = await pool.query(query, params);
+    return res.json({ 
+      message: `Updated ${result.affectedRows} listings`,
+      affectedRows: result.affectedRows
+    });
+  } catch (err) {
+    console.error('[Admin bulkUpdateListings error]', err);
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
+
+exports.getSystemSettings = async (req, res) => {
+  try {
+    const [settings] = await pool.query('SELECT * FROM platform_settings');
+    const settingsMap = {};
+    settings.forEach(s => {
+      settingsMap[s.key] = s.value;
+    });
+    return res.json({ settings: settingsMap });
+  } catch (err) {
+    console.error('[Admin getSystemSettings error]', err);
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
+
+exports.updateSystemSettings = async (req, res) => {
+  const { settings } = req.body;
+  if (!settings || typeof settings !== 'object') {
+    return res.status(400).json({ message: 'Settings object required' });
+  }
+
+  try {
+    for (const [key, value] of Object.entries(settings)) {
+      await pool.query(
+        'INSERT INTO platform_settings (key, value) VALUES (?, ?) ON DUPLICATE KEY UPDATE value = ?',
+        [key, JSON.stringify(value), JSON.stringify(value)]
+      );
+    }
+    return res.json({ message: 'Settings updated' });
+  } catch (err) {
+    console.error('[Admin updateSystemSettings error]', err);
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
+
+exports.getUserDetails = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const [[user]] = await pool.query(
+      'SELECT id, name, email, phone, coins, role, is_verified, can_post_free, created_at FROM users WHERE id = ?',
+      [id]
+    );
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    // Get user's listings
+    const [listings] = await pool.query(
+      'SELECT id, title, status, created_at, expires_at FROM listings WHERE user_id = ? AND status != "deleted" ORDER BY created_at DESC LIMIT 10',
+      [id]
+    );
+
+    // Get user's transactions
+    const [transactions] = await pool.query(
+      'SELECT * FROM coin_transactions WHERE user_id = ? ORDER BY created_at DESC LIMIT 10',
+      [id]
+    );
+
+    // Get certificate info if applicable
+    let certificate = null;
+    if (user.role === 'ambassador') {
+      const [[cert]] = await pool.query(
+        'SELECT cert_no, status, issued_date, valid_until FROM ambassador_certificates WHERE user_id = ? ORDER BY created_at DESC LIMIT 1',
+        [id]
+      );
+      if (cert) certificate = { ...cert, type: 'ambassador' };
+    } else if (user.role === 'broker') {
+      const [[cert]] = await pool.query(
+        'SELECT cert_no, status, issued_date, valid_until FROM broker_certificates WHERE broker_id = ? ORDER BY created_at DESC LIMIT 1',
+        [id]
+      );
+      if (cert) certificate = { ...cert, type: 'broker' };
+    } else if (user.role === 'supplier') {
+      const [[cert]] = await pool.query(
+        'SELECT cert_no, status, issued_date, valid_until FROM supplier_certificates WHERE user_id = ? ORDER BY created_at DESC LIMIT 1',
+        [id]
+      );
+      if (cert) certificate = { ...cert, type: 'supplier' };
+    }
+
+    return res.json({ user, listings, transactions, certificate });
+  } catch (err) {
+    console.error('[Admin getUserDetails error]', err);
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
+
+exports.suspendUser = async (req, res) => {
+  const { id } = req.params;
+  const { reason, duration_days } = req.body;
+  if (parseInt(id) === req.user.id) return res.status(400).json({ message: 'Cannot suspend yourself' });
+
+  try {
+    const [[user]] = await pool.query('SELECT id, is_suspended FROM users WHERE id = ?', [id]);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    if (user.is_suspended) {
+      return res.status(400).json({ message: 'User is already suspended' });
+    }
+
+    const suspendedUntil = duration_days 
+      ? new Date(Date.now() + duration_days * 24 * 60 * 60 * 1000)
+      : null;
+
+    await pool.query(
+      'UPDATE users SET is_suspended = 1, suspended_until = ?, suspension_reason = ? WHERE id = ?',
+      [suspendedUntil, reason || 'Violation of platform policies', id]
+    );
+
+    notifyUser(id, 'Account suspended', `Your account has been suspended. Reason: ${reason || 'Violation of platform policies'}`, 'suspension', '/profile');
+
+    return res.json({ message: 'User suspended successfully' });
+  } catch (err) {
+    console.error('[Admin suspendUser error]', err);
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
+
+exports.unsuspendUser = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const [result] = await pool.query(
+      'UPDATE users SET is_suspended = 0, suspended_until = NULL, suspension_reason = NULL WHERE id = ?',
+      [id]
+    );
+    if (result.affectedRows === 0) return res.status(404).json({ message: 'User not found' });
+
+    notifyUser(id, 'Account reinstated', 'Your account has been reinstated and is now active.', 'reinstatement', '/profile');
+
+    return res.json({ message: 'User unsuspended successfully' });
+  } catch (err) {
+    console.error('[Admin unsuspendUser error]', err);
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
+
+exports.deleteUser = async (req, res) => {
+  const { id } = req.params;
+  if (parseInt(id) === req.user.id) return res.status(400).json({ message: 'Cannot delete yourself' });
+
+  const conn = await pool.getConnection();
+  try {
+    await conn.beginTransaction();
+
+    // Soft delete - mark as deleted rather than actual deletion
+    await conn.query('UPDATE users SET is_deleted = 1, deleted_at = NOW() WHERE id = ?', [id]);
+    
+    // Deactivate all their listings
+    await conn.query("UPDATE listings SET status = 'disabled' WHERE user_id = ?", [id]);
+
+    await conn.commit();
+    return res.json({ message: 'User deleted successfully' });
+  } catch (err) {
+    await conn.rollback();
+    console.error('[Admin deleteUser error]', err);
+    return res.status(500).json({ message: 'Server error' });
+  } finally {
+    conn.release();
   }
 };

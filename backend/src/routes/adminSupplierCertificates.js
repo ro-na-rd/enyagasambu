@@ -6,5 +6,6 @@ router.get('/', authenticate, requireAdmin, ctrl.getCertificates);
 router.get('/:id', authenticate, requireAdmin, ctrl.getCertificateDetail);
 router.post('/:id/confirm-payment', authenticate, requireAdmin, ctrl.confirmPayment);
 router.post('/:id/generate', authenticate, requireAdmin, ctrl.generateCertificate);
+router.post('/bulk', authenticate, requireAdmin, ctrl.bulkUpdateCertificates);
 
 module.exports = router;

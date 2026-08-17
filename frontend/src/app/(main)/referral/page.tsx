@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { useCurrency } from '@/context/CurrencyContext';
 import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
 
@@ -12,6 +13,7 @@ interface ReferralInfo {
 }
 
 export default function ReferralPage() {
+  const { format } = useCurrency();
   const { user, loading } = useAuth();
   const router = useRouter();
   const [info, setInfo] = useState<ReferralInfo | null>(null);
@@ -42,7 +44,7 @@ export default function ReferralPage() {
 
       <div className="bg-[#FF6B00] text-white rounded-2xl p-6 mb-6 text-center">
         <p className="text-orange-200 text-sm">You earn per certificate referral</p>
-        <p className="text-5xl font-bold mt-1">200 RWF</p>
+        <p className="text-5xl font-bold mt-1">{format(200)}</p>
         <p className="text-orange-200 text-sm mt-1">credited when your referral pays for their certificate</p>
       </div>
 
@@ -65,7 +67,7 @@ export default function ReferralPage() {
           <p className="text-xs text-gray-500 mt-1">Total friends referred</p>
         </div>
         <div className="bg-white rounded-xl shadow-sm p-4 text-center">
-          <p className="text-3xl font-bold text-[#E85D04]">{info.bonusPaid * info.bonusPerReferral} RWF</p>
+          <p className="text-3xl font-bold text-[#E85D04]">{format(info.bonusPaid * info.bonusPerReferral)}</p>
           <p className="text-xs text-gray-500 mt-1">Total earned</p>
         </div>
       </div>

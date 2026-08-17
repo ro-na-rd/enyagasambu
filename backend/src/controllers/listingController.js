@@ -5,18 +5,27 @@ const pool = require('../config/db');
 const { requestToPay, getPaymentStatus } = require('../services/momoService');
 const { sendSms } = require('../services/smsService');
 const { uploadToS3 } = require('../services/s3Service');
-const { notifyAdmins } = require('../services/notificationService');
+const { notifyAdmins, notifyUser } = require('../services/notificationService');
 
 const LISTING_COST = 400;
 const CONNECT_COST = 300;
 const LISTING_DAYS = 3;
 const BOOST_COST = 200;
 
-const LISTING_PRICE = {
-  3: 500,
-  7: 1000,
-  30: 3500,
-};
+async function getListingPrices() {
+  try {
+    const [rows] = await pool.query('SELECT setting_key, setting_value FROM platform_settings WHERE setting_key LIKE "listing_duration_%"');
+    const prices = {};
+    rows.forEach(r => {
+      const days = r.setting_key.replace('listing_duration_', '').replace('_days', '');
+      prices[parseInt(days)] = parseInt(r.setting_value);
+    });
+    return prices;
+  } catch (err) {
+    console.error('Error fetching listing prices from settings:', err);
+    return { 3: 500, 7: 1000, 30: 3500 }; // fallback to defaults
+  }
+}
 
 function normalizePhone(phone) {
   return phone ? phone.replace(/\s+/g, '') : '';
@@ -51,7 +60,7 @@ exports.getListings = async (req, res) => {
   const { category, type, group, search, featured, page = 1, limit = 20 } = req.query;
   const offset = (parseInt(page) - 1) * parseInt(limit);
 
-  let where = "l.status IN ('active','sold','expired')";
+  let where = "l.status IN ('active','sold','expired') AND l.is_deleted = 0";
   const params = [];
 
   if (category) {
@@ -114,7 +123,7 @@ exports.getListing = async (req, res) => {
        FROM listings l
        JOIN categories c ON l.category_id = c.id
        JOIN users u ON l.user_id = u.id
-       WHERE l.id = ? AND l.status != 'deleted'`,
+       WHERE l.id = ? AND l.status != 'deleted' AND l.is_deleted = 0`,
       [id]
     );
 
@@ -172,15 +181,34 @@ exports.createListing = async (req, res) => {
     let user = null;
     let isGuest = false;
 
+    // Validate category exists
+    const { category_id } = req.body;
+    if (!category_id) {
+      await conn.rollback();
+      return res.status(400).json({ message: 'Category is required' });
+    }
+    const [[category]] = await conn.query('SELECT id FROM categories WHERE id = ?', [category_id]);
+    if (!category) {
+      await conn.rollback();
+      return res.status(400).json({ message: 'Invalid category' });
+    }
+
+    // Get or create user
     if (req.user) {
       userId = req.user.id;
       isAdmin = req.user.role === 'admin';
-      [[user]] = await conn.query('SELECT name, coins, phone FROM users WHERE id = ? FOR UPDATE', [userId]);
+      [[user]] = await conn.query('SELECT name, coins, phone, role FROM users WHERE id = ? FOR UPDATE', [userId]);
     } else {
       const { guest_name, guest_phone } = req.body;
       if (!guest_name || !guest_phone) {
         await conn.rollback();
         return res.status(400).json({ message: 'Name and phone are required when not signed in.' });
+      }
+      // Check for duplicate guest phone
+      const [existingPhone] = await conn.query('SELECT id FROM users WHERE phone = ?', [guest_phone]);
+      if (existingPhone.length > 0) {
+        await conn.rollback();
+        return res.status(409).json({ message: 'Phone number already registered. Please log in.' });
       }
       isGuest = true;
       const [result] = await conn.query(
@@ -190,43 +218,84 @@ exports.createListing = async (req, res) => {
       userId = result.insertId;
     }
 
+    // Determine posting fee and duration based on user role
+    let durationDays = LISTING_DAYS;
     if (!isGuest && !isAdmin) {
-      // Check if user has free posting privilege
-      const [[userRow]] = await conn.query('SELECT can_post_free FROM users WHERE id = ?', [userId]);
-      if (userRow?.can_post_free) {
-        postingFree = true;
-      } else {
-        const [settingRows] = await conn.query("SELECT setting_key, setting_value FROM platform_settings WHERE setting_key IN ('posting_free','posting_fee')");
-        const s = {};
-        if (settingRows) settingRows.forEach(r => { s[r.setting_key] = r.setting_value; });
-        postingFree = s.posting_free === 'true';
-        postingFee = parseInt(s.posting_fee, 10) || LISTING_COST;
+      const [[userRow]] = await conn.query('SELECT role, can_post_free FROM users WHERE id = ?', [userId]);
+      const isAmbassador = userRow?.role === 'ambassador';
+      const isBroker = userRow?.role === 'broker';
+      const isSupplier = userRow?.role === 'supplier';
 
-        if (!postingFree) {
-          if (!user || user.coins < postingFee) {
-            await conn.rollback();
-            return res.status(402).json({ message: `Insufficient coins. You need ${postingFee} coins to list.` });
-          }
-          await conn.query('UPDATE users SET coins = coins - ? WHERE id = ?', [postingFee, userId]);
+      if (isAmbassador) {
+        // Ambassadors MUST pay for posting
+        postingFree = false;
+        postingFee = LISTING_COST;
+      } else if (isBroker || isSupplier) {
+        // Brokers and suppliers check platform settings
+        if (userRow?.can_post_free) {
+          postingFree = true;
+        } else {
+          const [settingRows] = await conn.query("SELECT setting_key, setting_value FROM platform_settings WHERE setting_key IN ('posting_free','posting_fee')");
+          const s = {};
+          if (settingRows) settingRows.forEach(r => { s[r.setting_key] = r.setting_value; });
+          postingFree = s.posting_free === 'true';
+          postingFee = parseInt(s.posting_fee, 10) || LISTING_COST;
+        }
+      } else {
+        // Regular users check platform settings
+        if (userRow?.can_post_free) {
+          postingFree = true;
+        } else {
+          const [settingRows] = await conn.query("SELECT setting_key, setting_value FROM platform_settings WHERE setting_key IN ('posting_free','posting_fee')");
+          const s = {};
+          if (settingRows) settingRows.forEach(r => { s[r.setting_key] = r.setting_value; });
+          postingFree = s.posting_free === 'true';
+          postingFee = parseInt(s.posting_fee, 10) || LISTING_COST;
         }
       }
-    }
 
-    let durationDays = LISTING_DAYS;
-    if (!isGuest) {
+      // Check for seller subscription (extends duration)
       const [[sub]] = await conn.query('SELECT * FROM seller_subscriptions WHERE user_id = ? AND (expires_at IS NULL OR expires_at > NOW())', [userId]);
       if (sub) durationDays = sub.listing_duration_days;
+
+      // Deduct posting fee if not free
+      if (!postingFree) {
+        if (!user || user.coins < postingFee) {
+          await conn.rollback();
+          return res.status(402).json({
+            message: isAmbassador
+              ? `Ambassadors must pay ${postingFee} coins to post listings. This helps maintain platform quality.`
+              : `Insufficient coins. You need ${postingFee} coins to list. Purchase coins or contact support.`
+          });
+        }
+        await conn.query('UPDATE users SET coins = coins - ? WHERE id = ?', [postingFee, userId]);
+      }
+    } else if (isAdmin) {
+      // Admins get extended duration and free posting
+      durationDays = 90;
+      postingFree = true;
     }
 
-    const { title, description, price, price_type, currency, location, listing_type, category_id } = req.body;
+    // Validate listing data
+    const { title, description, price, price_type, currency, location, listing_type } = req.body;
+    if (!title || title.trim().length === 0) {
+      await conn.rollback();
+      return res.status(400).json({ message: 'Title is required' });
+    }
+    if (title.length > 200) {
+      await conn.rollback();
+      return res.status(400).json({ message: 'Title must be less than 200 characters' });
+    }
+
     const expiresAt = new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000);
 
     const [result] = await conn.query(
-      `INSERT INTO listings (user_id, category_id, title, description, price, price_type, currency, location, listing_type, expires_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [userId, category_id, title, description, price || null, price_type || 'fixed', currency || 'RWF', location, listing_type || 'sell', expiresAt]
+      `INSERT INTO listings (user_id, category_id, title, description, price, price_type, currency, location, listing_type, status, expires_at, is_featured)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?)`,
+      [userId, category_id, title.trim(), description || null, price || null, price_type || 'fixed', currency || 'RWF', location, listing_type || 'sell', expiresAt, isAdmin ? 1 : 0]
     );
 
+    // Record transaction if fee was paid
     if (!isGuest && !isAdmin && !postingFree) {
       await conn.query(
         'INSERT INTO coin_transactions (user_id, amount, type, listing_id) VALUES (?, ?, ?, ?)',
@@ -234,6 +303,7 @@ exports.createListing = async (req, res) => {
       );
     }
 
+    // Upload images
     if (req.files?.length) {
       const imageValues = [];
       for (let i = 0; i < req.files.length; i++) {
@@ -243,13 +313,15 @@ exports.createListing = async (req, res) => {
       await conn.query('INSERT INTO listing_images (listing_id, image_url, is_primary) VALUES ?', [imageValues]);
     }
 
+    // Create renewal token for authenticated users (not guests or admins)
     const sellerPhone = user ? normalizePhone(user.phone) : normalizePhone(req.body.guest_phone || '');
-    if (sellerPhone && !isGuest) {
+    if (sellerPhone && !isGuest && !isAdmin) {
       await createRenewalToken(conn, result.insertId, sellerPhone, expiresAt);
     }
 
     await conn.commit();
 
+    // Send notifications
     const sellerName = isGuest ? (req.body.guest_name || 'Guest') : (user?.name || 'Seller');
     const listingTitle = title || 'a listing';
     notifyAdmins(
@@ -259,11 +331,21 @@ exports.createListing = async (req, res) => {
       `/admin/listings?id=${result.insertId}`
     );
 
-    return res.status(201).json({ message: 'Listing created', listingId: result.insertId });
+    if (!isGuest && !isAdmin) {
+      notifyUser(userId, 'Listing published', `Your listing "${listingTitle}" is now live on the platform.`, 'listing', `/listings/${result.insertId}`);
+    }
+
+    return res.status(201).json({
+      message: isAdmin ? 'Admin listing created successfully (free, featured, 90-day duration)' : 'Listing created successfully',
+      listingId: result.insertId,
+      expires_at: expiresAt,
+      posting_fee_paid: !postingFree ? postingFee : 0,
+      duration_days: durationDays
+    });
   } catch (err) {
     await conn.rollback();
-    console.error(err);
-    return res.status(500).json({ message: 'Server error' });
+    console.error('[Create listing error]', err);
+    return res.status(500).json({ message: 'Server error during listing creation' });
   } finally {
     conn.release();
   }
@@ -275,7 +357,8 @@ exports.initiateListingPayment = async (req, res) => {
   if (!errors.isEmpty()) return res.status(422).json({ errors: errors.array() });
 
   const duration = [3, 7, 30].includes(parseInt(duration_days)) ? parseInt(duration_days) : 3;
-  const amount = LISTING_PRICE[duration];
+  const listingPrices = await getListingPrices();
+  const amount = listingPrices[duration] || listingPrices[3];
 
   let sellerPhone;
   let guestName = '';
@@ -352,7 +435,7 @@ exports.confirmListingPayment = async (req, res) => {
 
       const phone = normalizePhone(payment.phone);
       if (phone) {
-        sendSms(phone, `Payment of ${payment.amount_rwf} RWF received for your listing. A verification code will be sent shortly.`).catch(() => {});
+        sendSms(phone, `Payment of ${payment.amount_rwf} RWF received for your listing. A verification code will be sent shortly.`).catch(() => { });
       }
 
       return res.json({ status: 'payment_verified', referenceId, amount_rwf: payment.amount_rwf });
@@ -363,7 +446,7 @@ exports.confirmListingPayment = async (req, res) => {
 
       const phone = normalizePhone(payment.phone);
       if (phone) {
-        sendSms(phone, 'Your payment has not been completed. Please complete the Mobile Money payment and try again.').catch(() => {});
+        sendSms(phone, 'Your payment has not been completed. Please complete the Mobile Money payment and try again.').catch(() => { });
       }
 
       return res.json({ status: 'failed', message: momoStatus.reason || 'Payment failed.' });
@@ -392,7 +475,8 @@ exports.initiateRenewal = async (req, res) => {
     if (!tokenRow) return res.status(400).json({ message: 'Invalid or expired renewal token' });
 
     const renewDays = [3, 7, 30].includes(parseInt(days)) ? parseInt(days) : 3;
-    const amount = LISTING_PRICE[renewDays];
+    const listingPrices = await getListingPrices();
+    const amount = listingPrices[renewDays] || listingPrices[3];
     const referenceId = uuidv4();
 
     await pool.query(
@@ -606,6 +690,68 @@ exports.boostListing = async (req, res) => {
     await conn.rollback();
     console.error(err);
     return res.status(500).json({ message: 'Server error' });
+  } finally {
+    conn.release();
+  }
+};
+
+exports.deleteListing = async (req, res) => {
+  const { id } = req.params;
+
+  const conn = await pool.getConnection();
+  try {
+    await conn.beginTransaction();
+
+    const [[listing]] = await conn.query(
+      `SELECT id, user_id, title, status FROM listings WHERE id = ?`,
+      [id]
+    );
+
+    if (!listing) {
+      await conn.rollback();
+      return res.status(404).json({ message: 'Listing not found' });
+    }
+
+    // Check ownership (admins can delete any listing)
+    if (req.user.role !== 'admin' && listing.user_id !== req.user.id) {
+      await conn.rollback();
+      return res.status(403).json({ message: 'You can only delete your own listings' });
+    }
+
+    if (listing.status === 'deleted') {
+      await conn.rollback();
+      return res.status(400).json({ message: 'Listing already deleted' });
+    }
+
+    // Move to recycle bin
+    const restoreUntil = new Date();
+    restoreUntil.setDate(restoreUntil.getDate() + 30);
+
+    await conn.query('UPDATE listings SET status = ? WHERE id = ?', ['deleted', id]);
+
+    await conn.query(
+      `INSERT INTO recycle_bin (item_type, item_id, original_data, deleted_by, deleted_role, restore_until)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      ['listing', id, JSON.stringify(listing), req.user.id, req.user.role, restoreUntil]
+    );
+
+    await conn.commit();
+
+    notifyAdmins('Listing moved to recycle bin', `Listing "${listing.title}" moved to recycle bin by ${req.user.name || req.user.role}`, 'recycle', '/admin/recycle-bin');
+
+    if (listing.user_id !== req.user.id) {
+      notifyUser(listing.user_id, 'Listing deleted', `Your listing "${listing.title}" has been moved to recycle bin. Contact support to restore it.`, 'recycle', '/recycle-bin');
+    }
+
+    return res.json({
+      message: 'Listing moved to recycle bin',
+      restore_until: restoreUntil,
+      auto_delete_after_days: 30
+    });
+  } catch (err) {
+    await conn.rollback();
+    console.error('[Delete listing error]', err);
+    return res.status(500).json({ message: 'Server error during deletion' });
   } finally {
     conn.release();
   }

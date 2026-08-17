@@ -170,7 +170,7 @@ export default function BrokerLayout({ children }: { children: React.ReactNode }
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: '#f8f9fc' }}>
         <div className="text-center">
-          <div className="w-14 h-14 rounded-full mx-auto mb-4 flex items-center justify-center overflow-hidden shadow-lg"><img src="/logo.svg" alt="E-Nyagasambu" className="w-full h-full object-cover" /></div>
+          <img src="/assets/logo.png" alt="E-Nyagasambu" className="w-14 h-14 mx-auto mb-4 object-contain" />
           <p className="text-gray-500 text-sm animate-pulse">Loading broker dashboard…</p>
         </div>
       </div>
@@ -203,9 +203,7 @@ export default function BrokerLayout({ children }: { children: React.ReactNode }
         {/* Logo & Brand */}
         <div className="px-4 py-6 border-b border-white/10 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#E85D04] to-[#f2701c] flex items-center justify-center">
-              <span className="text-white font-bold text-lg">E</span>
-            </div>
+            <p className="text-white font-bold text-lg">Broker Portal</p>
           </div>
           <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-white/40 hover:text-white">
             <X size={18} />

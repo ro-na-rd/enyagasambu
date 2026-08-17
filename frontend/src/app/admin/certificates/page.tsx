@@ -6,6 +6,7 @@ import { FileText, Award, Search, Filter } from '@/lib/icons';
 import { SITE_DOMAIN } from '@/lib/config';
 import { buildAmbassadorCertPrintHtml } from '@/lib/ambassadorCertPrint';
 import AmbassadorCertificate from '@/components/AmbassadorCertificate';
+import { useCurrency } from '@/context/CurrencyContext';
 
 const BRAND = {
   navy: '#0f1e42',
@@ -29,6 +30,7 @@ const statusBadge = (s: string) => {
 };
 
 export default function AdminCertificatesPage() {
+  const { format } = useCurrency();
   const [type, setType] = useState<CertType>('ambassador');
   const [certs, setCerts] = useState<{ id: number; cert_no?: string; status: string; user_name: string; user_email: string; user_phone?: string; photo_url?: string; phone?: string; created_at: string; issued_date?: string; valid_until?: string; amount_rwf?: number; type_name?: string; type_code?: string }[]>([]);
   const [total, setTotal] = useState(0);
@@ -247,7 +249,7 @@ ${businessHtml}
               <div><span className="text-gray-600">Phone:</span> <span className="text-gray-700">{detail.user_phone || '-'}</span></div>
               {detail.type_name && <div><span className="text-gray-600">Type:</span> <span className="text-gray-700">{detail.type_name}</span></div>}
               {typeof detail.amount_rwf === 'number' && (
-                <div><span className="text-gray-600">Fee:</span> <span className="text-gray-700 font-semibold">RWF {detail.amount_rwf.toLocaleString('en-US')}</span></div>
+                <div><span className="text-gray-600">Fee:</span> <span className="text-gray-700 font-semibold">{format(detail.amount_rwf)}</span></div>
               )}
               <div><span className="text-gray-600">Cert No:</span> <span className="text-gray-700">{detail.cert_no || '-'}</span></div>
               <div><span className="text-gray-600">Status:</span> <span className={statusBadge(detail.status)}>{detail.status}</span></div>
@@ -319,7 +321,7 @@ ${businessHtml}
                       <span className="inline-flex items-center gap-1">
                         <span className="text-gray-800 font-semibold">{c.type_name}</span>
                         <span className="text-gray-400">·</span>
-                        <span className="font-mono">RWF {(c.amount_rwf ?? 0).toLocaleString('en-US')}</span>
+                        <span className="font-mono">{format(c.amount_rwf ?? 0)}</span>
                       </span>
                     ) : '-'}
                   </td>

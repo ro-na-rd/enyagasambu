@@ -1,0 +1,55 @@
+<svg width="1123" height="794" viewBox="0 0 1123 794" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+  <!-- Main background -->
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#ffffff;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#f8f9fb;stop-opacity:1" />
+    </linearGradient>
+    
+    <radialGradient id="cornerGradient1" cx="0%" cy="0%">
+      <stop offset="0%" style="stop-color:#E85D04;stop-opacity:0.25" />
+      <stop offset="100%" style="stop-color:#E85D04;stop-opacity:0" />
+    </radialGradient>
+    
+    <radialGradient id="cornerGradient2" cx="100%" cy="0%">
+      <stop offset="0%" style="stop-color:#E85D04;stop-opacity:0.25" />
+      <stop offset="100%" style="stop-color:#E85D04;stop-opacity:0" />
+    </radialGradient>
+    
+    <radialGradient id="cornerGradient3" cx="100%" cy="100%">
+      <stop offset="0%" style="stop-color:#0f1e42;stop-opacity:0.08" />
+      <stop offset="100%" style="stop-color:#0f1e42;stop-opacity:0" />
+    </radialGradient>
+  </defs>
+  
+  <!-- White base -->
+  <rect width="1123" height="794" fill="url(#bgGradient)"/>
+  
+  <!-- Top-left curved accent (orange) -->
+  <path d="M 0 0 Q 280 80 0 200 L 0 0 Z" fill="#E85D04" opacity="0.12"/>
+  <path d="M 0 0 Q 200 120 0 250 L 0 0 Z" fill="#E85D04" opacity="0.06"/>
+  
+  <!-- Top-right curved accent (orange) -->
+  <path d="M 1123 0 Q 843 80 1123 200 L 1123 0 Z" fill="#E85D04" opacity="0.12"/>
+  <path d="M 1123 0 Q 923 120 1123 250 L 1123 0 Z" fill="#E85D04" opacity="0.06"/>
+  
+  <!-- Bottom-right curved accent (navy) -->
+  <path d="M 1123 794 Q 843 714 1123 594 L 1123 794 Z" fill="#0f1e42" opacity="0.08"/>
+  <path d="M 1123 794 Q 923 674 1123 544 L 1123 794 Z" fill="#0f1e42" opacity="0.04"/>
+  
+  <!-- Bottom-left curved accent (navy) -->
+  <path d="M 0 794 Q 280 714 0 594 L 0 794 Z" fill="#0f1e42" opacity="0.08"/>
+  <path d="M 0 794 Q 200 674 0 544 L 0 794 Z" fill="#0f1e42" opacity="0.04"/>
+  
+  <!-- Subtle corner radiants -->
+  <circle cx="0" cy="0" r="350" fill="url(#cornerGradient1)"/>
+  <circle cx="1123" cy="0" r="350" fill="url(#cornerGradient2)"/>
+  <circle cx="1123" cy="794" r="350" fill="url(#cornerGradient3)"/>
+  
+  <!-- Decorative line elements -->
+  <line x1="80" y1="40" x2="180" y2="40" stroke="#E85D04" stroke-width="2" opacity="0.3"/>
+  <line x1="1043" y1="40" x2="1123" y2="40" stroke="#E85D04" stroke-width="2" opacity="0.3"/>
+  
+  <line x1="80" y1="754" x2="280" y2="754" stroke="#0f1e42" stroke-width="1.5" opacity="0.15"/>
+  <line x1="843" y1="754" x2="1043" y2="754" stroke="#0f1e42" stroke-width="1.5" opacity="0.15"/>
+</svg>

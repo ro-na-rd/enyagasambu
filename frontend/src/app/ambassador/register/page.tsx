@@ -44,10 +44,7 @@ export default function AmbassadorRegisterPage() {
   return (
     <AuthRegisterLayout badge="Ambassador Program">
       <div className="flex items-center gap-2 mb-6">
-        <div className="w-9 h-9 rounded-lg flex items-center justify-center overflow-hidden"
-          style={{ boxShadow: `0 4px 14px ${ORG}33` }}>
-          <img src="/logo.svg" alt="E-Nyagasambu" className="w-full h-full object-cover" />
-        </div>
+        <img src="/assets/logo.png" alt="E-Nyagasambu" className="w-9 h-9 object-contain" />
         <div>
           <p className="font-extrabold text-sm leading-tight" style={{ color: NAVY }}>Ambassador Portal</p>
           <p className="text-[9px] font-bold tracking-widest uppercase" style={{ color: ORG }}>Program</p>

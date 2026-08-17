@@ -10,7 +10,7 @@ import { Search, UserPlus, Star, Heart, Menu, X, Coins, List, Gift, Wrench, LogO
 import { categoryMap } from '@/lib/translations';
 
 const navy = '#0f1e42';
-const org  = '#E85D04';
+const org = '#E85D04';
 
 function catLabel(slug: string, lang: 'en' | 'fr' | 'rw') {
   return categoryMap[slug]?.[lang] ?? categoryMap[slug]?.en ?? slug;
@@ -53,13 +53,13 @@ function SearchForm({ placeholder, onDone }: { placeholder: string; onDone?: () 
 }
 
 function NavbarView({ pathname, tab }: { pathname: string | null; tab: string | null }) {
-  const { user, logout }   = useAuth();
+  const { user, logout } = useAuth();
   const { lang, setLang, T } = useLanguage();
   const { currency, setCurrency, currencies } = useCurrency();
   const [menuOpen, setMenuOpen] = useState(false);
   const [catsOpen, setCatsOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [currOpen, setCurrOpen] = useState(false);
+  const [prefOpen, setPrefOpen] = useState(false);
   const close = () => setMenuOpen(false);
   const closeMobile = () => setMobileOpen(false);
 
@@ -67,32 +67,32 @@ function NavbarView({ pathname, tab }: { pathname: string | null; tab: string | 
   const isListings = pathname === '/listings';
 
   const NAV_LINKS = [
-    { key: 'home',        href: '/',                         label: T.home, icon: <Home size={16} /> },
-    { key: 'products',    href: '/listings?tab=products',    label: T.products },
-    { key: 'properties',  href: '/listings?tab=properties',  label: T.properties },
-    { key: 'rent',        href: '/listings?tab=rent',        label: T.rent },
-    { key: 'vehicles',    href: '/listings?tab=vehicles',    label: T.vehicles },
-    { key: 'services',    href: '/listings?tab=services',    label: T.services },
-    { key: 'auction',     href: '/auction',                 label: T.auction },
-    { key: 'adverts',     href: '/listings?tab=adverts',     label: T.adverts },
+    { key: 'home', href: '/', label: T.home, icon: <Home size={16} /> },
+    { key: 'products', href: '/listings?tab=products', label: T.products },
+    { key: 'properties', href: '/listings?tab=properties', label: T.properties },
+    { key: 'rent', href: '/listings?tab=rent', label: T.rent },
+    { key: 'vehicles', href: '/listings?tab=vehicles', label: T.vehicles },
+    { key: 'services', href: '/listings?tab=services', label: T.services },
+    { key: 'auction', href: '/auction', label: T.auction },
+    { key: 'adverts', href: '/listings?tab=adverts', label: T.adverts },
   ];
 
   const CAT_LINKS: { label: string; href: string; disabled?: boolean }[] = [
-    { label: T.allCategories,    href: '/listings' },
-    { label: T.electronics,      href: '/listings?category=electronics' },
+    { label: T.allCategories, href: '/listings' },
+    { label: T.electronics, href: '/listings?category=electronics' },
     { label: catLabel('food-beverage', lang), href: '/listings?category=food-beverage' },
-    { label: T.clothing,         href: '/listings?category=clothing' },
-    { label: T.construction,     href: '/listings?category=construction' },
-    { label: T.health,           href: '/listings?category=health' },
-    { label: T.education,        href: '/listings?category=education' },
+    { label: T.clothing, href: '/listings?category=clothing' },
+    { label: T.construction, href: '/listings?category=construction' },
+    { label: T.health, href: '/listings?category=health' },
+    { label: T.education, href: '/listings?category=education' },
     { label: catLabel('farmer-product', lang), href: '/listings?category=farmer-product' },
-    { label: catLabel('supply-chain', lang),   href: '/listings?category=supply-chain' },
+    { label: catLabel('supply-chain', lang), href: '/listings?category=supply-chain' },
   ];
 
   return (
     <>
       {/* ── TOP BAR ── */}
-      <div className="text-white text-xs px-3 sm:px-5 py-1.5 flex items-center gap-3 sm:gap-4 flex-wrap" style={{ background: navy }}>
+      <div className="text-white text-xs px-3 sm:px-5 py-1.5 flex items-center gap-3 sm:gap-4 flex-wrap relative z-[60]" style={{ background: navy }}>
         <span className="mr-auto hidden sm:inline" style={{ opacity: 0.75, fontSize: 12 }}>{T.marketOnline}</span>
         <Link href="/support" className="transition" style={{ color: '#cdd4f0' }}
           onMouseEnter={e => (e.currentTarget.style.color = '#fff')}
@@ -107,62 +107,132 @@ function NavbarView({ pathname, tab }: { pathname: string | null; tab: string | 
         {user
           ? <span className="hidden sm:inline" style={{ color: 'rgba(255,255,255,0.7)' }}>{user.name.split(' ')[0]}</span>
           : <Link href="/login" className="transition" style={{ color: '#cdd4f0' }}
-              onMouseEnter={e => (e.currentTarget.style.color = '#fff')}
-              onMouseLeave={e => (e.currentTarget.style.color = '#cdd4f0')}>
-              {T.signIn}
-            </Link>
+            onMouseEnter={e => (e.currentTarget.style.color = '#fff')}
+            onMouseLeave={e => (e.currentTarget.style.color = '#cdd4f0')}>
+            {T.signIn}
+          </Link>
         }
 
-        {/* Language pills — EN | FR | RW */}
-        <div className="flex gap-1.5 items-center">
-          {(['en', 'fr', 'rw'] as Lang[]).map(code => (
-            <button
-              key={code}
-              onClick={() => setLang(code)}
-              className="transition text-[11px] font-semibold cursor-pointer"
-              style={{
-                border:     `1px solid ${lang === code ? '#fff' : '#cdd4f0'}`,
-                background: lang === code ? '#fff' : 'transparent',
-                color:      lang === code ? navy   : '#cdd4f0',
-                padding:    '2px 8px',
-                borderRadius: 3,
-              }}
-            >
-              {code.toUpperCase()}
-            </button>
-          ))}
-        </div>
-
-        {/* Currency dropdown */}
+        {/* Language & Currency selector */}
         <div className="relative">
           <button
-            onClick={() => setCurrOpen(!currOpen)}
-            className="transition text-[11px] font-semibold cursor-pointer"
+            onClick={() => setPrefOpen(!prefOpen)}
+            className="transition text-[11px] font-semibold cursor-pointer flex items-center gap-1.5"
             style={{
-              border: '1px solid #cdd4f0',
-              background: currOpen ? '#fff' : 'transparent',
-              color: '#cdd4f0',
-              padding: '2px 8px',
-              borderRadius: 3,
+              border: '1px solid rgba(205, 212, 240, 0.5)',
+              background: prefOpen ? 'rgba(255, 255, 255, 0.95)' : 'rgba(255, 255, 255, 0.1)',
+              color: prefOpen ? navy : '#cdd4f0',
+              padding: '4px 10px',
+              borderRadius: 6,
+              backdropFilter: prefOpen ? 'blur(10px)' : 'none',
+              boxShadow: prefOpen ? '0 4px 12px rgba(0, 0, 0, 0.15)' : 'none',
+            }}
+            onMouseEnter={e => {
+              if (!prefOpen) {
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)';
+                e.currentTarget.style.borderColor = 'rgba(205, 212, 240, 0.8)';
+              }
+            }}
+            onMouseLeave={e => {
+              if (!prefOpen) {
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+                e.currentTarget.style.borderColor = 'rgba(205, 212, 240, 0.5)';
+              }
             }}
           >
-            {currency}
+            <span style={{ fontSize: 12, fontWeight: 700 }}>{lang.toUpperCase()}</span>
+            <span style={{ opacity: 0.6, fontSize: 8 }}>•</span>
+            <span style={{ fontSize: 12, fontWeight: 700 }}>{currency}</span>
+            <span style={{ fontSize: 8, marginLeft: 2, transition: 'transform 0.2s', transform: prefOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}>▼</span>
           </button>
-          {currOpen && (
+          {prefOpen && (
             <div
-              className="absolute right-0 top-full mt-1 z-50 bg-white rounded-lg shadow-lg border border-gray-200 py-1 min-w-[140px]"
-              onMouseLeave={() => setCurrOpen(false)}
+              className="absolute right-0 top-full mt-2 z-[100] bg-white rounded-xl shadow-2xl border border-gray-100 py-3 min-w-[180px]"
+              style={{
+                animation: 'fadeIn 0.2s ease-out',
+                backdropFilter: 'blur(20px)',
+              }}
+              onMouseLeave={() => setPrefOpen(false)}
             >
-              {currencies.map(c => (
-                <button
-                  key={c.code}
-                  onClick={() => { setCurrency(c.code); setCurrOpen(false); }}
-                  className="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-50 transition"
-                  style={{ color: currency === c.code ? '#E85D04' : navy }}
-                >
-                  {c.symbol} {c.code} — {c.name}
-                </button>
-              ))}
+              <style jsx>{`
+                @keyframes fadeIn {
+                  from { opacity: 0; transform: translateY(-8px); }
+                  to { opacity: 1; transform: translateY(0); }
+                }
+              `}</style>
+
+              <p className="px-4 pb-2 text-[10px] font-bold uppercase tracking-widest text-gray-400 border-b border-gray-100">Language</p>
+              <div className="flex gap-2 px-4 py-3">
+                {(['en', 'fr', 'rw'] as Lang[]).map(code => (
+                  <button
+                    key={code}
+                    onClick={() => setLang(code)}
+                    className="transition text-[11px] font-semibold cursor-pointer px-3 py-1.5 rounded-lg flex-1"
+                    style={{
+                      border: `1.5px solid ${lang === code ? navy : '#e5e7eb'}`,
+                      background: lang === code ? navy : '#f9fafb',
+                      color: lang === code ? '#fff' : '#374151',
+                      boxShadow: lang === code ? '0 2px 8px rgba(15, 30, 66, 0.3)' : 'none',
+                    }}
+                    onMouseEnter={e => {
+                      if (lang !== code) {
+                        e.currentTarget.style.background = '#f3f4f6';
+                        e.currentTarget.style.borderColor = '#d1d5db';
+                      }
+                    }}
+                    onMouseLeave={e => {
+                      if (lang !== code) {
+                        e.currentTarget.style.background = '#f9fafb';
+                        e.currentTarget.style.borderColor = '#e5e7eb';
+                      }
+                    }}
+                  >
+                    {code.toUpperCase()}
+                  </button>
+                ))}
+              </div>
+
+              <p className="px-4 pb-2 text-[10px] font-bold uppercase tracking-widest text-gray-400 border-b border-gray-100 mt-2">Currency</p>
+              <div className="py-2">
+                {currencies.map(c => (
+                  <button
+                    key={c.code}
+                    onClick={() => { setCurrency(c.code); setPrefOpen(false); }}
+                    className="w-full text-left px-4 py-2 text-xs transition flex items-center justify-between group"
+                    style={{
+                      color: currency === c.code ? '#E85D04' : '#374151',
+                      background: currency === c.code ? 'rgba(232, 93, 4, 0.05)' : 'transparent',
+                    }}
+                    onMouseEnter={e => {
+                      if (currency !== c.code) {
+                        e.currentTarget.style.background = '#f9fafb';
+                      }
+                    }}
+                    onMouseLeave={e => {
+                      if (currency !== c.code) {
+                        e.currentTarget.style.background = 'transparent';
+                      }
+                    }}
+                  >
+                    <span className="flex items-center gap-2">
+                      <span style={{
+                        fontSize: 11,
+                        fontWeight: 700,
+                        background: currency === c.code ? 'rgba(232, 93, 4, 0.1)' : '#f3f4f6',
+                        padding: '2px 6px',
+                        borderRadius: 4,
+                        color: currency === c.code ? '#E85D04' : '#6b7280'
+                      }}>
+                        {c.code}
+                      </span>
+                      <span className="font-medium">{c.name}</span>
+                    </span>
+                    {currency === c.code && (
+                      <span style={{ color: '#E85D04', fontSize: 10 }}>✓</span>
+                    )}
+                  </button>
+                ))}
+              </div>
             </div>
           )}
         </div>
@@ -175,10 +245,7 @@ function NavbarView({ pathname, tab }: { pathname: string | null; tab: string | 
       >
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 sm:gap-3 shrink-0 min-w-0">
-          <div className="rounded-full bg-white flex items-center justify-center overflow-hidden shrink-0"
-            style={{ width: 44, height: 44, border: `2px solid ${org}` }}>
-            <img src="/logo.jpg" alt="E-Nyagasambu" className="w-full h-full object-cover" />
-          </div>
+          <img src="/assets/logo.png" alt="E-Nyagasambu" className="w-11 h-11 object-contain shrink-0" />
           <div className="min-w-0">
             <h1 className="font-medium text-lg sm:text-xl leading-tight truncate" style={{ color: navy }}>
               <span style={{ color: org }}>E</span>-Nyagasambu
@@ -240,11 +307,11 @@ function NavbarView({ pathname, tab }: { pathname: string | null; tab: string | 
                     {user.name.split(' ')[0]} <span style={{ fontSize: 9 }}>▾</span>
                   </button>
                   {menuOpen && (
-                    <div className="absolute right-0 mt-2 bg-white rounded-xl shadow-xl overflow-hidden border border-gray-100 z-50" style={{ width: 220, maxWidth: 'calc(100vw - 24px)' }}>
-                      <Link href="/my-listings"    className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold hover:bg-gray-50 border-b" style={{ color: navy }} onClick={close}><List size={15} /> {T.myListings}</Link>
-                      <Link href="/coins"          className="flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-gray-50 text-gray-800" onClick={close}><Coins size={15} /> {T.coinsWallet}</Link>
-                      <Link href="/subscriptions"  className="flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-gray-50 text-gray-800" onClick={close}><Star size={15} /> {T.sellerPlans}</Link>
-                      <Link href="/referral"       className="flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-gray-50 text-gray-800" onClick={close}><Gift size={15} /> {T.referEarn}</Link>
+                    <div className="absolute right-0 mt-2 bg-white rounded-xl shadow-xl overflow-hidden border border-gray-100 z-30" style={{ width: 220, maxWidth: 'calc(100vw - 24px)' }}>
+                      <Link href="/my-listings" className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold hover:bg-gray-50 border-b" style={{ color: navy }} onClick={close}><List size={15} /> {T.myListings}</Link>
+                      <Link href="/coins" className="flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-gray-50 text-gray-800" onClick={close}><Coins size={15} /> {T.coinsWallet}</Link>
+                      <Link href="/subscriptions" className="flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-gray-50 text-gray-800" onClick={close}><Star size={15} /> {T.sellerPlans}</Link>
+                      <Link href="/referral" className="flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-gray-50 text-gray-800" onClick={close}><Gift size={15} /> {T.referEarn}</Link>
                       {(user.role === 'admin' || user.role === 'staff') && (
                         <Link href="/staff" className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold hover:bg-gray-50 border-t" style={{ color: navy }} onClick={close}>
                           <Wrench size={15} /> {T.staffDashboard}
@@ -334,7 +401,7 @@ function NavbarView({ pathname, tab }: { pathname: string | null; tab: string | 
             </div>
 
             {/* Auth + language */}
-            <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+            <div className="flex flex-col gap-3 pt-3 border-t border-gray-100">
               {user ? (
                 <button onClick={() => { logout(); closeMobile(); }}
                   className="flex items-center gap-2 text-sm text-red-600 cursor-pointer" style={{ background: 'none', border: 'none', font: 'inherit' }}>
@@ -345,14 +412,68 @@ function NavbarView({ pathname, tab }: { pathname: string | null; tab: string | 
                   {T.signIn}
                 </Link>
               )}
-              <div className="flex gap-1.5">
-                {(['en', 'fr', 'rw'] as Lang[]).map(code => (
-                  <button key={code} onClick={() => setLang(code)}
-                    className="transition text-[11px] font-semibold cursor-pointer px-2 py-0.5 rounded"
-                    style={{ border: `1px solid ${lang === code ? navy : '#cdd4f0'}`, background: lang === code ? navy : 'transparent', color: lang === code ? '#fff' : '#6b7280' }}>
-                    {code.toUpperCase()}
-                  </button>
-                ))}
+
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">Language</p>
+                <div className="flex gap-2">
+                  {(['en', 'fr', 'rw'] as Lang[]).map(code => (
+                    <button key={code} onClick={() => setLang(code)}
+                      className="transition text-[11px] font-semibold cursor-pointer px-3 py-1.5 rounded-lg flex-1"
+                      style={{
+                        border: `1.5px solid ${lang === code ? navy : '#e5e7eb'}`,
+                        background: lang === code ? navy : '#f9fafb',
+                        color: lang === code ? '#fff' : '#374151',
+                        boxShadow: lang === code ? '0 2px 8px rgba(15, 30, 66, 0.3)' : 'none',
+                      }}>
+                      {code.toUpperCase()}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">Currency</p>
+                <div className="flex flex-col gap-1">
+                  {currencies.map(c => (
+                    <button
+                      key={c.code}
+                      onClick={() => setCurrency(c.code)}
+                      className="w-full text-left px-3 py-2 text-xs rounded-lg transition flex items-center justify-between"
+                      style={{
+                        border: `1px solid ${currency === c.code ? '#E85D04' : '#e5e7eb'}`,
+                        background: currency === c.code ? 'rgba(232, 93, 4, 0.05)' : '#fff',
+                        color: currency === c.code ? '#E85D04' : '#374151',
+                      }}
+                      onMouseEnter={e => {
+                        if (currency !== c.code) {
+                          e.currentTarget.style.background = '#f9fafb';
+                        }
+                      }}
+                      onMouseLeave={e => {
+                        if (currency !== c.code) {
+                          e.currentTarget.style.background = '#fff';
+                        }
+                      }}
+                    >
+                      <span className="flex items-center gap-2">
+                        <span style={{
+                          fontSize: 10,
+                          fontWeight: 700,
+                          background: currency === c.code ? 'rgba(232, 93, 4, 0.1)' : '#f3f4f6',
+                          padding: '2px 5px',
+                          borderRadius: 3,
+                          color: currency === c.code ? '#E85D04' : '#6b7280'
+                        }}>
+                          {c.code}
+                        </span>
+                        <span className="font-medium">{c.name}</span>
+                      </span>
+                      {currency === c.code && (
+                        <span style={{ color: '#E85D04', fontSize: 10 }}>✓</span>
+                      )}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
@@ -360,7 +481,7 @@ function NavbarView({ pathname, tab }: { pathname: string | null; tab: string | 
       )}
 
       {/* ── MAIN NAV (desktop) ── */}
-      <nav className="hidden md:flex px-5 items-center justify-between sticky top-0 z-50" style={{ background: navy }}>
+      <nav className="hidden md:flex px-5 items-center justify-between sticky top-0 z-40" style={{ background: navy }}>
         <div className="flex">
           {NAV_LINKS.map(({ key, href, label, icon }) => {
             const isActive = key === activeKey;
@@ -376,7 +497,7 @@ function NavbarView({ pathname, tab }: { pathname: string | null; tab: string | 
                     href={href}
                     className="text-sm px-4 py-3 transition block flex items-center gap-1"
                     style={{
-                      color:        '#cdd4f0',
+                      color: '#cdd4f0',
                       borderBottom: (isActive || catsOpen) ? `3px solid ${org}` : '3px solid transparent',
                       textDecoration: 'none',
                     }}
@@ -393,7 +514,7 @@ function NavbarView({ pathname, tab }: { pathname: string | null; tab: string | 
                     {label} <span style={{ fontSize: 9 }}>▾</span>
                   </Link>
                   {catsOpen && (
-                    <div className="absolute left-0 top-full bg-white rounded-b-lg shadow-2xl border border-gray-100 z-50 py-2 min-w-56 max-h-[calc(100vh-80px)] overflow-y-auto">
+                    <div className="absolute left-0 top-full bg-white rounded-b-lg shadow-2xl border border-gray-100 z-30 py-2 min-w-56 max-h-[calc(100vh-80px)] overflow-y-auto">
                       {CAT_LINKS.map(({ label: cLabel, href: cHref, disabled }) => (
                         disabled ? (
                           <span
@@ -428,7 +549,7 @@ function NavbarView({ pathname, tab }: { pathname: string | null; tab: string | 
                 href={href}
                 className="text-sm px-4 py-3 transition block flex items-center gap-1.5"
                 style={{
-                  color:        '#cdd4f0',
+                  color: '#cdd4f0',
                   borderBottom: isActive ? `3px solid ${org}` : '3px solid transparent',
                   textDecoration: 'none',
                 }}
@@ -463,45 +584,45 @@ function NavbarView({ pathname, tab }: { pathname: string | null; tab: string | 
 
       {/* ── CATEGORY PILLS (desktop) ── */}
       {!isListings && (
-      <div className="hidden md:flex px-5 py-1.5 gap-2 flex-wrap sticky z-40" style={{ background: '#0f1e42', borderTop: '1px solid rgba(255,255,255,0.25)', top: 44 }}>
-        {CAT_LINKS.map(({ label, href, disabled }, i) => (
-          disabled ? (
-            <span
-              key={label}
-              className="text-xs font-medium"
-              title="Coming soon"
-              style={{
-                padding: '5px 14px', borderRadius: 3,
-                border: '1px solid #4a5580',
-                background: 'transparent',
-                color: '#6a7090',
-                cursor: 'not-allowed',
-                opacity: 0.55,
-              }}
-            >
-              {label}
-            </span>
-          ) : (
-            <Link
-              key={label}
-              href={href}
-              className="text-xs font-medium transition"
-              style={{
-                padding:      '5px 14px',
-                borderRadius: 3,
-                border:       `1px solid ${i === 0 ? org : '#6a7dbf'}`,
-                background:   i === 0 ? org : 'transparent',
-                color:        i === 0 ? '#fff' : '#c5cce8',
-                textDecoration: 'none',
-              }}
-              onMouseEnter={e => { e.currentTarget.style.background = i === 0 ? org : 'rgba(255,255,255,0.1)'; e.currentTarget.style.color = '#fff'; }}
-              onMouseLeave={e => { e.currentTarget.style.background = i === 0 ? org : 'transparent'; e.currentTarget.style.color = i === 0 ? '#fff' : '#c5cce8'; }}
-            >
-              {label}
-            </Link>
-          )
-        ))}
-      </div>
+        <div className="hidden md:flex px-5 py-1.5 gap-2 flex-wrap sticky z-40" style={{ background: '#0f1e42', borderTop: '1px solid rgba(255,255,255,0.25)', top: 44 }}>
+          {CAT_LINKS.map(({ label, href, disabled }, i) => (
+            disabled ? (
+              <span
+                key={label}
+                className="text-xs font-medium"
+                title="Coming soon"
+                style={{
+                  padding: '5px 14px', borderRadius: 3,
+                  border: '1px solid #4a5580',
+                  background: 'transparent',
+                  color: '#6a7090',
+                  cursor: 'not-allowed',
+                  opacity: 0.55,
+                }}
+              >
+                {label}
+              </span>
+            ) : (
+              <Link
+                key={label}
+                href={href}
+                className="text-xs font-medium transition"
+                style={{
+                  padding: '5px 14px',
+                  borderRadius: 3,
+                  border: `1px solid ${i === 0 ? org : '#6a7dbf'}`,
+                  background: i === 0 ? org : 'transparent',
+                  color: i === 0 ? '#fff' : '#c5cce8',
+                  textDecoration: 'none',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.background = i === 0 ? org : 'rgba(255,255,255,0.1)'; e.currentTarget.style.color = '#fff'; }}
+                onMouseLeave={e => { e.currentTarget.style.background = i === 0 ? org : 'transparent'; e.currentTarget.style.color = i === 0 ? '#fff' : '#c5cce8'; }}
+              >
+                {label}
+              </Link>
+            )
+          ))}
+        </div>
       )}
     </>
   );

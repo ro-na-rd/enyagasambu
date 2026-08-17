@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import api from '@/lib/api';
+import { useCurrency } from '@/context/CurrencyContext';
 import { Heart, Search, Filter, TrendingUp, Users, Smartphone, CreditCard } from '@/lib/icons';
 
 const ORG = '#E85D04';
@@ -39,6 +40,7 @@ export default function AdminDonationsPage() {
   const [statusFilter, setStatusFilter] = useState('');
   const [methodFilter, setMethodFilter] = useState('');
   const [fetching, setFetching] = useState(true);
+  const { format } = useCurrency();
 
   const load = (q = '', status = '', method = '') => {
     const params = new URLSearchParams();
@@ -70,7 +72,7 @@ export default function AdminDonationsPage() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
         <div className="rounded-2xl p-4" style={{ background: 'linear-gradient(135deg, #0f1e42, #1a2d5a)', boxShadow: '0 8px 24px rgba(15,30,66,0.15)' }}>
           <p className="text-[11px] uppercase tracking-widest text-white/60 font-semibold">Total Raised</p>
-          <p className="text-xl lg:text-2xl font-extrabold text-white mt-1">{stats.total_raised.toLocaleString()} RWF</p>
+          <p className="text-xl lg:text-2xl font-extrabold text-white mt-1">{format(stats.total_raised)}</p>
         </div>
         <div className="rounded-2xl p-4 border border-gray-200" style={{ background: '#ffffff' }}>
           <p className="text-[11px] uppercase tracking-widest text-gray-400 font-semibold">Confirmed</p>
@@ -163,7 +165,7 @@ export default function AdminDonationsPage() {
                   </td>
                   <td className="px-4 py-3.5 text-gray-500">{d.donor_phone || '—'}</td>
                   <td className="px-4 py-3.5 text-right font-bold whitespace-nowrap" style={{ color: ORG }}>
-                    {d.amount_rwf.toLocaleString()} RWF
+                    {format(d.amount_rwf)}
                   </td>
                   <td className="px-4 py-3.5 text-center">
                     <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-full bg-gray-100 text-gray-600">

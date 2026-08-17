@@ -122,41 +122,6 @@ export default function BrokerDashboardPage() {
         </div>
       </div>
 
-      {/* User Profile Card */}
-      <div className="px-4 lg:px-8 -mt-6 mb-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 lg:p-8">
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-              <div className="flex items-center gap-4">
-                <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#0f1e42] to-[#1a2952] flex items-center justify-center text-white font-bold text-2xl">
-                  {user?.name?.charAt(0).toUpperCase()}
-                </div>
-                <div>
-                  <h2 className="text-2xl font-bold text-gray-900">{user?.name}</h2>
-                  <p className="text-gray-500 mt-1">Certified Broker • {user?.email}</p>
-                </div>
-              </div>
-              <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
-                {user?.phone && (
-                  <div className="flex items-center gap-2">
-                    <Phone size={16} style={{ color: ORG }} />
-                    <span>{user.phone}</span>
-                  </div>
-                )}
-                <div className="flex items-center gap-2">
-                  <Mail size={16} style={{ color: ORG }} />
-                  <span>{user?.email}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <MapPin size={16} style={{ color: ORG }} />
-                  <span>Kigali, Rwanda</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* Main Content */}
       <div className="px-4 lg:px-8 py-8">
         <div className="max-w-7xl mx-auto">

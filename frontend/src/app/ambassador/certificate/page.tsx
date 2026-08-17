@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { useCurrency } from '@/context/CurrencyContext';
 import api from '@/lib/api';
 import { Check, Lock, Download, Camera } from '@/lib/icons';
 import AmbassadorCertificate from '@/components/AmbassadorCertificate';
@@ -9,9 +10,8 @@ const NAVY = '#0f1e42';
 const ORG = '#E85D04';
 const DEFAULT_PRICE = 2000;
 
-const fmtRWF = (n: number) => 'RWF ' + Number(n || 0).toLocaleString('en-US');
-
 function CertWatermark({ price }: { price: number }) {
+  const { format } = useCurrency();
   return (
     <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-4 pointer-events-none"
       style={{
@@ -29,7 +29,7 @@ function CertWatermark({ price }: { price: number }) {
           style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>
           <Lock size={36} className="mx-auto mb-2 text-white/80" />
           <p className="text-white font-extrabold text-lg">Preview Only</p>
-          <p className="text-white/60 text-sm mt-1">Pay {fmtRWF(price)} to unlock & download</p>
+          <p className="text-white/60 text-sm mt-1">Pay {format(price)} to unlock & download</p>
         </div>
       </div>
     </div>
@@ -37,6 +37,7 @@ function CertWatermark({ price }: { price: number }) {
 }
 
 export default function AmbassadorCertificatePage() {
+  const { format } = useCurrency();
   const { user } = useAuth();
   const [cert, setCert] = useState<{
     cert_no?: string; status?: string; issued_date?: string; valid_until?: string;
@@ -150,7 +151,7 @@ export default function AmbassadorCertificatePage() {
             margin: 0 !important;
             page-break-inside: avoid;
           }
-          @page { size: landscape; margin: 0; }
+          @page { size: A4 landscape; margin: 0; }
         }
       `}</style>
 
@@ -159,7 +160,7 @@ export default function AmbassadorCertificatePage() {
         <p className="text-sm text-gray-500 mb-6">
           {isGenerated
             ? 'Your official ambassador certificate is ready.'
-            : `Upload your photo, then pay ${fmtRWF(certPrice)} to unlock and download your official ambassador certificate.`}
+            : `Upload your photo, then pay ${format(certPrice)} to unlock and download your official ambassador certificate.`}
         </p>
 
         {msg && (
@@ -227,7 +228,7 @@ export default function AmbassadorCertificatePage() {
                   <button onClick={handlePay} disabled={paying}
                     className="text-sm px-6 py-2.5 rounded-lg text-white font-bold transition disabled:opacity-50 flex items-center gap-2"
                     style={{ background: ORG }}>
-                    {paying ? 'Processing...' : <><Lock size={14} /> Pay {fmtRWF(certPrice)}</>}
+                    {paying ? 'Processing...' : <><Lock size={14} /> Pay {format(certPrice)}</>}
                   </button>
                 </div>
               </>

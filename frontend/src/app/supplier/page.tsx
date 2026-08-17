@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import api from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
+import { useCurrency } from '@/context/CurrencyContext';
 import Link from 'next/link';
 import { LayoutDashboard, Store, Home, BadgeCheck, Loader2, ArrowUpRight, Mail, Phone, MapPin } from '@/lib/icons';
 
@@ -30,6 +31,7 @@ interface MyListing {
 }
 
 export default function SupplierDashboard() {
+  const { format } = useCurrency();
   const { user } = useAuth();
   const [profile, setProfile] = useState<SupplierProfile | null>(null);
   const [listings, setListings] = useState<MyListing[]>([]);
@@ -185,7 +187,7 @@ export default function SupplierDashboard() {
                   <p className="text-xs text-gray-400 mt-0.5">Posted {new Date(l.created_at).toLocaleDateString()}</p>
                 </div>
                 <div className="flex items-center gap-3 shrink-0">
-                  {l.price != null && <span className="text-sm font-bold" style={{ color: ORG }}>{Number(l.price).toLocaleString()} {l.currency || 'RWF'}</span>}
+                  {l.price != null && <span className="text-sm font-bold" style={{ color: ORG }}>{format(Number(l.price))}</span>}
                   <span className="text-[10px] font-bold px-2 py-1 rounded-full capitalize"
                     style={{ background: l.status === 'active' ? '#dcfce7' : '#f3f4f6', color: l.status === 'active' ? '#059669' : '#6b7280' }}>
                     {l.status}

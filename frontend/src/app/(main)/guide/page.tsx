@@ -205,10 +205,7 @@ export default function GuidePage() {
             }} />
         </div>
         <div className="relative z-10 max-w-5xl mx-auto px-4 pt-12 pb-16 text-center">
-          <div className="w-14 h-14 rounded-2xl mx-auto mb-5 flex items-center justify-center overflow-hidden"
-            style={{ boxShadow: `0 4px 20px ${ORG}44` }}>
-            <img src="/logo.jpg" alt="E-Nyagasambu" className="w-full h-full object-cover" />
-          </div>
+          <img src="/assets/logo.png" alt="E-Nyagasambu" className="w-14 h-14 mx-auto mb-5 object-contain" />
           <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-3">
             How It Works
           </h1>

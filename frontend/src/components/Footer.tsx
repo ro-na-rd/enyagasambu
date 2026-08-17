@@ -47,9 +47,7 @@ export default function Footer() {
           <div className="lg:col-span-4">
             <a href="/" className="inline-block">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-full overflow-hidden shrink-0 border-2" style={{ borderColor: '#E85D04' }}>
-                  <img src="/logo.svg" alt="E-Nyagasambu" className="w-full h-full object-cover" />
-                </div>
+                <img src="/assets/logo.png" alt="E-Nyagasambu" className="w-12 h-12 object-contain shrink-0" />
                 <div>
                   <p className="text-2xl font-extrabold tracking-tight">
                     <span style={{ color: '#E85D04' }}>E-</span>Nyagasambu

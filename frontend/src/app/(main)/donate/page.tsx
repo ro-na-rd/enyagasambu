@@ -2,12 +2,13 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import api from '@/lib/api';
 import { useLanguage } from '@/context/LanguageContext';
+import { useCurrency } from '@/context/CurrencyContext';
 import { Heart, Phone, CreditCard, CheckCircle, Loader2, Sparkles, Shield, Smartphone } from '@/lib/icons';
 
 const NAVY = '#0f1e42';
 const ORG = '#E85D04';
 
-const PRESETS = [1000, 2000, 5000, 10000, 25000, 50000];
+const PRESETS: number[] = [];
 
 type Step = 'form' | 'pay' | 'waiting' | 'otp' | 'success';
 
@@ -21,10 +22,10 @@ interface RecentDonor {
 
 export default function DonatePage() {
   const { T } = useLanguage();
+  const { format } = useCurrency();
   const [step, setStep] = useState<Step>('form');
   const [method, setMethod] = useState<'momo' | 'card'>('momo');
   const [provider, setProvider] = useState<'mtn' | 'airtel'>('mtn');
-  const [amount, setAmount] = useState<number>(5000);
   const [customAmount, setCustomAmount] = useState('');
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
@@ -45,12 +46,12 @@ export default function DonatePage() {
 
   const [recent, setRecent] = useState<RecentDonor[]>([]);
 
-  const effectiveAmount = customAmount ? parseInt(customAmount) : amount;
+  const effectiveAmount = parseInt(customAmount) || 0;
 
   const loadPublic = useCallback(() => {
     api.get('/donations').then(({ data }) => {
       setRecent(data.recent || []);
-    }).catch(() => {});
+    }).catch(() => { });
   }, []);
 
   useEffect(() => { loadPublic(); }, [loadPublic]);
@@ -68,8 +69,9 @@ export default function DonatePage() {
 
   const validateBase = () => {
     if (!name.trim()) return 'Please enter your name.';
-    if (!effectiveAmount || isNaN(effectiveAmount) || effectiveAmount < 100) {
-      return 'Please enter a donation amount of at least 100 RWF.';
+    const amountValue = parseInt(customAmount);
+    if (!customAmount || isNaN(amountValue) || amountValue < 100) {
+      return `Please enter a donation amount of at least ${format(100)}.`;
     }
     return '';
   };
@@ -79,6 +81,7 @@ export default function DonatePage() {
     if (baseErr) { setError(baseErr); return; }
     const digits = phone.trim().replace(/\D/g, '');
     if (digits.length < 10) { setError('Please enter the full phone number (at least 10 digits).'); return; }
+    const amountValue = parseInt(customAmount);
     setError('');
     setSubmitting(true);
     try {
@@ -86,7 +89,7 @@ export default function DonatePage() {
         donor_name: name.trim(),
         donor_phone: phone.trim(),
         donor_email: email.trim() || undefined,
-        amount: effectiveAmount,
+        amount: amountValue,
         provider,
         message: message.trim() || undefined,
       });
@@ -163,6 +166,7 @@ export default function DonatePage() {
     if (cardNumber.replace(/\s+/g, '').length < 12) { setError('Please enter a valid card number.'); return; }
     if (!cardName.trim()) { setError('Please enter the name on the card.'); return; }
     if (!cardExpiry.trim() || !cardCvv.trim()) { setError('Please enter the card expiry and CVV.'); return; }
+    const amountValue = parseInt(customAmount);
     setError('');
     setSubmitting(true);
     try {
@@ -170,7 +174,7 @@ export default function DonatePage() {
         donor_name: name.trim(),
         donor_phone: phone.trim(),
         donor_email: email.trim() || undefined,
-        amount: effectiveAmount,
+        amount: amountValue,
         card_number: cardNumber,
         card_name: cardName,
         card_expiry: cardExpiry,
@@ -222,23 +226,8 @@ export default function DonatePage() {
           {step === 'form' && (
             <>
               <h2 className="text-xl font-bold text-gray-900">{T.donationAmount}</h2>
-              <div className="mt-4 grid grid-cols-3 gap-2">
-                {PRESETS.map((p) => (
-                  <button
-                    key={p}
-                    type="button"
-                    onClick={() => { setAmount(p); setCustomAmount(''); }}
-                    className={`py-2.5 rounded-xl text-sm font-semibold transition border-2 ${
-                      amount === p && !customAmount ? 'text-white border-transparent' : 'border-gray-200 text-gray-700 hover:border-[#E85D04]'
-                    }`}
-                    style={amount === p && !customAmount ? { background: ORG } : {}}
-                  >
-                    {p.toLocaleString()}
-                  </button>
-                ))}
-              </div>
               <div className="mt-3">
-                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Custom amount</label>
+                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Enter amount</label>
                 <input
                   type="number"
                   min={100}
@@ -286,9 +275,8 @@ export default function DonatePage() {
                 <button
                   type="button"
                   onClick={() => setMethod('momo')}
-                  className={`flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold border-2 transition ${
-                    method === 'momo' ? 'text-white border-transparent' : 'border-gray-200 text-gray-700 hover:border-[#E85D04]'
-                  }`}
+                  className={`flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold border-2 transition ${method === 'momo' ? 'text-white border-transparent' : 'border-gray-200 text-gray-700 hover:border-[#E85D04]'
+                    }`}
                   style={method === 'momo' ? { background: ORG } : {}}
                 >
                   <Smartphone size={16} /> {T.mobileMoney}
@@ -296,9 +284,8 @@ export default function DonatePage() {
                 <button
                   type="button"
                   onClick={() => setMethod('card')}
-                  className={`flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold border-2 transition ${
-                    method === 'card' ? 'text-white border-transparent' : 'border-gray-200 text-gray-700 hover:border-[#E85D04]'
-                  }`}
+                  className={`flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold border-2 transition ${method === 'card' ? 'text-white border-transparent' : 'border-gray-200 text-gray-700 hover:border-[#E85D04]'
+                    }`}
                   style={method === 'card' ? { background: ORG } : {}}
                 >
                   <CreditCard size={16} /> {T.bankCard}
@@ -325,9 +312,8 @@ export default function DonatePage() {
                           key={p}
                           type="button"
                           onClick={() => setProvider(p)}
-                          className={`py-2.5 rounded-xl text-sm font-semibold border-2 transition ${
-                            provider === p ? 'text-white border-transparent' : 'border-gray-200 text-gray-700 hover:border-[#E85D04]'
-                          }`}
+                          className={`py-2.5 rounded-xl text-sm font-semibold border-2 transition ${provider === p ? 'text-white border-transparent' : 'border-gray-200 text-gray-700 hover:border-[#E85D04]'
+                            }`}
                           style={provider === p ? { background: NAVY } : {}}
                         >
                           {p === 'mtn' ? 'MTN MoMo' : 'Airtel Money'}
@@ -342,7 +328,7 @@ export default function DonatePage() {
                     style={{ background: ORG }}
                   >
                     {submitting ? <Loader2 size={18} className="animate-spin" /> : <Heart size={18} />}
-                    {T.donateNow} — {effectiveAmount.toLocaleString()} RWF
+                    {T.donateNow} — {format(parseInt(customAmount) || 0)}
                   </button>
                 </div>
               ) : (
@@ -402,7 +388,7 @@ export default function DonatePage() {
                     style={{ background: ORG }}
                   >
                     {submitting ? <Loader2 size={18} className="animate-spin" /> : <Heart size={18} />}
-                    {T.donateNow} — {effectiveAmount.toLocaleString()} RWF
+                    {T.donateNow} — {format(parseInt(customAmount) || 0)}
                   </button>
                 </div>
               )}
@@ -418,7 +404,7 @@ export default function DonatePage() {
               <div className="bg-orange-50 rounded-xl px-4 py-3 text-sm text-gray-700">
                 <p className="font-medium">{T.donorPhone}: {phone}</p>
                 <p className="text-xs text-gray-500 mt-1">
-                  {effectiveAmount.toLocaleString()} RWF via {provider === 'mtn' ? 'MTN MoMo' : 'Airtel Money'} — approve the prompt on your phone.
+                  {format(parseInt(customAmount) || 0)} via {provider === 'mtn' ? 'MTN MoMo' : 'Airtel Money'} — approve the prompt on your phone.
                 </p>
               </div>
               <button
@@ -490,7 +476,7 @@ export default function DonatePage() {
               </div>
               <h2 className="text-2xl font-extrabold text-gray-900">{T.thankYou}</h2>
               <p className="text-gray-500 text-sm max-w-sm mx-auto">
-                Your donation of <strong>{effectiveAmount.toLocaleString()} RWF</strong> has been received
+                Your donation of <strong>{format(effectiveAmount)}</strong> has been received
                 {donationId ? ` (Ref #${donationId})` : ''}. It will appear in the supporter list below shortly.
               </p>
               <button
@@ -527,7 +513,7 @@ export default function DonatePage() {
                   </p>
                 </div>
                 <span className="text-sm font-bold whitespace-nowrap" style={{ color: ORG }}>
-                  {d.amount_rwf.toLocaleString()} RWF
+                  {format(d.amount_rwf)}
                 </span>
               </div>
             ))}

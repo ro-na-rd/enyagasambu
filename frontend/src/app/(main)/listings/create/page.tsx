@@ -3,6 +3,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
 import { useLanguage } from '@/context/LanguageContext';
+import { useCurrency } from '@/context/CurrencyContext';
 import api from '@/lib/api';
 import { Smartphone, Clock, CheckCircle, Sparkles } from '@/lib/icons';
 
@@ -18,12 +19,12 @@ interface CreateForm {
 
 interface Category { id: number; name: string; slug: string; type: string; }
 
-const DURATION_PRICES: Record<number, number> = { 3: 500, 7: 1000, 30: 3500 };
-
 export default function CreateListingPage() {
   const { T } = useLanguage();
+  const { format } = useCurrency();
   const router = useRouter();
   const [categories, setCategories] = useState<Category[]>([]);
+  const [durationPrices, setDurationPrices] = useState<Record<number, number>>({ 3: 500, 7: 1000, 30: 3500 });
   const [images, setImages] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
   const [error, setError] = useState('');
@@ -48,7 +49,17 @@ export default function CreateListingPage() {
     api.get('/listings/categories').then(({ data }) => setCategories(data.categories));
     api.get('/settings').then(({ data }) => {
       setPostingFree(data.settings?.posting_free === 'true');
-    }).catch(() => {});
+      const prices: Record<number, number> = {};
+      Object.entries(data.settings).forEach(([key, value]) => {
+        if (key.startsWith('listing_duration_')) {
+          const days = parseInt(key.replace('listing_duration_', '').replace('_days', ''));
+          prices[days] = parseInt(value as string);
+        }
+      });
+      if (Object.keys(prices).length > 0) {
+        setDurationPrices(prices);
+      }
+    }).catch(() => { });
   }, []);
 
   const handleImages = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -191,7 +202,7 @@ export default function CreateListingPage() {
           </div>
           <h2 className="text-xl font-bold text-gray-900">{T.completePayment}</h2>
           <p className="text-gray-500 text-sm">
-            {T.payViaMomo(DURATION_PRICES[durationDays], durationDays)}
+            {T.payViaMomo(durationPrices[durationDays], durationDays)}
           </p>
           <div className="bg-orange-50 rounded-lg px-4 py-3 text-sm text-gray-700">
             <p className="font-medium">{T.phoneLabel}: {sellerPhone}</p>
@@ -371,25 +382,25 @@ export default function CreateListingPage() {
             </select>
           </div>
         </div>
-          <div className="mt-2">
-            <label className="block text-sm font-medium text-gray-700 mb-1">{T.priceType}</label>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => setNegotiable(false)}
-                className={`border rounded-lg px-3 py-2.5 text-sm font-medium transition ${!negotiable ? 'border-[#E85D04] bg-orange-50 text-[#E85D04]' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}
-              >
-                {T.notNegotiable}
-              </button>
-              <button
-                type="button"
-                onClick={() => setNegotiable(true)}
-                className={`border rounded-lg px-3 py-2.5 text-sm font-medium transition ${negotiable ? 'border-[#E85D04] bg-orange-50 text-[#E85D04]' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}
-              >
-                {T.negotiable}
-              </button>
-            </div>
+        <div className="mt-2">
+          <label className="block text-sm font-medium text-gray-700 mb-1">{T.priceType}</label>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => setNegotiable(false)}
+              className={`border rounded-lg px-3 py-2.5 text-sm font-medium transition ${!negotiable ? 'border-[#E85D04] bg-orange-50 text-[#E85D04]' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}
+            >
+              {T.notNegotiable}
+            </button>
+            <button
+              type="button"
+              onClick={() => setNegotiable(true)}
+              className={`border rounded-lg px-3 py-2.5 text-sm font-medium transition ${negotiable ? 'border-[#E85D04] bg-orange-50 text-[#E85D04]' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}
+            >
+              {T.negotiable}
+            </button>
           </div>
+        </div>
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">{T.locationField}</label>
@@ -409,14 +420,13 @@ export default function CreateListingPage() {
                   key={d}
                   type="button"
                   onClick={() => setDurationDays(d)}
-                  className={`border rounded-lg px-3 py-3 text-sm font-medium transition ${
-                    durationDays === d
-                      ? 'border-[#E85D04] bg-orange-50 text-[#E85D04]'
-                      : 'border-gray-200 text-gray-600 hover:border-gray-300'
-                  }`}
+                  className={`border rounded-lg px-3 py-3 text-sm font-medium transition ${durationDays === d
+                    ? 'border-[#E85D04] bg-orange-50 text-[#E85D04]'
+                    : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                    }`}
                 >
                   <div>{d} days</div>
-                  <div className="text-xs mt-1 opacity-80">{DURATION_PRICES[d].toLocaleString()} RWF</div>
+                  <div className="text-xs mt-1 opacity-80">{format(durationPrices[d])}</div>
                 </button>
               ))}
             </div>
@@ -471,7 +481,7 @@ export default function CreateListingPage() {
           disabled={isSubmitting || postSuccess}
           className="w-full bg-[#E85D04] text-white font-semibold py-3 rounded-lg hover:bg-[#e05d00] transition disabled:opacity-60"
         >
-          {postSuccess ? 'Posted!' : isSubmitting ? 'Processing...' : postingFree ? 'Post Listing (Free)' : `Pay & Post (${DURATION_PRICES[durationDays].toLocaleString()} RWF)`}
+          {postSuccess ? 'Posted!' : isSubmitting ? 'Processing...' : postingFree ? 'Post Listing (Free)' : `Pay & Post (${format(durationPrices[durationDays])})`}
         </button>
       </form>
     </div>

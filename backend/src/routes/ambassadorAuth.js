@@ -1,7 +1,7 @@
 const router = require('express').Router();
 const { body, validationResult } = require('express-validator');
 const { authenticate, requireAmbassador } = require('../middleware/auth');
-const { register, login, me } = require('../controllers/ambassadorAuthController');
+const { register, login, me, updateProfile, changePassword } = require('../controllers/ambassadorAuthController');
 
 const validate = (req, res, next) => {
   const errs = validationResult(req);
@@ -33,5 +33,17 @@ router.post(
 );
 
 router.get('/me', authenticate, requireAmbassador, me);
+router.put('/profile', authenticate, requireAmbassador, updateProfile);
+router.post(
+  '/change-password',
+  [
+    body('currentPassword').notEmpty().withMessage('Current password is required'),
+    body('newPassword').isLength({ min: 6 }).withMessage('New password must be at least 6 characters'),
+    validate,
+  ],
+  authenticate,
+  requireAmbassador,
+  changePassword
+);
 
 module.exports = router;

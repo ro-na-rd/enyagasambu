@@ -29,3 +29,6 @@ Thumbs.db
 
 # Uploads (runtime data)
 backend/uploads/
+
+# AI Code Review temporary files
+.ai-code-review/

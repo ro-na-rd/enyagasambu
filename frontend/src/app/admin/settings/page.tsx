@@ -15,13 +15,19 @@ export default function AdminSettingsPage() {
   const [loading, setLoading] = useState(true);
   const [postingFee, setPostingFee] = useState('400');
   const [postingFeeEnabled, setPostingFeeEnabled] = useState(true);
+  const [duration3Days, setDuration3Days] = useState('500');
+  const [duration7Days, setDuration7Days] = useState('1000');
+  const [duration30Days, setDuration30Days] = useState('3500');
 
   useEffect(() => {
     api.get('/settings').then(({ data }) => {
       const s = data.settings;
       setPostingFee(s.posting_fee || '400');
       setPostingFeeEnabled(s.posting_free === 'false');
-    }).catch(() => {}).finally(() => setLoading(false));
+      setDuration3Days(s.listing_duration_3_days || '500');
+      setDuration7Days(s.listing_duration_7_days || '1000');
+      setDuration30Days(s.listing_duration_30_days || '3500');
+    }).catch(() => { }).finally(() => setLoading(false));
   }, []);
 
   const handleSave = async (e: React.FormEvent) => {
@@ -30,7 +36,10 @@ export default function AdminSettingsPage() {
       await api.put('/settings', {
         settings: {
           posting_fee: postingFee,
-          posting_free: postingFeeEnabled ? 'false' : 'true'
+          posting_free: postingFeeEnabled ? 'false' : 'true',
+          listing_duration_3_days: duration3Days,
+          listing_duration_7_days: duration7Days,
+          listing_duration_30_days: duration30Days,
         }
       });
       setSaved(true);
@@ -128,6 +137,49 @@ export default function AdminSettingsPage() {
               </button>
               {saved && <span className="text-sm font-medium" style={{ color: '#2ea043' }}><Check size={14} className="inline" /> Saved</span>}
             </div>
+          </div>
+        </div>
+
+        <div className="rounded-2xl p-6" style={{ background: '#ffffff', border: '1px solid rgba(0,0,0,0.05)' }}>
+          <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-4">Listing Duration Pricing</h2>
+          <p className="text-xs text-gray-600 mb-4">Set the pricing for different listing duration options (in RWF).</p>
+
+          <div className="space-y-4">
+            <div>
+              <label className="block text-xs text-gray-600 mb-1">3 Days (RWF)</label>
+              <input
+                type="number"
+                value={duration3Days}
+                onChange={(e) => setDuration3Days(e.target.value)}
+                className="border rounded-lg px-3 py-2.5 text-sm w-full max-w-[200px] focus:outline-none focus:ring-2 focus:ring-orange-500/30"
+                style={{ background: '#f6f8fa', borderColor: '#d0d7de', color: '#1a1a1a' }} />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-600 mb-1">7 Days (RWF)</label>
+              <input
+                type="number"
+                value={duration7Days}
+                onChange={(e) => setDuration7Days(e.target.value)}
+                className="border rounded-lg px-3 py-2.5 text-sm w-full max-w-[200px] focus:outline-none focus:ring-2 focus:ring-orange-500/30"
+                style={{ background: '#f6f8fa', borderColor: '#d0d7de', color: '#1a1a1a' }} />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-600 mb-1">30 Days (RWF)</label>
+              <input
+                type="number"
+                value={duration30Days}
+                onChange={(e) => setDuration30Days(e.target.value)}
+                className="border rounded-lg px-3 py-2.5 text-sm w-full max-w-[200px] focus:outline-none focus:ring-2 focus:ring-orange-500/30"
+                style={{ background: '#f6f8fa', borderColor: '#d0d7de', color: '#1a1a1a' }} />
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 pt-4">
+            <button onClick={handleSave} className="text-white text-sm font-semibold px-5 py-2.5 rounded-lg transition"
+              style={{ background: `linear-gradient(135deg, ${BRAND.orange}, ${BRAND.orangeDark})` }}>
+              Save Duration Pricing
+            </button>
+            {saved && <span className="text-sm font-medium" style={{ color: '#2ea043' }}><Check size={14} className="inline" /> Saved</span>}
           </div>
         </div>
 

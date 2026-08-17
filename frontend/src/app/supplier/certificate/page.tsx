@@ -4,6 +4,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useCurrency } from '@/context/CurrencyContext';
 import api from '@/lib/api';
 import { Check, Lock, Download, Camera } from '@/lib/icons';
+import { SITE_DOMAIN, SITE_URL } from '@/lib/config';
 
 const NAVY = '#0f1e42';
 const ORG = '#E85D04';
@@ -12,6 +13,9 @@ const DEFAULT_PRICE = 2000;
 const fmtRWF = (n: number) => 'RWF ' + Number(n || 0).toLocaleString('en-US');
 
 function CertPreview({ name, businessName, photo, certNo, issued, validUntil }: { name: string; businessName?: string | null; photo?: string | null; certNo?: string; issued: string; validUntil: string }) {
+  const verifyUrl = `${SITE_URL}/verify-supplier/${certNo || 'pending'}`;
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(verifyUrl)}`;
+
   return (
     <div className="relative bg-white rounded-xl overflow-hidden border border-gray-200 select-none"
       style={{ userSelect: 'none', WebkitUserSelect: 'none' }}
@@ -30,9 +34,7 @@ function CertPreview({ name, businessName, photo, certNo, issued, validUntil }: 
       <div className="absolute top-4 bottom-4 right-5 w-0.5 opacity-30" style={{background:`linear-gradient(180deg,${ORG},transparent 40%,transparent 60%,${ORG})`}}/>
       <div className="relative z-10 p-8">
         <div className="flex items-center gap-4 mb-6">
-          <div className="w-14 h-14 rounded-full flex items-center justify-center overflow-hidden border-2" style={{borderColor:ORG}}>
-            <img src="/logo.svg" alt="E-Nyagasambu" className="w-full h-full object-cover" />
-          </div>
+          <img src="/assets/logo.png" alt="E-Nyagasambu" className="w-14 h-14 object-contain" />
           <div>
             <p className="font-extrabold text-lg leading-tight" style={{color:NAVY}}>E-NYAGASAMBU</p>
             <p className="font-bold tracking-widest" style={{fontSize:10,color:ORG}}>DIGITAL MARKET PLACE</p>
@@ -68,6 +70,9 @@ function CertPreview({ name, businessName, photo, certNo, issued, validUntil }: 
             <p className="text-gray-400 mb-0.5">Valid Until</p>
             <p className="font-bold" style={{color:NAVY}}>{validUntil}</p>
           </div>
+        </div>
+        <div className="mt-4 flex justify-center">
+          <img src={qrUrl} alt="Verification QR" width={80} height={80} className="rounded border border-gray-300" />
         </div>
       </div>
     </div>
@@ -153,13 +158,18 @@ export default function SupplierCertificatePage() {
     try {
       const { data } = await api.post('/supplier/certificate/pay', { phone, certificateTypeId: cert?.certificate_type_id });
       setMsg('Payment request sent. Approve on your phone.');
+      
+      // Poll for payment status
       pollRef.current = setInterval(async () => {
         try {
           const { data: statusData } = await api.get(`/supplier/certificate/payment-status/${data.referenceId}`);
           if (statusData.status === 'generated' || statusData.status === 'paid') {
             if (pollRef.current) clearInterval(pollRef.current);
-            if (statusData.status === 'generated') setMsg('Certificate is ready!');
-            else setMsg('Payment successful! Waiting for admin to generate your certificate.');
+            if (statusData.status === 'generated') {
+              setMsg('Certificate is ready!');
+            } else {
+              setMsg('Payment successful! Waiting for admin to generate your certificate.');
+            }
             await fetchCert();
             setPaying(false);
           } else if (statusData.status === 'failed') {
@@ -167,8 +177,17 @@ export default function SupplierCertificatePage() {
             setMsg('Payment failed. Try again.');
             setPaying(false);
           }
-        } catch { if (pollRef.current) clearInterval(pollRef.current); setPaying(false); }
+        } catch {
+          if (pollRef.current) clearInterval(pollRef.current);
+          setPaying(false);
+        }
       }, 5000);
+      
+      // Stop polling after 5 minutes
+      setTimeout(() => {
+        if (pollRef.current) clearInterval(pollRef.current);
+        if (paying) setPaying(false);
+      }, 300000);
     } catch (err: unknown) {
       setMsg((err as { response?: { data?: { message?: string } } })?.response?.data?.message || (err instanceof Error ? err.message : 'Payment initiation failed'));
       setPaying(false);
@@ -187,6 +206,7 @@ export default function SupplierCertificatePage() {
   const supplierPhoto = cert?.supplier_photo || cert?.photo_url || null;
   const businessName = cert?.business_name || null;
   const certPrice = cert?.type_price ?? DEFAULT_PRICE;
+  const certNo = cert?.cert_no || `ENA-SUP-${certYear}-${String(user.id).padStart(4, '0')}`;
 
   if (loading) return (
     <div className="p-8 text-center"><p className="text-gray-400 animate-pulse">Loading...</p></div>
@@ -221,7 +241,7 @@ export default function SupplierCertificatePage() {
           name={supplierName}
           businessName={businessName}
           photo={supplierPhoto}
-          certNo={cert?.cert_no}
+          certNo={certNo}
           issued={issuedDisplay}
           validUntil={validUntilDisplay}
         />

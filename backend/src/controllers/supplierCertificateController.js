@@ -2,8 +2,10 @@ const pool = require('../config/db');
 const { randomUUID: uuidv4 } = require('crypto');
 const { requestToPay, getPaymentStatus } = require('../services/momoService');
 const { uploadToS3 } = require('../services/s3Service');
+const { notifyAdmins, notifyUser } = require('../services/notificationService');
 
 const DEFAULT_CERT_PRICE = 2000;
+const REFERRAL_REWARD = 200;
 
 async function resolveType(certificateTypeId) {
   if (certificateTypeId) {
@@ -149,6 +151,8 @@ exports.initiatePayment = async (req, res) => {
       payeeNote: `E-Nyagasambu ${type.name} Certificate – ${amount.toLocaleString('en-US')} RWF`,
     });
 
+    notifyAdmins('New supplier certificate payment', `Supplier ${req.user.email || req.user.id} initiated a certificate payment of ${Number(amount).toLocaleString('en-US')} RWF.`, 'certificate', '/admin/supplier-certificates');
+
     return res.json({
       message: 'Payment request sent. Check your phone and approve the MoMo prompt.',
       referenceId,
@@ -198,6 +202,23 @@ exports.checkPayment = async (req, res) => {
         ['generated', certNo, issuedDate, validUntilStr, cert.id]
       );
 
+      notifyUser(req.user.id, 'Certificate generated', `Your supplier certificate ${certNo} is ready.`, 'certificate', '/supplier/certificate');
+
+      // Credit referrer with 200 RWF if this user was referred and bonus not yet paid
+      const [[referral]] = await pool.query(
+        'SELECT referrer_id FROM referrals WHERE referred_id = ? AND bonus_paid = 0 LIMIT 1',
+        [req.user.id]
+      );
+      if (referral) {
+        await pool.query('UPDATE users SET coins = coins + ? WHERE id = ?', [REFERRAL_REWARD, referral.referrer_id]);
+        await pool.query(
+          "INSERT INTO coin_transactions (user_id, amount, type, reference) VALUES (?, ?, 'referral_bonus', ?)",
+          [referral.referrer_id, REFERRAL_REWARD, `cert_referral_${req.user.id}`]
+        );
+        await pool.query('UPDATE referrals SET bonus_paid = 1 WHERE referrer_id = ? AND referred_id = ?', [referral.referrer_id, req.user.id]);
+        notifyUser(referral.referrer_id, 'Referral reward earned', `You earned ${REFERRAL_REWARD} RWF for referring a new supplier.`, 'reward', '/supplier/rewards');
+      }
+
       return res.json({ status: 'generated', cert_no: certNo });
     }
 
@@ -213,5 +234,64 @@ exports.checkPayment = async (req, res) => {
   } catch (err) {
     console.error('[Supplier Cert MoMo check error]', err?.response?.data || err.message);
     return res.status(502).json({ message: 'Could not reach MTN to check status.' });
+  }
+};
+
+exports.verifyCertificate = async (req, res) => {
+  const { certNo } = req.params;
+
+  try {
+    const [[cert]] = await pool.query(
+      `SELECT sc.cert_no, sc.status, sc.issued_date, sc.valid_until, sc.photo_url,
+              u.name AS supplier_name, u.email AS supplier_email, u.phone AS supplier_phone,
+              sp.business_name,
+              ct.name AS type_name, ct.code AS type_code, ct.duration_years AS type_duration
+       FROM supplier_certificates sc
+       JOIN users u ON sc.user_id = u.id
+       LEFT JOIN supplier_profiles sp ON sp.user_id = u.id
+       LEFT JOIN certificate_types ct ON sc.certificate_type_id = ct.id
+       WHERE sc.cert_no = ?`,
+      [certNo]
+    );
+
+    if (!cert) {
+      return res.status(404).json({ 
+        valid: false, 
+        message: 'Certificate not found. Please check the certificate number and try again.' 
+      });
+    }
+
+    if (cert.status !== 'generated') {
+      return res.status(400).json({ 
+        valid: false, 
+        message: 'Certificate is not yet issued. Payment may still be processing.' 
+      });
+    }
+
+    // Check if certificate is expired
+    const today = new Date();
+    const validUntil = new Date(cert.valid_until);
+    const isExpired = today > validUntil;
+
+    return res.json({
+      valid: !isExpired,
+      certificate: {
+        cert_no: cert.cert_no,
+        supplier_name: cert.supplier_name,
+        supplier_email: cert.supplier_email,
+        supplier_phone: cert.supplier_phone,
+        business_name: cert.business_name,
+        supplier_photo: cert.photo_url,
+        type_name: cert.type_name || 'Verified Supplier',
+        type_code: cert.type_code || 'SUPPLIER',
+        issued_date: cert.issued_date,
+        valid_until: cert.valid_until,
+        is_expired: isExpired,
+        status: cert.status
+      }
+    });
+  } catch (err) {
+    console.error('[Supplier certificate verification error]', err);
+    return res.status(500).json({ message: 'Server error during verification' });
   }
 };

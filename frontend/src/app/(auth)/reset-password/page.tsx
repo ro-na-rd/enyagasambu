@@ -76,10 +76,7 @@ function ResetPasswordForm() {
           }}>
 
           <div className="flex items-center justify-center gap-3 mb-8">
-            <div className="w-11 h-11 rounded-xl flex items-center justify-center overflow-hidden"
-              style={{ boxShadow: `0 4px 20px ${ORG}44` }}>
-              <img src="/logo.svg" alt="E-Nyagasambu" className="w-full h-full object-cover" />
-            </div>
+            <img src="/assets/logo.png" alt="E-Nyagasambu" className="w-11 h-11 object-contain" />
             <div>
               <span className="text-gray-900 font-extrabold text-lg tracking-tight block leading-tight">E-Nyagasambu</span>
               <span className="text-[9px] font-bold tracking-[0.25em] uppercase" style={{ color: `${ORG}bb` }}>Digital Market Place</span>

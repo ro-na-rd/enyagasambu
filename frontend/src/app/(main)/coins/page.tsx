@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { useCurrency } from '@/context/CurrencyContext';
 import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
 import { Coins, Smartphone } from '@/lib/icons';
@@ -12,6 +13,7 @@ type PayStep = 'idle' | 'enter_phone' | 'waiting' | 'success' | 'failed';
 
 export default function CoinsPage() {
   const { user, loading, refreshUser } = useAuth();
+  const { format } = useCurrency();
   const router = useRouter();
   const [packages, setPackages] = useState<Package[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -168,7 +170,7 @@ export default function CoinsPage() {
             {payStep === 'enter_phone' && (
               <>
                 <p className="text-sm text-gray-500 mb-4">
-                  Amount: <strong>{selectedPkg.price_rwf.toLocaleString()} RWF</strong> via MTN MoMo
+                  Amount: <strong>{format(selectedPkg.price_rwf)}</strong> via MTN MoMo
                 </p>
                 {momoMsg && <p className="text-red-600 text-sm mb-3">{momoMsg}</p>}
                 <label className="block text-sm font-medium text-gray-700 mb-1">Your MTN phone number</label>
@@ -227,8 +229,8 @@ export default function CoinsPage() {
             className="bg-white border-2 border-gray-200 hover:border-yellow-400 rounded-xl p-4 text-left transition group"
           >
             <p className="text-2xl font-bold" style={{ color: '#E85D04' }}><Coins size={20} /> {pkg.coins.toLocaleString()}</p>
-            <p className="text-gray-800 font-semibold text-sm mt-1">{pkg.price_rwf.toLocaleString()} RWF</p>
-            <p className="text-xs text-gray-400 mt-0.5">≈ {(pkg.price_rwf / pkg.coins).toFixed(1)} RWF/coin</p>
+            <p className="text-gray-800 font-semibold text-sm mt-1">{format(pkg.price_rwf)}</p>
+            <p className="text-xs text-gray-400 mt-0.5">≈ {format((pkg.price_rwf / pkg.coins))}/coin</p>
             <p className="text-xs text-yellow-600 mt-2 font-medium opacity-0 group-hover:opacity-100 transition">Pay via MoMo →</p>
           </button>
         ))}

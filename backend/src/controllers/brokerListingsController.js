@@ -1,5 +1,6 @@
 const pool = require('../config/db');
 const { uploadToS3 } = require('../services/s3Service');
+const { notifyAdmins, notifyUser } = require('../services/notificationService');
 
 const BROKER_LISTING_DAYS = 30;
 
@@ -111,6 +112,58 @@ exports.createListing = async (req, res) => {
     await conn.rollback();
     console.error('[Broker listing create error]', err);
     return res.status(500).json({ message: 'Server error' });
+  } finally {
+    conn.release();
+  }
+};
+
+exports.deleteListing = async (req, res) => {
+  const { id } = req.params;
+  
+  const conn = await pool.getConnection();
+  try {
+    await conn.beginTransaction();
+
+    const [[listing]] = await conn.query(
+      `SELECT id, user_id, title, status FROM listings WHERE id = ? AND user_id = ?`,
+      [id, req.user.id]
+    );
+
+    if (!listing) {
+      await conn.rollback();
+      return res.status(404).json({ message: 'Listing not found or not yours' });
+    }
+
+    if (listing.status === 'deleted') {
+      await conn.rollback();
+      return res.status(400).json({ message: 'Listing already deleted' });
+    }
+
+    // Move to recycle bin
+    const restoreUntil = new Date();
+    restoreUntil.setDate(restoreUntil.getDate() + 30);
+
+    await conn.query('UPDATE listings SET status = ? WHERE id = ?', ['deleted', id]);
+
+    await conn.query(
+      `INSERT INTO recycle_bin (item_type, item_id, original_data, deleted_by, deleted_role, restore_until)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      ['listing', id, JSON.stringify(listing), req.user.id, req.user.role, restoreUntil]
+    );
+
+    await conn.commit();
+
+    notifyAdmins('Broker listing moved to recycle bin', `Broker listing "${listing.title}" moved to recycle bin`, 'recycle', '/admin/recycle-bin');
+
+    return res.json({ 
+      message: 'Listing moved to recycle bin',
+      restore_until: restoreUntil,
+      auto_delete_after_days: 30
+    });
+  } catch (err) {
+    await conn.rollback();
+    console.error('[Broker delete listing error]', err);
+    return res.status(500).json({ message: 'Server error during deletion' });
   } finally {
     conn.release();
   }

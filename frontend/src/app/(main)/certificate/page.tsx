@@ -30,9 +30,7 @@ function BrokerFront({ name, brokerId, district, phone, email, qr, photo }: {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-              <div style={{ width: 38, height: 38, borderRadius: '50%', border: `2px solid ${ORG}`, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fff', overflow: 'hidden', flexShrink: 0 }}>
-                <img src="/logo.svg" alt="E-Nyagasambu" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-              </div>
+              <img src="/assets/logo.png" alt="E-Nyagasambu" style={{ width: 38, height: 38, objectFit: 'contain', flexShrink: 0 }} />
               <div>
                 <div style={{ fontSize: 11, fontWeight: 900, color: '#fff', letterSpacing: 1.5, lineHeight: 1.1 }}>E-NYAGASAMBU</div>
                 <div style={{ fontSize: 7, color: ORG, letterSpacing: 1.5, fontWeight: 700 }}>DIGITAL MARKET PLACE</div>
@@ -218,9 +216,7 @@ function CertContent() {
       <div style={{ background: '#e8ebf4', minHeight: '100vh' }}>
         <div className="flex items-center justify-between px-6 py-3 bg-white border-b shadow-sm">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center" style={{ background: '#fff' }}>
-              <img src="/logo.jpg" alt="E-Nyagasambu" className="w-full h-full object-cover" />
-            </div>
+            <img src="/assets/logo.png" alt="E-Nyagasambu" className="w-8 h-8 object-contain" />
             <span className="font-semibold text-sm" style={{ color: NAVY }}>Broker ID Card — Photo Upload</span>
           </div>
           <Link href="/my-listings" className="text-xs text-gray-400 hover:text-gray-600">← My Listings</Link>

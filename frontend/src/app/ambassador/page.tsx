@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { useCurrency } from '@/context/CurrencyContext';
 import api from '@/lib/api';
 import Link from 'next/link';
 import { Link as LinkIcon, FileText, Award, Users, Check, Clock, Coins, Sparkles, Mail, Phone, MapPin, User as UserIcon } from '@/lib/icons';
@@ -18,6 +19,7 @@ const certStatusConfig: Record<string, { label: string; icon: React.ReactNode; c
 };
 
 export default function AmbassadorDashboardPage() {
+  const { format } = useCurrency();
   const { user } = useAuth();
   const [referral, setReferral] = useState<{ totalReferrals?: number; bonusPaid?: number; bonusPerReferral?: number; referralCode?: string } | null>(null);
   const [cert, setCert] = useState<{ cert_no?: string; status?: string; issued_date?: string } | null>(null);
@@ -120,7 +122,7 @@ export default function AmbassadorDashboardPage() {
                   <code className="text-2xl font-extrabold tracking-[0.2em] select-all" style={{ color: NAVY }}>
                     {referral?.referralCode || '------'}
                   </code>
-                   <p className="text-xs text-gray-400 mt-2 mb-4">Share this code with ambassadors to earn {referral?.bonusPerReferral ?? 200} RWF when they get certified!</p>
+                    <p className="text-xs text-gray-400 mt-2 mb-4">Share this code with ambassadors to earn {format(referral?.bonusPerReferral ?? 200)} when they get certified!</p>
                   <button
                     onClick={() => {
                       const link = `${window.location.origin}/register?ref=${referral?.referralCode || ''}`;
@@ -143,7 +145,7 @@ export default function AmbassadorDashboardPage() {
                 <div className="min-w-0">
                   <p className="text-sm font-semibold text-gray-800 group-hover:text-[#E85D04] transition">{certCfg.label}</p>
                   <p className="text-xs text-gray-400 mt-0.5">
-                    {certStatus === 'none' && 'Pay 2,000 RWF to get your official certificate'}
+                     {certStatus === 'none' && `Pay ${format(2000)} to get your official certificate`}
                     {certStatus === 'pending' && 'Waiting for payment confirmation'}
                     {certStatus === 'paid' && 'Payment confirmed — awaiting admin generation'}
                     {certStatus === 'generated' && `Certificate: ${cert?.cert_no || ''}`}

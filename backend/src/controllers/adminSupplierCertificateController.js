@@ -1,5 +1,5 @@
 const pool = require('../config/db');
-const { notifyUser } = require('../services/notificationService');
+const { notifyUser, notifyAdmins } = require('../services/notificationService');
 
 exports.getCertificates = async (req, res) => {
   const { status, page = 1 } = req.query;
@@ -39,6 +39,7 @@ exports.getCertificates = async (req, res) => {
 
 exports.generateCertificate = async (req, res) => {
   const { id } = req.params;
+  const { force = false } = req.body;
 
   try {
     const [[cert]] = await pool.query(
@@ -46,8 +47,12 @@ exports.generateCertificate = async (req, res) => {
       [id]
     );
     if (!cert) return res.status(404).json({ message: 'Certificate request not found' });
-    if (cert.status !== 'paid') return res.status(400).json({ message: 'Payment not completed yet' });
-    if (cert.cert_no) return res.status(400).json({ message: 'Certificate already generated' });
+    if (cert.status === 'generated') return res.status(400).json({ message: 'Certificate already generated' });
+    
+    // Allow admin to force generate even without payment if requested
+    if (!force && cert.status !== 'paid') {
+      return res.status(400).json({ message: 'Payment not completed yet. Use force=true to override.' });
+    }
 
     const year = new Date().getFullYear();
     const [[{ cnt }]] = await pool.query(
@@ -66,9 +71,10 @@ exports.generateCertificate = async (req, res) => {
     );
 
     notifyUser(cert.user_id, 'Certificate generated', `Your supplier certificate ${certNo} is ready.`, 'certificate', '/supplier/certificate');
+    notifyAdmins('Supplier certificate generated', `Admin generated certificate ${certNo} for ${cert.user_name}`, 'certificate', '/admin/supplier-certificates');
 
     return res.json({
-      message: 'Certificate generated successfully',
+      message: force ? 'Certificate force-generated successfully' : 'Certificate generated successfully',
       certificate: {
         ...cert,
         cert_no: certNo,
@@ -125,6 +131,71 @@ exports.getCertificateDetail = async (req, res) => {
     return res.json({ certificate: cert });
   } catch (err) {
     console.error(err);
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
+
+exports.bulkUpdateCertificates = async (req, res) => {
+  const { ids, action, value } = req.body;
+  if (!ids || !Array.isArray(ids) || ids.length === 0) {
+    return res.status(400).json({ message: 'Certificate IDs array required' });
+  }
+  if (!action) return res.status(400).json({ message: 'Action required' });
+
+  try {
+    let query, params;
+    const placeholders = ids.map(() => '?').join(',');
+    
+    switch (action) {
+      case 'confirm_payment':
+        query = `UPDATE supplier_certificates SET status = 'paid' WHERE id IN (${placeholders}) AND status = 'pending'`;
+        params = ids;
+        break;
+      case 'generate':
+        const year = new Date().getFullYear();
+        let generatedCount = 0;
+        for (const id of ids) {
+          const [[cert]] = await pool.query(
+            'SELECT id, status, user_id FROM supplier_certificates WHERE id = ?',
+            [id]
+          );
+          if (cert && (cert.status === 'paid' || value === true)) {
+            const [[{ cnt }]] = await pool.query(
+              "SELECT COUNT(*) AS cnt FROM supplier_certificates WHERE YEAR(created_at) = ? AND cert_no IS NOT NULL",
+              [year]
+            );
+            const certNo = `ENA-SUP-${year}-${String(cnt + 1).padStart(4, '0')}`;
+            const issuedDate = new Date().toISOString().split('T')[0];
+            const validUntil = new Date();
+            validUntil.setFullYear(validUntil.getFullYear() + 1);
+            const validUntilStr = validUntil.toISOString().split('T')[0];
+            
+            await pool.query(
+              'UPDATE supplier_certificates SET status = ?, cert_no = ?, issued_date = ?, valid_until = ?, generated_by = ? WHERE id = ?',
+              ['generated', certNo, issuedDate, validUntilStr, req.user.id, id]
+            );
+            notifyUser(cert.user_id, 'Certificate generated', `Your supplier certificate ${certNo} is ready.`, 'certificate', '/supplier/certificate');
+            generatedCount++;
+          }
+        }
+        return res.json({ message: `Generated ${generatedCount} certificates` });
+      case 'delete':
+        query = `DELETE FROM supplier_certificates WHERE id IN (${placeholders})`;
+        params = ids;
+        break;
+      default:
+        return res.status(400).json({ message: 'Invalid action' });
+    }
+
+    if (query) {
+      const [result] = await pool.query(query, params);
+      return res.json({ 
+        message: `Updated ${result.affectedRows} certificates`,
+        affectedRows: result.affectedRows
+      });
+    }
+  } catch (err) {
+    console.error('[Admin bulkUpdateSupplierCertificates error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };

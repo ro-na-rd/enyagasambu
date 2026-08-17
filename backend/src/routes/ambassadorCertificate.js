@@ -15,5 +15,6 @@ router.get('/', authenticate, ctrl.getMyCertificate);
 router.post('/upload-photo', authenticate, upload.single('photo'), ctrl.uploadPhoto);
 router.post('/pay', authenticate, ctrl.initiatePayment);
 router.get('/payment-status/:referenceId', authenticate, ctrl.checkPayment);
+router.get('/verify/:certNo', ctrl.verifyCertificate);
 
 module.exports = router;

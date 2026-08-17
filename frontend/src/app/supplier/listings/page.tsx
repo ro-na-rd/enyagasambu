@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 import api from '@/lib/api';
 import Link from 'next/link';
 import { Store, Loader2, MapPin } from '@/lib/icons';
+import { useCurrency } from '@/context/CurrencyContext';
 
 const ORG = '#E85D04';
 const NAVY = '#0f1e42';
@@ -25,6 +26,7 @@ export default function SupplierListingsPage() {
   const [listings, setListings] = useState<MyListing[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const { format } = useCurrency();
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -89,7 +91,7 @@ export default function SupplierListingsPage() {
               {l.description && <p className="text-xs text-gray-500 mt-1.5 line-clamp-2">{l.description}</p>}
               <div className="flex items-center justify-between mt-4">
                 {l.price != null
-                  ? <span className="text-sm font-extrabold" style={{ color: ORG }}>{Number(l.price).toLocaleString()} {l.currency || 'RWF'}</span>
+                  ? <span className="text-sm font-extrabold" style={{ color: ORG }}>{format(Number(l.price))}</span>
                   : <span className="text-sm font-bold text-gray-400">{l.listing_type}</span>}
                 {l.location && (
                   <span className="flex items-center gap-1 text-xs text-gray-400"><MapPin size={11} /> {l.location}</span>

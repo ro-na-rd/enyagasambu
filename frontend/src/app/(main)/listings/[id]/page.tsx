@@ -89,6 +89,12 @@ export default function ListingDetailPage({ params }: { params: Promise<{ id: st
   const [copyTooltip, setCopyTooltip] = useState(false);
   const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Related listings
+  const [relatedListings, setRelatedListings] = useState<any[]>([]);
+  const [relatedLoading, setRelatedLoading] = useState(false);
+  const [relatedPage, setRelatedPage] = useState(1);
+  const [hasMoreRelated, setHasMoreRelated] = useState(false);
+
   const handleCopyLink = async () => {
     const url = `${window.location.origin}/listings/${id}`;
     let ok = false;
@@ -131,15 +137,38 @@ export default function ListingDetailPage({ params }: { params: Promise<{ id: st
       .finally(() => setLoading(false));
   }, [id]);
 
+  // Fetch related listings when listing data is available
+  useEffect(() => {
+    if (!listing) return;
+    const fetchRelatedListings = async () => {
+      setRelatedLoading(true);
+      try {
+        const { data } = await api.get(`/listings?limit=5&page=${relatedPage}`);
+        const allListings = data.listings || [];
+        // Filter out current listing and same category
+        const related = allListings.filter((item: any) =>
+          item.id !== parseInt(id) && item.category_name === listing.category_name
+        ).slice(0, 5);
+        setRelatedListings(related);
+        setHasMoreRelated(false); // Disable pagination for now
+      } catch (err) {
+        console.error('Failed to fetch related listings:', err);
+      } finally {
+        setRelatedLoading(false);
+      }
+    };
+    fetchRelatedListings();
+  }, [listing, relatedPage, id]);
+
   useEffect(() => {
     if (!listing) return;
     api.get(`/likes/${id}`).then(({ data }) => {
       setLiked(data.liked);
       setLikeCount(data.count);
-    }).catch(() => {});
+    }).catch(() => { });
     api.get(`/comments/${id}`).then(({ data }) => {
       setComments(data.comments);
-    }).catch(() => {});
+    }).catch(() => { });
   }, [id, listing]);
 
   useEffect(() => {
@@ -387,11 +416,10 @@ export default function ListingDetailPage({ params }: { params: Promise<{ id: st
                   <div className="flex gap-2 p-3 overflow-x-auto bg-gray-50 border-t border-gray-100">
                     {listing.images.map((img, i) => (
                       <button key={img.id} onClick={() => setActiveImg(i)}
-                        className={`h-16 w-16 rounded-xl overflow-hidden shrink-0 border-2 transition-all ${
-                          activeImg === i
-                            ? 'border-[#E85D04] shadow-md scale-105'
-                            : 'border-transparent opacity-60 hover:opacity-100'
-                        }`}>
+                        className={`h-16 w-16 rounded-xl overflow-hidden shrink-0 border-2 transition-all ${activeImg === i
+                          ? 'border-[#E85D04] shadow-md scale-105'
+                          : 'border-transparent opacity-60 hover:opacity-100'
+                          }`}>
                         <img src={img.image_url} alt="" className="w-full h-full object-cover" />
                       </button>
                     ))}
@@ -468,15 +496,62 @@ export default function ListingDetailPage({ params }: { params: Promise<{ id: st
               </div>
             )}
           </div>
+
+          {/* Related Listings Section */}
+          {relatedListings.length > 0 && (
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mt-6">
+              <h2 className="text-sm font-bold uppercase tracking-wider text-gray-800 mb-4">Related Listings</h2>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                {relatedListings.map((related) => (
+                  <Link key={related.id} href={`/listings/${related.id}`} className="group">
+                    <div className="bg-gray-50 rounded-xl overflow-hidden border border-gray-100 hover:border-[#E85D04] transition-all duration-300 hover:shadow-lg">
+                      <div className="aspect-square bg-gray-100 relative overflow-hidden">
+                        {related.primary_image ? (
+                          <img
+                            src={related.primary_image}
+                            alt={related.title}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-gray-300">
+                            <Package size={32} />
+                          </div>
+                        )}
+                      </div>
+                      <div className="p-3">
+                        <h3 className="text-xs font-semibold text-gray-800 line-clamp-2 mb-1 group-hover:text-[#E85D04] transition-colors">
+                          {related.title}
+                        </h3>
+                        <p className="text-xs font-bold" style={{ color: ORG }}>
+                          {related.price ? `${Number(related.price).toLocaleString()} ${related.currency || 'RWF'}` : 'On request'}
+                        </p>
+                        <p className="text-[10px] text-gray-500 mt-1 flex items-center gap-1">
+                          <MapPin size={10} /> {related.location || 'Kigali'}
+                        </p>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+              {hasMoreRelated && (
+                <button
+                  onClick={() => setRelatedPage(prev => prev + 1)}
+                  disabled={relatedLoading}
+                  className="w-full mt-4 py-2.5 rounded-xl text-sm font-semibold border-2 border-dashed border-gray-200 hover:border-[#E85D04] hover:text-[#E85D04] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {relatedLoading ? 'Loading...' : 'Load More Related Listings'}
+                </button>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Info - Right */}
         <div className="lg:col-span-2">
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 lg:sticky lg:top-24">
             <div className="flex items-start justify-between gap-3 mb-3">
-              <span className={`text-[11px] font-extrabold px-2.5 py-1 rounded-full tracking-wider ${
-                listing.listing_type === 'rent' ? 'bg-blue-100 text-blue-700' : 'bg-orange-100 text-[#E85D04]'
-              }`}>
+              <span className={`text-[11px] font-extrabold px-2.5 py-1 rounded-full tracking-wider ${listing.listing_type === 'rent' ? 'bg-blue-100 text-blue-700' : 'bg-orange-100 text-[#E85D04]'
+                }`}>
                 {listing.listing_type === 'rent' ? T.forRent : T.forSale}
               </span>
               {isExpired && <span className="bg-red-100 text-red-700 text-xs font-semibold px-3 py-1 rounded-full shrink-0">Expired</span>}

@@ -1,0 +1,26 @@
+{
+  "$schema": "https://raw.githubusercontent.com/aws/amazon-q-developer-cli/refs/heads/main/schemas/agent-v1.json",
+  "name": "KIMI",
+  "description": "Need answer about KIMI K3. Identity says Kimi K3 developed by Moonshot AI. Current time 2026. Product/current info may change, should search. Also kimi-help-center skill maybe for product features? User asks tell about KIMI K3 likely assistant/model. Need maybe search web for current official info. Search first. Need cite searched info if use. Use web_search. Need concise. We'll do one round search official.",
+  "prompt": "Run the project",
+  "mcpServers": {},
+  "tools": [
+    "fs_read",
+    "fs_write",
+    "execute_bash",
+    "use_aws",
+    "introspect"
+  ],
+  "toolAliases": {},
+  "allowedTools": [
+    "fs_read"
+  ],
+  "resources": [
+    "file://AmazonQ.md",
+    "file://README.md",
+    "file://.amazonq/rules/**/*.md"
+  ],
+  "hooks": {},
+  "toolsSettings": {},
+  "useLegacyMcpJson": true
+}

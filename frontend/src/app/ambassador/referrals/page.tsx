@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import api from '@/lib/api';
 import { Users, Check, Clock, Coins, Link, Copy, Sparkles } from '@/lib/icons';
+import { useCurrency } from '@/context/CurrencyContext';
 
 const NAVY = '#0f1e42';
 const ORG = '#E85D04';
@@ -10,6 +11,7 @@ export default function AmbassadorReferralsPage() {
   const [referral, setReferral] = useState<{ referralCode: string; totalReferrals?: number; totalEarned?: number; bonusPaid?: number; bonusPerReferral?: number; rewards: { code: string; amount: number; used: boolean; createdAt: string }[] } | null>(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
+  const { format } = useCurrency();
 
   useEffect(() => {
     api.get('/referrals/me')
@@ -28,7 +30,7 @@ export default function AmbassadorReferralsPage() {
     return (
       <div className="p-4 lg:p-8 animate-fadeInUp">
         <div className="text-center py-16">
-          <div className="w-10 h-10 rounded-xl mx-auto mb-3 flex items-center justify-center overflow-hidden"><img src="/logo.svg" alt="E-Nyagasambu" className="w-full h-full object-cover" /></div>
+          <img src="/assets/logo.png" alt="E-Nyagasambu" className="w-10 h-10 mx-auto mb-3 object-contain" />
           <p className="text-gray-400 text-sm animate-pulse">Loading your referrals...</p>
         </div>
       </div>
@@ -63,7 +65,7 @@ export default function AmbassadorReferralsPage() {
             { label: 'Total Referrals', value: referral.totalReferrals ?? 0, icon: 'users' },
             { label: 'Successful', value: referral.bonusPaid ?? 0, icon: 'check' },
             { label: 'Pending', value: (referral.totalReferrals ?? 0) - (referral.bonusPaid ?? 0), icon: 'clock' },
-            { label: 'Bonus/Referral', value: (referral.bonusPerReferral ?? 200) + ' RWF', icon: 'coins' },
+            { label: 'Bonus/Referral', value: format(referral.bonusPerReferral ?? 200), icon: 'coins' },
           ].map((s) => {
             const IconComp = s.icon === 'users' ? Users : s.icon === 'check' ? Check : s.icon === 'clock' ? Clock : Coins;
             const color = s.label === 'Total Referrals' ? NAVY : s.label === 'Successful' ? '#059669' : s.label === 'Pending' ? '#d97706' : ORG;
@@ -94,7 +96,7 @@ export default function AmbassadorReferralsPage() {
                     <code className="text-3xl font-extrabold tracking-[0.15em] select-all" style={{ color: NAVY }}>
                       {referral.referralCode}
                     </code>
-                    <p className="text-xs text-gray-400 mt-2">Share this code with ambassadors to earn {referral.bonusPerReferral ?? 200} RWF when they pay for their certificate!</p>
+                    <p className="text-xs text-gray-400 mt-2">Share this code with ambassadors to earn {format(referral.bonusPerReferral ?? 200)} when they pay for their certificate!</p>
                   </div>
                 </div>
                 <button onClick={copyLink}

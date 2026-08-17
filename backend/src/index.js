@@ -64,6 +64,7 @@ app.use('/api/announcements', require('./routes/announcements'));
 app.use('/api/auctions', require('./routes/auctions'));
 app.use('/api/ambassador', require('./routes/ambassadorActivities'));
 app.use('/api/admin/announcements', require('./routes/adminAnnouncements'));
+app.use('/api/recycle-bin', require('./routes/recycleBin'));
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok', platform: 'NMO' }));
 

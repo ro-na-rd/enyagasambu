@@ -231,3 +231,59 @@ exports.checkPayment = async (req, res) => {
     return res.status(502).json({ message: 'Could not reach MTN to check status.' });
   }
 };
+
+exports.verifyCertificate = async (req, res) => {
+  const { certNo } = req.params;
+
+  try {
+    const [[cert]] = await pool.query(
+      `SELECT ac.cert_no, ac.status, ac.issued_date, ac.valid_until, ac.photo_url,
+              u.name AS ambassador_name, u.email AS ambassador_email, u.phone AS ambassador_phone,
+              ct.name AS type_name, ct.code AS type_code, ct.duration_years AS type_duration
+       FROM ambassador_certificates ac
+       JOIN users u ON ac.user_id = u.id
+       LEFT JOIN certificate_types ct ON ac.certificate_type_id = ct.id
+       WHERE ac.cert_no = ?`,
+      [certNo]
+    );
+
+    if (!cert) {
+      return res.status(404).json({ 
+        valid: false, 
+        message: 'Certificate not found. Please check the certificate number and try again.' 
+      });
+    }
+
+    if (cert.status !== 'generated') {
+      return res.status(400).json({ 
+        valid: false, 
+        message: 'Certificate is not yet issued. Payment may still be processing.' 
+      });
+    }
+
+    // Check if certificate is expired
+    const today = new Date();
+    const validUntil = new Date(cert.valid_until);
+    const isExpired = today > validUntil;
+
+    return res.json({
+      valid: !isExpired,
+      certificate: {
+        cert_no: cert.cert_no,
+        ambassador_name: cert.ambassador_name,
+        ambassador_email: cert.ambassador_email,
+        ambassador_phone: cert.ambassador_phone,
+        ambassador_photo: cert.photo_url,
+        type_name: cert.type_name || 'Brand Ambassador',
+        type_code: cert.type_code || 'AMBASSADOR',
+        issued_date: cert.issued_date,
+        valid_until: cert.valid_until,
+        is_expired: isExpired,
+        status: cert.status
+      }
+    });
+  } catch (err) {
+    console.error('[Certificate verification error]', err);
+    return res.status(500).json({ message: 'Server error during verification' });
+  }
+};

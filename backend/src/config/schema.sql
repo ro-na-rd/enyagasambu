@@ -353,7 +353,10 @@ INSERT IGNORE INTO platform_settings (setting_key, setting_value) VALUES
   ('posting_free', 'false'),
   ('auction_anti_sniping', 'false'),
   ('auction_sniping_window', '30'),
-  ('auction_default_increment', '500');
+  ('auction_default_increment', '500'),
+  ('listing_duration_3_days', '500'),
+  ('listing_duration_7_days', '1000'),
+  ('listing_duration_30_days', '3500');
 
 CREATE TABLE IF NOT EXISTS contact_access_payments (
   id INT AUTO_INCREMENT PRIMARY KEY,

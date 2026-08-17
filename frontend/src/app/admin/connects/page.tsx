@@ -8,6 +8,7 @@ import {
   User, Store, ChevronLeft, ChevronRight as ChevronRightIcon,
   Eye, Link as LinkIcon, Download, ExternalLink
 } from '@/lib/icons';
+import { useCurrency } from '@/context/CurrencyContext';
 
 const ORG = '#E85D04';
 const NAVY = '#0f1e42';
@@ -100,6 +101,8 @@ export default function AdminConnectsPage() {
   const [detailModal, setDetailModal] = useState<Connect | null>(null);
   const [updatingId, setUpdatingId] = useState<number | null>(null);
 
+  const { format } = useCurrency();
+
   const load = useCallback((p = 1) => {
     const params = new URLSearchParams();
     params.set('page', String(p));
@@ -190,7 +193,7 @@ export default function AdminConnectsPage() {
             { label: 'MoMo Payments', value: stats.totalMomoConnects, icon: <Smartphone size={18} />, gradient: 'linear-gradient(135deg, #059669, #047857)' },
             { label: 'OTP Verifications', value: stats.totalOtpConnects, icon: <Lock size={18} />, gradient: 'linear-gradient(135deg, #3b82f6, #2563eb)' },
             { label: 'Pending Actions', value: stats.pendingOtps + stats.pendingPayments, icon: <AlertTriangle size={18} />, gradient: 'linear-gradient(135deg, #f59e0b, #d97706)' },
-            { label: 'MoMo Revenue', value: `${(stats.moMoRevenue || 0).toLocaleString()} RWF`, icon: <Coins size={18} />, gradient: 'linear-gradient(135deg, #10b981, #059669)' },
+            { label: 'MoMo Revenue', value: format(stats.moMoRevenue || 0), icon: <Coins size={18} />, gradient: 'linear-gradient(135deg, #10b981, #059669)' },
           ].map((card) => (
             <div key={card.label} className="relative overflow-hidden rounded-2xl p-4 text-white"
               style={{ background: card.gradient }}>
@@ -329,7 +332,7 @@ export default function AdminConnectsPage() {
                         <ExternalLink size={11} className="opacity-0 group-hover:opacity-100 transition shrink-0" />
                       </Link>
                       {c.listing_price != null && (
-                        <p className="text-xs text-gray-600">{Number(c.listing_price).toLocaleString()} RWF</p>
+                        <p className="text-xs text-gray-600">{format(Number(c.listing_price))}</p>
                       )}
                     </td>
                     <td className="px-4 py-3.5">
@@ -361,7 +364,7 @@ export default function AdminConnectsPage() {
                     </td>
                     <td className="px-4 py-3.5 text-center">
                       <p className="text-xs font-medium text-gray-800">
-                        {c.connect_type === 'momo' ? `${c.amount_rwf?.toLocaleString()} RWF` : '300 coins'}
+                        {c.connect_type === 'momo' ? format(Number(c.amount_rwf || 0)) : '300 coins'}
                       </p>
                     </td>
                     <td className="px-4 py-3.5 text-center">
@@ -500,7 +503,7 @@ export default function AdminConnectsPage() {
                   {detailModal.listing_title}
                 </Link>
                 {detailModal.listing_price != null && (
-                  <p className="text-xs text-gray-600 mt-0.5">{Number(detailModal.listing_price).toLocaleString()} RWF</p>
+                  <p className="text-xs text-gray-600 mt-0.5">{format(Number(detailModal.listing_price))}</p>
                 )}
               </div>
 
@@ -513,7 +516,7 @@ export default function AdminConnectsPage() {
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <p className="text-[10px] text-gray-500 uppercase">Amount</p>
-                      <p className="text-sm font-bold" style={{ color: '#059669' }}>{detailModal.amount_rwf?.toLocaleString()} RWF</p>
+                      <p className="text-sm font-bold" style={{ color: '#059669' }}>{format(Number(detailModal.amount_rwf || 0))}</p>
                     </div>
                     <div>
                       <p className="text-[10px] text-gray-500 uppercase">Payment Status</p>

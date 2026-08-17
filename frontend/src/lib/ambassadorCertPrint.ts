@@ -35,10 +35,10 @@ export function buildAmbassadorCertPrintHtml(opts: {
   return `<!DOCTYPE html><html><head><title>Certificate - ${certNo}</title>
 <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Playfair+Display:wght@900&display=swap" rel="stylesheet" />
 <style>
-  @page { size: landscape; margin: 0; }
+  @page { size: A4 landscape; margin: 0; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: Arial,Helvetica,sans-serif; margin: 0; background: #fff; }
-  .cert { width: 1000px; height: 700px; position: relative; background: #fff; overflow: hidden; margin: 0 auto; }
+  .cert { width: 1123px; height: 794px; position: relative; background: #fff; overflow: hidden; margin: 0 auto; }
   .badge { display: inline-flex; align-items: center; gap: 12px; border-radius: 28px; border: 1px solid ${NAVY}; background: #f7f9ff; padding: 12px 18px; }
   .badge-dot { width: 44px; height: 44px; border-radius: 50%; background: ${ORG}; display: grid; place-items: center; color: #fff; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }
   .top-panel { display: flex; justify-content: space-between; gap: 20px; padding: 28px 36px 0 36px; }
@@ -57,7 +57,7 @@ export function buildAmbassadorCertPrintHtml(opts: {
   .main-body { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0 12px; }
   .main-body h2 { font-family: 'Great Vibes', cursive; font-size: 46px; color: ${NAVY}; margin: 0 0 8px; line-height: 1.05; }
   .main-body .line { width: 360px; height: 2px; background: linear-gradient(90deg, transparent, ${GOLD}, transparent); margin-bottom: 18px; }
-  .main-body .role { font-size: 14px; color: ${NAVY}; text-align: center; margin: 0 0 12px; line-height: 1.5; }
+  .main-body .role { font-size: 14px; color: #000; text-align: center; margin: 0 0 12px; line-height: 1.5; }
   .main-body .role strong { font-size: 18px; font-weight: 900; color: ${ORG}; letter-spacing: 0.8; }
   .main-body .desc { font-size: 10px; color: #555; text-align: center; margin: 0 0 22px; line-height: 1.7; max-width: 520px; }
   .stats { display: flex; justify-content: center; gap: 28px; flex-wrap: wrap; margin-bottom: 24px; }
@@ -83,6 +83,12 @@ export function buildAmbassadorCertPrintHtml(opts: {
   <svg style="position:absolute;top:0;left:0;width:200px;height:160px" viewBox="0 0 200 160"><path d="M0,0 L200,0 L200,80 Q120,100 0,160 Z" fill="${NAVY}"/><path d="M0,0 L140,0 Q80,40 0,100 Z" fill="${ORG}" opacity="0.85"/></svg>
   <svg style="position:absolute;top:0;right:0;width:180px;height:140px" viewBox="0 0 180 140"><path d="M180,0 L0,0 L0,70 Q60,90 180,140 Z" fill="${NAVY}"/><path d="M180,0 L40,0 Q100,35 180,90 Z" fill="${ORG}" opacity="0.85"/></svg>
   <svg style="position:absolute;bottom:0;right:0;width:220px;height:150px" viewBox="0 0 220 150"><path d="M220,150 L220,0 L110,0 Q160,60 220,150 Z" fill="${NAVY}"/><path d="M220,150 L220,40 Q150,80 220,150 Z" fill="${ORG}" opacity="0.85"/></svg>
+  <svg style="position:absolute;bottom:0;left:0;width:200px;height:150px" viewBox="0 0 200 150">
+    <path d="M0,0 L200,0 L200,150 L0,150 Z" fill="#fff"/>
+    <path d="M0,150 L200,150 L200,60 Q100,30 0,60 Z" fill="${NAVY}"/>
+    <path d="M0,60 Q100,30 200,60" fill="none" stroke="#d0d0d0" stroke-width="2"/>
+    <path d="M0,60 Q100,35 200,60 L200,75 Q100,45 0,75 Z" fill="${NAVY}" opacity="0.3"/>
+  </svg>
 
   <div style="position:absolute;inset:0;display:flex;flex-direction:column;z-index:2">
     <div class="top-panel">

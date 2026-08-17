@@ -73,10 +73,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: '#ffffff' }}>
         <div className="text-center">
-          <div className="w-14 h-14 rounded-2xl mx-auto mb-4 flex items-center justify-center overflow-hidden"
-            style={{ boxShadow: `0 8px 32px ${BRAND.orange}44` }}>
-            <img src="/logo.svg" alt="E-Nyagasambu" className="w-full h-full object-cover" />
-          </div>
+          <img src="/assets/logo.png" alt="E-Nyagasambu" className="w-14 h-14 mx-auto mb-4 object-contain" />
           <div className="flex gap-1 justify-center">
             {[0, 1, 2].map(i => (
               <div key={i} className="w-2 h-2 rounded-full bg-white/30 animate-bounce"
@@ -109,10 +106,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
         {/* Brand */}
         <div className="px-5 py-5 flex items-center gap-3 border-b border-white/[0.05]">
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center overflow-hidden shrink-0"
-            style={{ boxShadow: `0 4px 20px ${BRAND.orange}44` }}>
-            <img src="/logo.svg" alt="E-Nyagasambu" className="w-full h-full object-cover" />
-          </div>
+          <img src="/assets/logo.png" alt="E-Nyagasambu" className="w-10 h-10 object-contain shrink-0" />
           <div className="min-w-0">
             <p className="font-bold text-[13px] text-white leading-tight tracking-tight">E-Nyagasambu</p>
             <p className="text-[9px] font-semibold tracking-[0.2em] uppercase" style={{ color: `${BRAND.orange}bb` }}>Admin Panel</p>

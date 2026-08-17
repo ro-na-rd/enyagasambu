@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import api from '@/lib/api';
 import { Plus, Search, X, Home, Loader2, AlertCircle, CheckCircle } from '@/lib/icons';
+import { useCurrency } from '@/context/CurrencyContext';
 
 const ORG = '#E85D04';
 
@@ -69,6 +70,7 @@ function formatDate(iso: string) {
 }
 
 export default function BrokerListingsPage() {
+  const { format } = useCurrency();
   const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -270,7 +272,7 @@ export default function BrokerListingsPage() {
                       <p className="text-xs text-gray-400">{typeLabel[l.listing_type] || l.listing_type}</p>
                     </td>
                     <td className="px-4 py-3 font-semibold text-gray-800 whitespace-nowrap">
-                      {l.price ? `${l.currency || 'RWF'} ${Number(l.price).toLocaleString()}` : l.price_type === 'negotiable' ? 'Negotiable' : '—'}
+                      {l.price ? format(Number(l.price)) : l.price_type === 'negotiable' ? 'Negotiable' : '—'}
                     </td>
                     <td className="px-4 py-3">
                       <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${statusColor[l.status] || 'bg-gray-100 text-gray-500'}`}>

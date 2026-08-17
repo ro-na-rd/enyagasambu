@@ -50,9 +50,7 @@ function BrokerFront({ name, brokerId, district, phone, email, qr, photo }: {
         {/* Left content */}
         <div style={{ flex: '1.6', display: 'flex', flexDirection: 'column' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-            <div style={{ width: 38, height: 38, borderRadius: 8, overflow: 'hidden', background: '#fff', padding: 2, flexShrink: 0 }}>
-              <img src="/images/logo.png" alt="E-Nyagasambu" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-            </div>
+            <img src="/assets/logo.png" alt="E-Nyagasambu" style={{ width: 38, height: 38, objectFit: 'contain', flexShrink: 0 }} />
             <div>
               <div style={{ fontWeight: 900, fontSize: 14.5, letterSpacing: 0.5, color: '#fff', lineHeight: 1.15, fontFamily: "'Literata', serif" }}>E-NYAGASAMBU</div>
               <div style={{ fontSize: 7, fontWeight: 600, letterSpacing: 1.8, color: '#ffb585' }}>DIGITAL MARKET PLACE</div>
@@ -215,6 +213,7 @@ function PhotoUploadStep({ onPhoto, onSkip }: { onPhoto: (url: string) => void; 
 
 /* ── CATALOG STEP ──────────────────────────────────────── */
 function CatalogStep({ types, onSelect }: { types: CertType[]; onSelect: (t: CertType) => void }) {
+  const { format } = useCurrency();
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2">
@@ -399,21 +398,48 @@ export default function BrokerCertificatePage() {
     if (!phone) { setMsg('Enter your phone number'); return; }
     setBusy(true); setMsg('');
     try {
-      const { data } = await api.post('/broker/certificate/pay', { phone });
-      setMsg(data.message);
-      fetchStatus();
+      const { data } = await api.post('/broker/certificate/pay', { phone, certificateTypeId: selectedType?.id });
+      setMsg('Payment request sent. Approve on your phone.');
+      
+      // Poll for payment status
+      const pollInterval = setInterval(async () => {
+        try {
+          const { data: statusData } = await api.get(`/broker/certificate/payment-status/${data.referenceId}`);
+          if (statusData.status === 'generated' || statusData.status === 'paid') {
+            clearInterval(pollInterval);
+            if (statusData.status === 'generated') {
+              setMsg('Certificate is ready!');
+            } else {
+              setMsg('Payment successful! Waiting for admin to generate your certificate.');
+            }
+            fetchStatus();
+            setBusy(false);
+          } else if (statusData.status === 'failed') {
+            clearInterval(pollInterval);
+            setMsg('Payment failed. Try again.');
+            setBusy(false);
+          }
+        } catch {
+          clearInterval(pollInterval);
+          setBusy(false);
+        }
+      }, 5000);
+      
+      // Stop polling after 5 minutes
+      setTimeout(() => clearInterval(pollInterval), 300000);
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || (err instanceof Error ? err.message : 'Payment submission failed');
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || (err instanceof Error ? err.message : 'Payment initiation failed');
       setMsg(msg);
-    } finally { setBusy(false); }
+      setBusy(false);
+    }
   };
 
   if (loading) return null;
   if (!user) return null;
 
   const year = new Date().getFullYear();
-  const certNo = cert?.cert_no || `ENB-${year}-${pad(user.id, 3)}`;
-  const verifyUrl = `https://${SITE_DOMAIN}/verify/${certNo}`;
+  const certNo = cert?.cert_no || `ENA-BRK-${year}-${pad(user.id, 4)}`;
+  const verifyUrl = `https://${SITE_DOMAIN}/verify-broker/${certNo}`;
   const qr = `https://api.qrserver.com/v1/create-qr-code/?size=130x130&data=${encodeURIComponent(verifyUrl)}&bgcolor=ffffff&color=1B2A5E&margin=4`;
 
   const price = cert?.amount_rwf ?? cert?.type_price ?? selectedType?.price_rwf ?? 2000;
@@ -422,9 +448,7 @@ export default function BrokerCertificatePage() {
     return (
       <div className="p-4 lg:p-8">
         <div className="flex items-center gap-2 mb-6">
-          <div className="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center" style={{ background: '#fff' }}>
-            <img src="/logo.jpg" alt="E-Nyagasambu" className="w-full h-full object-cover" />
-          </div>
+          <img src="/assets/logo.png" alt="E-Nyagasambu" className="w-8 h-8 object-contain" />
           <span className="font-semibold text-sm" style={{ color: NAVY }}>Broker ID Card — Photo Upload</span>
         </div>
         <PhotoUploadStep

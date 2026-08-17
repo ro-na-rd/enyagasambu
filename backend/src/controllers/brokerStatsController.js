@@ -65,34 +65,6 @@ exports.getStats = async (req, res) => {
 
 exports.getTransactions = async (req, res) => {
   try {
-    const entries = await getEntries(req.user.id);
-    const transactions = entries.map((e) => ({
-      id: 'TX-' + String(e.id).padStart(5, '0'),
-      type: 'Commission',
-      client: e.client_name || 'Direct client',
-      property: e.title || 'Listing #' + e.listing_id,
-      amount: Number(e.amount_rwf) || 0,
-      status: 'Completed',
-      date: e.created_at,
-    }));
-    const volume = transactions.reduce((sum, t) => sum + t.amount, 0);
-    return res.json({
-      transactions,
-      stats: {
-        total: transactions.length,
-        volume,
-        completed: transactions.length,
-        pending: 0,
-      },
-    });
-  } catch (err) {
-    console.error('[Broker transactions error]', err);
-    return res.status(500).json({ message: 'Server error' });
-  }
-};
-
-exports.getTransactions = async (req, res) => {
-  try {
     const brokerId = req.user.id;
 
     const [rows] = await pool.query(

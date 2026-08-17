@@ -1,5 +1,6 @@
 'use client';
 import { SITE_DOMAIN, SITE_URL } from '@/lib/config';
+import { useEffect } from 'react';
 
 const NAVY = '#0f1e42';
 const ORG = '#E85D04';
@@ -15,23 +16,21 @@ const RESPONSIBILITIES = [
   'Uphold E-Nyagasambu policies',
 ];
 
-const W = 1000;
-const H = 700;
+const W = 1123; // A4 landscape width at 96 DPI
+const H = 794;  // A4 landscape height at 96 DPI
 
 function BrandLogo({ scale = 1 }: { scale?: number }) {
   const s = scale;
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 10 * s }}>
-      <svg width={52 * s} height={52 * s} viewBox="0 0 52 52" aria-hidden>
-        <circle cx="26" cy="26" r="25" fill={NAVY} stroke={ORG} strokeWidth="1.5" />
-        <text x="8" y="36" fontSize="28" fontWeight="900" fontFamily="Arial Black,Arial,sans-serif" fill="#fff">E</text>
-        <g transform="translate(24,18) scale(0.85)">
-          <path d="M1 1h3.4l2.2 11.3a2 2 0 0 0 2 1.7h9.6a2 2 0 0 0 2-1.6L22.6 5.5H5" stroke={ORG} strokeWidth="2.2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-          <circle cx="9" cy="17" r="1.3" stroke={ORG} strokeWidth="1.7" fill="none" />
-          <circle cx="16" cy="17" r="1.3" stroke={ORG} strokeWidth="1.7" fill="none" />
-        </g>
-        <path d="M38 8 L42 4 L44 10 L50 12 L44 14 L42 20 L38 14 L32 12 Z" fill={ORG} opacity="0.9" />
-      </svg>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img 
+        src="/assets/logo.png" 
+        alt="E-Nyagasambu Logo" 
+        width={52 * s} 
+        height={52 * s}
+        style={{ objectFit: 'contain' }}
+      />
       <div>
         <div style={{ fontSize: 15 * s, fontWeight: 900, color: NAVY, letterSpacing: 1.2, lineHeight: 1.1 }}>E-NYAGASAMBU</div>
         <div style={{ fontSize: 8.5 * s, color: ORG, letterSpacing: 2, fontWeight: 700 }}>DIGITAL MARKET PLACE</div>
@@ -56,6 +55,16 @@ function CornerDecorations() {
         <path d="M220,150 L220,0 L110,0 Q160,60 220,150 Z" fill={NAVY} />
         <path d="M220,150 L220,40 Q150,80 220,150 Z" fill={ORG} opacity="0.85" />
       </svg>
+      <svg style={{ position: 'absolute', bottom: 0, left: 0, width: 200, height: 150, pointerEvents: 'none' }} viewBox="0 0 200 150" aria-hidden>
+        {/* White upper section background */}
+        <path d="M0,0 L200,0 L200,150 L0,150 Z" fill="#fff" />
+        {/* Dark blue lower section with curved top */}
+        <path d="M0,150 L200,150 L200,60 Q100,30 0,60 Z" fill={NAVY} />
+        {/* Light grey curved line separator */}
+        <path d="M0,60 Q100,30 200,60" fill="none" stroke="#d0d0d0" strokeWidth="2" />
+        {/* Subtle darker blue curved shape on top */}
+        <path d="M0,60 Q100,35 200,60 L200,75 Q100,45 0,75 Z" fill={NAVY} opacity="0.3" />
+      </svg>
     </>
   );
 }
@@ -79,31 +88,14 @@ function WavyBackground() {
 function OfficialSeal() {
   return (
     <div style={{ position: 'relative', width: 140, height: 160, flexShrink: 0 }}>
-      <svg width="140" height="140" viewBox="0 0 140 140" aria-hidden>
-        <defs>
-          <radialGradient id="sealGold" cx="50%" cy="40%" r="60%">
-            <stop offset="0%" stopColor="#f7d670" />
-            <stop offset="100%" stopColor={GOLD_DARK} />
-          </radialGradient>
-        </defs>
-        {Array.from({ length: 28 }).map((_, i) => {
-          const angle = (i * 360) / 28;
-          const rad = (angle * Math.PI) / 180;
-          const x1 = 70 + Math.cos(rad) * 59;
-          const y1 = 70 + Math.sin(rad) * 59;
-          const x2 = 70 + Math.cos(rad) * 66;
-          const y2 = 70 + Math.sin(rad) * 66;
-          return <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke={GOLD_DARK} strokeWidth="2" />;
-        })}
-        <circle cx="70" cy="70" r="56" fill="url(#sealGold)" stroke={GOLD_DARK} strokeWidth="2" />
-        <circle cx="70" cy="70" r="48" fill="none" stroke={GOLD_DARK} strokeWidth="1.5" strokeDasharray="4 3" />
-        <circle cx="70" cy="70" r="40" fill="none" stroke={GOLD_DARK} strokeWidth="1" />
-        <path d="M70,30 C90,30 90,60 70,60 C50,60 50,30 70,30 Z" fill={GOLD_DARK} opacity="0.08" />
-        <path d="M32,70 Q70,40 108,70 Q70,100 32,70" fill="none" stroke={GOLD_DARK} strokeWidth="1.2" />
-        <text x="70" y="56" textAnchor="middle" fontSize="8" fontWeight="800" fill={NAVY} fontFamily="Arial,sans-serif">OFFICIAL</text>
-        <text x="70" y="68" textAnchor="middle" fontSize="8" fontWeight="800" fill={NAVY} fontFamily="Arial,sans-serif">BRAND</text>
-        <text x="70" y="80" textAnchor="middle" fontSize="8" fontWeight="800" fill={NAVY} fontFamily="Arial,sans-serif">AMBASSADOR</text>
-      </svg>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img 
+        src="/assets/seal.png" 
+        alt="Official Seal" 
+        width={140} 
+        height={140}
+        style={{ objectFit: 'contain' }}
+      />
       <svg width="140" height="30" viewBox="0 0 140 30" style={{ position: 'absolute', bottom: 0, left: 0 }} aria-hidden>
         <path d="M40,0 L52,24 L64,0 Z" fill={ORG} />
         <path d="M88,0 L100,24 L112,0 Z" fill={ORG} />
@@ -114,15 +106,16 @@ function OfficialSeal() {
 
 function CorporateStamp() {
   return (
-    <svg width="90" height="90" viewBox="0 0 90 90" aria-hidden>
-      <circle cx="45" cy="45" r="42" fill="none" stroke={NAVY} strokeWidth="2" />
-      <circle cx="45" cy="45" r="36" fill="none" stroke={ORG} strokeWidth="1" />
-      <text x="45" y="22" textAnchor="middle" fontSize="5.5" fontWeight="700" fill={NAVY} fontFamily="Arial,sans-serif">E-NYAGASAMBU LTD</text>
-      <text x="45" y="30" textAnchor="middle" fontSize="4.5" fontWeight="600" fill={ORG} fontFamily="Arial,sans-serif">DIGITAL MARKET PLACE</text>
-      <circle cx="45" cy="48" r="14" fill={NAVY} />
-      <text x="45" y="53" textAnchor="middle" fontSize="16" fontWeight="900" fill="#fff" fontFamily="Arial Black,Arial,sans-serif">E</text>
-      <text x="45" y="72" textAnchor="middle" fontSize="4.5" fontWeight="600" fill={NAVY} fontFamily="Arial,sans-serif">KIGALI · RWANDA</text>
-    </svg>
+    <div style={{ width: 90, height: 90, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img 
+        src="/assets/KBL.png" 
+        alt="Corporate Stamp" 
+        width={90} 
+        height={90}
+        style={{ objectFit: 'contain' }}
+      />
+    </div>
   );
 }
 
@@ -162,12 +155,23 @@ function AmbassadorBadge() {
   );
 }
 
-function SignatureLine({ title }: { title: string }) {
+function SignatureLine({ title, signatureImage }: { title: string; signatureImage?: string }) {
   return (
     <div style={{ textAlign: 'center', flex: 1 }}>
-      <svg width="120" height="36" viewBox="0 0 120 36" aria-hidden>
-        <path d="M8,28 C25,10 40,32 55,18 S85,8 112,24" fill="none" stroke="#333" strokeWidth="1.5" strokeLinecap="round" />
-      </svg>
+      {signatureImage ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img 
+          src={signatureImage} 
+          alt="Signature" 
+          width={120} 
+          height={36}
+          style={{ objectFit: 'contain' }}
+        />
+      ) : (
+        <svg width="120" height="36" viewBox="0 0 120 36" aria-hidden>
+          <path d="M8,28 C25,10 40,32 55,18 S85,8 112,24" fill="none" stroke="#333" strokeWidth="1.5" strokeLinecap="round" />
+        </svg>
+      )}
       <div style={{ borderTop: `1px solid ${NAVY}`, marginTop: 2, paddingTop: 4 }}>
         <p style={{ fontSize: 8, color: NAVY, margin: 0, fontWeight: 600 }}>{title}</p>
       </div>
@@ -215,6 +219,17 @@ export default function AmbassadorCertificate({
   const verifyUrl = `${SITE_URL}/verify/${certNo}`;
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(verifyUrl)}`;
 
+  // Load Google Fonts for certificate
+  useEffect(() => {
+    const link = document.createElement('link');
+    link.href = 'https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Great+Vibes&display=swap';
+    link.rel = 'stylesheet';
+    document.head.appendChild(link);
+    return () => {
+      document.head.removeChild(link);
+    };
+  }, []);
+
   return (
     <div
       id={id}
@@ -225,7 +240,11 @@ export default function AmbassadorCertificate({
         aspectRatio: `${W} / ${H}`,
         margin: '0 auto',
         position: 'relative',
-        background: '#fff',
+        background: '#ffffff',
+        backgroundImage: 'url(/assets/certificate-bg.svg)',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
         overflow: 'hidden',
         fontFamily: 'Arial,Helvetica,sans-serif',
         boxShadow: '0 4px 36px rgba(0,0,0,0.18)',
@@ -281,8 +300,8 @@ export default function AmbassadorCertificate({
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 12px' }}>
             <p style={{ fontFamily: "'Great Vibes', cursive", fontSize: 46, color: NAVY, margin: '0 0 8px', lineHeight: 1.05 }}>{name}</p>
             <div style={{ width: 360, height: 2, background: `linear-gradient(90deg, transparent, ${GOLD}, transparent)`, marginBottom: 18 }} />
-            <p style={{ fontSize: 14, color: NAVY, textAlign: 'center', margin: '0 0 12px', lineHeight: 1.5 }}>
-              For being officially appointed as a <span style={{ fontSize: 18, fontWeight: 900, color: ORG, letterSpacing: 0.8 }}>BRAND AMBASSADOR</span> of E-Nyagasambu Digital Marketplace
+            <p style={{ fontSize: 14, color: '#000', textAlign: 'center', margin: '0 0 12px', lineHeight: 1.5 }}>
+              For being officially appointed as a <br/><span style={{ fontSize: 18, fontWeight: 900, color: ORG, letterSpacing: 0.8 }}>BRAND AMBASSADOR</span><br/> of E-Nyagasambu Digital Marketplace
             </p>
             <p style={{ fontSize: 10, color: '#555', textAlign: 'center', margin: '0 0 22px', lineHeight: 1.7, maxWidth: 520 }}>
               In recognition of your commitment to promoting digital commerce, supporting local businesses, onboarding users, and representing the values and mission of E-Nyagasambu.
@@ -303,11 +322,11 @@ export default function AmbassadorCertificate({
               ))}
             </div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 20, width: '100%', maxWidth: 520 }}>
-              <SignatureLine title="Platform Director, E-Nyagasambu Ltd" />
+              <SignatureLine title="Platform Director, E-Nyagasambu Ltd" signatureImage="/assets/signature-1.png" />
               <div style={{ width: 88, height: 88, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <CorporateStamp />
               </div>
-              <SignatureLine title="Business Development Officer, E-Nyagasambu Ltd" />
+              <SignatureLine title="Business Development Officer, E-Nyagasambu Ltd" signatureImage="/assets/signature-2.png" />
             </div>
           </div>
 
