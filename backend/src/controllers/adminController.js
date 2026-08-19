@@ -1,5 +1,5 @@
 const pool = require('../config/db');
-const { uploadToS3 } = require('../services/s3Service');
+const { uploadToS3, deleteFromS3Url } = require('../services/s3Service');
 const { notifyAdmins, notifyUser } = require('../services/notificationService');
 
 exports.getStats = async (req, res) => {
@@ -218,29 +218,32 @@ exports.deleteListing = async (req, res) => {
       return res.status(404).json({ message: 'Listing not found' });
     }
 
-    if (listing.status === 'deleted') {
-      await conn.rollback();
-      return res.status(400).json({ message: 'Listing already deleted' });
-    }
-
-    // Move to recycle bin
-    const restoreUntil = new Date();
-    restoreUntil.setDate(restoreUntil.getDate() + 30);
-
-    await conn.query('UPDATE listings SET status = ? WHERE id = ?', ['deleted', id]);
-
-    await conn.query(
-      `INSERT INTO recycle_bin (item_type, item_id, original_data, deleted_by, deleted_role, restore_until)
-       VALUES (?, ?, ?, ?, ?, ?)`,
-      ['listing', id, JSON.stringify(listing), req.user.id, req.user.role, restoreUntil]
+    const [images] = await conn.query(
+      'SELECT id, image_url FROM listing_images WHERE listing_id = ?',
+      [id]
     );
+
+    // Permanently delete the listing and all related data
+    await conn.query('DELETE FROM listing_images WHERE listing_id = ?', [id]);
+    await conn.query('DELETE FROM listing_comments WHERE listing_id = ?', [id]);
+    await conn.query('DELETE FROM listing_likes WHERE listing_id = ?', [id]);
+    await conn.query('DELETE FROM listing_ratings WHERE listing_id = ?', [id]);
+    await conn.query('DELETE FROM listing_reports WHERE listing_id = ?', [id]);
+    await conn.query('DELETE FROM contact_unlocks WHERE listing_id = ?', [id]);
+    await conn.query('DELETE FROM renewal_tokens WHERE listing_id = ?', [id]);
+    await conn.query('DELETE FROM coin_transactions WHERE listing_id = ?', [id]);
+    await conn.query('DELETE FROM listings WHERE id = ?', [id]);
 
     await conn.commit();
 
-    return res.json({ 
-      message: 'Listing moved to recycle bin',
-      restore_until: restoreUntil,
-      auto_delete_after_days: 30
+    // Remove associated files from storage after DB commit
+    for (const img of images) {
+      await deleteFromS3Url(img.image_url);
+    }
+
+    return res.json({
+      message: 'Listing permanently deleted',
+      images_deleted: images.length,
     });
   } catch (err) {
     await conn.rollback();
@@ -1058,6 +1061,109 @@ exports.unsuspendUser = async (req, res) => {
   } catch (err) {
     console.error('[Admin unsuspendUser error]', err);
     return res.status(500).json({ message: 'Server error' });
+  }
+};
+
+exports.getAdminAuctions = async (req, res) => {
+  const { page = 1, search, status } = req.query;
+  const limit = 20;
+  const offset = (parseInt(page) - 1) * limit;
+  let where = "l.listing_type = 'auction' AND l.status != 'deleted'";
+  const params = [];
+  if (search) { where += ' AND (l.title LIKE ? OR u.name LIKE ?)'; params.push(`%${search}%`, `%${search}%`); }
+  if (status && status !== 'all') {
+    if (status === 'live') where += " AND l.status = 'active' AND (l.auction_start IS NULL OR l.auction_start <= NOW()) AND l.expires_at > NOW()";
+    else if (status === 'ended') where += " AND (l.status IN ('expired','sold') OR l.expires_at <= NOW())";
+    else if (status === 'sold') where += " AND l.status = 'sold'";
+    else { where += ' AND l.status = ?'; params.push(status); }
+  }
+  try {
+    const [rows] = await pool.query(
+      `SELECT l.id, l.title, l.price, l.currency, l.status, l.is_featured, l.expires_at, l.created_at,
+              l.highest_bid, l.minimum_increment, l.reserve_price,
+              u.name AS seller_name, u.phone AS seller_phone,
+              c.name AS category_name,
+              (SELECT image_url FROM listing_images WHERE listing_id = l.id AND is_primary = 1 LIMIT 1) AS primary_image,
+              (SELECT COUNT(*) FROM auction_bids b WHERE b.listing_id = l.id) AS bid_count
+       FROM listings l
+       JOIN users u ON l.user_id = u.id
+       JOIN categories c ON l.category_id = c.id
+       WHERE ${where} ORDER BY l.created_at DESC LIMIT ? OFFSET ?`,
+      [...params, limit, offset]
+    );
+    const [[{ total }]] = await pool.query(
+      `SELECT COUNT(*) AS total FROM listings l JOIN users u ON l.user_id = u.id WHERE ${where}`,
+      params
+    );
+    const auctions = rows.map((r) => ({
+      ...r,
+      price: r.price != null ? Number(r.price) : 0,
+      highest_bid: r.highest_bid != null ? Number(r.highest_bid) : null,
+      minimum_increment: Number(r.minimum_increment || 500),
+      reserve_price: r.reserve_price != null ? Number(r.reserve_price) : null,
+      bid_count: Number(r.bid_count || 0),
+    }));
+    return res.json({ auctions, total, page: parseInt(page) });
+  } catch (err) {
+    console.error('[Admin getAdminAuctions error]', err);
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
+
+exports.getAuctionBids = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const [bids] = await pool.query(
+      `SELECT b.id, b.user_id, b.bidder_name, b.amount, b.created_at,
+              u.phone AS bidder_phone
+       FROM auction_bids b
+       LEFT JOIN users u ON u.id = b.user_id
+       WHERE b.listing_id = ? ORDER BY b.amount DESC, b.created_at ASC LIMIT 200`,
+      [id]
+    );
+    return res.json({ bids });
+  } catch (err) {
+    console.error('[Admin getAuctionBids error]', err);
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
+
+exports.deleteAuction = async (req, res) => {
+  const { id } = req.params;
+  const conn = await pool.getConnection();
+  try {
+    await conn.beginTransaction();
+    const [[auction]] = await conn.query(
+      `SELECT id FROM listings WHERE id = ? AND listing_type = 'auction'`,
+      [id]
+    );
+    if (!auction) {
+      await conn.rollback();
+      return res.status(404).json({ message: 'Auction not found' });
+    }
+    const [images] = await conn.query(
+      'SELECT id, image_url FROM listing_images WHERE listing_id = ?', [id]
+    );
+    await conn.query('DELETE FROM listing_images WHERE listing_id = ?', [id]);
+    await conn.query('DELETE FROM auction_bids WHERE listing_id = ?', [id]);
+    await conn.query('DELETE FROM auction_watches WHERE listing_id = ?', [id]);
+    await conn.query('DELETE FROM listing_comments WHERE listing_id = ?', [id]);
+    await conn.query('DELETE FROM listing_likes WHERE listing_id = ?', [id]);
+    await conn.query('DELETE FROM listing_ratings WHERE listing_id = ?', [id]);
+    await conn.query('DELETE FROM listing_reports WHERE listing_id = ?', [id]);
+    await conn.query('DELETE FROM contact_unlocks WHERE listing_id = ?', [id]);
+    await conn.query('DELETE FROM renewal_tokens WHERE listing_id = ?', [id]);
+    await conn.query('DELETE FROM coin_transactions WHERE listing_id = ?', [id]);
+    await conn.query('DELETE FROM listings WHERE id = ?', [id]);
+    await conn.commit();
+    for (const img of images) await deleteFromS3Url(img.image_url);
+    return res.json({ message: 'Auction permanently deleted' });
+  } catch (err) {
+    await conn.rollback();
+    console.error('[Admin deleteAuction error]', err);
+    return res.status(500).json({ message: 'Server error' });
+  } finally {
+    conn.release();
   }
 };
 

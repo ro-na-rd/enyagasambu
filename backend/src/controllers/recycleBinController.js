@@ -1,4 +1,5 @@
 const pool = require('../config/db');
+const { deleteFromS3Url } = require('../services/s3Service');
 const { notifyAdmins, notifyUser } = require('../services/notificationService');
 
 const AUTO_DELETE_DAYS = 30; // Items in recycle bin are permanently deleted after 30 days
@@ -313,6 +314,13 @@ exports.permanentDelete = async (req, res) => {
     const itemType = item.item_type;
     const itemId = item.item_id;
 
+    // Collect files to remove from storage
+    let filesToDelete = [];
+    if (itemType === 'listing') {
+      const [images] = await conn.query('SELECT image_url FROM listing_images WHERE listing_id = ?', [itemId]);
+      filesToDelete = images.map((img) => img.image_url);
+    }
+
     // Permanently delete from original table
     switch (itemType) {
       case 'listing':
@@ -360,6 +368,11 @@ exports.permanentDelete = async (req, res) => {
 
     await conn.commit();
 
+    // Remove associated files from storage
+    for (const url of filesToDelete) {
+      await deleteFromS3Url(url);
+    }
+
     return res.json({ message: 'Item permanently deleted' });
   } catch (err) {
     await conn.rollback();
@@ -394,6 +407,13 @@ exports.emptyRecycleBin = async (req, res) => {
     for (const item of items) {
       const itemId = item.item_id;
       const itemType = item.item_type;
+
+      if (itemType === 'listing') {
+        const [images] = await conn.query('SELECT image_url FROM listing_images WHERE listing_id = ?', [itemId]);
+        for (const img of images) {
+          await deleteFromS3Url(img.image_url);
+        }
+      }
 
       switch (itemType) {
         case 'listing':

@@ -97,4 +97,18 @@ async function deleteFromS3(key) {
   }
 }
 
-module.exports = { uploadToS3, deleteFromS3, ensureBucket, waitForS3 };
+function extractKeyFromUrl(url) {
+  if (!url || typeof url !== 'string') return null;
+  const marker = `/${BUCKET}/`;
+  const idx = url.indexOf(marker);
+  if (idx !== -1) return url.slice(idx + marker.length);
+  return null;
+}
+
+async function deleteFromS3Url(url) {
+  const key = extractKeyFromUrl(url);
+  if (!key) return;
+  await deleteFromS3(key);
+}
+
+module.exports = { uploadToS3, deleteFromS3, deleteFromS3Url, ensureBucket, waitForS3 };

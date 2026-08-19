@@ -27,6 +27,8 @@ export const Bell = createIcon(<><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-
 export const X = createIcon(<><path d="M18 6 6 18" /><path d="m6 6 12 12" /></>);
 export const ChevronLeft = createIcon(<><path d="m15 18-6-6 6-6" /></>);
 export const ChevronRight = createIcon(<><path d="m9 18 6-6-6-6" /></>);
+export const ChevronUp = createIcon(<><path d="m18 15-6-6-6 6" /></>);
+export const ChevronDown = createIcon(<><path d="m6 9 6 6 6-6" /></>);
 export const ArrowLeft = createIcon(<><path d="m12 19-7-7 7-7" /><path d="M19 12H5" /></>);
 export const LogOut = createIcon(<><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" x2="9" y1="12" y2="12" /></>);
 

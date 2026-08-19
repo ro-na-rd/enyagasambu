@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import api from '@/lib/api';
-import { CheckCircle, AlertCircle, Folder, Plus, Trash2 } from '@/lib/icons';
+import { CheckCircle, AlertCircle, Folder, Plus, Trash2, Edit3 } from '@/lib/icons';
 
 const BRAND = {
   navy: '#0f1e42',
@@ -18,6 +18,7 @@ export default function AdminCategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [editing, setEditing] = useState<Category | null>(null);
   const [name, setName] = useState('');
   const [type, setType] = useState('products');
   const [msg, setMsg] = useState<React.ReactNode>('');
@@ -43,11 +44,43 @@ export default function AdminCategoriesPage() {
     }
   };
 
+  const startEdit = (c: Category) => {
+    setEditing(c);
+    setName(c.name);
+    setType(c.type);
+    setShowForm(true);
+    setMsg('');
+  };
+
+  const handleUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editing) return;
+    setMsg('');
+    try {
+      await api.put(`/categories/${editing.id}`, { name, type });
+      setMsg(<><CheckCircle size={14} className="inline" style={{ color: '#2ea043' }} /> Category updated</>);
+      const { data } = await api.get('/categories');
+      setCategories(data.categories || []);
+      setEditing(null);
+      setShowForm(false);
+      setName('');
+    } catch {
+      setMsg(<><AlertCircle size={14} className="inline" style={{ color: '#f85149' }} /> Failed to update category</>);
+    }
+  };
+
   const handleDelete = async (id: number) => {
     if (!confirm('Delete this category?')) return;
     await api.delete(`/categories/${id}`);
     const { data } = await api.get('/categories');
     setCategories(data.categories || []);
+  };
+
+  const closeForm = () => {
+    setShowForm(false);
+    setEditing(null);
+    setName('');
+    setMsg('');
   };
 
   return (
@@ -70,8 +103,8 @@ export default function AdminCategoriesPage() {
       </div>
 
       {showForm && (
-        <form onSubmit={handleCreate} className="rounded-2xl p-6 mb-6" style={{ background: '#ffffff', border: '1px solid rgba(0,0,0,0.05)' }}>
-          <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-4">New Category</h2>
+        <form onSubmit={editing ? handleUpdate : handleCreate} className="rounded-2xl p-6 mb-6" style={{ background: '#ffffff', border: '1px solid rgba(0,0,0,0.05)' }}>
+          <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-4">{editing ? `Edit Category — ${editing.name}` : 'New Category'}</h2>
           {msg && <p className="text-sm mb-3 text-gray-300">{msg}</p>}
           <div className="grid sm:grid-cols-3 gap-4">
             <div>
@@ -95,8 +128,8 @@ export default function AdminCategoriesPage() {
             <div className="flex items-end gap-2">
               <button type="submit"
                 className="text-white text-sm font-semibold px-5 py-2.5 rounded-lg transition"
-                style={{ background: BRAND.orange }}>Save</button>
-              <button type="button" onClick={() => setShowForm(false)}
+                style={{ background: BRAND.orange }}>{editing ? 'Update' : 'Save'}</button>
+              <button type="button" onClick={closeForm}
                 className="text-sm px-4 py-2.5 rounded-lg transition"
                 style={{ color: '#6e7781', background: '#f6f8fa', border: '1px solid #d0d7de' }}>Cancel</button>
             </div>
@@ -129,11 +162,18 @@ export default function AdminCategoriesPage() {
                   </td>
                   <td className="px-4 py-3.5 text-xs text-gray-600">{new Date(c.created_at).toLocaleDateString()}</td>
                   <td className="px-4 py-3.5 text-center">
-                    <button onClick={() => handleDelete(c.id)}
-                      className="text-xs font-semibold hover:underline flex items-center gap-1 mx-auto"
-                      style={{ color: '#f85149' }}>
-                      <Trash2 size={12} /> Delete
-                    </button>
+                    <div className="flex items-center gap-3 justify-center">
+                      <button onClick={() => startEdit(c)}
+                        className="text-xs font-semibold hover:underline flex items-center gap-1"
+                        style={{ color: '#0969da' }}>
+                        <Edit3 size={12} /> Edit
+                      </button>
+                      <button onClick={() => handleDelete(c.id)}
+                        className="text-xs font-semibold hover:underline flex items-center gap-1"
+                        style={{ color: '#f85149' }}>
+                        <Trash2 size={12} /> Delete
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}

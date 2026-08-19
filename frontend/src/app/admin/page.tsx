@@ -185,8 +185,8 @@ export default function AdminDashboardPage() {
           </div>
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gray-100 border-gray-200">
-              <Calendar size={14} className="text-white/30" />
-              <span className="text-xs font-medium text-white/50">
+              <Calendar size={14} className="text-black/60" />
+              <span className="text-xs font-medium text-black">
                 {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
               </span>
             </div>

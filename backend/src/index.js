@@ -57,6 +57,8 @@ app.use('/api/ratings', require('./routes/ratings'));
 app.use('/api/comments', require('./routes/comments'));
 app.use('/api/content', require('./routes/content'));
 app.use('/api/site-content', require('./routes/siteContent'));
+app.use('/api/team', require('./routes/team'));
+app.use('/api/home-buttons', require('./routes/homeButtons'));
 app.use('/api/support', require('./routes/support'));
 app.use('/api/stats', require('./routes/stats'));
 app.use('/api/donations', require('./routes/donations'));

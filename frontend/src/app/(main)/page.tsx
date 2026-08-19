@@ -59,6 +59,14 @@ const PARTNERS = [
 ];
 const EMPTY_PARTNER_SLOTS = 5;
 
+const FALLBACK_JOIN_BUTTONS = [
+  { label: 'Buyer Registration', href: '/register' },
+  { label: 'Supplier Registration', href: '/register' },
+  { label: 'Ambassador Portal', href: '/ambassador/register' },
+  { label: 'Broker Portal', href: '/broker/register' },
+  { label: 'Donate / Support', href: '/donate' },
+];
+
 const navy  = '#0f1e42';
 const org   = '#E85D04';
 const darkOrg = '#c04a00';
@@ -71,6 +79,7 @@ export default function HomePage() {
   const [featured, setFeatured] = useState<Listing[]>([]);
   const [auctions, setAuctions] = useState<Auction[]>([]);
   const [stats, setStats] = useState<Record<string, number>>({ products: 0, properties: 0, vehicles: 0, suppliers: 0 });
+  const [joinButtons, setJoinButtons] = useState(FALLBACK_JOIN_BUTTONS);
 
   useEffect(() => {
     api.get('/listings?limit=4')
@@ -84,6 +93,11 @@ export default function HomePage() {
       .catch(() => {});
     api.get('/stats')
       .then(r => setStats(r.data.stats ?? {}))
+      .catch(() => {});
+    api.get('/home-buttons/public')
+      .then(({ data }) => {
+        if (data?.buttons?.length) setJoinButtons(data.buttons);
+      })
       .catch(() => {});
   }, []);
 
@@ -277,11 +291,9 @@ export default function HomePage() {
               {get('home.join_desc', 'Register as a buyer, seller, broker or ambassador and grow your business digitally.')}
             </p>
             <div className="flex gap-2 flex-wrap">
-              <RegBtn href="/register" primary>Buyer Registration →</RegBtn>
-              <RegBtn href="/register" primary>Supplier Registration →</RegBtn>
-              <RegBtn href="/ambassador/register" primary>Ambassador Portal →</RegBtn>
-              <RegBtn href="/broker/register" primary>Broker Portal →</RegBtn>
-              <RegBtn href="/donate"  primary>Donate / Support →</RegBtn>
+              {joinButtons.map((b) => (
+                <RegBtn key={`${b.label}-${b.href}`} href={b.href} primary>{(b.label).replace(/→\s*$/, '').trim()} →</RegBtn>
+              ))}
             </div>
           </section>
         </div>

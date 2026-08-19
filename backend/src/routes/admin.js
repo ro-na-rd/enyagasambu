@@ -44,5 +44,8 @@ router.put('/promos/:id',        authenticate, requireAdmin, ctrl.updatePromo);
 router.delete('/promos/:id',     authenticate, requireAdmin, ctrl.deletePromo);
 router.get('/settings',          authenticate, requireAdmin, ctrl.getSystemSettings);
 router.put('/settings',          authenticate, requireAdmin, ctrl.updateSystemSettings);
+router.get('/auctions',          authenticate, requireStaff, ctrl.getAdminAuctions);
+router.get('/auctions/:id/bids', authenticate, requireStaff, ctrl.getAuctionBids);
+router.delete('/auctions/:id',   authenticate, requireAdmin, ctrl.deleteAuction);
 
 module.exports = router;

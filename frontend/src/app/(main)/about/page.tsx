@@ -1,9 +1,11 @@
 'use client';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Target, Eye, Diamond } from '@/lib/icons';
 import { useLanguage } from '@/context/LanguageContext';
 import { roleMap } from '@/lib/translations';
 import { useSiteContent } from '@/lib/useSiteContent';
+import api from '@/lib/api';
 
 const navy = '#0f1e42';
 const org  = '#E85D04';
@@ -31,6 +33,15 @@ const BOARD: Member[] = [
   { name: 'Board Member 3', role: 'Independent Director',      initials: 'B3', color: '#374151' },
   { name: 'Board Member 4', role: 'Board Secretary',           initials: 'B4', color: '#374151' },
 ];
+
+function initialsOf(name: string) {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((w) => w[0]?.toUpperCase() || '')
+    .join('') || '?';
+}
 
 interface RegisteredPerson {
   name: string;
@@ -141,8 +152,30 @@ export default function AboutPage() {
   const { get } = useSiteContent();
   const tr = (s: string) => roleMap[s]?.[lang] ?? s;
 
-  const LEAD = LEADERSHIP.map(m => ({ ...m, role: tr(m.role) }));
-  const BOD  = BOARD.map(m => ({ ...m, role: tr(m.role) }));
+  const [teamMembers, setTeamMembers] = useState<Member[]>(LEADERSHIP);
+  const [boardMembers, setBoardMembers] = useState<Member[]>(BOARD);
+
+  useEffect(() => {
+    api.get('/team/public')
+      .then(({ data }) => {
+        if (!data?.members?.length) return;
+        const toMember = (m: { name: string; role: string; photo_url: string | null }): Member => ({
+          name: m.name,
+          role: m.role || '',
+          initials: initialsOf(m.name),
+          color: navy,
+          photo: m.photo_url || undefined,
+        });
+        const team = data.members.filter((m: { category: string }) => m.category === 'team').map(toMember);
+        const board = data.members.filter((m: { category: string }) => m.category === 'board').map(toMember);
+        if (team.length) setTeamMembers(team);
+        if (board.length) setBoardMembers(board);
+      })
+      .catch(() => {});
+  }, []);
+
+  const LEAD = teamMembers.map(m => ({ ...m, role: tr(m.role) }));
+  const BOD  = boardMembers.map(m => ({ ...m, role: tr(m.role) }));
 
   const steps = [
     { step: '01', title: T.aboutStep1Title, desc: T.aboutStep1Desc },
@@ -165,7 +198,6 @@ export default function AboutPage() {
           <div className="text-base opacity-90 leading-relaxed mb-8 space-y-4 text-left">
             <p>{get('about.intro_1', T.aboutIntro1)}</p>
             <p>{get('about.intro_2', T.aboutIntro2)}</p>
-            <p>{get('about.intro_3', T.aboutIntro3)}</p>
           </div>
 
         </div>
@@ -218,10 +250,6 @@ export default function AboutPage() {
         <div className="max-w-6xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-x-8 gap-y-12">
           {BOD.map(m => <Avatar key={m.name} member={m} />)}
         </div>
-
-        <p className="text-center text-xs text-gray-400 mt-8 italic">
-          {T.aboutBoardNote}
-        </p>
       </section>
 
       {/* ── Registered Brokers & Ambassadors ── */}

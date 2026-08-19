@@ -55,7 +55,7 @@ services:
       DB_NAME: nmo_db
       JWT_SECRET: ${JWT_SECRET:-nmo_super_secret_key_change_in_production_2024}
       JWT_EXPIRES_IN: 7d
-      CLIENT_URL: http://localhost:3000,http://localhost:3001
+      CLIENT_URL: http://localhost:3000
       FRONTEND_URL: http://localhost:3000
       SMTP_HOST: ${SMTP_HOST:-}
       SMTP_PORT: ${SMTP_PORT:-587}
