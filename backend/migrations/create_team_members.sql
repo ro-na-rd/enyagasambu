@@ -4,6 +4,8 @@ CREATE TABLE IF NOT EXISTS team_members (
   name VARCHAR(200) NOT NULL,
   role VARCHAR(200) NOT NULL DEFAULT '',
   photo_url VARCHAR(500) DEFAULT NULL,
+  photo_position VARCHAR(50) NOT NULL DEFAULT 'center',
+  photo_zoom DECIMAL(6,2) NOT NULL DEFAULT 1.00,
   sort_order INT NOT NULL DEFAULT 0,
   active TINYINT(1) NOT NULL DEFAULT 1,
   updated_by INT DEFAULT NULL,

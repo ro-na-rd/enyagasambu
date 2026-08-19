@@ -17,14 +17,15 @@ interface Member {
   color: string;
   photo?: string;
   photoPosition?: string;
+  photoZoom?: number;
 }
 
 const LEADERSHIP: Member[] = [
-  { name: 'Sinonza Polemon',    role: 'Chief Executive Officer',   initials: 'SP', color: navy,       photo: '/polemon.jpg' },
-  { name: 'Musinguzi Ronard',   role: 'Chief Information Officer', initials: 'MR', color: '#1a6b3a',  photo: '/ronard.jpg' },
-  { name: 'Manishimwe Blaise',  role: 'Chief Operations Officer',  initials: 'MB', color: '#7c3a8a',  photo: '/blaise.jpg' },
-  { name: 'Kobusinge Florence', role: 'Chief Marketing Officer',   initials: 'KF', color: '#c04a00',  photo: '/florence.jpg', photoPosition: 'center 20%' },
-  { name: 'Tuyishime Eric',     role: 'Chief Financial Officer',   initials: 'TE', color: '#0a6494',  photo: '/eric.jpg' },
+  { name: 'Sinonza Polemon',    role: 'Chief Executive Officer',   initials: 'SP', color: navy,       photo: '/profiles/polemon.jpg' },
+  { name: 'Musinguzi Ronard',   role: 'Chief Information Officer', initials: 'MR', color: '#1a6b3a',  photo: '/profiles/ronard.jpg' },
+  { name: 'Manishimwe Blaise',  role: 'Chief Operations Officer',  initials: 'MB', color: '#7c3a8a',  photo: '/profiles/blaise.jpg' },
+  { name: 'Kobusinge Florence', role: 'Chief Marketing Officer',   initials: 'KF', color: '#c04a00',  photo: '/profiles/florence.jpg' },
+  { name: 'Tuyishime Eric',     role: 'Chief Financial Officer',   initials: 'TE', color: '#0a6494',  photo: '/profiles/eric.jpg' },
 ];
 
 const BOARD: Member[] = [
@@ -136,7 +137,12 @@ function Avatar({ member }: { member: Member }) {
         }}
       >
         {member.photo
-          ? <img src={member.photo} alt={member.name} className="w-full h-full object-cover" style={{ objectPosition: member.photoPosition ?? 'center' }} />
+          ? <img src={member.photo} alt={member.name} className="w-full h-full object-cover"
+              style={{
+                objectPosition: member.photoPosition ?? 'center',
+                transform: member.photoZoom && member.photoZoom > 0 ? `scale(${member.photoZoom})` : undefined,
+                transformOrigin: member.photoPosition ?? 'center',
+              }} />
           : member.initials
         }
       </div>
@@ -159,12 +165,14 @@ export default function AboutPage() {
     api.get('/team/public')
       .then(({ data }) => {
         if (!data?.members?.length) return;
-        const toMember = (m: { name: string; role: string; photo_url: string | null }): Member => ({
+        const toMember = (m: { name: string; role: string; photo_url: string | null; photo_position?: string | null; photo_zoom?: number | null }): Member => ({
           name: m.name,
           role: m.role || '',
           initials: initialsOf(m.name),
           color: navy,
           photo: m.photo_url || undefined,
+          photoPosition: m.photo_position || 'center',
+          photoZoom: m.photo_zoom && m.photo_zoom > 0 ? m.photo_zoom : 1,
         });
         const team = data.members.filter((m: { category: string }) => m.category === 'team').map(toMember);
         const board = data.members.filter((m: { category: string }) => m.category === 'board').map(toMember);

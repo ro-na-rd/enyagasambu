@@ -5,6 +5,7 @@ import {
   Users, Plus, Trash2, Edit3, X, Check, Save, Camera,
   Globe, LayoutDashboard, ChevronDown, ChevronUp
 } from '@/lib/icons';
+import PhotoCropEditor from '@/components/PhotoCropEditor';
 
 const BRAND = { navy: '#0f1e42', navyLight: '#1a2d5a', orange: '#E85D04', orangeDark: '#c44d00' };
 
@@ -14,6 +15,8 @@ interface TeamMember {
   name: string;
   role: string;
   photo_url: string | null;
+  photo_position?: string | null;
+  photo_zoom?: number | null;
   sort_order: number;
   active: number;
   updated_at: string;
@@ -27,6 +30,8 @@ const emptyForm = {
   sort_order: 0,
   photoFile: null as File | null,
   photoPreview: '',
+  photoPosition: 'center' as string | null,
+  photoZoom: 1 as number | null,
 };
 
 function initialsOf(name: string) {
@@ -78,6 +83,8 @@ export default function AdminTeamPage() {
       sort_order: m.sort_order,
       photoFile: null,
       photoPreview: m.photo_url || '',
+      photoPosition: m.photo_position || 'center',
+      photoZoom: m.photo_zoom && m.photo_zoom > 0 ? m.photo_zoom : 1,
     });
     setShowModal(true);
   };
@@ -88,7 +95,13 @@ export default function AdminTeamPage() {
       ...f,
       photoFile: file,
       photoPreview: file ? URL.createObjectURL(file) : f.photoPreview,
+      photoPosition: 'center',
+      photoZoom: 1,
     }));
+  };
+
+  const handleCropChange = (position: string, zoom: number) => {
+    setForm((f) => ({ ...f, photoPosition: position, photoZoom: zoom }));
   };
 
   const handleSave = async () => {
@@ -100,6 +113,8 @@ export default function AdminTeamPage() {
       fd.append('name', form.name.trim());
       fd.append('role', form.role.trim());
       fd.append('sort_order', String(form.sort_order || 0));
+      fd.append('photo_position', form.photoPosition || 'center');
+      fd.append('photo_zoom', String(form.photoZoom || 1));
       if (form.photoFile) fd.append('photo', form.photoFile);
 
       if (editingId) {
@@ -206,7 +221,12 @@ export default function AdminTeamPage() {
                 <div className="w-24 h-24 rounded-full flex items-center justify-center text-white text-2xl font-bold overflow-hidden"
                   style={{ background: m.photo_url ? 'transparent' : BRAND.navy, border: `3px solid ${BRAND.orange}` }}>
                   {m.photo_url
-                    ? <img src={m.photo_url} alt={m.name} className="w-full h-full object-cover" />
+                    ? <img src={m.photo_url} alt={m.name} className="w-full h-full object-cover"
+                        style={{
+                          objectPosition: m.photo_position && m.photo_position !== 'center' ? (m.photo_position as string) : 'center',
+                          transform: m.photo_zoom && m.photo_zoom > 0 ? `scale(${m.photo_zoom})` : undefined,
+                          transformOrigin: m.photo_position && m.photo_position !== 'center' ? (m.photo_position as string) : 'center',
+                        }} />
                     : initialsOf(m.name)}
                 </div>
                 {m.active === 0 && (
@@ -261,23 +281,43 @@ export default function AdminTeamPage() {
               </button>
             </div>
             <div className="flex-1 overflow-y-auto p-6 space-y-4">
-              <div className="flex justify-center mb-3">
-                <label className="relative cursor-pointer group block">
-                  <div className="w-28 h-28 rounded-full flex items-center justify-center text-white text-3xl font-bold overflow-hidden"
+              <div className="mb-1">
+                <label className="relative cursor-pointer group block text-center">
+                  <div className="w-24 h-24 rounded-full mx-auto flex items-center justify-center text-white text-3xl font-bold overflow-hidden relative"
                     style={{ background: form.photoPreview ? 'transparent' : BRAND.navy, border: `3px solid ${BRAND.orange}` }}>
                     {form.photoPreview
-                      ? <img src={form.photoPreview} alt="preview" className="w-full h-full object-cover" />
+                      ? <img src={form.photoPreview} alt="preview" className="w-full h-full object-cover"
+                          style={{
+                            objectPosition: form.photoPosition && form.photoPosition !== 'center' ? form.photoPosition : 'center',
+                            transform: form.photoZoom && form.photoZoom > 0 ? `scale(${form.photoZoom})` : undefined,
+                            transformOrigin: form.photoPosition && form.photoPosition !== 'center' ? form.photoPosition : 'center',
+                          }} />
                       : initialsOf(form.name || '?')}
                   </div>
-                  <span className="absolute inset-0 rounded-full flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition text-white">
+                  <span className="absolute inset-0 rounded-full flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition text-white"
+                    style={{ inset: 'auto 0 0 0', height: '100%', margin: '0 auto', width: 96 }}>
                     <Camera size={20} />
                   </span>
                   <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
                 </label>
+                <p className="text-center text-xs text-gray-400 -mt-1 mb-2">
+                  Click to upload a profile photo
+                </p>
               </div>
-              <p className="text-center text-xs text-gray-400 -mt-1 mb-2">
-                Click the circle to upload a profile photo
-              </p>
+
+              {form.photoPreview && (
+                <div className="rounded-2xl p-4" style={{ background: '#fafbff', border: '1px solid rgba(0,0,0,0.05)' }}>
+                  <p className="text-center text-xs font-semibold text-gray-600 mb-3">
+                    Adjust how the photo is displayed
+                  </p>
+                  <PhotoCropEditor
+                    src={form.photoPreview}
+                    initialPosition={form.photoPosition}
+                    initialZoom={form.photoZoom}
+                    onChange={handleCropChange}
+                  />
+                </div>
+              )}
 
               <div>
                 <label className="block text-xs font-semibold text-gray-600 mb-1.5">Category</label>
