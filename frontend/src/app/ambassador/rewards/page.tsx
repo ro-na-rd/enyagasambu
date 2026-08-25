@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import api from '@/lib/api';
-import { Coins, Sparkles } from '@/lib/icons';
+import { Coins } from '@/lib/icons';
 import { useCurrency } from '@/context/CurrencyContext';
 
 const NAVY = '#0f1e42';

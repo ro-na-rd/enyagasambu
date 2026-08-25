@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { LayoutDashboard, LogOut, Menu, User, Link as LinkIcon, FileText, Gift, Award, Megaphone, TrendingUp, Settings, HelpCircle, Bell } from '@/lib/icons';
+import { LayoutDashboard, LogOut, Menu, User, Link as LinkIcon, FileText, Gift, Award, Megaphone, TrendingUp, Settings, HelpCircle, Bell, Share2, UserPlus, Target, Shield } from '@/lib/icons';
 import NotificationBell from '@/components/NotificationBell';
 import { useUnreadCount } from '@/lib/useUnreadCount';
 
@@ -22,15 +22,25 @@ const menuIcons: Record<string, React.FC<{ size?: number }>> = {
   settings: Settings,
   help: HelpCircle,
   notifications: Bell,
+  promotions: Share2,
+  recruitments: UserPlus,
+  campaigns: Megaphone,
+  onboarding: Target,
+  policies: Shield,
 };
 
 const menuItems = [
   { href: '/ambassador',            iconKey: 'dashboard', label: 'Dashboard' },
   { href: '/ambassador/profile',    iconKey: 'profile', label: 'My Profile' },
+  { href: '/ambassador/onboarding', iconKey: 'onboarding', label: 'Onboarding' },
   { href: '/ambassador/referrals',  iconKey: 'referrals', label: 'My Referrals' },
+  { href: '/ambassador/promotions', iconKey: 'promotions', label: 'Promotions' },
+  { href: '/ambassador/recruitments', iconKey: 'recruitments', label: 'Recruitments' },
+  { href: '/ambassador/campaigns',  iconKey: 'campaigns', label: 'Campaigns' },
   { href: '/ambassador/activities', iconKey: 'activities', label: 'My Activities' },
   { href: '/ambassador/rewards',    iconKey: 'rewards', label: 'Rewards & Earnings' },
   { href: '/ambassador/certificate', iconKey: 'certificate', label: 'My Certificate' },
+  { href: '/ambassador/policies',   iconKey: 'policies', label: 'Policies' },
   { href: '/ambassador/announcements', iconKey: 'announcements', label: 'Announcements' },
   { href: '/ambassador/reports',    iconKey: 'reports', label: 'Reports' },
   { href: '/ambassador/notifications', iconKey: 'notifications', label: 'Notifications' },
@@ -93,17 +103,15 @@ export default function AmbassadorLayout({ children }: { children: React.ReactNo
       <aside className={`fixed inset-y-0 left-0 z-30 w-64 bg-white border-r border-gray-200 flex flex-col transition-transform duration-200 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
 
 
-        {/* User summary */}
-        <div className="px-4 py-4 border-b border-gray-100 bg-gradient-to-r from-orange-50 to-blue-50">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm shrink-0 shadow-sm" style={{ background: NAVY }}>
-              {initials}
+        {/* Company Brand */}
+        <div className="px-4 py-4 border-b border-gray-100">
+          <Link href="/ambassador" className="flex items-center gap-3">
+            <img src="/assets/logo.png" alt="E-Nyagasambu" className="w-10 h-10 object-contain shrink-0" />
+            <div className="leading-tight min-w-0">
+              <p className="text-sm font-bold text-gray-900 truncate">E-Nyagasambu</p>
+              <p className="text-[9px] font-semibold tracking-[0.22em] uppercase" style={{ color: `${ORG}cc` }}>Ambassador Portal</p>
             </div>
-            <div className="min-w-0">
-              <p className="text-sm font-bold text-gray-900 truncate">{user.name}</p>
-              <p className="text-[10px] text-gray-500">Ambassador</p>
-            </div>
-          </div>
+          </Link>
         </div>
 
         {/* Navigation */}

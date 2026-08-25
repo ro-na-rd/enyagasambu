@@ -99,16 +99,17 @@ export default function BrokerDashboardPage() {
   return (
     <div className="min-h-screen" style={{ background: '#f8fafc' }}>
       {/* Hero Welcome Section */}
-      <div className="bg-gradient-to-r from-[#0f1e42] to-[#1a2952] text-white px-4 lg:px-8 py-8">
+      <div className="text-white px-4 lg:px-8 py-8" style={{ background: `linear-gradient(120deg, #0f1e42 0%, #1a2952 60%, #24365f 100%)` }}>
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center justify-between gap-6">
             <div className="flex-1">
-              <h1 className="text-3xl lg:text-4xl font-extrabold mb-2">Welcome, {user?.name?.split(' ')[0]}</h1>
-              <p className="text-blue-100">Manage your properties, clients, and earnings all in one place</p>
+              <p className="text-[11px] font-bold tracking-[0.2em] uppercase mb-2" style={{ color: '#E85D04cc' }}>Broker Portal</p>
+              <h1 className="text-3xl lg:text-4xl font-extrabold mb-2 tracking-tight">Welcome back, {user?.name?.split(' ')[0]}</h1>
+              <p className="text-blue-100/80">Manage your properties, clients, and earnings all in one place</p>
             </div>
             <div className="hidden lg:flex items-center gap-4">
-              <div className="bg-white/10 backdrop-blur-sm rounded-xl px-6 py-4 border border-white/20">
-                <p className="text-xs text-blue-100 mb-1">Certificate Status</p>
+              <div className="bg-white/[0.08] backdrop-blur-sm rounded-xl px-6 py-4 border border-white/10">
+                <p className="text-xs text-blue-100/70 mb-1">Certificate Status</p>
                 <p className="text-lg font-bold flex items-center gap-2">
                   {cert?.status === 'generated' ? (
                     <><span className="w-2 h-2 rounded-full bg-green-400"></span>Active</>

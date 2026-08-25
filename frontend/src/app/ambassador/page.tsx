@@ -4,12 +4,10 @@ import { useAuth } from '@/context/AuthContext';
 import { useCurrency } from '@/context/CurrencyContext';
 import api from '@/lib/api';
 import Link from 'next/link';
-import { Link as LinkIcon, FileText, Award, Users, Check, Clock, Coins, Sparkles, Mail, Phone, MapPin, User as UserIcon } from '@/lib/icons';
+import { Link as LinkIcon, FileText, Award, Users, Check, Clock, Coins, Sparkles, Mail, Phone, MapPin, Share2, UserPlus, Megaphone, Target, Shield } from '@/lib/icons';
 
 const NAVY = '#0f1e42';
 const ORG = '#E85D04';
-
-
 
 const certStatusConfig: Record<string, { label: string; icon: React.ReactNode; color: string; bg: string; action: string; href: string }> = {
   none:      { label: 'Not Requested', icon: <Award size={20} />, color: '#6b7280', bg: '#f3f4f6', action: 'Pay 2,000 RWF', href: '/ambassador/certificate' },
@@ -23,16 +21,28 @@ export default function AmbassadorDashboardPage() {
   const { user } = useAuth();
   const [referral, setReferral] = useState<{ totalReferrals?: number; bonusPaid?: number; bonusPerReferral?: number; referralCode?: string } | null>(null);
   const [cert, setCert] = useState<{ cert_no?: string; status?: string; issued_date?: string } | null>(null);
+  const [recruitStats, setRecruitStats] = useState<{ total: number; suppliers: number; vendors: number; onboarded: number } | null>(null);
+  const [campaignStats, setCampaignStats] = useState<{ total: number; active: number; completed: number } | null>(null);
+  const [promoStats, setPromoStats] = useState<{ totalShares: number } | null>(null);
+  const [onboardProgress, setOnboardProgress] = useState<{ total: number; completed: number; percentage: number } | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     Promise.all([
-      api.get('/referrals/me'),
-      api.get('/ambassador/certificate'),
+      api.get('/referrals/me').catch(() => ({ data: {} })),
+      api.get('/ambassador/certificate').catch(() => ({ data: {} })),
+      api.get('/ambassador/recruitments/stats').catch(() => ({ data: null })),
+      api.get('/ambassador/campaigns/stats').catch(() => ({ data: null })),
+      api.get('/ambassador/promotions/stats').catch(() => ({ data: null })),
+      api.get('/ambassador/onboarding/progress').catch(() => ({ data: null })),
     ])
-      .then(([refData, certData]) => {
+      .then(([refData, certData, rec, camp, promo, onboard]) => {
         setReferral(refData.data);
         setCert(certData.data.certificate);
+        setRecruitStats(rec.data);
+        setCampaignStats(camp.data);
+        setPromoStats(promo.data);
+        setOnboardProgress(onboard.data);
       })
       .finally(() => setLoading(false));
   }, []);
@@ -47,22 +57,21 @@ export default function AmbassadorDashboardPage() {
     { label: 'Rewards Earned', value: ((referral?.bonusPaid ?? 0) * (referral?.bonusPerReferral ?? 200)).toLocaleString(), icon: <Coins size={24} />, color: ORG, bg: '#fff7ed' },
   ];
 
-  const activities = [
-    { action: 'You joined the Ambassador Program', time: 'Just now', icon: <Sparkles size={16} /> },
-    ...(referral && (referral.totalReferrals ?? 0) > 0
-      ? [{ action: `${referral.totalReferrals ?? 0} referral(s) made`, time: 'Today', icon: <LinkIcon size={16} /> }]
-      : []),
+  const quickLinks = [
+    { label: 'Promotions', desc: `${promoStats?.totalShares ?? 0} shares`, icon: <Share2 size={20} />, href: '/ambassador/promotions', color: '#7c3aed', bg: '#f5f3ff' },
+    { label: 'Recruitments', desc: `${recruitStats?.total ?? 0} recruited`, icon: <UserPlus size={20} />, href: '/ambassador/recruitments', color: '#059669', bg: '#ecfdf5' },
+    { label: 'Campaigns', desc: `${campaignStats?.active ?? 0} active`, icon: <Megaphone size={20} />, href: '/ambassador/campaigns', color: '#2563eb', bg: '#eff6ff' },
+    { label: 'Onboarding', desc: `${onboardProgress?.percentage ?? 0}% done`, icon: <Target size={20} />, href: '/ambassador/onboarding', color: '#d97706', bg: '#fffbeb' },
+    { label: 'Policies', desc: 'Code of conduct', icon: <Shield size={20} />, href: '/ambassador/policies', color: '#dc2626', bg: '#fef2f2' },
   ];
 
   return (
     <div className="p-4 lg:p-8">
-      {/* Welcome */}
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-900">Ambassador Dashboard</h1>
         <p className="text-sm text-gray-500 mt-1">Welcome back, <strong>{user?.name}</strong></p>
       </div>
 
-      {/* User Profile Card */}
       <div className="mb-8">
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 lg:p-8">
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
@@ -95,7 +104,6 @@ export default function AmbassadorDashboardPage() {
         </div>
       </div>
 
-      {/* Stats cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {stats.map((s) => (
           <div key={s.label} className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 hover:shadow-md transition">
@@ -108,9 +116,23 @@ export default function AmbassadorDashboardPage() {
         ))}
       </div>
 
-      {/* Referral code + certificate + activities */}
+      <div className="mb-8">
+        <h2 className="text-sm font-bold uppercase tracking-wider text-gray-800 mb-3">Quick Actions</h2>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+          {quickLinks.map((ql) => (
+            <Link key={ql.label} href={ql.href}
+              className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 hover:shadow-md transition group text-center">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center mx-auto mb-2" style={{ background: ql.bg, color: ql.color }}>
+                {ql.icon}
+              </div>
+              <p className="text-sm font-semibold text-gray-800 group-hover:text-[#E85D04] transition">{ql.label}</p>
+              <p className="text-[11px] text-gray-400 mt-0.5">{ql.desc}</p>
+            </Link>
+          ))}
+        </div>
+      </div>
+
       <div className="grid lg:grid-cols-3 gap-6 mb-8">
-        {/* Referral code card */}
         <div className="lg:col-span-1 space-y-3">
           <div>
             <h2 className="text-sm font-bold uppercase tracking-wider text-gray-800 mb-3">Your Referral Code</h2>
@@ -122,7 +144,7 @@ export default function AmbassadorDashboardPage() {
                   <code className="text-2xl font-extrabold tracking-[0.2em] select-all" style={{ color: NAVY }}>
                     {referral?.referralCode || '------'}
                   </code>
-                    <p className="text-xs text-gray-400 mt-2 mb-4">Share this code with ambassadors to earn {format(referral?.bonusPerReferral ?? 200)} when they get certified!</p>
+                  <p className="text-xs text-gray-400 mt-2 mb-4">Share this code with ambassadors to earn {format(referral?.bonusPerReferral ?? 200)} when they get certified!</p>
                   <button
                     onClick={() => {
                       const link = `${window.location.origin}/register?ref=${referral?.referralCode || ''}`;
@@ -136,7 +158,6 @@ export default function AmbassadorDashboardPage() {
               )}
             </div>
           </div>
-          {/* Certificate status card */}
           <div>
             <h2 className="text-sm font-bold uppercase tracking-wider text-gray-800 mb-3">My Certificate</h2>
             <Link href="/ambassador/certificate" className="block bg-white rounded-xl border border-gray-100 shadow-sm p-5 hover:shadow-md transition group">
@@ -145,7 +166,7 @@ export default function AmbassadorDashboardPage() {
                 <div className="min-w-0">
                   <p className="text-sm font-semibold text-gray-800 group-hover:text-[#E85D04] transition">{certCfg.label}</p>
                   <p className="text-xs text-gray-400 mt-0.5">
-                     {certStatus === 'none' && `Pay ${format(2000)} to get your official certificate`}
+                    {certStatus === 'none' && `Pay ${format(2000)} to get your official certificate`}
                     {certStatus === 'pending' && 'Waiting for payment confirmation'}
                     {certStatus === 'paid' && 'Payment confirmed — awaiting admin generation'}
                     {certStatus === 'generated' && `Certificate: ${cert?.cert_no || ''}`}
@@ -162,36 +183,29 @@ export default function AmbassadorDashboardPage() {
           </div>
         </div>
 
-        {/* Activity timeline */}
         <div className="lg:col-span-1">
-          <h2 className="text-sm font-bold uppercase tracking-wider text-gray-800 mb-3">Recent Activities</h2>
-          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
-            {activities.length === 0 ? (
-              <p className="text-sm text-gray-400 text-center py-4">No activities yet</p>
+          <h2 className="text-sm font-bold uppercase tracking-wider text-gray-800 mb-3">Onboarding Progress</h2>
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 mb-3">
+            {onboardProgress ? (
+              <>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-semibold text-gray-800">{onboardProgress.completed}/{onboardProgress.total} tasks</span>
+                  <span className="text-sm font-bold" style={{ color: NAVY }}>{onboardProgress.percentage}%</span>
+                </div>
+                <div className="w-full bg-gray-100 rounded-full h-2.5 overflow-hidden">
+                  <div className="h-full rounded-full transition-all" style={{ width: `${onboardProgress.percentage}%`, background: `linear-gradient(90deg, ${ORG}, #ff8a3d)` }} />
+                </div>
+              </>
             ) : (
-              <div className="space-y-4">
-                {activities.map((a, i) => (
-                  <div key={i} className="flex gap-3">
-                    <div className="flex flex-col items-center">
-                      <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0" style={{ background: '#f0f2f9', color: '#0f1e42' }}>{a.icon}</div>
-                      {i < activities.length - 1 && <div className="w-0.5 flex-1 bg-gray-100 mt-1" />}
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-700">{a.action}</p>
-                      <p className="text-xs text-gray-400 mt-0.5">{a.time}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <p className="text-sm text-gray-400 text-center py-4">No onboarding data</p>
             )}
           </div>
-          <Link href="/ambassador/activities"
-            className="block mt-3 text-xs font-semibold text-center py-2 rounded-lg border border-gray-200 text-gray-500 hover:text-[#E85D04] hover:border-[#E85D04] transition">
-            View all activities →
+          <Link href="/ambassador/onboarding"
+            className="block text-xs font-semibold text-center py-2 rounded-lg border border-gray-200 text-gray-500 hover:text-[#E85D04] hover:border-[#E85D04] transition">
+            View onboarding →
           </Link>
         </div>
 
-        {/* Referral performance chart */}
         <div className="lg:col-span-1">
           <h2 className="text-sm font-bold uppercase tracking-wider text-gray-800 mb-3">Referral Performance</h2>
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">

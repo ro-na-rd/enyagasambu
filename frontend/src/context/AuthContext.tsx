@@ -9,6 +9,8 @@ interface User {
   phone?: string;
   coins: number;
   role: string;
+  executive_role?: string;
+  services?: string[];
 }
 
 interface AuthContextType {

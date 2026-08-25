@@ -8,7 +8,7 @@ exports.getActivities = async (req, res) => {
        FROM referrals r
        JOIN users u ON u.id = r.referred_id
        WHERE r.referrer_id = ?
-       ORDER BY r.created_at DESC LIMIT 20`,
+       ORDER BY r.created_at DESC LIMIT 10`,
       [req.user.id]
     );
 
@@ -16,7 +16,7 @@ exports.getActivities = async (req, res) => {
       `SELECT title, message, type, created_at
        FROM notifications
        WHERE user_id = ?
-       ORDER BY created_at DESC LIMIT 20`,
+       ORDER BY created_at DESC LIMIT 10`,
       [req.user.id]
     );
 
@@ -25,6 +25,38 @@ exports.getActivities = async (req, res) => {
        FROM ambassador_certificates
        WHERE user_id = ?
        ORDER BY created_at DESC LIMIT 5`,
+      [req.user.id]
+    );
+
+    const [recruitments] = await pool.query(
+      `SELECT name, type, status, created_at
+       FROM ambassador_recruitments
+       WHERE user_id = ?
+       ORDER BY created_at DESC LIMIT 10`,
+      [req.user.id]
+    );
+
+    const [promotions] = await pool.query(
+      `SELECT title, platform, shares, created_at
+       FROM ambassador_promotions
+       WHERE user_id = ?
+       ORDER BY created_at DESC LIMIT 10`,
+      [req.user.id]
+    );
+
+    const [campaigns] = await pool.query(
+      `SELECT title, status, created_at
+       FROM ambassador_campaigns
+       WHERE user_id = ?
+       ORDER BY created_at DESC LIMIT 10`,
+      [req.user.id]
+    );
+
+    const [onboardingTasks] = await pool.query(
+      `SELECT title, completed, completed_at, created_at
+       FROM ambassador_onboarding_tasks
+       WHERE user_id = ? AND completed = 1
+       ORDER BY completed_at DESC LIMIT 10`,
       [req.user.id]
     );
 
@@ -69,9 +101,45 @@ exports.getActivities = async (req, res) => {
       }
     }
 
+    for (const r of recruitments) {
+      activities.push({
+        type: 'recruitment',
+        title: `${r.type.charAt(0).toUpperCase() + r.type.slice(1)} recruitment: ${r.name}`,
+        description: `Status: ${r.status}`,
+        createdAt: r.created_at,
+      });
+    }
+
+    for (const p of promotions) {
+      activities.push({
+        type: 'promotion',
+        title: `Promotion created: ${p.title}`,
+        description: `Shared on ${p.platform} — ${p.shares} share(s)`,
+        createdAt: p.created_at,
+      });
+    }
+
+    for (const c of campaigns) {
+      activities.push({
+        type: 'campaign',
+        title: `Campaign: ${c.title}`,
+        description: `Status: ${c.status}`,
+        createdAt: c.created_at,
+      });
+    }
+
+    for (const t of onboardingTasks) {
+      activities.push({
+        type: 'onboarding',
+        title: `Task completed: ${t.title}`,
+        description: 'Onboarding progress updated',
+        createdAt: t.completed_at || t.created_at,
+      });
+    }
+
     activities.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
-    return res.json({ activities });
+    return res.json({ activities: activities.slice(0, 30) });
   } catch (err) {
     console.error('[Ambassador activities error]', err);
     return res.status(500).json({ message: 'Server error' });
@@ -152,7 +220,6 @@ exports.getReferralCode = async (req, res) => {
 
     let referralCode = user.referral_code;
     if (!referralCode) {
-      // Generate a unique referral code
       referralCode = 'AMB' + crypto.randomBytes(4).toString('hex').toUpperCase();
       await pool.query(
         'UPDATE users SET referral_code = ? WHERE id = ?',

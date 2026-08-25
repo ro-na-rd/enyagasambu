@@ -1,6 +1,7 @@
 const router = require('express').Router();
 const { body, validationResult } = require('express-validator');
 const { authenticate, requireBroker } = require('../middleware/auth');
+const { loginLimiter } = require('../middleware/rateLimiter');
 const { register, login, me, updateMe } = require('../controllers/brokerAuthController');
 
 const validate = (req, res, next) => {
@@ -25,6 +26,7 @@ router.post(
 
 router.post(
   '/login',
+  loginLimiter,
   [
     body('email').isEmail().normalizeEmail().withMessage('Valid email required'),
     body('password').notEmpty().withMessage('Password is required'),

@@ -3,10 +3,9 @@ import { useEffect, useState, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useCurrency } from '@/context/CurrencyContext';
 import api from '@/lib/api';
-import { Check, Lock, Download, Camera } from '@/lib/icons';
+import { Lock, Download } from '@/lib/icons';
 import AmbassadorCertificate from '@/components/AmbassadorCertificate';
 
-const NAVY = '#0f1e42';
 const ORG = '#E85D04';
 const DEFAULT_PRICE = 2000;
 
@@ -45,12 +44,10 @@ export default function AmbassadorCertificatePage() {
     certificate_type_id?: number | null; type_price?: number | null;
   } | null>(null);
   const [loading, setLoading] = useState(true);
-  const [uploading, setUploading] = useState(false);
   const [phone, setPhone] = useState('');
   const [paying, setPaying] = useState(false);
   const [msg, setMsg] = useState('');
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const fileRef = useRef<HTMLInputElement>(null);
 
   const fetchCert = async () => {
     api.get('/ambassador/certificate')
@@ -64,25 +61,6 @@ export default function AmbassadorCertificatePage() {
   useEffect(() => {
     return () => { if (pollRef.current) clearInterval(pollRef.current); };
   }, []);
-
-  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setUploading(true);
-    setMsg('');
-    try {
-      const formData = new FormData();
-      formData.append('photo', file);
-      await api.post('/ambassador/certificate/upload-photo', formData);
-      setMsg('Photo uploaded successfully!');
-      await fetchCert();
-    } catch (err: unknown) {
-      setMsg((err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed to upload photo');
-    } finally {
-      setUploading(false);
-      if (fileRef.current) fileRef.current.value = '';
-    }
-  };
 
   const handlePay = async () => {
     if (!phone) return setMsg('Enter your MoMo phone number');
@@ -122,7 +100,6 @@ export default function AmbassadorCertificatePage() {
     : new Date(certYear + 1, new Date().getMonth(), new Date().getDate()).toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' });
 
   const ambassadorName = cert?.ambassador_name || user?.name || 'Your Name';
-  const ambassadorPhoto = cert?.ambassador_photo || cert?.photo_url || null;
   const certPrice = cert?.type_price ?? DEFAULT_PRICE;
 
   if (loading) return (
@@ -131,36 +108,63 @@ export default function AmbassadorCertificatePage() {
 
   const status = cert?.status || 'pending';
   const isGenerated = status === 'generated';
-  const hasPhoto = !!ambassadorPhoto;
 
   return (
     <>
       <style jsx global>{`
         @media print {
-          body * { visibility: hidden !important; }
-          #ambassador-cert-print, #ambassador-cert-print * { visibility: visible !important; }
+          html, body {
+            background: #ffffff !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+            color-adjust: exact !important;
+          }
+          body * {
+            visibility: hidden !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+            color-adjust: exact !important;
+          }
+          #ambassador-cert-print,
+          #ambassador-cert-print * {
+            visibility: visible !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+            color-adjust: exact !important;
+          }
           #ambassador-cert-print {
             position: fixed !important;
             left: 0 !important;
             top: 0 !important;
-            width: 100vw !important;
+            width: 1123px !important;
+            height: 794px !important;
             max-width: none !important;
             aspect-ratio: auto !important;
-            height: 100vh !important;
+            border-radius: 0 !important;
             box-shadow: none !important;
             margin: 0 !important;
+            transform: none !important;
             page-break-inside: avoid;
+            break-inside: avoid;
+            background: linear-gradient(120deg, #0c2c5c 0%, #12336a 55%, #0c2c5c 100%) !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
           }
-          @page { size: A4 landscape; margin: 0; }
+          #ambassador-cert-print img {
+            max-width: none !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+          @page { size: 297mm 210mm; margin: 0; }
         }
       `}</style>
 
-      <div className="p-4 lg:p-8 max-w-5xl mx-auto" onContextMenu={e => { if (!isGenerated) e.preventDefault(); }}>
+      <div className="p-4 lg:p-8 max-w-[1200px] mx-auto" onContextMenu={e => { if (!isGenerated) e.preventDefault(); }}>
         <h1 className="text-2xl font-bold text-gray-900 mb-1">My Certificate</h1>
         <p className="text-sm text-gray-500 mb-6">
           {isGenerated
             ? 'Your official ambassador certificate is ready.'
-            : `Upload your photo, then pay ${format(certPrice)} to unlock and download your official ambassador certificate.`}
+            : `Pay ${format(certPrice)} to unlock and download your official ambassador certificate.`}
         </p>
 
         {msg && (
@@ -182,33 +186,6 @@ export default function AmbassadorCertificatePage() {
           />
           {!isGenerated && <CertWatermark price={certPrice} />}
         </div>
-
-        {!isGenerated && status !== 'paid' && (
-          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 mb-4">
-            <h2 className="text-sm font-bold uppercase tracking-wider text-gray-800 mb-4">
-              {hasPhoto ? 'Update Your Photo' : 'Upload Your Photo'}
-            </h2>
-            <p className="text-sm text-gray-600 mb-3">
-              {hasPhoto
-                ? 'You already have a photo. You can replace it or proceed to payment.'
-                : 'Upload a passport-style photo for your ambassador profile.'}
-            </p>
-            <div className="flex items-center gap-3">
-              <input ref={fileRef} type="file" accept="image/*" onChange={handlePhotoUpload}
-                className="hidden" />
-              <button onClick={() => fileRef.current?.click()} disabled={uploading}
-                className="text-sm px-5 py-2.5 rounded-lg text-white font-bold transition disabled:opacity-50 flex items-center gap-2"
-                style={{ background: NAVY }}>
-                {uploading ? 'Uploading...' : <><Camera size={16} /> {hasPhoto ? 'Change Photo' : 'Choose Photo'}</>}
-              </button>
-              {hasPhoto && (
-                <span className="text-xs text-green-600 flex items-center gap-1">
-                  <Check size={14} /> Photo added
-                </span>
-              )}
-            </div>
-          </div>
-        )}
 
         {!isGenerated && (
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 mb-4">

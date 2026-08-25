@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { SITE_DOMAIN } from '@/lib/config';
 import { Lock, MapPin, Phone, Mail, Globe, Camera, Image, Download } from '@/lib/icons';
+import { useQrDataUrl } from '@/components/QrCode';
 
 const NAVY   = '#0f1e42';
 const ORG    = '#E85D04';
@@ -188,6 +189,11 @@ function CertContent() {
   });
   const [photoStep, setPhotoStep] = useState(!photo);
 
+  const year = new Date().getFullYear();
+  const certNo = user ? `ENB-${year}-${pad(user.id, 3)}` : '';
+  const verifyUrl = certNo ? `https://${SITE_DOMAIN}/verify/${certNo}` : '';
+  const qr = useQrDataUrl(verifyUrl, { size: 130, color: '#1B2A5E', bgColor: '#ffffff', margin: 4 });
+
   /* If someone hits /certificate?type=ambassador redirect them to listings */
   const type = params.get('type');
   if (type === 'ambassador') {
@@ -205,10 +211,6 @@ function CertContent() {
   );
 
   const isStaff = user.role === 'admin' || user.role === 'staff';
-  const year    = new Date().getFullYear();
-  const certNo  = `ENB-${year}-${pad(user.id, 3)}`;
-  const verifyUrl = `https://${SITE_DOMAIN}/verify/${certNo}`;
-  const qr = `https://api.qrserver.com/v1/create-qr-code/?size=130x130&data=${encodeURIComponent(verifyUrl)}&bgcolor=ffffff&color=1B2A5E&margin=4`;
 
   /* Photo upload step */
   if (photoStep) {

@@ -1,0 +1,41 @@
+services:
+  mysql:
+    ports: []
+    volumes:
+      - mysql_data:/var/lib/mysql
+  minio:
+    ports: []
+
+  backend:
+    ports: []
+    environment:
+      NODE_ENV: production
+    depends_on:
+      mysql:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+
+  frontend:
+    ports: []
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: nmo-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      backend:
+        condition: service_healthy
+      frontend:
+        condition: service_healthy
+
+volumes:
+  caddy_data:
+  caddy_config:

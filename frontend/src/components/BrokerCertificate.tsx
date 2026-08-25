@@ -1,212 +1,176 @@
 'use client';
-import React, { useState } from 'react';
+import { SITE_DOMAIN } from '@/lib/config';
+import { MapPin, Phone, Mail, Globe, User, BadgeCheck, Check } from '@/lib/icons';
+import { useQrDataUrl } from './QrCode';
 
-interface BrokerCertificateProps {
-  brokerName: string;
+const NAVY = '#0e1f4b';
+const ORG = '#f2701c';
+
+export interface BrokerCertificateProps {
+  name: string;
   brokerId: string;
-  district: string;
-  phone: string;
+  district?: string;
+  phone?: string;
   email: string;
-  profileImage?: string;
-  qrCode?: string;
+  photo?: string | null;
+  services?: string[];
+  id?: string;
+  className?: string;
+  showBack?: boolean;
 }
 
-export default function BrokerCertificate({
-  brokerName,
-  brokerId,
-  district,
-  phone,
-  email,
-  profileImage = '/placeholder-avatar.jpg',
-  qrCode = '/placeholder-qr.png',
-}: BrokerCertificateProps) {
-  const [isFlipped, setIsFlipped] = useState(false);
+const DEFAULT_SERVICES = [
+  'Product Brokerage',
+  'Property Brokerage',
+  'Vehicle Brokerage',
+  'Marketplace Verification',
+  'Customer Support',
+];
 
-  const NAVY = '#0f1e42';
-  const ORANGE = '#E85D04';
-
+function BrokerFront({ name, brokerId, district, phone, email, qr, photo }: {
+  name: string; brokerId: string; district: string; phone: string; email: string; qr: string; photo: string | null;
+}) {
+  const W = 520, H = 300;
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100 p-4">
-      <div
-        className="perspective w-full max-w-4xl h-96 cursor-pointer relative"
-        onClick={() => setIsFlipped(!isFlipped)}
-        style={{
-          transformStyle: 'preserve-3d',
-          transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
-          transition: 'transform 0.6s',
-        }}
-      >
-        {/* FRONT SIDE */}
-        <div
-          style={{
-            backfaceVisibility: 'hidden',
-            WebkitBackfaceVisibility: 'hidden',
-          }}
-          className="absolute w-full h-full rounded-2xl shadow-2xl overflow-hidden"
-        >
-          <div className="flex h-full">
-            {/* Left Section - Broker Info */}
-            <div
-              className="w-1/2 p-8 flex flex-col justify-between"
-              style={{ backgroundColor: NAVY }}
-            >
-              {/* Logo and Title */}
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="w-12 h-12 rounded-full flex items-center justify-center overflow-hidden border-2" style={{ borderColor: ORANGE }}>
-                    <span className="text-white font-bold text-xl">E</span>
-                  </div>
-                </div>
-                <h2 className="text-white font-bold text-sm tracking-widest">E-NYAGASAMBU</h2>
-                <p className="text-orange-500 text-xs font-bold">DIGITAL MARKET PLACE</p>
-                <h3 className="text-orange-500 text-2xl font-bold mt-2">CERTIFIED BROKER</h3>
-              </div>
+    <div style={{ width: W, height: H, borderRadius: 18, overflow: 'hidden', position: 'relative', background: NAVY, fontFamily: "'Poppins', Arial, sans-serif", boxShadow: '0 22px 45px rgba(10,20,50,0.25)', flexShrink: 0 }}>
+      <div style={{ position: 'absolute', top: 0, right: -30, bottom: 0, width: '52%', background: NAVY, transform: 'skewX(-12deg)', transformOrigin: 'top right' }} />
+      <div style={{ position: 'absolute', top: 0, right: -90, bottom: 0, width: '52%', background: ORG, transform: 'skewX(-12deg)', transformOrigin: 'top right' }} />
 
-              {/* Broker Details */}
-              <div className="space-y-3">
-                <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 flex items-center justify-center flex-shrink-0 mt-1">
-                    <span className="text-white text-lg">👤</span>
-                  </div>
-                  <div>
-                    <p className="text-white font-bold text-sm">{brokerName}</p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 flex items-center justify-center flex-shrink-0">
-                    <span className="text-orange-500 text-lg">📋</span>
-                  </div>
-                  <div>
-                    <p className="text-white text-xs">Broker ID</p>
-                    <p className="text-white font-bold text-sm">: {brokerId}</p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 flex items-center justify-center flex-shrink-0">
-                    <span className="text-orange-500 text-lg">📍</span>
-                  </div>
-                  <div>
-                    <p className="text-white text-xs">District</p>
-                    <p className="text-white font-bold text-sm">: {district}</p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 flex items-center justify-center flex-shrink-0">
-                    <span className="text-orange-500 text-lg">📱</span>
-                  </div>
-                  <div>
-                    <p className="text-white text-xs">Phone</p>
-                    <p className="text-white font-bold text-sm">: {phone}</p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 flex items-center justify-center flex-shrink-0">
-                    <span className="text-orange-500 text-lg">✉️</span>
-                  </div>
-                  <div>
-                    <p className="text-white text-xs">Email</p>
-                    <p className="text-white font-bold text-xs break-all">{email}</p>
-                  </div>
-                </div>
-              </div>
+      <div style={{ position: 'relative', zIndex: 2, display: 'flex', height: '100%', padding: 26, gap: 12 }}>
+        <div style={{ flex: '1.6', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+            <img src="/assets/logo.png" alt="E-Nyagasambu" style={{ width: 38, height: 38, objectFit: 'contain', flexShrink: 0 }} />
+            <div>
+              <div style={{ fontWeight: 900, fontSize: 14.5, letterSpacing: 0.5, color: '#fff', lineHeight: 1.15, fontFamily: "'Literata', serif" }}>E-NYAGASAMBU</div>
+              <div style={{ fontSize: 7, fontWeight: 600, letterSpacing: 1.8, color: '#ffb585' }}>DIGITAL MARKET PLACE</div>
             </div>
+          </div>
 
-            {/* Right Section - Profile Photo and QR Code */}
-            <div
-              className="w-1/2 p-8 flex flex-col justify-between items-center"
-              style={{ backgroundColor: '#f5f5f5' }}
-            >
-              {/* Profile Image */}
-              <div className="w-32 h-32 rounded-full overflow-hidden border-4" style={{ borderColor: ORANGE }}>
-                <img src={profileImage} alt={brokerName} className="w-full h-full object-cover" />
-              </div>
+          <div style={{ marginTop: 12, alignSelf: 'flex-start', background: ORG, color: '#fff', fontWeight: 800, fontSize: 11.5, letterSpacing: 1.5, padding: '4px 12px', borderRadius: 6 }}>CERTIFIED BROKER</div>
 
-              {/* QR Code */}
-              <div className="text-center">
-                <div className="w-32 h-32 bg-white rounded-lg border-2 border-gray-300 p-2 flex items-center justify-center mb-2">
-                  <img src={qrCode} alt="QR Code" className="w-full h-full object-contain" />
-                </div>
-                <p className="text-gray-600 text-xs font-bold">SCAN TO VERIFY</p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12 }}>
+            <User size={17} color="#ffb585" />
+            <span style={{ fontWeight: 700, fontSize: 18, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 210 }}>{name}</span>
+          </div>
+
+          <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {[
+              { ic: <BadgeCheck size={12} color={ORG} />, k: 'Broker ID', v: brokerId },
+              { ic: <MapPin size={12} color={ORG} />, k: 'District',  v: district },
+              { ic: <Phone size={12} color={ORG} />, k: 'Phone',     v: phone || 'N/A' },
+              { ic: <Mail size={12} color={ORG} />, k: 'Email',     v: email.length > 22 ? email.slice(0, 20) + '\u2026' : email },
+            ].map(({ ic, k, v }) => (
+              <div key={k} style={{ display: 'flex', alignItems: 'center', gap: 9, fontSize: 11.5 }}>
+                <span style={{ width: 20, height: 20, borderRadius: 6, background: 'rgba(255,255,255,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: ORG, flexShrink: 0 }}>{ic}</span>
+                <span style={{ color: '#c6cde6', minWidth: 52 }}>{k}</span>
+                <span style={{ color: '#fff', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>: {v}</span>
               </div>
-            </div>
+            ))}
           </div>
         </div>
 
-        {/* BACK SIDE */}
-        <div
-          style={{
-            backfaceVisibility: 'hidden',
-            WebkitBackfaceVisibility: 'hidden',
-            transform: 'rotateY(180deg)',
-          }}
-          className="absolute w-full h-full rounded-2xl shadow-2xl overflow-hidden"
-        >
-          <div className="flex flex-col h-full" style={{ backgroundColor: NAVY }}>
-            {/* Header */}
-            <div className="px-8 pt-8 pb-4">
-              <div className="inline-block px-4 py-2 rounded-full" style={{ backgroundColor: ORANGE }}>
-                <p className="text-white font-bold text-sm">AUTHORIZED SERVICES</p>
-              </div>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'space-between', padding: '4px 0' }}>
+          <div style={{ borderRadius: '50%', background: ORG, padding: 4, boxShadow: '0 6px 14px rgba(0,0,0,0.25)' }}>
+            <div style={{ width: 84, height: 84, borderRadius: '50%', border: '3px solid #fff', overflow: 'hidden', background: '#dfe3ef', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              {photo
+                ? <img src={photo} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                : <User size={46} color="#98a1bd" />
+              }
             </div>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <div style={{ background: '#fff', borderRadius: 8, padding: 4, boxShadow: '0 4px 10px rgba(0,0,0,0.12)' }}>
+              <img src={qr} alt="QR" width={54} height={54} style={{ display: 'block' }} />
+            </div>
+            <div style={{ fontSize: 7, fontWeight: 700, color: '#ffb585', letterSpacing: 0.8, marginTop: 3 }}>SCAN TO VERIFY</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
-            {/* Services List */}
-            <div className="px-8 flex-1 flex flex-col justify-center space-y-3">
-              {[
-                { title: 'Product Brokerage', icon: '✅' },
-                { title: 'Property Brokerage', icon: '✅' },
-                { title: 'Vehicle Brokerage', icon: '✅' },
-                { title: 'Marketplace Verification', icon: '✅' },
-                { title: 'Customer Support', icon: '✅' },
-              ].map((service, index) => (
-                <div key={index} className="flex items-center gap-3">
-                  <span className="text-xl">{service.icon}</span>
-                  <p className="text-white font-semibold text-sm">{service.title}</p>
+function BrokerBack({ qr, services }: { qr: string; services: string[] }) {
+  const displayServices = services.length > 0 ? services : DEFAULT_SERVICES;
+  return (
+    <div style={{ width: 520, height: 300, borderRadius: 18, overflow: 'hidden', position: 'relative', background: '#fdfdfc', fontFamily: "'Poppins', Arial, sans-serif", boxShadow: '0 22px 45px rgba(10,20,50,0.25)', flexShrink: 0 }}>
+      <div style={{ position: 'absolute', left: -60, top: -45, width: 110, height: 110, transform: 'rotate(45deg)', background: ORG, opacity: 0.9 }} />
+      <div style={{ position: 'absolute', right: -50, top: 24, width: 110, height: 110, transform: 'rotate(45deg)', background: NAVY, opacity: 0.08 }} />
+
+      <div style={{ position: 'relative', zIndex: 2, display: 'flex', flexDirection: 'column', height: '100%', padding: '26px 28px 0' }}>
+        <div style={{ display: 'flex', flex: 1, gap: 18 }}>
+          <div style={{ flex: '1.15', display: 'flex', flexDirection: 'column' }}>
+            <span style={{ alignSelf: 'flex-start', background: NAVY, color: '#fff', fontSize: 10, fontWeight: 700, letterSpacing: 1.5, padding: '6px 14px', borderRadius: 6, marginBottom: 14 }}>AUTHORIZED SERVICES</span>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
+              {displayServices.map(s => (
+                <div key={s} style={{ display: 'flex', alignItems: 'center', gap: 9, fontSize: 11.5, color: NAVY, fontWeight: 600 }}>
+                  <span style={{ width: 16, height: 16, borderRadius: '50%', background: ORG, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, flexShrink: 0 }}><Check size={10} /></span>
+                  {s}
                 </div>
               ))}
             </div>
+          </div>
 
-            {/* Contact Information */}
-            <div className="px-8 pb-8 space-y-4 border-t-2" style={{ borderColor: ORANGE }}>
-              <div className="flex items-start gap-3 mt-4">
-                <span className="text-xl">🌐</span>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 14, paddingTop: 30 }}>
+            {[
+              { ic: <Globe size={14} color={ORG} />, label: 'Website',   val: `www.${SITE_DOMAIN}` },
+              { ic: <Mail size={14} color={ORG} />, label: 'Email',     val: `info@${SITE_DOMAIN}` },
+              { ic: <Phone size={14} color={ORG} />, label: 'Emergency Contact', val: '+250 788 300 003' },
+            ].map(({ ic, label, val }) => (
+              <div key={label} style={{ display: 'flex', gap: 9, alignItems: 'flex-start' }}>
+                <span style={{ color: ORG, marginTop: 1, flexShrink: 0 }}>{ic}</span>
                 <div>
-                  <p className="text-orange-500 text-xs font-bold">Website</p>
-                  <p className="text-white text-sm">www.enyagasambu.rw</p>
+                  <div style={{ fontSize: 9.5, color: '#5c6684', fontWeight: 600 }}>{label}</div>
+                  <div style={{ fontSize: 11.5, color: NAVY, fontWeight: 700 }}>{val}</div>
                 </div>
               </div>
+            ))}
+          </div>
 
-              <div className="flex items-start gap-3">
-                <span className="text-xl">✉️</span>
-                <div>
-                  <p className="text-orange-500 text-xs font-bold">Email</p>
-                  <p className="text-white text-sm">info@enyagasambu.rw</p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3">
-                <span className="text-xl">📞</span>
-                <div>
-                  <p className="text-orange-500 text-xs font-bold">Emergency Contact</p>
-                  <p className="text-white text-sm">+250 788 300 003</p>
-                </div>
-              </div>
-
-              <div className="text-center mt-4 pt-4 border-t-2" style={{ borderColor: ORANGE }}>
-                <p className="text-orange-500 font-bold text-xs">Building Trust. Connecting Opportunities. Growing Together.</p>
-              </div>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+            <div style={{ border: '1px solid rgba(23,42,99,0.15)', borderRadius: 8, padding: 4 }}>
+              <img src={qr} alt="QR" width={60} height={60} style={{ display: 'block' }} />
             </div>
+            <div style={{ fontSize: 7.5, fontWeight: 700, color: NAVY, letterSpacing: 0.8 }}>SCAN TO VERIFY</div>
           </div>
         </div>
-      </div>
 
-      {/* Click to Flip Instruction */}
-      <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2">
-        <p className="text-gray-600 text-sm animate-bounce">👆 Click to flip certificate</p>
+        <div style={{ position: 'relative', margin: '0 -28px', background: NAVY, padding: '11px 28px', overflow: 'hidden' }}>
+          <div style={{ position: 'absolute', right: -10, top: 0, bottom: 0, width: 80, transform: 'skewX(-12deg)', background: ORG }} />
+          <p style={{ position: 'relative', margin: 0, fontSize: 11, fontWeight: 600, fontStyle: 'italic', color: '#ffb585', letterSpacing: 0.4 }}>Building Trust. Connecting Opportunities. Growing Together.</p>
+        </div>
       </div>
+    </div>
+  );
+}
+
+export default function BrokerCertificate({
+  name,
+  brokerId,
+  district = 'Kigali City',
+  phone,
+  email,
+  photo = null,
+  services = [],
+  id = 'broker-cert-print',
+  className,
+  showBack = true,
+}: BrokerCertificateProps) {
+  const verifyUrl = `https://${SITE_DOMAIN}/verify-broker/${brokerId}`;
+  const qr = useQrDataUrl(verifyUrl, { size: 130, color: '#1B2A5E', bgColor: '#ffffff', margin: 4 });
+
+  return (
+    <div id={id} className={className} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <BrokerFront
+        name={name}
+        brokerId={brokerId}
+        district={district}
+        phone={phone || ''}
+        email={email}
+        qr={qr}
+        photo={photo}
+      />
+      {showBack && <BrokerBack qr={qr} services={services} />}
     </div>
   );
 }

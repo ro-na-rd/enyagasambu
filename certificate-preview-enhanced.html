@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Professional Ambassador Certificate - Enhanced</title>
+    <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Playfair+Display:wght@700;900&family=Cinzel:wght@700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial', 'Helvetica', sans-serif;
+            margin: 0;
+            padding: 40px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+        
+        .certificate {
+            width: 1123px;
+            height: 794px;
+            position: relative;
+            background: #fff;
+            overflow: hidden;
+            margin: 20px auto;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+        
+        /* Professional Border Frame */
+        .border-frame {
+            position: absolute;
+            inset: 12px;
+            border: 3px solid #0f1e42;
+            border-radius: 8px;
+            pointer-events: none;
+            z-index: 10;
+        }
+        
+        .border-frame::before {
+            content: '';
+            position: absolute;
+            inset: 4px;
+            border: 1px solid #E85D04;
+            border-radius: 4px;
+        }
+        
+        /* Elegant Background Pattern */
+        .background-pattern {
+            position: absolute;
+            inset: 0;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(232, 93, 4, 0.03) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(15, 30, 66, 0.03) 0%, transparent 50%),
+                linear-gradient(135deg, #fafbfc 0%, #f0f2f5 100%);
+            z-index: 0;
+        }
+        
+        .guilloche-pattern {
+            position: absolute;
+            inset: 0;
+            opacity: 0.04;
+            z-index: 1;
+            background-image: 
+                repeating-linear-gradient(45deg, #0f1e42 0, #0f1e42 1px, transparent 0, transparent 50%),
+                repeating-linear-gradient(-45deg, #0f1e42 0, #0f1e42 1px, transparent 0, transparent 50%);
+            background-size: 20px 20px;
+        }
+        
+        /* Watermark */
+        .watermark {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-30deg);
+            font-family: 'Playfair Display', serif;
+            font-size: 180px;
+            font-weight: 900;
+            color: rgba(15, 30, 66, 0.03);
+            z-index: 1;
+            pointer-events: none;
+            letter-spacing: 20px;
+        }
+        
+        /* Enhanced Corner Decorations */
+        .corner-decoration {
+            position: absolute;
+            z-index: 2;
+        }
+        
+        .corner-top-left {
+            top: 0;
+            left: 0;
+            width: 280px;
+            height: 200px;
+        }
+        
+        .corner-top-right {
+            top: 0;
+            right: 0;
+            width: 240px;
+            height: 180px;
+        }
+        
+        .corner-bottom-right {
+            bottom: 0;
+            right: 0;
+            width: 260px;
+            height: 200px;
+        }
+        
+        .corner-bottom-left {
+            bottom: 0;
+            left: 0;
+            width: 280px;
+            height: 200px;
+        }
+        
+        /* Professional Header */
+        .header {
+            position: absolute;
+            top: 28px;
+            left: 36px;
+            right: 36px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            z-index: 5;
+        }
+        
+        .logo-section {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            min-width: 280px;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+        
+        .logo-emblem {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #0f1e42 0%, #1a3a6e 100%);
+            border: 3px solid #E85D04;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 32px;
+            font-weight: 900;
+            font-family: 'Arial Black', Arial;
+            box-shadow: 0 4px 12px rgba(232, 93, 4, 0.3);
+        }
+        
+        .logo-text {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .logo-main {
+            font-size: 18px;
+            font-weight: 900;
+            color: #0f1e42;
+            letter-spacing: 1.5px;
+            font-family: 'Cinzel', serif;
+        }
+        
+        .logo-sub {
+            font-size: 9px;
+            color: #E85D04;
+            letter-spacing: 2.5px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        
+        .logo-url {
+            font-size: 8px;
+            color: #0f1e42;
+            margin-top: 3px;
+            letter-spacing: 0.5px;
+        }
+        
+        /* Enhanced Badge */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 14px;
+            border-radius: 32px;
+            border: 2px solid #0f1e42;
+            background: linear-gradient(135deg, #f7f9ff 0%, #e8efff 100%);
+            padding: 14px 20px;
+            box-shadow: 0 8px 24px rgba(15, 30, 66, 0.12);
+        }
+        
+        .badge-emblem {
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #E85D04 0%, #ff7b2e 100%);
+            display: grid;
+            place-items: center;
+            color: white;
+            font-size: 11px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            box-shadow: 0 4px 12px rgba(232, 93, 4, 0.4);
+        }
+        
+        .badge-text {
+            display: flex;
+            flex-direction: column;
+            line-height: 1.1;
+        }
+        
+        .badge-text-small {
+            font-size: 10px;
+            font-weight: 700;
+            color: #0f1e42;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+        }
+        
+        .badge-text-large {
+            font-size: 16px;
+            font-weight: 900;
+            color: #0f1e42;
+            letter-spacing: 0.8px;
+            font-family: 'Cinzel', serif;
+        }
+        
+        /* Center Title Section */
+        .center-section {
+            position: absolute;
+            top: 28px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            z-index: 5;
+        }
+        
+        .cert-title {
+            font-family: 'Playfair Display', Georgia, serif;
+            font-size: 62px;
+            color: #0f1e42;
+            margin: 0;
+            letter-spacing: 6px;
+            line-height: 1;
+            font-weight: 900;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .subtitle {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-top: 12px;
+        }
+        
+        .subtitle-line {
+            width: 100px;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #0f1e42, transparent);
+        }
+        
+        .subtitle-text {
+            font-size: 16px;
+            color: #E85D04;
+            font-weight: 900;
+            letter-spacing: 5px;
+            text-transform: uppercase;
+            font-family: 'Cinzel', serif;
+        }
+        
+        .awarded-text {
+            margin: 16px 0 0;
+            font-size: 12px;
+            color: #555;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+        
+        /* Right Section - QR and Details */
+        .details-section {
+            position: absolute;
+            top: 28px;
+            right: 36px;
+            width: 260px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 16px;
+            z-index: 5;
+        }
+        
+        .qr-code {
+            width: 100px;
+            height: 100px;
+            border-radius: 20px;
+            border: 2px solid #0f1e42;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            color: #666;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .details-box {
+            width: 100%;
+            background: linear-gradient(135deg, #f7f9ff 0%, #e8efff 100%);
+            border-radius: 20px;
+            padding: 18px 20px;
+            border: 2px solid rgba(15, 30, 66, 0.15);
+            box-shadow: 0 8px 24px rgba(15, 30, 66, 0.1);
+        }
+        
+        .details-title {
+            font-size: 9px;
+            color: #E85D04;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 12px;
+            text-align: center;
+        }
+        
+        .details-row {
+            font-size: 10px;
+            color: #0f1e42;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .details-row:last-child {
+            margin-bottom: 0;
+        }
+        
+        .cert-number {
+            display: inline-block;
+            background: linear-gradient(135deg, #0f1e42 0%, #1a3a6e 100%);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 8px;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+        
+        /* Main Content Section */
+        .main-content {
+            position: absolute;
+            top: 180px;
+            left: 36px;
+            right: 36px;
+            bottom: 40px;
+            display: flex;
+            gap: 24px;
+            z-index: 5;
+        }
+        
+        /* Left Seal Section */
+        .seal-section {
+            width: 280px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding-top: 24px;
+        }
+        
+        .seal {
+            width: 160px;
+            height: 160px;
+            border-radius: 50%;
+            background: radial-gradient(circle, #f7d670 0%, #c9a227 50%, #a8841a 100%);
+            border: 4px solid #a8841a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            box-shadow: 0 8px 24px rgba(168, 132, 26, 0.4);
+        }
+        
+        .seal::before {
+            content: '';
+            position: absolute;
+            inset: 8px;
+            border: 2px dashed #a8841a;
+            border-radius: 50%;
+        }
+        
+        .seal-inner {
+            width: 110px;
+            height: 110px;
+            border-radius: 50%;
+            border: 2px solid #a8841a;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.3);
+        }
+        
+        .seal-text {
+            font-size: 9px;
+            font-weight: 900;
+            color: #0f1e42;
+            font-family: 'Arial', sans-serif;
+            line-height: 1.3;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .seal-label {
+            margin-top: 24px;
+            font-size: 11px;
+            color: #444;
+            font-weight: 700;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        /* Center Body Section */
+        .body-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 0 20px;
+        }
+        
+        .recipient-name {
+            font-family: 'Great Vibes', cursive;
+            font-size: 52px;
+            color: #0f1e42;
+            margin: 0 0 12px;
+            line-height: 1.05;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .name-line {
+            width: 400px;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, #c9a227, #E85D04, #c9a227, transparent);
+            margin-bottom: 24px;
+            box-shadow: 0 2px 8px rgba(201, 162, 39, 0.3);
+        }
+        
+        .role-text {
+            font-size: 15px;
+            color: #000;
+            text-align: center;
+            margin: 0 0 16px;
+            line-height: 1.6;
+        }
+        
+        .role-highlight {
+            font-size: 20px;
+            font-weight: 900;
+            color: #E85D04;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            font-family: 'Cinzel', serif;
+        }
+        
+        .description {
+            font-size: 11px;
+            color: #555;
+            text-align: center;
+            margin: 0 0 28px;
+            line-height: 1.8;
+            max-width: 560px;
+            font-weight: 500;
+        }
+        
+        .info-grid {
+            display: flex;
+            justify-content: center;
+            gap: 32px;
+            flex-wrap: wrap;
+            margin-bottom: 28px;
+        }
+        
+        .info-item {
+            text-align: center;
+            min-width: 110px;
+        }
+        
+        .info-label {
+            font-size: 9px;
+            color: #E85D04;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 6px;
+        }
+        
+        .info-value {
+            font-size: 11px;
+            color: #0f1e42;
+            font-weight: 700;
+        }
+        
+        .signatures {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 24px;
+            width: 100%;
+            max-width: 560px;
+        }
+        
+        .signature {
+            text-align: center;
+            flex: 1;
+        }
+        
+        .signature-line {
+            width: 140px;
+            height: 42px;
+            border-bottom: 2px solid #0f1e42;
+        }
+        
+        .signature-title {
+            font-size: 9px;
+            color: #0f1e42;
+            font-weight: 700;
+            margin-top: 6px;
+            border-top: 1px solid #0f1e42;
+            padding-top: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .corporate-stamp {
+            width: 100px;
+            height: 100px;
+            border: 3px solid #0f1e42;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(15, 30, 66, 0.2);
+        }
+        
+        .stamp-inner {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #0f1e42 0%, #1a3a6e 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 18px;
+            font-weight: 900;
+        }
+        
+        /* Right Responsibilities Section */
+        .responsibilities-section {
+            width: 260px;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        
+        .resp-box {
+            border-radius: 24px;
+            border: 2px solid #0f1e42;
+            background: linear-gradient(135deg, #eef4fb 0%, #e0e8f5 100%);
+            overflow: hidden;
+            box-shadow: 0 12px 32px rgba(15, 30, 66, 0.12);
+        }
+        
+        .resp-header {
+            background: linear-gradient(135deg, #0f1e42 0%, #1a3a6e 100%);
+            padding: 18px 20px;
+            text-align: center;
+        }
+        
+        .resp-header-text {
+            color: white;
+            font-size: 11px;
+            font-weight: 900;
+            letter-spacing: 2.5px;
+            text-transform: uppercase;
+            font-family: 'Cinzel', serif;
+        }
+        
+        .resp-content {
+            padding: 20px 18px;
+        }
+        
+        .resp-item {
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+            margin-bottom: 14px;
+        }
+        
+        .resp-item:last-child {
+            margin-bottom: 0;
+        }
+        
+        .resp-bullet {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #E85D04 0%, #ff7b2e 100%);
+            display: grid;
+            place-items: center;
+            margin-top: 1px;
+            flex-shrink: 0;
+            box-shadow: 0 2px 8px rgba(232, 93, 4, 0.3);
+        }
+        
+        .resp-bullet span {
+            color: white;
+            font-size: 11px;
+            font-weight: 900;
+        }
+        
+        .resp-text {
+            margin: 0;
+            font-size: 10px;
+            color: #0f1e42;
+            line-height: 1.5;
+            font-weight: 500;
+        }
+        
+        /* Page Title */
+        .page-title {
+            text-align: center;
+            margin-bottom: 30px;
+            color: white;
+        }
+        
+        .page-title h1 {
+            font-size: 36px;
+            margin: 0 0 10px;
+            font-weight: 900;
+            text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.3);
+        }
+        
+        .page-title p {
+            font-size: 16px;
+            margin: 0;
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body>
+    <div class="page-title">
+        <h1>Professional Ambassador Certificate</h1>
+        <p>Enhanced Design with Premium Elements</p>
+    </div>
+    
+    <div class="certificate">
+        <!-- Background Elements -->
+        <div class="background-pattern"></div>
+        <div class="guilloche-pattern"></div>
+        <div class="watermark">E-NYAGASAMBU</div>
+        
+        <!-- Professional Border Frame -->
+        <div class="border-frame"></div>
+        
+        <!-- Enhanced Corner Decorations -->
+        <svg class="corner-decoration corner-top-left" viewBox="0 0 280 200">
+            <defs>
+                <linearGradient id="cornerGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" style="stop-color:#0f1e42;stop-opacity:1" />
+                    <stop offset="100%" style="stop-color:#1a3a6e;stop-opacity:1" />
+                </linearGradient>
+                <linearGradient id="cornerGrad2" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" style="stop-color:#E85D04;stop-opacity:0.9" />
+                    <stop offset="100%" style="stop-color:#ff7b2e;stop-opacity:0.7" />
+                </linearGradient>
+            </defs>
+            <path d="M0,0 L280,0 L280,100 Q180,140 0,200 Z" fill="url(#cornerGrad1)" />
+            <path d="M0,0 L200,0 Q140,60 0,140 Z" fill="url(#cornerGrad2)" />
+            <path d="M0,0 L160,0 Q100,50 0,120 Z" fill="#0f1e42" opacity="0.3" />
+        </svg>
+        
+        <svg class="corner-decoration corner-top-right" viewBox="0 0 240 180">
+            <path d="M240,0 L0,0 L0,90 Q80,130 240,180 Z" fill="url(#cornerGrad1)" />
+            <path d="M240,0 L60,0 Q120,50 240,120 Z" fill="url(#cornerGrad2)" />
+            <path d="M240,0 L120,0 Q160,40 240,100 Z" fill="#0f1e42" opacity="0.3" />
+        </svg>
+        
+        <svg class="corner-decoration corner-bottom-right" viewBox="0 0 260 200">
+            <path d="M260,200 L260,0 L130,0 Q180,80 260,200 Z" fill="url(#cornerGrad1)" />
+            <path d="M260,200 L260,50 Q170,100 260,200 Z" fill="url(#cornerGrad2)" />
+            <path d="M260,200 L260,80 Q190,120 260,200 Z" fill="#0f1e42" opacity="0.3" />
+        </svg>
+        
+        <svg class="corner-decoration corner-bottom-left" viewBox="0 0 280 200">
+            <path d="M0,200 L280,200 L280,80 Q180,40 0,0 Z" fill="url(#cornerGrad1)" />
+            <path d="M0,200 L200,200 Q140,160 0,80 Z" fill="url(#cornerGrad2)" />
+            <path d="M0,200 L160,200 Q100,160 0,100 Z" fill="#0f1e42" opacity="0.3" />
+        </svg>
+        
+        <!-- Header Section -->
+        <div class="header">
+            <div class="logo-section">
+                <div class="logo">
+                    <div class="logo-emblem">E</div>
+                    <div class="logo-text">
+                        <div class="logo-main">E-NYAGASAMBU</div>
+                        <div class="logo-sub">Digital Marketplace</div>
+                        <div class="logo-url">www.enyagasambu.rw</div>
+                    </div>
+                </div>
+                <div class="badge">
+                    <div class="badge-emblem">Official</div>
+                    <div class="badge-text">
+                        <span class="badge-text-small">Brand</span>
+                        <span class="badge-text-large">Ambassador</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="details-section">
+                <div class="qr-code">QR Code</div>
+                <div class="details-box">
+                    <div class="details-title">Scan to Verify</div>
+                    <div class="details-row">
+                        <strong>Certificate No.</strong> 
+                        <span class="cert-number">ENA-AMB-2026-0001</span>
+                    </div>
+                    <div class="details-row">
+                        <strong>Issue Date</strong> 
+                        <span>15 August 2026</span>
+                    </div>
+                    <div class="details-row">
+                        <strong>Valid Until</strong> 
+                        <span>15 August 2027</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Center Title -->
+        <div class="center-section">
+            <h1 class="cert-title">CERTIFICATE</h1>
+            <div class="subtitle">
+                <div class="subtitle-line"></div>
+                <span class="subtitle-text">Of Appointment</span>
+                <div class="subtitle-line"></div>
+            </div>
+            <p class="awarded-text">This Certificate is Proudly Awarded To</p>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="seal-section">
+                <div class="seal">
+                    <div class="seal-inner">
+                        <div class="seal-text">Official<br/>Brand<br/>Ambassador</div>
+                    </div>
+                </div>
+                <div class="seal-label">Official Brand Ambassador Seal</div>
+            </div>
+            
+            <div class="body-section">
+                <h2 class="recipient-name">John Doe</h2>
+                <div class="name-line"></div>
+                <p class="role-text">
+                    For being officially appointed as a <span class="role-highlight">Brand Ambassador</span> of E-Nyagasambu Digital Marketplace
+                </p>
+                <p class="description">
+                    In recognition of your commitment to promoting digital commerce, supporting local businesses, onboarding users, and representing the values and mission of E-Nyagasambu with excellence and professionalism.
+                </p>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <div class="info-label">Authorized Territory</div>
+                        <div class="info-value">Kigali City</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Issue Date</div>
+                        <div class="info-value">15 August 2026</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Valid Until</div>
+                        <div class="info-value">15 August 2027</div>
+                    </div>
+                </div>
+                <div class="signatures">
+                    <div class="signature">
+                        <div class="signature-line"></div>
+                        <div class="signature-title">Platform Director<br/>E-Nyagasambu Ltd</div>
+                    </div>
+                    <div class="corporate-stamp">
+                        <div class="stamp-inner">E</div>
+                    </div>
+                    <div class="signature">
+                        <div class="signature-line"></div>
+                        <div class="signature-title">Business Development<br/>E-Nyagasambu Ltd</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="responsibilities-section">
+                <div class="resp-box">
+                    <div class="resp-header">
+                        <span class="resp-header-text">Responsibilities</span>
+                    </div>
+                    <div class="resp-content">
+                        <div class="resp-item">
+                            <div class="resp-bullet"><span>✓</span></div>
+                            <p class="resp-text">Promote E-Nyagasambu services</p>
+                        </div>
+                        <div class="resp-item">
+                            <div class="resp-bullet"><span>✓</span></div>
+                            <p class="resp-text">Recruit suppliers and vendors</p>
+                        </div>
+                        <div class="resp-item">
+                            <div class="resp-bullet"><span>✓</span></div>
+                            <p class="resp-text">Support user onboarding</p>
+                        </div>
+                        <div class="resp-item">
+                            <div class="resp-bullet"><span>✓</span></div>
+                            <p class="resp-text">Conduct awareness campaigns</p>
+                        </div>
+                        <div class="resp-item">
+                            <div class="resp-bullet"><span>✓</span></div>
+                            <p class="resp-text">Represent platform professionally</p>
+                        </div>
+                        <div class="resp-item">
+                            <div class="resp-bullet"><span>✓</span></div>
+                            <p class="resp-text">Uphold E-Nyagasambu policies</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

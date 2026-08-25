@@ -5,6 +5,7 @@ import { useCurrency } from '@/context/CurrencyContext';
 import api from '@/lib/api';
 import { Check, Lock, Download, Camera } from '@/lib/icons';
 import { SITE_DOMAIN, SITE_URL } from '@/lib/config';
+import { useQrDataUrl } from '@/components/QrCode';
 
 const NAVY = '#0f1e42';
 const ORG = '#E85D04';
@@ -14,10 +15,10 @@ const fmtRWF = (n: number) => 'RWF ' + Number(n || 0).toLocaleString('en-US');
 
 function CertPreview({ name, businessName, photo, certNo, issued, validUntil }: { name: string; businessName?: string | null; photo?: string | null; certNo?: string; issued: string; validUntil: string }) {
   const verifyUrl = `${SITE_URL}/verify-supplier/${certNo || 'pending'}`;
-  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(verifyUrl)}`;
+  const qrUrl = useQrDataUrl(verifyUrl, { size: 100, color: NAVY, bgColor: '#ffffff' });
 
   return (
-    <div className="relative bg-white rounded-xl overflow-hidden border border-gray-200 select-none"
+    <div id="supplier-cert-print" className="relative bg-white rounded-xl overflow-hidden border border-gray-200 select-none"
       style={{ userSelect: 'none', WebkitUserSelect: 'none' }}
       onContextMenu={e => e.preventDefault()}>
       {['tl','tr','bl','br'].map(p => {
@@ -117,12 +118,13 @@ export default function SupplierCertificatePage() {
   const [paying, setPaying] = useState(false);
   const [msg, setMsg] = useState('');
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const pollDeadlineRef = useRef(0);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const fetchCert = async () => {
     api.get('/supplier/certificate')
       .then(({ data }) => setCert(data.certificate))
-      .catch(() => { })
+      .catch(() => { setMsg('Could not load your certificate status. Please refresh.'); })
       .finally(() => setLoading(false));
   };
 
@@ -158,9 +160,16 @@ export default function SupplierCertificatePage() {
     try {
       const { data } = await api.post('/supplier/certificate/pay', { phone, certificateTypeId: cert?.certificate_type_id });
       setMsg('Payment request sent. Approve on your phone.');
-      
-      // Poll for payment status
+
+      // Poll for payment status (max 5 minutes)
+      pollDeadlineRef.current = Date.now() + 300000;
       pollRef.current = setInterval(async () => {
+        if (Date.now() > pollDeadlineRef.current) {
+          if (pollRef.current) clearInterval(pollRef.current);
+          setPaying(false);
+          setMsg('Payment confirmation timed out. If you approved the payment, your certificate will appear shortly.');
+          return;
+        }
         try {
           const { data: statusData } = await api.get(`/supplier/certificate/payment-status/${data.referenceId}`);
           if (statusData.status === 'generated' || statusData.status === 'paid') {
@@ -178,16 +187,9 @@ export default function SupplierCertificatePage() {
             setPaying(false);
           }
         } catch {
-          if (pollRef.current) clearInterval(pollRef.current);
-          setPaying(false);
+          // Transient network error — keep polling until deadline
         }
       }, 5000);
-      
-      // Stop polling after 5 minutes
-      setTimeout(() => {
-        if (pollRef.current) clearInterval(pollRef.current);
-        if (paying) setPaying(false);
-      }, 300000);
     } catch (err: unknown) {
       setMsg((err as { response?: { data?: { message?: string } } })?.response?.data?.message || (err instanceof Error ? err.message : 'Payment initiation failed'));
       setPaying(false);
@@ -218,6 +220,37 @@ export default function SupplierCertificatePage() {
 
   return (
     <div className="p-4 lg:p-8 max-w-3xl mx-auto" onContextMenu={e => { if (!isGenerated) e.preventDefault(); }}>
+      <style jsx global>{`
+        @media print {
+          html, body {
+            background: #ffffff !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+          body * {
+            visibility: hidden !important;
+          }
+          #supplier-cert-print,
+          #supplier-cert-print * {
+            visibility: visible !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+          #supplier-cert-print {
+            position: fixed !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 100vw !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            margin: 0 !important;
+            transform: none !important;
+            page-break-inside: avoid;
+            break-inside: avoid;
+          }
+          @page { size: A4 portrait; margin: 8mm; }
+        }
+      `}</style>
       <h1 className="text-2xl font-bold text-gray-900 mb-1">My Certificate</h1>
       <p className="text-sm text-gray-500 mb-6">
         {isGenerated

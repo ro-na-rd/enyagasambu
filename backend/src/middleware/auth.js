@@ -84,4 +84,33 @@ const authenticatePhoneSeller = (req, res, next) => {
   }
 };
 
-module.exports = { authenticate, authenticateOptional, authenticatePhoneSeller, requireAdmin, requireStaff, requireBroker, requireAmbassador, requireSupplier };
+const requireExecutive = (req, res, next) => {
+  if (!req.user || (req.user.role !== 'executive' && req.user.is_staff !== true)) {
+    return res.status(403).json({ message: 'Executive access required' });
+  }
+  next();
+};
+
+const requireExecutiveRole = (allowedRoles) => (req, res, next) => {
+  if (!req.user || !allowedRoles.includes(req.user.executive_role)) {
+    return res.status(403).json({ message: 'Executive role not authorized' });
+  }
+  next();
+};
+
+const checkExecutivePermission = async (pool, executiveRole, module, action) => {
+  const [rows] = await pool.query(
+    'SELECT 1 FROM executive_permissions WHERE executive_role = ? AND module = ? AND action = ?',
+    [executiveRole, module, action]
+  );
+  return rows.length > 0;
+};
+
+const logExecutiveAction = async (pool, staffId, executiveRole, action, module, recordId, previousValue, newValue, ipAddress, userAgent) => {
+  await pool.query(
+    'INSERT INTO executive_audit_log (staff_id, executive_role, action, module, record_id, previous_value, new_value, ip_address, user_agent) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    [staffId, executiveRole, action, module, recordId, previousValue, newValue, ipAddress, userAgent]
+  );
+};
+
+module.exports = { authenticate, authenticateOptional, authenticatePhoneSeller, requireAdmin, requireStaff, requireBroker, requireAmbassador, requireSupplier, requireExecutive, requireExecutiveRole, checkExecutivePermission, logExecutiveAction };

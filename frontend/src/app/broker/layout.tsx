@@ -6,7 +6,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import {
   LayoutDashboard, User, BadgeCheck, Users, Home, CreditCard, DollarSign, FileText,
-  MessageCircle, TrendingUp, Bell, Settings, HelpCircle, LogOut, Menu, X, Award,
+  MessageCircle, TrendingUp, Bell, Settings, HelpCircle, LogOut, Menu,
 } from '@/lib/icons';
 import NotificationBell from '@/components/NotificationBell';
 import { useUnreadCount } from '@/lib/useUnreadCount';
@@ -198,36 +198,26 @@ export default function BrokerLayout({ children }: { children: React.ReactNode }
         <div className="fixed inset-0 bg-black/30 z-20 lg:hidden" onClick={() => setSidebarOpen(false)} />
       )}
 
-      {/* Sidebar - Professional Dark Theme */}
-      <aside className={`fixed inset-y-0 left-0 z-30 w-64 bg-gradient-to-b from-[#0f1e42] to-[#0a1530] flex flex-col transition-transform duration-200 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
-        {/* Logo & Brand */}
-        <div className="px-4 py-6 border-b border-white/10 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <p className="text-white font-bold text-lg">Broker Portal</p>
-          </div>
-          <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-white/40 hover:text-white">
-            <X size={18} />
-          </button>
-        </div>
+      {/* Sidebar - Clean White Theme (matches ambassador) */}
+      <aside className={`fixed inset-y-0 left-0 z-30 w-64 bg-white border-r border-gray-200 flex flex-col transition-transform duration-200 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
 
-        {/* User Card */}
-        <div className="px-4 py-4 bg-gradient-to-r from-[#E85D04]/20 to-transparent border-b border-white/10">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm shrink-0 bg-gradient-to-br from-[#E85D04] to-[#f2701c]">
-              {initials}
+        {/* Company Brand */}
+        <div className="px-4 py-4 border-b border-gray-100">
+          <Link href="/broker" className="flex items-center gap-3">
+            <img src="/assets/LOGO1.png" alt="E-Nyagasambu" className="w-10 h-10 object-contain shrink-0" />
+            <div className="leading-tight min-w-0">
+              <p className="text-sm font-bold text-gray-900 truncate">E-Nyagasambu</p>
+              <p className="text-[9px] font-semibold tracking-[0.22em] uppercase" style={{ color: `${ORG}cc` }}>Broker Portal</p>
             </div>
-            <div className="min-w-0">
-              <p className="text-sm font-bold text-white truncate">{user.name}</p>
-              <p className="text-[10px] text-blue-200">Broker Account</p>
-            </div>
-          </div>
+          </Link>
         </div>
 
         {/* Navigation Groups */}
-        <nav className="flex-1 overflow-y-auto py-4 px-2 space-y-6">
+        <nav className="flex-1 overflow-y-auto py-3 px-3 space-y-4">
           {NAV_GROUPS.map(group => (
             <div key={group.title}>
-              <div className="space-y-1">
+              <p className="px-3 mb-1 text-[9px] font-bold tracking-[0.18em] uppercase text-gray-400">{group.title}</p>
+              <div className="space-y-0.5">
                 {group.items.map(({ href, iconKey, label, badge }) => {
                   const active = isActive(href);
                   const Icon = menuIcons[iconKey];
@@ -239,11 +229,12 @@ export default function BrokerLayout({ children }: { children: React.ReactNode }
                   return (
                     <Link key={href} href={href}
                       onClick={() => setSidebarOpen(false)}
-                      className={`flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm transition ${
+                      className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition ${
                         active
-                          ? 'font-semibold bg-[#E85D04]/20 text-[#E85D04] border border-[#E85D04]/30'
-                          : 'text-blue-200 hover:text-white hover:bg-white/5'
-                      }`}>
+                          ? 'font-semibold bg-orange-50'
+                          : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                      }`}
+                      style={active ? { color: ORG } : {}}>
                       <Icon size={18} />
                       <span className="flex-1 truncate">{label}</span>
                       {dynamicBadge && (
@@ -251,7 +242,7 @@ export default function BrokerLayout({ children }: { children: React.ReactNode }
                           {dynamicBadge}
                         </span>
                       )}
-                      {active && <div className="w-1.5 h-1.5 rounded-full bg-[#E85D04]"></div>}
+                      {active && <span className="ml-auto w-1.5 h-1.5 rounded-full" style={{ background: ORG }} />}
                     </Link>
                   );
                 })}
@@ -260,10 +251,20 @@ export default function BrokerLayout({ children }: { children: React.ReactNode }
           ))}
         </nav>
 
-        {/* Logout Button */}
-        <div className="px-3 py-4 border-t border-white/10">
+        {/* User Card + Logout */}
+        <div className="px-3 py-3 border-t border-gray-100 space-y-1">
+          <div className="flex items-center gap-3 px-3 py-2">
+            <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0"
+              style={{ background: NAVY }}>
+              {initials}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[12px] font-semibold text-gray-800 truncate">{user.name}</p>
+              <p className="text-[10px] text-gray-400 truncate">{user.email || 'Broker'}</p>
+            </div>
+          </div>
           <button onClick={() => { logout(); router.push('/broker/login'); }}
-            className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm text-blue-200 hover:text-red-400 hover:bg-red-500/10 transition w-full">
+            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-gray-500 hover:text-red-600 hover:bg-red-50 transition w-full">
             <LogOut size={18} />
             <span>Logout</span>
           </button>
@@ -272,14 +273,17 @@ export default function BrokerLayout({ children }: { children: React.ReactNode }
 
       {/* Main Area */}
       <div className="flex-1 flex flex-col min-w-0 lg:ml-64">
-        {/* Top Header - Professional */}
-        <header className="bg-white border-b border-gray-200 px-4 lg:px-8 py-4 flex items-center justify-between sticky top-0 z-10 shadow-sm">
-          <div className="flex items-center gap-4">
-            <button className="lg:hidden p-2 text-gray-600 hover:text-gray-900 rounded-lg hover:bg-gray-100 transition" onClick={() => setSidebarOpen(true)}>
+
+        {/* Top Header - Clean White (matches ambassador) */}
+        <header className="bg-white border-b border-gray-200 px-4 lg:px-6 py-3 flex items-center justify-between sticky top-0 z-10 shadow-sm">
+          <div className="flex items-center gap-3">
+            <button className="lg:hidden text-gray-600 hover:text-gray-900" onClick={() => setSidebarOpen(true)}>
               <Menu size={20} />
             </button>
-            <div className="hidden sm:block">
-              <h2 className="text-sm font-semibold text-gray-400 capitalize">{pageTitle}</h2>
+            <div className="hidden sm:flex items-center gap-2 text-sm">
+              <span className="text-gray-900 font-medium capitalize">
+                {pageTitle}
+              </span>
             </div>
           </div>
 
@@ -289,10 +293,10 @@ export default function BrokerLayout({ children }: { children: React.ReactNode }
             {/* Messages Dropdown */}
             <div className="relative">
               <button onClick={(e) => { e.stopPropagation(); setProfileOpen(false); setMsgOpen(!msgOpen); }}
-                className="relative p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition" title="Messages">
-                <MessageCircle size={20} />
+                className="relative p-2 text-gray-500 hover:text-gray-800 hover:bg-gray-50 rounded-lg transition" title="Messages">
+                <MessageCircle size={19} />
                 {unreadMsgs > 0 && (
-                  <span className="absolute top-1.5 right-1.5 w-4 h-4 bg-[#E85D04] text-white text-[8px] font-bold rounded-full flex items-center justify-center">{unreadMsgs}</span>
+                  <span className="absolute top-1 right-1 min-w-4 h-4 px-1 text-white text-[8px] font-bold rounded-full flex items-center justify-center" style={{ background: ORG }}>{unreadMsgs}</span>
                 )}
               </button>
               {msgOpen && (
@@ -306,7 +310,7 @@ export default function BrokerLayout({ children }: { children: React.ReactNode }
                       <p className="text-xs text-gray-400 text-center py-8">No conversations yet</p>
                     ) : msgConvs.map((c) => (
                       <Link key={c.key} href="/broker/messages" className="flex items-start gap-3 px-4 py-3 border-b border-gray-50 last:border-b-0 hover:bg-gray-50 transition">
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#E85D04] to-[#f2701c] flex items-center justify-center text-white font-bold text-xs shrink-0">
+                        <div className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-xs shrink-0" style={{ background: `linear-gradient(135deg, ${ORG}, #f2701c)` }}>
                           {(c.name || '?').charAt(0).toUpperCase()}
                         </div>
                         <div className="flex-1 min-w-0">
@@ -315,40 +319,35 @@ export default function BrokerLayout({ children }: { children: React.ReactNode }
                           <p className="text-xs text-gray-400 mt-0.5">{convTime(c.lastAt)}</p>
                         </div>
                         {c.unread > 0 && (
-                          <span className="min-w-4 h-4 px-1 bg-[#E85D04] text-white text-[8px] font-bold rounded-full flex items-center justify-center shrink-0">{c.unread}</span>
+                          <span className="min-w-4 h-4 px-1 text-white text-[8px] font-bold rounded-full flex items-center justify-center shrink-0" style={{ background: ORG }}>{c.unread}</span>
                         )}
                       </Link>
                     ))}
                   </div>
-                  <Link href="/broker/messages" className="block text-center text-xs font-semibold text-[#E85D04] py-3 border-t border-gray-100 hover:bg-gray-50 rounded-b-xl">
+                  <Link href="/broker/messages" className="block text-center text-xs font-semibold py-3 border-t border-gray-100 hover:bg-gray-50 rounded-b-xl transition" style={{ color: ORG }}>
                     View All Messages
                   </Link>
                 </div>
               )}
             </div>
 
-            {/* Notifications */}
-            <button className="relative p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition" title="Notifications">
-              <Bell size={20} />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full"></span>
-            </button>
-
             {/* Profile Dropdown */}
             <div className="relative pl-2 ml-1 border-l border-gray-200">
               <button onClick={(e) => { e.stopPropagation(); setProfileOpen(!profileOpen); }}
                 className="flex items-center gap-2 hover:bg-gray-50 rounded-lg px-2 py-1 transition">
-                <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold bg-gradient-to-br from-[#0f1e42] to-[#E85D04]">
+                <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold" style={{ background: NAVY }}>
                   {initials}
                 </div>
                 <div className="hidden sm:block text-left text-sm">
                   <p className="font-semibold text-gray-800 leading-tight -mb-0.5">{user.name?.split(' ')[0]}</p>
-                  <p className="text-[10px] text-gray-500">Broker</p>
+                  <p className="text-[10px] text-gray-400">Broker Account</p>
                 </div>
               </button>
               {profileOpen && (
-                <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-50" onClick={(e) => e.stopPropagation()}>
-                  <Link href="/broker/profile" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 border-b border-gray-100">My Profile</Link>
-                  <Link href="/broker/settings" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 border-b border-gray-100">Settings</Link>
+                <div className="fixed right-4 top-16 w-[calc(100vw-32px)] max-w-[320px] z-50 bg-white rounded-xl shadow-lg border border-gray-100 py-2 lg:absolute lg:right-0 lg:top-full lg:mt-1 lg:w-48 lg:max-w-none" onClick={(e) => e.stopPropagation()}>
+                  <Link href="/broker/profile" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">My Profile</Link>
+                  <Link href="/broker/settings" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">Settings</Link>
+                  <hr className="my-1 border-gray-100" />
                   <button onClick={() => { logout(); router.push('/broker/login'); }} className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50">
                     Sign Out
                   </button>

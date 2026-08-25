@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { LayoutDashboard, User, Home, Store, HelpCircle, LogOut, Menu, Bell, Award } from '@/lib/icons';
+import { LayoutDashboard, User, Home, HelpCircle, LogOut, Menu, Bell, Award } from '@/lib/icons';
 
 const NAVY = '#0f1e42';
 const ORG = '#E85D04';
@@ -71,14 +71,12 @@ export default function SupplierLayout({ children }: { children: React.ReactNode
       {/* Sidebar */}
       <aside className={`fixed inset-y-0 left-0 z-30 w-64 bg-white border-r border-gray-200 flex flex-col transition-transform duration-200 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
         {/* Brand */}
-        <div className="px-5 py-5 border-b border-gray-100">
-          <Link href="/supplier" className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-lg flex items-center justify-center text-white font-black text-sm" style={{ background: `linear-gradient(135deg, ${NAVY}, ${ORG})` }}>
-              <Store size={18} />
-            </div>
-            <div>
-              <p className="font-bold text-sm leading-tight" style={{ color: NAVY }}>E-Nyagasambu</p>
-              <p className="text-[9px] font-bold tracking-widest uppercase" style={{ color: ORG }}>Supplier Portal</p>
+        <div className="px-4 py-4 border-b border-gray-100">
+          <Link href="/supplier" className="flex items-center gap-3">
+            <img src="/assets/LOGO1.png" alt="E-Nyagasambu" className="w-10 h-10 object-contain shrink-0" />
+            <div className="leading-tight min-w-0">
+              <p className="text-sm font-bold text-gray-900 truncate">E-Nyagasambu</p>
+              <p className="text-[9px] font-semibold tracking-[0.22em] uppercase" style={{ color: `${ORG}cc` }}>Supplier Portal</p>
             </div>
           </Link>
         </div>

@@ -74,9 +74,20 @@ exports.login = async(req, res) => {
 };
 
 exports.updateMe = async(req, res) => {
-    const { name, phone } = req.body;
+    const { name, phone, services } = req.body;
     try {
-        await pool.query('UPDATE users SET name = COALESCE(?, name), phone = COALESCE(?, phone) WHERE id = ?', [name, phone, req.user.id]);
+        if (services !== undefined) {
+            const servicesJson = services ? JSON.stringify(services) : null;
+            try {
+                await pool.query('UPDATE users SET name = COALESCE(?, name), phone = COALESCE(?, phone), services = COALESCE(?, services) WHERE id = ?', [name, phone, servicesJson, req.user.id]);
+            } catch (e) {
+                if (e.code === 'ER_BAD_FIELD_ERROR') {
+                    await pool.query('UPDATE users SET name = COALESCE(?, name), phone = COALESCE(?, phone) WHERE id = ?', [name, phone, req.user.id]);
+                } else throw e;
+            }
+        } else {
+            await pool.query('UPDATE users SET name = COALESCE(?, name), phone = COALESCE(?, phone) WHERE id = ?', [name, phone, req.user.id]);
+        }
         return res.json({ message: 'Profile updated' });
     } catch (err) {
         console.error(err);
@@ -86,11 +97,26 @@ exports.updateMe = async(req, res) => {
 
 exports.me = async(req, res) => {
     try {
-        const [rows] = await pool.query(
-            'SELECT id, name, email, phone, coins, role, referral_code, created_at FROM users WHERE id = ?', [req.user.id]
-        );
+        let rows;
+        try {
+            [rows] = await pool.query(
+                'SELECT id, name, email, phone, coins, role, referral_code, services, created_at FROM users WHERE id = ?', [req.user.id]
+            );
+        } catch (e) {
+            if (e.code === 'ER_BAD_FIELD_ERROR') {
+                [rows] = await pool.query(
+                    'SELECT id, name, email, phone, coins, role, referral_code, created_at FROM users WHERE id = ?', [req.user.id]
+                );
+                rows[0].services = [];
+            } else throw e;
+        }
         if (rows.length === 0) return res.status(404).json({ message: 'User not found' });
-        return res.json({ user: rows[0] });
+        const user = rows[0];
+        if (user.services && typeof user.services === 'string') {
+            try { user.services = JSON.parse(user.services); } catch { user.services = []; }
+        }
+        if (!user.services) user.services = [];
+        return res.json({ user });
     } catch (err) {
         console.error(err);
         return res.status(500).json({ message: 'Server error' });

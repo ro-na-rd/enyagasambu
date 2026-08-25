@@ -56,4 +56,10 @@ const verifyOtpLimiter = createLimiter({
   message: 'Too many OTP verification attempts. Please try again later.',
 });
 
-module.exports = { loginLimiter, otpLimiter, passwordResetLimiter, revealLimiter, verifyOtpLimiter };
+const executiveRateLimiter = createLimiter({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  message: 'Too many executive requests, please try again later',
+});
+
+module.exports = { loginLimiter, otpLimiter, passwordResetLimiter, revealLimiter, verifyOtpLimiter, executiveRateLimiter };

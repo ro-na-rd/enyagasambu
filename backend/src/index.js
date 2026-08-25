@@ -2,6 +2,8 @@ require('dotenv').config();
 const http = require('http');
 const express = require('express');
 const cors = require('cors');
+let helmet;
+try { helmet = require('helmet'); } catch { helmet = null; }
 const { startRenewalScheduler } = require('./services/renewalScheduler');
 const { startExpiryScheduler } = require('./services/expiryScheduler');
 const { startAuctionScheduler } = require('./services/auctionScheduler');
@@ -10,12 +12,14 @@ const { waitForS3, ensureBucket } = require('./services/s3Service');
 
 const app = express();
 
+if (helmet) app.use(helmet());
+
 app.use(cors({
   origin: (process.env.CLIENT_URL || 'http://localhost:3000').split(',').map((o) => o.trim()),
   credentials: true,
 }));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '2mb' }));
+app.use(express.urlencoded({ extended: true, limit: '2mb' }));
 
 async function init() {
   await waitForS3();
@@ -66,8 +70,16 @@ app.use('/api/notifications', require('./routes/notifications'));
 app.use('/api/announcements', require('./routes/announcements'));
 app.use('/api/auctions', require('./routes/auctions'));
 app.use('/api/ambassador', require('./routes/ambassadorActivities'));
+app.use('/api/ambassador/promotions', require('./routes/ambassadorPromotions'));
+app.use('/api/ambassador/recruitments', require('./routes/ambassadorRecruitments'));
+app.use('/api/ambassador/campaigns', require('./routes/ambassadorCampaigns'));
+app.use('/api/ambassador/onboarding', require('./routes/ambassadorOnboarding'));
+app.use('/api/ambassador/settings', require('./routes/ambassadorSettings'));
+app.use('/api/ambassador/policies', require('./routes/policies'));
+app.use('/api/ambassador/supplier-recruitments', require('./routes/supplierRecruitments'));
 app.use('/api/admin/announcements', require('./routes/adminAnnouncements'));
 app.use('/api/recycle-bin', require('./routes/recycleBin'));
+app.use('/api/executive', require('./routes/executive'));
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok', platform: 'NMO' }));
 
