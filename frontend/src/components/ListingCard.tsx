@@ -50,14 +50,16 @@ export default function ListingCard({ listing }: { listing: Listing }) {
   const [otpCountdown, setOtpCountdown] = useState(0);
 
   useEffect(() => {
+    const timer = timerRef.current;
+    const poll = pollRef.current;
+    const otpTimer = otpTimerRef.current;
     return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-      if (pollRef.current) clearInterval(pollRef.current);
-      if (otpTimerRef.current) clearInterval(otpTimerRef.current);
+      if (timer) clearInterval(timer);
+      if (poll) clearInterval(poll);
+      if (otpTimer) clearInterval(otpTimer);
     };
   }, []);
 
-  const currency = listing.currency || 'RWF';
   const isSold = listing.status === 'sold' || listing.status === 'expired';
   const priceLabel = listing.price != null
     ? `${format(listing.price)}${listing.price_type === 'per_day' ? '/day' : listing.price_type === 'per_month' ? '/mo' : ''}`
@@ -84,21 +86,6 @@ export default function ListingCard({ listing }: { listing: Listing }) {
     if (otpTimerRef.current) clearInterval(otpTimerRef.current);
     setTimeLeft(0);
     setOtpCountdown(0);
-  };
-
-  const startTimer = (expiresAt: string) => {
-    const expiry = new Date(expiresAt).getTime();
-    if (timerRef.current) clearInterval(timerRef.current);
-    timerRef.current = setInterval(() => {
-      const now = Date.now();
-      const diff = Math.max(0, Math.floor((expiry - now) / 1000));
-      setTimeLeft(diff);
-      if (diff <= 0) {
-        if (timerRef.current) clearInterval(timerRef.current);
-        setStep('idle');
-        setSellerPhone(null);
-      }
-    }, 1000);
   };
 
   const startOtpCountdown = useCallback(() => {
@@ -200,12 +187,6 @@ export default function ListingCard({ listing }: { listing: Listing }) {
     const m = Math.floor(seconds / 60);
     const s = seconds % 60;
     return `${m}:${s.toString().padStart(2, '0')}`;
-  };
-
-  const formatPrice = (price: number) => {
-    if (price >= 1000000) return (price / 1000000).toFixed(1) + 'M';
-    if (price >= 1000) return (price / 1000).toFixed(0) + 'K';
-    return price.toString();
   };
 
   const formatPriceFull = (price: number) => {

@@ -22,7 +22,7 @@ const COLORS: Record<string, string> = {
   info: 'bg-gray-100 text-gray-600',
 };
 
-export default function NotificationBell({ dark = false }: { dark?: boolean }) {
+export default function NotificationBell() {
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<Notification[]>([]);
   const [count, setCount] = useState(0);

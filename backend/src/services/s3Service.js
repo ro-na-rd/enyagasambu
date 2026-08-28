@@ -15,7 +15,11 @@ const s3 = new S3Client({
 });
 
 const BUCKET = process.env.S3_BUCKET || 'nmo-images';
-const PUBLIC_URL = process.env.S3_PUBLIC_URL || `http://localhost:9000/${BUCKET}`;
+const PUBLIC_URL = process.env.S3_PUBLIC_URL;
+if (!PUBLIC_URL) {
+  console.error('[FATAL] S3_PUBLIC_URL must be set in environment');
+  process.exit(1);
+}
 
 async function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));

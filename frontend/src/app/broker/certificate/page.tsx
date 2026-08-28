@@ -3,7 +3,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useCurrency } from '@/context/CurrencyContext';
 import api from '@/lib/api';
-import { Lock, Camera, Image, User, BadgeCheck, CheckCircle, Clock, Coins, Check } from '@/lib/icons';
+import { Lock, Camera, Image, BadgeCheck, CheckCircle, Clock, Coins } from '@/lib/icons';
 import { useQrDataUrl } from '@/components/QrCode';
 import { SITE_DOMAIN } from '@/lib/config';
 import BrokerCertificate from '@/components/BrokerCertificate';
@@ -67,7 +67,7 @@ function PhotoUploadStep({ onPhoto, onSkip }: { onPhoto: (url: string) => void; 
         >
           {preview
             ? <img src={preview} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-            : <><Image size={40} className="mb-3" /><p className="text-sm text-gray-400">Click or drag &amp; drop your photo here</p><p className="text-xs text-gray-300 mt-1">JPG, PNG, WEBP supported</p></>
+            : <><Image size={40} className="mb-3" aria-hidden="true" alt="" /><p className="text-sm text-gray-400">Click or drag &amp; drop your photo here</p><p className="text-xs text-gray-300 mt-1">JPG, PNG, WEBP supported</p></>
           }
         </div>
         <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f); }} />
@@ -178,7 +178,7 @@ export default function BrokerCertificatePage() {
   const qrYear = new Date().getFullYear();
   const qrCertNo = cert?.cert_no || (user ? `ENA-BRK-${qrYear}-${pad(user.id, 4)}` : '');
   const verifyUrl = qrCertNo ? `https://${SITE_DOMAIN}/verify-broker/${qrCertNo}` : '';
-  const qr = useQrDataUrl(verifyUrl, { size: 130, color: '#1B2A5E', bgColor: '#ffffff', margin: 4 });
+  useQrDataUrl(verifyUrl, { size: 130, color: '#1B2A5E', bgColor: '#ffffff', margin: 4 });
 
   const uploadPhotoToBackend = async (dataUrl: string) => {
     try {

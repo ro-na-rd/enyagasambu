@@ -48,6 +48,7 @@ export default function PhotoCropEditor({
   const clamp = (v: number, min: number, max: number) => Math.min(max, Math.max(min, v));
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setCrop({
       ...parsePosition(initialPosition),
       zoom: initialZoom && initialZoom > 0 ? initialZoom : 1,

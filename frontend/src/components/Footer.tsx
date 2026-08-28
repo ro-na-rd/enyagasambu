@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import Link from 'next/link';
 import { useLanguage } from '@/context/LanguageContext';
 import { useSiteContent } from '@/lib/useSiteContent';
 import { MapPin, Phone, Mail, CheckCircle } from '@/lib/icons';
@@ -47,7 +48,7 @@ export default function Footer() {
         <div className="grid gap-12 md:grid-cols-2 lg:grid-cols-12">
           {/* Brand */}
           <div className="lg:col-span-4">
-            <a href="/" className="inline-block">
+            <Link href="/" className="inline-block">
               <div className="flex items-center gap-3">
                 <img src="/assets/LOGO1.png" alt="E-Nyagasambu" className="w-12 h-12 object-contain shrink-0" />
                 <div>
@@ -59,7 +60,7 @@ export default function Footer() {
                   </p>
                 </div>
               </div>
-            </a>
+            </Link>
             <p className="mt-4 max-w-sm text-sm leading-relaxed text-white/60">{get('footer.description', T.footerDesc)}</p>
             <div className="mt-6">
               <p className="text-xs font-semibold uppercase tracking-wider text-white/40">{T.followUs}</p>

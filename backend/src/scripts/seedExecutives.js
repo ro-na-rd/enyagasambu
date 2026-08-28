@@ -3,11 +3,11 @@ const bcrypt = require('bcryptjs');
 const pool = require('../config/db');
 
 const EXECUTIVES = [
-  { username: 'ceo', password: 'Admin@123', executive_role: 'CEO' },
-  { username: 'cio', password: 'cio123456', executive_role: 'CIO' },
-  { username: 'coo', password: 'coo123456', executive_role: 'COO' },
-  { username: 'cmo', password: 'cmo123456', executive_role: 'CMO' },
-  { username: 'cfo', password: 'cfo123456', executive_role: 'CFO' },
+  { username: 'ceo', email: 'ceo@enyagasambu.rw', password: 'Admin@123', executive_role: 'CEO' },
+  { username: 'cio', email: 'cio@enyagasambu.rw', password: 'cio123456', executive_role: 'CIO' },
+  { username: 'coo', email: 'coo@enyagasambu.rw', password: 'coo123456', executive_role: 'COO' },
+  { username: 'cmo', email: 'cmo@enyagasambu.rw', password: 'cmo123456', executive_role: 'CMO' },
+  { username: 'cfo', email: 'cfo@enyagasambu.rw', password: 'cfo123456', executive_role: 'CFO' },
 ];
 
 async function main() {
@@ -23,17 +23,17 @@ async function main() {
 
     if (existing) {
       await pool.query(
-        'UPDATE staff SET executive_role = ?, role = ? WHERE id = ?',
-        [exec.executive_role, 'admin', existing.id]
+        'UPDATE staff SET executive_role = ?, role = ?, email = ? WHERE id = ?',
+        [exec.executive_role, 'admin', exec.email, existing.id]
       );
-      console.log(`  Updated: ${exec.username} -> ${exec.executive_role} (id: ${existing.id})`);
+      console.log(`  Updated: ${exec.username} -> ${exec.executive_role} (email: ${exec.email}, id: ${existing.id})`);
     } else {
       const [result] = await pool.query(
-        `INSERT INTO staff (username, password_hash, phone, role, executive_role, is_active)
-         VALUES (?, ?, ?, 'admin', ?, 1)`,
-        [exec.username, hash, '+250700000000', exec.executive_role]
+        `INSERT INTO staff (username, email, password_hash, phone, role, executive_role, is_active)
+         VALUES (?, ?, ?, ?, 'admin', ?, 1)`,
+        [exec.username, exec.email, hash, '+250700000000', exec.executive_role]
       );
-      console.log(`  Created: ${exec.username} -> ${exec.executive_role} (id: ${result.insertId})`);
+      console.log(`  Created: ${exec.username} -> ${exec.executive_role} (email: ${exec.email}, id: ${result.insertId})`);
     }
   }
 
@@ -43,13 +43,21 @@ async function main() {
   console.log('Login URL: /admin/login');
   console.log('');
   console.log('CEO:      ceo / Admin@123');
+  console.log('  Email: ceo@enyagasambu.rw');
   console.log('  -> CEO can create staff accounts via Staff Management page');
   console.log('  -> CEO should change default password after first login');
   console.log('');
   console.log('CIO:      cio / cio123456');
+  console.log('  Email: cio@enyagasambu.rw');
   console.log('COO:      coo / coo123456');
+  console.log('  Email: coo@enyagasambu.rw');
   console.log('CMO:      cmo / cmo123456');
+  console.log('  Email: cmo@enyagasambu.rw');
   console.log('CFO:      cfo / cfo123456');
+  console.log('  Email: cfo@enyagasambu.rw');
+  console.log('');
+  console.log('Each executive can update their email, name, and phone');
+  console.log('via the Profile page in the executive sidebar.');
   console.log('========================================');
 
   await pool.end();

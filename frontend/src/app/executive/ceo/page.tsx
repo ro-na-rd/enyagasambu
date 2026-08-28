@@ -5,7 +5,7 @@ import { Chart as ChartJS, registerables } from 'chart.js';
 import {
   DollarSign, Users, Package, Activity, Handshake, Award, FileText,
   CheckCircle, Sparkles, Calendar, Download, AlertTriangle, AlertCircle,
-  Coins, Ticket, Tag, BarChart3, TrendingUp, Shield, Info, Gavel,
+  Coins, Ticket, Tag, TrendingUp, Shield, Info, Gavel,
   ShoppingCart, Heart, RefreshCw, Filter
 } from '@/lib/icons';
 
@@ -65,6 +65,7 @@ export default function CEODashboardPage() {
       .finally(() => setLoading(false));
   }, [startDate, endDate]);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { fetchData(); }, [fetchData]);
 
   useEffect(() => {

@@ -32,7 +32,6 @@ const routeFor = (category: string, userRole: string | undefined, isAuth: boolea
 };
 
 const actionFor = (category: string, userRole: string | undefined, isAuth: boolean) => {
-  const target = routeFor(category, userRole, isAuth);
   if (category === 'broker') return isAuth && userRole === 'broker' ? 'Get My Certificate →' : 'Register as Broker →';
   if (category === 'ambassador') return isAuth && userRole === 'ambassador' ? 'Go to My Certificate →' : 'Register as Ambassador →';
   return isAuth && userRole === 'supplier' ? 'Go to My Portal →' : 'Register as Supplier →';

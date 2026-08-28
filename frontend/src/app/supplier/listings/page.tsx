@@ -6,7 +6,6 @@ import { Store, Loader2, MapPin } from '@/lib/icons';
 import { useCurrency } from '@/context/CurrencyContext';
 
 const ORG = '#E85D04';
-const NAVY = '#0f1e42';
 
 interface MyListing {
   id: number;
@@ -41,6 +40,7 @@ export default function SupplierListingsPage() {
     }
   }, []);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { load(); }, [load]);
 
   return (

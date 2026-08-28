@@ -2,8 +2,8 @@
 import { useEffect, useState } from 'react';
 import api from '@/lib/api';
 import {
-  Users, Plus, Search, Edit3, Trash2, Shield, CheckCircle,
-  Ban, Eye, EyeOff, X, Key, Sparkles, Calendar
+  Users, Plus, Search, Edit3, Trash2, CheckCircle,
+  Ban, Eye, EyeOff, X, Key, Sparkles
 } from '@/lib/icons';
 
 const BRAND = {
@@ -44,7 +44,6 @@ export default function CEOStaffManagementPage() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingStaff, setEditingStaff] = useState<StaffMember | null>(null);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
-  const [passwordTarget, setPasswordTarget] = useState<StaffMember | null>(null);
 
   const [form, setForm] = useState({ username: '', password: '', phone: '', role: 'staff', executive_role: '' });
   const [editForm, setEditForm] = useState({ phone: '', role: 'staff', executive_role: '', is_active: true });
@@ -62,6 +61,7 @@ export default function CEOStaffManagementPage() {
       .finally(() => setLoading(false));
   };
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect, react-hooks/exhaustive-deps
   useEffect(() => { fetchStaff(); }, [search, roleFilter]);
 
   const handleCreate = async () => {
@@ -78,8 +78,8 @@ export default function CEOStaffManagementPage() {
       setShowCreateModal(false);
       setForm({ username: '', password: '', phone: '', role: 'staff', executive_role: '' });
       fetchStaff();
-    } catch (err: any) {
-      alert(err?.response?.data?.message || 'Failed to create staff');
+    } catch (err: unknown) {
+      alert((err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed to create staff');
     } finally {
       setSubmitting(false);
     }
@@ -98,8 +98,8 @@ export default function CEOStaffManagementPage() {
       setShowEditModal(false);
       setEditingStaff(null);
       fetchStaff();
-    } catch (err: any) {
-      alert(err?.response?.data?.message || 'Failed to update staff');
+    } catch (err: unknown) {
+      alert((err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed to update staff');
     } finally {
       setSubmitting(false);
     }
@@ -110,8 +110,8 @@ export default function CEOStaffManagementPage() {
     try {
       await api.delete(`/executive/staff/${id}`);
       fetchStaff();
-    } catch (err: any) {
-      alert(err?.response?.data?.message || 'Failed to delete staff');
+    } catch (err: unknown) {
+      alert((err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed to delete staff');
     }
   };
 
@@ -119,8 +119,8 @@ export default function CEOStaffManagementPage() {
     try {
       await api.put(`/executive/staff/${staff.id}`, { is_active: !staff.is_active });
       fetchStaff();
-    } catch (err: any) {
-      alert(err?.response?.data?.message || 'Failed to toggle status');
+    } catch (err: unknown) {
+      alert((err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed to toggle status');
     }
   };
 
@@ -132,8 +132,8 @@ export default function CEOStaffManagementPage() {
       setShowPasswordModal(false);
       setPwForm({ currentPassword: '', newPassword: '' });
       alert('Password changed successfully');
-    } catch (err: any) {
-      alert(err?.response?.data?.message || 'Failed to change password');
+    } catch (err: unknown) {
+      alert((err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed to change password');
     } finally {
       setSubmitting(false);
     }
@@ -150,8 +150,8 @@ export default function CEOStaffManagementPage() {
     setShowEditModal(true);
   };
 
-  const openPassword = (staff: StaffMember) => {
-    setPasswordTarget(staff);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const openPassword = (_staff: StaffMember) => {
     setShowPasswordModal(true);
   };
 

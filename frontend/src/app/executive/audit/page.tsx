@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import api from '@/lib/api';
-import { FileText, Clock, Shield, Filter, Sparkles, Calendar } from '@/lib/icons';
+import { FileText, Clock, Filter, Sparkles, Calendar } from '@/lib/icons';
 
 const BRAND = {
   navy: '#0f1e42',
@@ -30,6 +30,7 @@ export default function AuditLogPage() {
   const [actionFilter, setActionFilter] = useState('');
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
     const params: Record<string, string> = {};
     if (roleFilter) params.role = roleFilter;

@@ -1,6 +1,5 @@
 'use client';
 import { useForm } from 'react-hook-form';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useState } from 'react';
 import api from '@/lib/api';
@@ -19,7 +18,6 @@ interface AmbassadorRegisterForm {
 
 export default function AmbassadorRegisterPage() {
   const { register, handleSubmit, watch, formState: { errors, isSubmitting } } = useForm<AmbassadorRegisterForm>();
-  const router = useRouter();
   const [error, setError] = useState('');
 
   const onSubmit = async (data: AmbassadorRegisterForm) => {

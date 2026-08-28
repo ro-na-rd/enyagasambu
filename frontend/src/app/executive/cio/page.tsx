@@ -5,7 +5,7 @@ import { Chart as ChartJS, registerables } from 'chart.js';
 import {
   Users, Shield, Server, Package, DollarSign, Key, AlertTriangle,
   Activity, Sparkles, Calendar, Clock, Download, Globe, Monitor,
-  Mail, Smartphone, Lock, Settings
+  Mail, Smartphone, Lock
 } from '@/lib/icons';
 
 ChartJS.register(...registerables);

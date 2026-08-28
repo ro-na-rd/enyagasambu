@@ -69,7 +69,7 @@ export default function AmbassadorCertificate({
           <div className={styles.layoutGrid}>
             {/* Main column */}
             <div className={styles.mainCol}>
-              {/* Header: title centered */}
+              {/* Header: title only */}
               <header className={styles.headerRow}>
                 <div className={styles.titleBlock}>
                   <h2 className={styles.titleMain}>CERTIFICATE</h2>

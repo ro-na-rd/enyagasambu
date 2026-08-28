@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useCurrency } from '@/context/CurrencyContext';
 import api from '@/lib/api';
-import { Loader2, AlertCircle, Coins, DollarSign, TrendingUp, CheckCircle, FileText } from '@/lib/icons';
+import { Loader2, Coins, DollarSign, TrendingUp, CheckCircle, FileText } from '@/lib/icons';
 
 const NAVY = '#0f1e42';
 const ORG = '#E85D04';
@@ -55,6 +55,7 @@ export default function BrokerCommissionsPage() {
     }
   }, []);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { fetchData(); }, [fetchData]);
 
   const cards = [

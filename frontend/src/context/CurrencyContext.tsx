@@ -19,6 +19,7 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const saved = localStorage.getItem('nmo_currency');
     if (saved && CURRENCIES.some((c) => c.code === saved)) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setCurrencyState(saved);
     }
   }, []);

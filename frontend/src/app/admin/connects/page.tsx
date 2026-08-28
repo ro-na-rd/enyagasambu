@@ -4,7 +4,7 @@ import api from '@/lib/api';
 import Link from 'next/link';
 import {
   Phone, Search, Filter, Coins, Smartphone, Lock,
-  Clock, CheckCircle, AlertCircle, AlertTriangle,
+  Clock, AlertCircle, AlertTriangle,
   User, Store, ChevronLeft, ChevronRight as ChevronRightIcon,
   Eye, Link as LinkIcon, Download, ExternalLink
 } from '@/lib/icons';
@@ -62,16 +62,6 @@ const typeConfig: Record<string, { label: string; icon: React.ReactNode; color: 
   otp: { label: 'OTP', icon: <Lock size={12} />, color: '#58a6ff', bg: 'rgba(88,166,255,0.1)' },
 };
 
-const statusConfig: Record<string, { label: string; icon: React.ReactNode; color: string; bg: string }> = {
-  active: { label: 'Active', icon: <CheckCircle size={12} />, color: '#2ea043', bg: 'rgba(46,160,67,0.1)' },
-  permanent: { label: 'Permanent', icon: <CheckCircle size={12} />, color: '#2ea043', bg: 'rgba(46,160,67,0.1)' },
-  completed: { label: 'Completed', icon: <CheckCircle size={12} />, color: '#2ea043', bg: 'rgba(46,160,67,0.1)' },
-  expired: { label: 'Expired', icon: <Clock size={12} />, color: '#d29922', bg: 'rgba(210,153,34,0.1)' },
-  pending: { label: 'Pending', icon: <AlertTriangle size={12} />, color: '#f0883e', bg: 'rgba(240,136,62,0.1)' },
-  otp_pending: { label: 'OTP Pending', icon: <Lock size={12} />, color: '#58a6ff', bg: 'rgba(88,166,255,0.1)' },
-  failed: { label: 'Failed', icon: <AlertCircle size={12} />, color: '#f85149', bg: 'rgba(248,81,73,0.1)' },
-};
-
 const saleStatusConfig: Record<string, { label: string; color: string; bg: string }> = {
   pending: { label: 'Available', color: '#6e7781', bg: 'rgba(110,119,129,0.1)' },
   sold: { label: 'Sold', color: '#2ea043', bg: 'rgba(46,160,67,0.1)' },
@@ -122,6 +112,7 @@ export default function AdminConnectsPage() {
       .finally(() => setFetching(false));
   }, [search, statusFilter, typeFilter, saleStatusFilter, dateFrom, dateTo]);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { load(); }, []);
 
   const handleSearch = () => { setPage(1); setFetching(true); load(1); };

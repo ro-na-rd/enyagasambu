@@ -4,7 +4,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useCurrency } from '@/context/CurrencyContext';
 import Link from 'next/link';
 import api from '@/lib/api';
-import { Package, Store, Car, CheckCircle, Handshake, Users, Clock, CreditCard, Coins, FileText, TrendingUp, User, Award, Mail, Phone, MapPin } from '@/lib/icons';
+import { Package, Store, Car, CheckCircle, Handshake, Users, Coins, FileText, TrendingUp, User, Award } from '@/lib/icons';
 
 const NAVY = '#0f1e42';
 const ORG = '#E85D04';
@@ -34,7 +34,6 @@ export default function BrokerDashboardPage() {
   const { user } = useAuth();
   const { format } = useCurrency();
   const [cert, setCert] = useState<{ status: string; cert_no?: string; amount_rwf?: number; type_name?: string; type_price?: number } | null>(null);
-  const [certLoading, setCertLoading] = useState(true);
   const [statsData, setStatsData] = useState<BrokerStats | null>(null);
   const [report, setReport] = useState<{
     byMonth: { label: string; count: number }[];
@@ -45,7 +44,7 @@ export default function BrokerDashboardPage() {
   useEffect(() => {
     api.get('/broker/certificate').then(({ data }) => {
       setCert(data.certificate || null);
-    }).catch(() => {}).finally(() => setCertLoading(false));
+    }).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -61,15 +60,6 @@ export default function BrokerDashboardPage() {
   }, []);
 
   const certPrice = cert?.amount_rwf ?? cert?.type_price ?? 2000;
-
-  const stats = [
-    { label: 'Total Clients', value: String(statsData?.totalClients ?? 0), icon: <Users size={24} />, color: NAVY, bg: '#eef2ff', change: `+${statsData?.clientsThisMonth ?? 0} this month` },
-    { label: 'Active Listings', value: String(statsData?.activeListings ?? 0), icon: <Store size={24} />, color: '#059669', bg: '#ecfdf5', change: `+${statsData?.activeThisWeek ?? 0} this week` },
-    { label: 'Pending Listings', value: String(statsData?.pendingListings ?? 0), icon: <Clock size={24} />, color: '#d97706', bg: '#fffbeb', change: 'Awaiting renewal' },
-    { label: 'Completed Deals', value: String(statsData?.completedDeals ?? 0), icon: <CheckCircle size={24} />, color: '#0f1e42', bg: '#f0f2f6', change: `+${statsData?.dealsThisQuarter ?? 0} this quarter` },
-    { label: 'Pending Transactions', value: String(statsData?.pendingTransactions ?? 0), icon: <CreditCard size={24} />, color: '#dc2626', bg: '#fef2f2', change: 'Need attention' },
-    { label: 'Total Commission', value: format(statsData?.totalCommission ?? 0), icon: <Coins size={24} />, color: ORG, bg: '#fff7ed', change: `+${format(statsData?.commissionThisMonth ?? 0)} this month` },
-  ];
 
   const quickActions = [
     { href: '/broker/clients', icon: <Users size={24} />, label: 'Add Client', desc: 'Register a new client', color: '#eef2ff' },

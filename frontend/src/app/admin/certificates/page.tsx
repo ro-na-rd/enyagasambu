@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import api from '@/lib/api';
-import { FileText, Award, Search, Filter } from '@/lib/icons';
+import { FileText, Award } from '@/lib/icons';
 import { SITE_DOMAIN } from '@/lib/config';
 import { buildAmbassadorCertPrintHtml } from '@/lib/ambassadorCertPrint';
 import { generateQrDataUrl } from '@/components/QrCode';
@@ -66,6 +66,7 @@ export default function AdminCertificatesPage() {
       .finally(() => setLoading(false));
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { fetchCerts(); }, [page, filter, type]);
 
   const handleGenerate = async (id: number) => {

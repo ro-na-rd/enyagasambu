@@ -3,9 +3,6 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { Home, BadgeCheck, MapPin, Star } from '@/lib/icons';
 
-const NAVY = '#0f1e42';
-const ORG = '#E85D04';
-
 const HOUSE_IMAGES = [
   'https://images.unsplash.com/photo-1568605114967-8130f3a36994?auto=format&fit=crop&w=1600&q=80',
   'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=1600&q=80',

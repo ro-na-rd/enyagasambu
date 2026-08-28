@@ -2,9 +2,6 @@
 import { ChevronRight, BookOpen, FileText, Lock, ExternalLink } from '@/lib/icons';
 import Link from 'next/link';
 
-const NAVY = '#0f1e42';
-const ORG = '#E85D04';
-
 const faqs = [
   { q: 'What is the Ambassador Program?', a: 'The Ambassador Program rewards you for referring new ambassadors to E-Nyagasambu. You earn 200 RWF when a referred ambassador pays for their certificate.' },
   { q: 'How do I refer someone?', a: 'Share your unique referral code or referral link with other ambassadors. When they register and pay for their certificate, you earn a reward.' },

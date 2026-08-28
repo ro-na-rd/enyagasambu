@@ -8,8 +8,6 @@ import { Heart, Phone, CreditCard, CheckCircle, Loader2, Sparkles, Shield, Smart
 const NAVY = '#0f1e42';
 const ORG = '#E85D04';
 
-const PRESETS: number[] = [];
-
 type Step = 'form' | 'pay' | 'waiting' | 'otp' | 'success';
 
 interface RecentDonor {

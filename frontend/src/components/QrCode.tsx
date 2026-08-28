@@ -31,6 +31,7 @@ export function useQrDataUrl(data: string, { size, color = '#1B2A5E', bgColor = 
   const [src, setSrc] = useState('');
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (!data) { setSrc(''); return; }
     let alive = true;
     const dark = color.startsWith('#') ? color : `#${color}`;

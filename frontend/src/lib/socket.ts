@@ -1,6 +1,6 @@
 import { io, type Socket } from 'socket.io-client';
 
-const BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+const BASE = process.env.NEXT_PUBLIC_API_URL || '/api';
 const SOCKET_URL = (process.env.NEXT_PUBLIC_SOCKET_URL || BASE).replace(/\/api$/, '');
 
 let socket: Socket | null = null;

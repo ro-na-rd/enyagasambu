@@ -101,7 +101,7 @@
 }
 
 .medalImage {
-  width: 128px;
+  width: 155px;
   height: auto;
   object-fit: contain;
   filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.35));
@@ -181,10 +181,6 @@
   height: 7px;
   border-radius: 50%;
   background: #ed5b22;
-}
-
-.qrHeaderSpacer {
-  width: 40px;
 }
 
 /* ===== Award section ===== */

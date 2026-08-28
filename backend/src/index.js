@@ -2,22 +2,35 @@ require('dotenv').config();
 const http = require('http');
 const express = require('express');
 const cors = require('cors');
-let helmet;
-try { helmet = require('helmet'); } catch { helmet = null; }
+const helmet = require('helmet');
 const { startRenewalScheduler } = require('./services/renewalScheduler');
 const { startExpiryScheduler } = require('./services/expiryScheduler');
 const { startAuctionScheduler } = require('./services/auctionScheduler');
 const { initSocket } = require('./config/socket');
 const { waitForS3, ensureBucket } = require('./services/s3Service');
 
+const REQUIRED_ENV = ['DB_HOST', 'DB_USER', 'DB_PASSWORD', 'DB_NAME', 'JWT_SECRET'];
+const missing = REQUIRED_ENV.filter((k) => !process.env[k]);
+if (missing.length) {
+  console.error(`[FATAL] Missing required environment variables: ${missing.join(', ')}`);
+  process.exit(1);
+}
+if ((process.env.JWT_SECRET || '').length < 32) {
+  console.error('[FATAL] JWT_SECRET must be at least 32 characters');
+  process.exit(1);
+}
+
 const app = express();
 
-if (helmet) app.use(helmet());
+app.set('trust proxy', 1);
+app.use(helmet());
 
-app.use(cors({
-  origin: (process.env.CLIENT_URL || 'http://localhost:3000').split(',').map((o) => o.trim()),
-  credentials: true,
-}));
+const clientUrls = (process.env.CLIENT_URL || '').split(',').map((o) => o.trim()).filter(Boolean);
+if (clientUrls.length === 0) {
+  console.error('[FATAL] CLIENT_URL must be set in production (comma-separated list of allowed origins)');
+  process.exit(1);
+}
+app.use(cors({ origin: clientUrls, credentials: true }));
 app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ extended: true, limit: '2mb' }));
 
@@ -25,7 +38,7 @@ async function init() {
   await waitForS3();
   await ensureBucket();
 }
-init().catch(err => console.error('[S3] Initialization failed:', err.message));
+init().catch((err) => console.error('[S3] Initialization failed:', err.message));
 
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/auth/seller', require('./routes/sellerAuth'));

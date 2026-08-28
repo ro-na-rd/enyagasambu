@@ -24,7 +24,7 @@ export default function PreviewCertificatePage() {
           />
         </div>
         <p className="text-center text-gray-600 mt-6 text-sm">
-          This is a preview of the ambassador certificate design. The actual certificate will include the ambassador's photo and real certificate number.
+          This is a preview of the ambassador certificate design. The actual certificate will include the ambassador&apos;s photo and real certificate number.
         </p>
       </div>
     </div>

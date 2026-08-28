@@ -3,9 +3,6 @@ import { useEffect, useState } from 'react';
 import api from '@/lib/api';
 import { UserPlus, Phone, Mail, Plus, Trash2 } from '@/lib/icons';
 
-const NAVY = '#0f1e42';
-const ORG = '#E85D04';
-
 const statusConfig: Record<string, { label: string; color: string; bg: string }> = {
   pending: { label: 'Pending', color: '#d97706', bg: '#fffbeb' },
   contacted: { label: 'Contacted', color: '#2563eb', bg: '#eff6ff' },

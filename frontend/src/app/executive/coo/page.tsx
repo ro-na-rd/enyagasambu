@@ -75,6 +75,7 @@ export default function COODashboardPage() {
       .finally(() => setLoading(false));
   }, [startDate, endDate]);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { fetchData(); }, [fetchData]);
 
   useEffect(() => {

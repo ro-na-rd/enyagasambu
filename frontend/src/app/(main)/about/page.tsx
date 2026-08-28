@@ -331,7 +331,7 @@ export default function AboutPage() {
         style={{ background: `linear-gradient(135deg, ${navy}, ${org})` }}>
         <h3 className="text-xl font-semibold mb-3">{get('about.cta_title', T.aboutCtaTitle)}</h3>
         <div className="flex gap-3 justify-center flex-wrap">
-          <Link href="/register"
+          <Link href="/login"
             className="bg-white font-bold px-6 py-2.5 rounded text-sm transition hover:opacity-90"
             style={{ color: navy }}>
             {T.aboutCtaRegister} →

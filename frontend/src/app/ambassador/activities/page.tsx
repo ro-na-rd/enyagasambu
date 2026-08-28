@@ -3,9 +3,6 @@ import { useEffect, useState } from 'react';
 import api from '@/lib/api';
 import { Sparkles, FileText, User, Coins, Award, Share2, UserPlus, Megaphone, Target } from '@/lib/icons';
 
-const NAVY = '#0f1e42';
-const ORG = '#E85D04';
-
 interface Activity {
   type: 'action' | 'reward' | 'achievement' | 'referral' | 'certificate' | 'recruitment' | 'promotion' | 'campaign' | 'onboarding';
   title: string;

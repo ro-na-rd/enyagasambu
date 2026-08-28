@@ -590,12 +590,34 @@ exports.getCFODashboard = async (req, res) => {
        GROUP BY type ORDER BY value DESC`
     );
 
+    const [paymentsByStatus] = await pool.query(
+      `SELECT status AS label, COUNT(*) AS value FROM payments
+       WHERE ${df.where} GROUP BY status ORDER BY value DESC`,
+      df.params
+    );
+
+    const [[{ successfulPayments }]] = await pool.query(
+      `SELECT COUNT(*) AS successfulPayments FROM payments WHERE status = 'completed' AND ${df.where}`,
+      df.params
+    );
+
+    const [recentRefunds] = await pool.query(
+      `SELECT id, amount, status, created_at FROM payments
+       WHERE status = 'refunded' ORDER BY created_at DESC LIMIT 10`
+    );
+
+    const alerts = await computeAlerts();
+
     return res.json({
       totalRevenue, listingFees, connectFees, subscriptionRevenue,
       boostRevenue, donations, totalPayments, failedPayments, refunded,
       pendingPayments, activeSubscriptions, pendingApprovals,
+      successfulPayments,
       revenueByMonth: revenueByMonth.reverse(),
-      revenueByType
+      revenueByType,
+      paymentsByStatus,
+      recentRefunds,
+      alerts
     });
   } catch (err) {
     console.error('[CFO Dashboard error]', err);
@@ -1045,6 +1067,54 @@ exports.changePassword = async (req, res) => {
     return res.json({ message: 'Password changed successfully' });
   } catch (err) {
     console.error('[Change password error]', err);
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
+
+exports.getProfile = async (req, res) => {
+  try {
+    const [[staff]] = await pool.query(
+      'SELECT id, username, email, phone, role, executive_role FROM staff WHERE id = ? AND is_active = 1',
+      [req.user.id]
+    );
+    if (!staff) return res.status(404).json({ message: 'Staff not found' });
+    return res.json({ user: staff });
+  } catch (err) {
+    console.error('[Get profile error]', err);
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
+
+exports.updateProfile = async (req, res) => {
+  const { name, email, phone } = req.body;
+  try {
+    const [[existing]] = await pool.query('SELECT id FROM staff WHERE id = ?', [req.user.id]);
+    if (!existing) return res.status(404).json({ message: 'Staff not found' });
+
+    if (email) {
+      const [[dup]] = await pool.query('SELECT id FROM staff WHERE email = ? AND id != ?', [email, req.user.id]);
+      if (dup) return res.status(400).json({ message: 'Email is already in use' });
+    }
+
+    await pool.query(
+      'UPDATE staff SET username = COALESCE(?, username), email = COALESCE(?, email), phone = COALESCE(?, phone) WHERE id = ?',
+      [name || null, email || null, phone || null, req.user.id]
+    );
+
+    const ip = req.headers['x-forwarded-for'] || req.connection?.remoteAddress || 'unknown';
+    await pool.query(
+      `INSERT INTO executive_audit_log (staff_id, executive_role, action, module, ip_address, new_value)
+       VALUES (?, ?, 'update_profile', 'profile', ?, ?)`,
+      [req.user.id, req.user.executive_role || 'admin', ip, JSON.stringify({ name, email, phone })]
+    );
+
+    const [[updated]] = await pool.query(
+      'SELECT id, username, email, phone, role, executive_role FROM staff WHERE id = ?',
+      [req.user.id]
+    );
+    return res.json({ message: 'Profile updated', user: updated });
+  } catch (err) {
+    console.error('[Update profile error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };

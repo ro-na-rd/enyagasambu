@@ -36,7 +36,6 @@ export default function CreateListingPage() {
   const [referenceId, setReferenceId] = useState('');
   const [otpCode, setOtpCode] = useState('');
   const [otpError, setOtpError] = useState('');
-  const [otpSent, setOtpSent] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [otpResendCooldown, setOtpResendCooldown] = useState(0);
   const [postSuccess, setPostSuccess] = useState(false);
@@ -127,7 +126,6 @@ export default function CreateListingPage() {
       if (res.status === 'payment_verified') {
         setStep('otp');
         await api.post('/listings/payment-otp/send', { referenceId });
-        setOtpSent(true);
         return res;
       } else if (res.listingId) {
         router.push(`/listings/${res.listingId}`);

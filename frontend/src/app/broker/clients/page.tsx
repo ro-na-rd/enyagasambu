@@ -1,9 +1,7 @@
 'use client';
 import { useState, useEffect, useCallback } from 'react';
 import api from '@/lib/api';
-import { Plus, Search, Edit3, Trash2, X, Users, Loader2, AlertCircle, Phone, Mail, Calendar } from '@/lib/icons';
-
-const ORG = '#E85D04';
+import { Plus, Search, Edit3, Trash2, X, Users, Loader2, AlertCircle, Phone, Mail } from '@/lib/icons';
 
 interface Client {
   id: number;
@@ -62,6 +60,7 @@ export default function BrokerClientsPage() {
     }
   }, []);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { fetchClients(); }, [fetchClients]);
 
   const filtered = clients.filter((c) => {
@@ -125,8 +124,8 @@ export default function BrokerClientsPage() {
       }
       setModal(null);
       setEditing(null);
-    } catch (err: any) {
-      setFormError(err?.response?.data?.message || 'Something went wrong. Please try again.');
+    } catch (err: unknown) {
+      setFormError((err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Something went wrong. Please try again.');
     } finally {
       setSaving(false);
     }

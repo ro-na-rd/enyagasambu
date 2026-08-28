@@ -103,11 +103,16 @@ exports.login = async (req, res) => {
 
 exports.me = async (req, res) => {
   try {
-    const [rows] = await pool.query(
-      'SELECT id, name, email, phone, coins, role, referral_code, created_at FROM users WHERE id = ?',
-      [req.user.id]
-    );
-    if (rows.length === 0) return res.status(404).json({ message: 'User not found' });
+    const isStaff = req.user.is_staff === true;
+    const table = isStaff ? 'staff' : 'users';
+    let query;
+    if (isStaff) {
+      query = 'SELECT id, username as name, email, phone, role, created_at FROM staff WHERE id = ?';
+    } else {
+      query = 'SELECT id, name, email, phone, coins, role, referral_code, created_at FROM users WHERE id = ?';
+    }
+    const [rows] = await pool.query(query, [req.user.id]);
+    if (rows.length === 0) return res.status(401).json({ message: 'User not found' });
     return res.json({ user: rows[0] });
   } catch (err) {
     console.error(err);

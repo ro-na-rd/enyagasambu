@@ -1,6 +1,5 @@
 'use client';
 import { useForm } from 'react-hook-form';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useState } from 'react';
 import api from '@/lib/api';
@@ -16,7 +15,6 @@ interface BrokerRegisterForm {
 
 export default function BrokerRegisterPage() {
   const { register, handleSubmit, watch, formState: { errors, isSubmitting } } = useForm<BrokerRegisterForm>();
-  const router = useRouter();
   const [error, setError] = useState('');
 
   const onSubmit = async (data: BrokerRegisterForm) => {

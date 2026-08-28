@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect, useCallback } from 'react';
 import api from '@/lib/api';
-import { Loader2, AlertCircle, Search, Phone } from '@/lib/icons';
+import { Loader2, Search, Phone } from '@/lib/icons';
 
 interface Lead {
   id: number;
@@ -61,6 +61,7 @@ export default function BrokerLeadsPage() {
     }
   }, []);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { fetchLeads(); }, [fetchLeads]);
 
   const filtered = leads.filter((l) => {

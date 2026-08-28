@@ -96,7 +96,16 @@ export default function HomePage() {
       .catch(() => {});
     api.get('/home-buttons/public')
       .then(({ data }) => {
-        if (data?.buttons?.length) setJoinButtons(data.buttons);
+        if (data?.buttons?.length) {
+          const seen = new Set();
+          const unique = data.buttons.filter((b: { label: string; href: string }) => {
+            const k = `${b.label}-${b.href}`;
+            if (seen.has(k)) return false;
+            seen.add(k);
+            return true;
+          });
+          setJoinButtons(unique);
+        }
       })
       .catch(() => {});
   }, []);

@@ -22,19 +22,12 @@ export default function BrokerProfilePage() {
 
   useEffect(() => {
     if (user) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setName(user.name || '');
       setPhone(user.phone || '');
       setServices(user.services || []);
     }
   }, [user]);
-
-  const toggleService = (service: string) => {
-    setServices(prev =>
-      prev.includes(service)
-        ? prev.filter(s => s !== service)
-        : [...prev, service]
-    );
-  };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();

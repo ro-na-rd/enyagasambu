@@ -20,9 +20,10 @@ function tokenFromHandshake(handshake) {
 
 function initSocket(server) {
   const { Server } = require('socket.io');
+  const origins = (process.env.CLIENT_URL || '').split(',').map((o) => o.trim()).filter(Boolean);
   io = new Server(server, {
     cors: {
-      origin: [process.env.CLIENT_URL || 'http://localhost:3000', process.env.FRONTEND_URL || 'http://localhost:3000'],
+      origin: origins,
       credentials: true,
     },
   });

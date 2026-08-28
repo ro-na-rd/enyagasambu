@@ -20,7 +20,6 @@ export default function CoinsPage() {
   const [promoCode, setPromoCode] = useState('');
   const [promoMsg, setPromoMsg] = useState('');
   const [applyingPromo, setApplyingPromo] = useState(false);
-  const [momoReferenceId, setMomoReferenceId] = useState('');
 
   // MoMo payment state
   const [selectedPkg, setSelectedPkg] = useState<Package | null>(null);
@@ -56,7 +55,6 @@ export default function CoinsPage() {
     if (pollRef.current) clearInterval(pollRef.current);
     setPayStep('idle');
     setSelectedPkg(null);
-    setMomoReferenceId('');
   };
 
   const handlePay = async () => {
@@ -70,7 +68,6 @@ export default function CoinsPage() {
         phone: momoPhone.trim(),
       });
 
-      setMomoReferenceId(data.referenceId);
       setPayStep('waiting');
       setMomoMsg('Check your phone — approve the MoMo prompt.');
 

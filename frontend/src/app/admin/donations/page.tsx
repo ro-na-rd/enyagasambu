@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import api from '@/lib/api';
 import { useCurrency } from '@/context/CurrencyContext';
-import { Heart, Search, Filter, TrendingUp, Users, Smartphone, CreditCard } from '@/lib/icons';
+import { Heart, Search, Filter, TrendingUp, Smartphone, CreditCard } from '@/lib/icons';
 
 const ORG = '#E85D04';
 const NAVY = '#0f1e42';
@@ -159,7 +159,7 @@ export default function AdminDonationsPage() {
                       <div>
                         <p className="font-medium text-gray-800">{d.donor_name}</p>
                         {d.donor_email && <p className="text-xs text-gray-600">{d.donor_email}</p>}
-                        {d.message && <p className="text-[11px] text-gray-500 italic truncate max-w-[200px]">"{d.message}"</p>}
+                        {d.message && <p className="text-[11px] text-gray-500 italic truncate max-w-[200px]">&quot;{d.message}&quot;</p>}
                       </div>
                     </div>
                   </td>

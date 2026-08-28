@@ -5,7 +5,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import {
   Server, Settings, BarChart3, DollarSign,
-  FileText, CheckCircle, LogOut, Menu, X, ChevronRight, Users
+  FileText, CheckCircle, LogOut, Menu, X, ChevronRight, Users, User
 } from '@/lib/icons';
 import NotificationBell from '@/components/NotificationBell';
 import { useUnreadCount } from '@/lib/useUnreadCount';
@@ -36,6 +36,7 @@ const getNavItems = (executiveRole?: string): NavItem[] => {
     { href: '/executive/cfo', icon: <DollarSign size={18} />, label: 'CFO Dashboard', roles: ['CFO'] },
     { href: '/executive/audit', icon: <FileText size={18} />, label: 'Audit Log', roles: ['CEO', 'CIO', 'COO', 'CMO', 'CFO'] },
     { href: '/executive/approvals', icon: <CheckCircle size={18} />, label: 'Approvals', roles: ['CEO', 'CIO', 'COO', 'CMO', 'CFO'] },
+    { href: '/executive/profile', icon: <User size={18} />, label: 'My Profile', roles: ['CEO', 'CIO', 'COO', 'CMO', 'CFO'] },
   ];
   if (!executiveRole) return allItems;
   return allItems.filter(item => item.roles.includes(executiveRole));
@@ -47,7 +48,7 @@ export default function ExecutiveLayout({ children }: { children: React.ReactNod
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  const { count: notifCount, refresh: refreshNotifs } = useUnreadCount();
+  const { refresh: refreshNotifs } = useUnreadCount();
 
   const isLoginPage = pathname === '/executive/login';
 
@@ -66,12 +67,7 @@ export default function ExecutiveLayout({ children }: { children: React.ReactNod
     if (!user?.executive_role) return;
     fetch(`/api/executive/permissions/${user.executive_role}`)
       .then(res => res.json())
-      .then(data => {
-        console.log(`[Audit] Permissions loaded for role ${user.executive_role}:`, data);
-      })
-      .catch(err => {
-        console.error('[Audit] Failed to fetch permissions:', err);
-      });
+      .catch(() => {});
   }, [user?.executive_role]);
 
   const navItems = getNavItems(user?.executive_role);

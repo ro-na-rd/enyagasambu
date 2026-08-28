@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import api from '@/lib/api';
-import { Coins, TrendingUp, Users, FileText } from '@/lib/icons';
+import { FileText } from '@/lib/icons';
 import Link from 'next/link';
 
 const NAVY = '#0f1e42';

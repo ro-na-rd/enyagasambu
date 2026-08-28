@@ -29,7 +29,7 @@ exports.login = async (req, res) => {
     }
 
     const token = jwt.sign(
-      { id: staff.id, username: staff.username, phone: staff.phone, role: staff.role, is_staff: true, executive_role: staff.executive_role || null },
+      { id: staff.id, username: staff.username, email: staff.email || staff.username, phone: staff.phone, role: staff.role, is_staff: true, executive_role: staff.executive_role || null },
       process.env.JWT_SECRET,
       { expiresIn: '8h' }
     );
@@ -37,7 +37,7 @@ exports.login = async (req, res) => {
     return res.json({
       token,
       role: staff.role,
-      user: { id: staff.id, name: staff.username, email: staff.username, phone: staff.phone, role: staff.role, executive_role: staff.executive_role || null },
+      user: { id: staff.id, name: staff.username, email: staff.email || staff.username, phone: staff.phone, role: staff.role, executive_role: staff.executive_role || null },
     });
   } catch (err) {
     console.error('[Admin login error]', err);
@@ -67,15 +67,15 @@ exports.verifyOtp = async (req, res) => {
     await pool.query('UPDATE staff_otps SET used = 1 WHERE id = ?', [otpRow.id]);
     await pool.query('UPDATE staff SET last_login = NOW() WHERE id = ?', [otpRow.staff_id]);
 
-    const [[staffInfo]] = await pool.query('SELECT username, phone, role, executive_role FROM staff WHERE id = ?', [otpRow.staff_id]);
+    const [[staffInfo]] = await pool.query('SELECT username, email, phone, role, executive_role FROM staff WHERE id = ?', [otpRow.staff_id]);
 
     const token = jwt.sign(
-      { id: otpRow.staff_id, username: staffInfo?.username, phone: otpRow.phone, role: otpRow.role, is_staff: true, executive_role: staffInfo?.executive_role || null },
+      { id: otpRow.staff_id, username: staffInfo?.username, email: staffInfo?.email || staffInfo?.username, phone: otpRow.phone, role: otpRow.role, is_staff: true, executive_role: staffInfo?.executive_role || null },
       process.env.JWT_SECRET,
       { expiresIn: '8h' }
     );
 
-    return res.json({ token, role: otpRow.role, user: { id: otpRow.staff_id, name: staffInfo?.username || 'Admin', email: staffInfo?.username, phone: otpRow.phone, role: otpRow.role, executive_role: staffInfo?.executive_role || null } });
+    return res.json({ token, role: otpRow.role, user: { id: otpRow.staff_id, name: staffInfo?.username || 'Admin', email: staffInfo?.email || staffInfo?.username, phone: otpRow.phone, role: otpRow.role, executive_role: staffInfo?.executive_role || null } });
   } catch (err) {
     console.error('[Admin verify OTP error]', err);
     return res.status(500).json({ message: 'Verification failed' });
@@ -85,10 +85,10 @@ exports.verifyOtp = async (req, res) => {
 exports.me = async (req, res) => {
   try {
     const [[staff]] = await pool.query(
-      'SELECT id, username AS name, username AS email, phone, role, executive_role FROM staff WHERE id = ? AND is_active = 1',
+      'SELECT id, username AS name, COALESCE(email, username) AS email, phone, role, executive_role FROM staff WHERE id = ? AND is_active = 1',
       [req.user.id]
     );
-    if (!staff) return res.status(404).json({ message: 'Staff not found' });
+    if (!staff) return res.status(401).json({ message: 'Staff not found' });
     return res.json({ user: staff });
   } catch (err) {
     console.error('[Admin me error]', err);

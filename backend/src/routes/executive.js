@@ -26,6 +26,8 @@ router.get('/staff', ctrl.listStaff);
 router.post('/staff', ctrl.createStaff);
 router.put('/staff/:id', ctrl.updateStaff);
 router.delete('/staff/:id', ctrl.deleteStaff);
+router.get('/profile', ctrl.getProfile);
+router.put('/profile', ctrl.updateProfile);
 router.post('/change-password', ctrl.changePassword);
 
 module.exports = router;

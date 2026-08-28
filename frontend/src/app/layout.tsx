@@ -6,8 +6,35 @@ import { CurrencyProvider } from '@/context/CurrencyContext';
 import WhatsAppButton from '@/components/WhatsAppButton';
 
 export const metadata: Metadata = {
-  title: 'NMO – Nyagasambu Market Online',
-  description: 'Buy, sell, and rent goods & services in Kigali, Rwanda',
+  metadataBase: new URL('https://enyagasambu.rw'),
+  title: {
+    default: 'E-Nyagasambu | Digital Marketplace Rwanda',
+    template: '%s | E-Nyagasambu',
+  },
+  description: 'Buy, sell, rent, and auction goods & services in Rwanda. The trusted digital marketplace connecting buyers, sellers, brokers, ambassadors, and suppliers.',
+  keywords: ['marketplace', 'Rwanda', 'buy', 'sell', 'rent', 'auction', 'Kigali', 'Nyagasambu'],
+  authors: [{ name: 'E-Nyagasambu Ltd' }],
+  creator: 'E-Nyagasambu',
+  openGraph: {
+    type: 'website',
+    locale: 'en_US',
+    url: 'https://enyagasambu.rw',
+    siteName: 'E-Nyagasambu',
+    title: 'E-Nyagasambu | Digital Marketplace Rwanda',
+    description: 'Buy, sell, rent, and auction goods & services in Rwanda.',
+    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'E-Nyagasambu Marketplace' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'E-Nyagasambu | Digital Marketplace Rwanda',
+    description: 'Buy, sell, rent, and auction goods & services in Rwanda.',
+    images: ['/og-image.png'],
+  },
+  icons: {
+    icon: '/favicon.ico',
+    apple: '/apple-touch-icon.png',
+  },
+  robots: { index: true, follow: true },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

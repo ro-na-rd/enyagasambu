@@ -92,6 +92,7 @@ export default function BrokerMessagesPage() {
     }
   }, []);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { fetchConversations(); }, [fetchConversations]);
 
   useEffect(() => {
@@ -138,6 +139,7 @@ export default function BrokerMessagesPage() {
   useEffect(() => {
     if (activeKey) {
       const found = conversations.find((c) => c.key === activeKey);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       if (found) setActiveConv(found);
     }
   }, [conversations, activeKey]);

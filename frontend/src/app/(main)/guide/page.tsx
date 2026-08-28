@@ -2,11 +2,10 @@
 import { useState, useRef } from 'react';
 import Link from 'next/link';
 import { useSiteContent } from '@/lib/useSiteContent';
-import { Smartphone, FileText, List, Clock, Coins, Lock, CheckCircle, Store, Search, Unlock, Phone, CreditCard, Clock3, Star, Package, AlertOctagon, Award, User, MessageSquare, Info, MailOpen, Check } from '@/lib/icons';
+import { Smartphone, FileText, List, Clock, Coins, Lock, CheckCircle, Store, Search, Unlock, Phone, CreditCard, Clock3, Star, Package, MessageSquare, Info, Check } from '@/lib/icons';
 
 const NAVY = '#0f1e42';
 const ORG = '#E85D04';
-const LIGHT_BG = '#f8f9fc';
 
 type Flow = 'post' | 'view' | 'payment' | 'coins';
 
@@ -448,7 +447,7 @@ export default function GuidePage() {
               Sign In
             </Link>
             <span className="text-gray-300">|</span>
-            <Link href="/register" className="text-xs font-semibold hover:underline" style={{ color: ORG }}>
+            <Link href="/login" className="text-xs font-semibold hover:underline" style={{ color: ORG }}>
               Create Account
             </Link>
             <span className="text-gray-300">|</span>

@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect, useCallback } from 'react';
 import api from '@/lib/api';
-import { AlertOctagon, Check, X, Eye, Search, Loader2, Package } from '@/lib/icons';
+import { AlertOctagon, Check, X, Eye, Loader2, Package } from '@/lib/icons';
 import Link from 'next/link';
 
 const BRAND = {
@@ -49,6 +49,7 @@ export default function AdminReportsPage() {
     }
   }, [statusFilter]);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { load(); }, [load]);
 
   const updateStatus = async (report: Report, status: string, disableListing = false) => {

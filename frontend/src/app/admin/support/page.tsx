@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import api from '@/lib/api';
-import { MessageSquare, Search } from '@/lib/icons';
+import { MessageSquare } from '@/lib/icons';
 
 const ORG = '#E85D04';
 

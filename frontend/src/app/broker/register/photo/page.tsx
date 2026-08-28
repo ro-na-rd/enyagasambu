@@ -69,7 +69,7 @@ export default function BrokerPhotoPage() {
         >
           {preview
             ? <img src={preview} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
-            : <><Image size={40} className="mb-3" /><p className="text-sm text-gray-400">Click or drag photo</p></>
+            : <><Image size={40} className="mb-3" aria-hidden="true" alt="" /><p className="text-sm text-gray-400">Click or drag photo</p></>
           }
         </div>
 

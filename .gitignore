@@ -9,9 +9,9 @@ build/
 
 # Environment files
 .env
-.env.local
-.env*.local
-!*.example
+.env.*
+!.env.example
+!.env.prod.example
 
 # Logs
 *.log
@@ -33,3 +33,12 @@ backend/uploads/
 
 # AI Code Review temporary files
 .ai-code-review/
+
+# Build status logs
+.build-status.log
+.frontend-build.log
+build.log
+build-err.log
+backend-dev.err.log
+backend-dev.log
+frontend-dev.log

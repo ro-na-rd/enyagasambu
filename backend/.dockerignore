@@ -1,5 +1,10 @@
-node_modules
-npm-debug.log
-uploads
 .env
+.env.*
+node_modules
 .git
+.gitignore
+*.md
+uploads/
+backend-dev.err.log
+backend-dev.log
+ca-avast.pem

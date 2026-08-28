@@ -4,8 +4,6 @@ import api from '@/lib/api';
 import { Plus, Search, X, Home, Loader2, AlertCircle, CheckCircle } from '@/lib/icons';
 import { useCurrency } from '@/context/CurrencyContext';
 
-const ORG = '#E85D04';
-
 interface Listing {
   id: number;
   title: string;
@@ -101,9 +99,10 @@ export default function BrokerListingsPage() {
   }, []);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchListings();
     api.get('/listings/categories').then(({ data }) => setCategories(data.categories || [])).catch(() => {});
-    api.get('/broker/clients').then(({ data }) => setClients((data.clients || []).map((c: any) => ({ id: c.id, name: c.name })))).catch(() => {});
+    api.get('/broker/clients').then(({ data }) => setClients((data.clients || []).map((c: { id: number; name: string }) => ({ id: c.id, name: c.name })))).catch(() => {});
   }, [fetchListings]);
 
   const filtered = listings.filter((l) => {
@@ -154,8 +153,8 @@ export default function BrokerListingsPage() {
       setModalOpen(false);
       setNotice('Listing created successfully.');
       fetchListings();
-    } catch (err: any) {
-      setFormError(err?.response?.data?.message || 'Something went wrong. Please try again.');
+    } catch (err: unknown) {
+      setFormError((err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Something went wrong. Please try again.');
     } finally {
       setSaving(false);
     }

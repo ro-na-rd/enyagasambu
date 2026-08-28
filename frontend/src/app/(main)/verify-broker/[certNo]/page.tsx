@@ -1,17 +1,32 @@
 'use client';
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import api from '@/lib/api';
 import { Check, X, Loader2, Search } from '@/lib/icons';
 
-const NAVY = '#0f1e42';
-const ORG = '#E85D04';
+
+
+interface BrokerCertificate {
+  broker_name: string;
+  type_name: string;
+  issued_date: string;
+  valid_until: string;
+  is_expired: boolean;
+  broker_phone?: string;
+}
+
+interface VerifyResult {
+  valid: boolean;
+  message?: string;
+  certificate: BrokerCertificate;
+}
 
 export default function VerifyBrokerCertificatePage() {
   const params = useParams();
   const certNo = params.certNo as string;
   const [loading, setLoading] = useState(true);
-  const [result, setResult] = useState<any>(null);
+  const [result, setResult] = useState<VerifyResult | null>(null);
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -19,8 +34,8 @@ export default function VerifyBrokerCertificatePage() {
       try {
         const { data } = await api.get(`/broker/certificate/verify/${certNo}`);
         setResult(data);
-      } catch (err: any) {
-        setError(err.response?.data?.message || 'Failed to verify certificate');
+      } catch (err: unknown) {
+        setError((err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed to verify certificate');
       } finally {
         setLoading(false);
       }
@@ -143,9 +158,9 @@ export default function VerifyBrokerCertificatePage() {
         )}
 
         <div className="mt-8 text-center">
-          <a href="/" className="inline-flex items-center gap-2 text-sm font-semibold text-gray-600 hover:text-gray-900 transition">
+          <Link href="/" className="inline-flex items-center gap-2 text-sm font-semibold text-gray-600 hover:text-gray-900 transition">
             ← Back to Home
-          </a>
+          </Link>
         </div>
       </div>
     </div>

@@ -37,6 +37,16 @@ interface Comment {
   created_at: string;
 }
 
+interface RelatedListing {
+  id: number;
+  title: string;
+  price: number | null;
+  currency?: string;
+  location: string;
+  category_name: string;
+  primary_image?: string;
+}
+
 const ORG = '#E85D04';
 const NAVY = '#0f1e42';
 const CONTACT_FEE = 300;
@@ -90,7 +100,7 @@ export default function ListingDetailPage({ params }: { params: Promise<{ id: st
   const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Related listings
-  const [relatedListings, setRelatedListings] = useState<any[]>([]);
+  const [relatedListings, setRelatedListings] = useState<RelatedListing[]>([]);
   const [relatedLoading, setRelatedLoading] = useState(false);
   const [relatedPage, setRelatedPage] = useState(1);
   const [hasMoreRelated, setHasMoreRelated] = useState(false);
@@ -146,7 +156,7 @@ export default function ListingDetailPage({ params }: { params: Promise<{ id: st
         const { data } = await api.get(`/listings?limit=5&page=${relatedPage}`);
         const allListings = data.listings || [];
         // Filter out current listing and same category
-        const related = allListings.filter((item: any) =>
+        const related = allListings.filter((item: RelatedListing) =>
           item.id !== parseInt(id) && item.category_name === listing.category_name
         ).slice(0, 5);
         setRelatedListings(related);

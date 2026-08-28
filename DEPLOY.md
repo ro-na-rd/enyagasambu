@@ -11,8 +11,8 @@
 # 1. Clone the repo
 git clone <repo-url> && cd enyagasambu-main
 
-# 2. Create production .env
-cp .env.example .env
+# 2. Create production .env from template
+cp .env.prod.example .env
 # Edit .env with your production values (see below)
 
 # 3. Run the deploy script
@@ -26,90 +26,60 @@ Edit `.env` in the project root:
 
 | Variable | Description | Example |
 |----------|-------------|---------|
+| `MYSQL_ROOT_PASSWORD` | Strong MySQL root password | `your_secure_password` |
 | `JWT_SECRET` | 64+ char random string | `openssl rand -hex 32` |
-| `DB_PASSWORD` | Strong MySQL password | `your_secure_password` |
+| `JWT_EXPIRES_IN` | Token expiry duration | `7d` |
 | `CLIENT_URL` | Frontend domains (comma-separated) | `https://enyagasambu.rw,https://www.enyagasambu.rw` |
-| `NEXT_PUBLIC_API_URL` | Backend API URL | `https://api.enyagasambu.rw/api` |
+| `FRONTEND_URL` | Primary frontend URL | `https://enyagasambu.rw` |
+| `NEXT_PUBLIC_API_URL` | Backend API URL | `https://enyagasambu.rw/api` |
+| `NEXT_PUBLIC_SITE_URL` | Frontend URL (public) | `https://enyagasambu.rw` |
+| `S3_PUBLIC_URL` | Public URL for uploaded images | `https://enyagasambu.rw/minio/nmo-images` |
 | `SMTP_USER` | Email for sending OTPs | `noreply@enyagasambu.rw` |
 | `SMTP_PASS` | Email app password | `your_app_password` |
 | `AT_API_KEY` | Africa's Talking API key | `your_key` |
+| `AT_USERNAME` | Africa's Talking username | `your_username` |
+| `MOMO_ENV` | MoMo environment (`sandbox`/`production`) | `sandbox` |
 | `MOMO_SUBSCRIPTION_KEY` | MTN MoMo API key | `your_key` |
+| `MOMO_USER_ID` | MTN MoMo user UUID | `your_uuid` |
+| `MOMO_API_KEY` | MTN MoMo API key | `your_key` |
+| `MINIO_ROOT_USER` | MinIO root username | `minioadmin` |
+| `MINIO_ROOT_PASSWORD` | MinIO root password | `your_minio_password` |
 
-## HTTPS Setup (nginx)
+## HTTPS Setup
 
-```nginx
-server {
-    listen 80;
-    server_name enyagasambu.rw www.enyagasambu.rw;
-    return 301 https://$host$request_uri;
-}
+The production deployment uses **Caddy** (included in `docker-compose.prod.yml`) for automatic HTTPS:
+- `enyagasambu.rw` → frontend (port 3000)
+- `/api/*` → backend (port 5000)
+- `www.enyagasambu.rw` → redirects to `enyagasambu.rw`
 
-server {
-    listen 443 ssl http2;
-    server_name enyagasambu.rw www.enyagasambu.rw;
-
-    ssl_certificate /etc/letsencrypt/live/enyagasambu.rw/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/enyagasambu.rw/privkey.pem;
-
-    location / {
-        proxy_pass http://localhost:3000;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-}
-
-server {
-    listen 443 ssl http2;
-    server_name api.enyagasambu.rw;
-
-    ssl_certificate /etc/letsencrypt/live/enyagasambu.rw/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/enyagasambu.rw/privkey.pem;
-
-    client_max_body_size 10M;
-
-    location / {
-        proxy_pass http://localhost:5000;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-
-    location /socket.io {
-        proxy_pass http://localhost:5000;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "upgrade";
-    }
-}
-```
+If you prefer nginx, see the Caddyfile for the routing logic and configure nginx accordingly.
 
 ## Useful Commands
 
 ```bash
-# View logs
-docker compose logs -f backend
-docker compose logs -f frontend
+# View logs (production)
+docker compose -f docker-compose.yml -f docker-compose.prod.yml logs -f backend
+docker compose -f docker-compose.yml -f docker-compose.prod.yml logs -f frontend
 
 # Restart services
-docker compose restart
+docker compose -f docker-compose.yml -f docker-compose.prod.yml restart
 
 # Stop everything
-docker compose down
+docker compose -f docker-compose.yml -f docker-compose.prod.yml down
 
 # Rebuild after code changes
-docker compose build --no-cache && docker compose up -d
+docker compose -f docker-compose.yml -f docker-compose.prod.yml build --no-cache && docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 
 # Check health
-curl http://localhost:5000/api/health
+curl -k https://enyagasambu.rw/api/health
 ```
 
 ## Security Checklist
 
-- [ ] Rotate ALL secrets (JWT, DB, API keys) — they were in git history
+- [ ] Rotate ALL secrets (JWT, DB, API keys) if they were in git history
+- [ ] Generate a strong JWT_SECRET: `node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"`
 - [ ] Set `MOMO_ENV=sandbox` for testing, `production` for live payments
-- [ ] Enable HTTPS via nginx/Caddy
-- [ ] Set up firewall (only open ports 80, 443, 22)
+- [ ] Ensure ports 80 and 443 are open in your firewall
+- [ ] Point domain DNS to your server's IP
 - [ ] Configure automated backups for MySQL and MinIO
+- [ ] Verify HTTPS is working after Caddy obtains certificates

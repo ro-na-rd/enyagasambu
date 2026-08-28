@@ -1,4 +1,7 @@
+.env
+.env.*
 node_modules
-npm-debug.log
 .git
-.env.local
+.gitignore
+.next
+*.md

@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useCurrency } from '@/context/CurrencyContext';
 import api from '@/lib/api';
-import { Loader2, AlertCircle, Users, Store, CheckCircle, Clock, Coins, UserPlus, TrendingUp, BarChart3 } from '@/lib/icons';
+import { Loader2, Users, Store, CheckCircle, Clock, Coins, UserPlus, TrendingUp, BarChart3 } from '@/lib/icons';
 
 const NAVY = '#0f1e42';
 const ORG = '#E85D04';
@@ -42,6 +42,7 @@ export default function BrokerReportsPage() {
     }
   }, []);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { fetchReport(); }, [fetchReport]);
 
   const s = report?.summary;

@@ -1,10 +1,9 @@
 'use client';
 import { useEffect, useState, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { useCurrency } from '@/context/CurrencyContext';
 import api from '@/lib/api';
 import { Check, Lock, Download, Camera } from '@/lib/icons';
-import { SITE_DOMAIN, SITE_URL } from '@/lib/config';
+import { SITE_URL } from '@/lib/config';
 import { useQrDataUrl } from '@/components/QrCode';
 
 const NAVY = '#0f1e42';

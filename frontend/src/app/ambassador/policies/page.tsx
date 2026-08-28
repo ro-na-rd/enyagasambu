@@ -1,10 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import api from '@/lib/api';
-import { Shield, CheckCircle, AlertTriangle, BookOpen, FileText } from '@/lib/icons';
-
-const NAVY = '#0f1e42';
-const ORG = '#E85D04';
+import { Shield, CheckCircle, FileText } from '@/lib/icons';
 
 interface PolicySection {
   heading: string;
@@ -36,8 +33,8 @@ export default function AmbassadorPoliciesPage() {
       .then(([policiesRes, statusRes]) => {
         setPolicies(policiesRes.data.policies);
         const acknowledged = statusRes.data.policies
-          .filter((p: any) => p.acknowledged)
-          .map((p: any) => p.id);
+          .filter((p: { id: number; acknowledged: boolean }) => p.acknowledged)
+          .map((p: { id: number; acknowledged: boolean }) => p.id);
         setAcknowledgedPolicies(new Set(acknowledged));
       })
       .finally(() => setLoading(false));

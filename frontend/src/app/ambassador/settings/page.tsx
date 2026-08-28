@@ -4,11 +4,8 @@ import api from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 import { Check, Lock, Download, Trash2, Eye, EyeOff, Loader2 } from '@/lib/icons';
 
-const NAVY = '#0f1e42';
-const ORG = '#E85D04';
-
 export default function AmbassadorSettingsPage() {
-  const { logout } = useAuth();
+  useAuth();
   const [saved, setSaved] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -67,8 +64,8 @@ export default function AmbassadorSettingsPage() {
       setPwMsg({ type: 'success', text: 'Password changed successfully' });
       setPwForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
       setShowPasswordForm(false);
-    } catch (err: any) {
-      setPwMsg({ type: 'error', text: err.response?.data?.message || 'Failed to change password' });
+    } catch (err: unknown) {
+      setPwMsg({ type: 'error', text: (err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed to change password' });
     }
     setPwLoading(false);
   };

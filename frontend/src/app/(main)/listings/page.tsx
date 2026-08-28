@@ -168,7 +168,7 @@ function ListingsContent() {
               { value: stats.activeListings, suffix: '+', label: 'Active Listings', icon: <Package size={30} />, color: '#E85D04' },
               { value: stats.categories, suffix: '', label: 'Categories', icon: <Store size={30} />, color: '#0f1e42' },
               { value: stats.sellers, suffix: '+', label: 'Trusted Sellers', icon: <Users size={30} />, color: '#E85D04' },
-              { value: stats.productImages, suffix: '+', label: 'Product Images', icon: <Image size={30} />, color: '#0f1e42' },
+              { value: stats.productImages, suffix: '+', label: 'Product Images', icon: <Image size={30} aria-hidden="true" alt="" />, color: '#0f1e42' },
             ].map((s, i) => (
               <div key={i} className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 text-center">
                 <div className="text-3xl mb-1">{s.icon}</div>
@@ -286,7 +286,7 @@ function ListingsContent() {
                   className="inline-block bg-white text-[#0f1e42] font-bold px-8 py-3 rounded-xl hover:shadow-lg transition shadow-md">
                   Start Selling Now
                 </Link>
-                <Link href="/register"
+                <Link href="/login"
                   className="inline-block border-2 border-white text-white font-bold px-8 py-3 rounded-xl hover:bg-white/10 transition">
                   Create Account
                 </Link>

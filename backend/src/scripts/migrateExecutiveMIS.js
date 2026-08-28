@@ -85,6 +85,16 @@ async function main() {
     } else throw e;
   }
 
+  // 7. Add email column to staff table if not exists
+  try {
+    await pool.query(`ALTER TABLE staff ADD COLUMN email VARCHAR(100) NULL UNIQUE AFTER username`);
+    console.log('staff.email column added');
+  } catch (e) {
+    if (e.code === 'ER_DUP_FIELDNAME') {
+      console.log('staff.email column already exists');
+    } else throw e;
+  }
+
   // --- Seed executive_roles ---
   const roles = [
     ['CEO', 'Chief Executive Officer – full platform oversight'],

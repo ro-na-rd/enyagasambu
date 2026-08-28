@@ -4,7 +4,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useCurrency } from '@/context/CurrencyContext';
 import api from '@/lib/api';
 import Link from 'next/link';
-import { Link as LinkIcon, FileText, Award, Users, Check, Clock, Coins, Sparkles, Mail, Phone, MapPin, Share2, UserPlus, Megaphone, Target, Shield } from '@/lib/icons';
+import { FileText, Award, Users, Check, Clock, Coins, Sparkles, Mail, Phone, MapPin, Share2, UserPlus, Megaphone, Target, Shield } from '@/lib/icons';
 
 const NAVY = '#0f1e42';
 const ORG = '#E85D04';

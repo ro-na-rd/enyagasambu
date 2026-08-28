@@ -6,7 +6,7 @@ import {
   Users, UserPlus, Package, Heart, Award, Handshake, ThumbsUp,
   MessageCircle, Gavel, Ticket, Sparkles, Calendar, Download,
   Filter, RefreshCw, AlertTriangle, AlertCircle, Info, TrendingUp,
-  Search, Eye, Coins, CreditCard, Megaphone, BarChart3, Activity,
+  Search, Eye, Coins, CreditCard, Megaphone, Activity,
   CheckCircle, DollarSign, MousePointerClick, Clock
 } from '@/lib/icons';
 
@@ -77,6 +77,7 @@ export default function CMODashboardPage() {
       .finally(() => setLoading(false));
   }, [startDate, endDate]);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { fetchData(); }, [fetchData]);
 
   useEffect(() => {
