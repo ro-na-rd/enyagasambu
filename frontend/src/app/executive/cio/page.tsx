@@ -5,7 +5,7 @@ import { Chart as ChartJS, registerables } from 'chart.js';
 import {
   Users, Shield, Server, Package, DollarSign, Key, AlertTriangle,
   Activity, Sparkles, Calendar, Clock, Download, Globe, Monitor,
-  Mail, Smartphone, Lock
+  Mail, Smartphone, Lock, RefreshCw
 } from '@/lib/icons';
 
 ChartJS.register(...registerables);
@@ -57,6 +57,7 @@ export default function CIODashboardPage() {
   const [systemHealth, setSystemHealth] = useState<SystemHealth | null>(null);
   const [security, setSecurity] = useState<SecurityMetrics | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const apiErrorsRef = useRef<HTMLCanvasElement>(null);
@@ -64,23 +65,48 @@ export default function CIODashboardPage() {
   const apiErrorsInstance = useRef<ChartJS | null>(null);
   const authInstance = useRef<ChartJS | null>(null);
 
-  useEffect(() => {
+  const loadData = async (showLoader = true) => {
+    if (showLoader) setLoading(true);
+    setError('');
+
     const params = new URLSearchParams();
     if (dateFrom) params.append('from', dateFrom);
     if (dateTo) params.append('to', dateTo);
     const qs = params.toString();
 
-    Promise.all([
-      api.get(`/executive/cio?${qs}`),
-      api.get('/executive/cio/health'),
-      api.get('/executive/alerts'),
-    ])
-      .then(([statsRes, healthRes, alertsRes]) => {
-        setStats(statsRes.data);
-        setSystemHealth(healthRes.data);
-        setSecurity(alertsRes.data);
-      })
-      .finally(() => setLoading(false));
+    const extractError = (err: unknown) => {
+      const e = err as { response?: { data?: { message?: string } }; message?: string };
+      return e?.response?.data?.message || e?.message || '';
+    };
+
+    try {
+      const [statsRes, healthRes, alertsRes] = await Promise.allSettled([
+        api.get(`/executive/cio?${qs}`),
+        api.get('/executive/cio/health'),
+        api.get('/executive/alerts'),
+      ]);
+
+      let failed = 0;
+      if (statsRes.status === 'fulfilled') setStats(statsRes.value.data);
+      else failed++;
+      if (healthRes.status === 'fulfilled') setSystemHealth(healthRes.value.data);
+      else failed++;
+      if (alertsRes.status === 'fulfilled') setSecurity(alertsRes.value.data);
+      else failed++;
+
+      if (failed > 0) {
+        setError(`Some dashboard sections could not be loaded (${failed} of 3 sources). Open section: ${statsRes.status === 'rejected' ? 'statistics' : ''} ${healthRes.status === 'rejected' ? 'system health' : ''} ${alertsRes.status === 'rejected' ? 'security alerts' : ''}.`);
+      }
+    } catch (err) {
+      const msg = extractError(err);
+      setError(`Unable to load dashboard data.${msg ? ` ${msg}` : ' Please try again.'}`);
+    } finally {
+      if (showLoader) setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
   }, [dateFrom, dateTo]);
 
   useEffect(() => {
@@ -100,7 +126,7 @@ export default function CIODashboardPage() {
           data: {
             labels: chartData.length ? chartData.map(r => r.label) : ['No data'],
             datasets: [{
-              label: 'Errors',
+              label: 'Failed Payments',
               data: chartData.length ? chartData.map(r => r.value) : [0],
               backgroundColor: '#f85149',
               borderRadius: 6,
@@ -160,19 +186,22 @@ export default function CIODashboardPage() {
   }, [stats]);
 
   const handleExport = async () => {
-    const params = new URLSearchParams();
+    const params = new URLSearchParams({ role: 'cio' });
     if (dateFrom) params.append('from', dateFrom);
     if (dateTo) params.append('to', dateTo);
     try {
-      const res = await api.get(`/executive/cio/export?${params.toString()}`, { responseType: 'blob' });
+      const res = await api.get(`/executive/export?${params.toString()}`, { responseType: 'blob' });
       const url = window.URL.createObjectURL(new Blob([res.data]));
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', `cio-report-${new Date().toISOString().split('T')[0]}.xlsx`);
+      link.setAttribute('download', `cio-report-${new Date().toISOString().split('T')[0]}.csv`);
       document.body.appendChild(link);
       link.click();
       link.remove();
-    } catch {}
+    } catch (err) {
+      const e = err as { response?: { data?: { message?: string } }; message?: string };
+      setError(`Export failed: ${e?.response?.data?.message || e?.message || 'Please try again.'}`);
+    }
   };
 
   const statusIndicator = (active: boolean) => (
@@ -206,6 +235,21 @@ export default function CIODashboardPage() {
   ];
 
   const storageUsed = systemHealth?.storage.usedPercent ?? 0;
+
+  const downServices = systemHealth
+    ? Object.entries({
+        Frontend: systemHealth.frontend.available,
+        Backend: systemHealth.backend.available,
+        Database: systemHealth.database.healthy,
+        'MinIO Storage': systemHealth.minio.available,
+        'Socket.IO': systemHealth.socketio.connected,
+        'Email Service': systemHealth.emailService.available,
+        'SMS Service': systemHealth.smsService.available,
+        'MTN MoMo': systemHealth.mtnMomo.available,
+      })
+        .filter(([, ok]) => ok === false)
+        .map(([name]) => name)
+    : [];
 
   if (loading) {
     return (
@@ -249,6 +293,46 @@ export default function CIODashboardPage() {
         </div>
       </div>
 
+      {/* Error Banner */}
+      {error && (
+        <div className="flex items-start gap-3 p-4 rounded-xl border"
+          style={{ background: 'rgba(248,81,73,0.07)', border: '1px solid rgba(248,81,73,0.3)' }}>
+          <AlertTriangle size={18} className="shrink-0 mt-0.5" style={{ color: '#f85149' }} />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-bold" style={{ color: '#da3633' }}>Dashboard Error</p>
+            <p className="text-xs text-gray-600 mt-0.5">{error}</p>
+            <button onClick={() => loadData(false)}
+              className="mt-2.5 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-[11px] font-bold text-white transition-all hover:opacity-90"
+              style={{ background: BRAND.orange }}>
+              <RefreshCw size={12} /> Retry
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* System Status Banner */}
+      {systemHealth && (
+        <div className="flex items-start gap-3 p-4 rounded-xl border"
+          style={downServices.length
+            ? { background: 'rgba(248,81,73,0.07)', border: '1px solid rgba(248,81,73,0.3)' }
+            : { background: 'rgba(46,160,67,0.06)', border: '1px solid rgba(46,160,67,0.25)' }}>
+          <AlertTriangle size={18} className="shrink-0 mt-0.5"
+            style={{ color: downServices.length ? '#f85149' : '#2ea043' }} />
+          <div>
+            <p className="text-sm font-bold" style={{ color: downServices.length ? '#da3633' : '#238636' }}>
+              {downServices.length ? `${downServices.length} service${downServices.length > 1 ? 's' : ''} down` : 'All systems operational'}
+            </p>
+            {downServices.length > 0 ? (
+              <p className="text-xs text-gray-600 mt-0.5">
+                Affected: {downServices.join(', ')}. Review the System Health section below for details.
+              </p>
+            ) : (
+              <p className="text-xs text-gray-600 mt-0.5">Frontend, backend, database and all integrated services are online.</p>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Date Range Filter */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 p-4 rounded-xl" style={{ background: '#ffffff', border: '1px solid rgba(0,0,0,0.05)' }}>
         <span className="text-xs font-bold text-gray-700 uppercase tracking-wider flex items-center gap-1.5">
@@ -272,6 +356,7 @@ export default function CIODashboardPage() {
           <Monitor size={16} style={{ color: BRAND.navy }} />
           <h2 className="text-sm font-bold text-gray-900">System Health</h2>
         </div>
+        {systemHealth ? (<>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
           {healthCards.map(card => (
             <div key={card.label}
@@ -347,6 +432,12 @@ export default function CIODashboardPage() {
             </div>
           </div>
         </div>
+        </>) : (
+          <p className="text-xs text-gray-500 py-6 text-center rounded-xl"
+            style={{ background: '#f9fafb', border: '1px solid rgba(0,0,0,0.04)' }}>
+            System health data is unavailable right now. Use the Retry button above to reload it.
+          </p>
+        )}
       </div>
 
       {/* Security Monitoring Section */}
@@ -468,8 +559,8 @@ export default function CIODashboardPage() {
       <div className="grid lg:grid-cols-2 gap-6">
         <div className="rounded-2xl p-6" style={{ background: '#ffffff', border: '1px solid rgba(0,0,0,0.05)' }}>
           <div className="mb-6">
-            <h2 className="text-sm font-bold text-gray-900">API Errors Over Time</h2>
-            <p className="text-xs text-gray-600 mt-0.5">Error count by endpoint</p>
+            <h2 className="text-sm font-bold text-gray-900">Failed Payments Over Time</h2>
+            <p className="text-xs text-gray-600 mt-0.5">Failed payment transactions by day</p>
           </div>
           <div className="h-56"><canvas ref={apiErrorsRef} /></div>
         </div>

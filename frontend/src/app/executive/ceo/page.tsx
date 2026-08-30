@@ -178,7 +178,7 @@ export default function CEODashboardPage() {
   const handleExport = async () => {
     setExporting(true);
     try {
-      const { data } = await api.get('/executive/export', { params: { role: 'CEO', startDate, endDate }, responseType: 'blob' });
+      const { data } = await api.get('/executive/export', { params: { role: 'ceo', startDate, endDate }, responseType: 'blob' });
       const url = window.URL.createObjectURL(new Blob([data]));
       const link = document.createElement('a');
       link.href = url;

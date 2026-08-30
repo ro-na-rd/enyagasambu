@@ -28,7 +28,6 @@ interface StaffMember {
 
 const STAFF_ROLES = [
   { value: 'admin', label: 'Admin', color: '#7c3aed', bg: 'rgba(124,58,237,0.1)' },
-  { value: 'staff', label: 'Staff', color: '#58a6ff', bg: 'rgba(88,166,255,0.1)' },
   { value: 'moderator', label: 'Moderator', color: '#d29922', bg: 'rgba(210,153,34,0.1)' },
 ];
 
@@ -45,8 +44,8 @@ export default function CEOStaffManagementPage() {
   const [editingStaff, setEditingStaff] = useState<StaffMember | null>(null);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
 
-  const [form, setForm] = useState({ username: '', password: '', phone: '', role: 'staff', executive_role: '' });
-  const [editForm, setEditForm] = useState({ phone: '', role: 'staff', executive_role: '', is_active: true });
+  const [form, setForm] = useState({ username: '', password: '', phone: '', role: 'admin', executive_role: '' });
+  const [editForm, setEditForm] = useState({ phone: '', role: 'admin', executive_role: '', is_active: true });
   const [pwForm, setPwForm] = useState({ currentPassword: '', newPassword: '' });
   const [submitting, setSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -76,7 +75,7 @@ export default function CEOStaffManagementPage() {
         executive_role: form.executive_role || undefined,
       });
       setShowCreateModal(false);
-      setForm({ username: '', password: '', phone: '', role: 'staff', executive_role: '' });
+      setForm({ username: '', password: '', phone: '', role: 'admin', executive_role: '' });
       fetchStaff();
     } catch (err: unknown) {
       alert((err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed to create staff');

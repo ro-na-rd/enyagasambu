@@ -64,6 +64,24 @@ export default function ExecutiveLayout({ children }: { children: React.ReactNod
   }, [pathname, refreshNotifs]);
 
   useEffect(() => {
+    if (loading || isLoginPage || !user?.executive_role) return;
+    const roleHub: Record<string, string> = {
+      CEO: '/executive/ceo',
+      CIO: '/executive/cio',
+      COO: '/executive/coo',
+      CMO: '/executive/cmo',
+      CFO: '/executive/cfo',
+    };
+    const path = pathname.split('/')[2];
+    if (path && ['ceo', 'cio', 'coo', 'cmo', 'cfo'].includes(path)) {
+      const allowed = roleHub[user.executive_role];
+      if (allowed && !pathname.startsWith(allowed)) {
+        router.replace(allowed);
+      }
+    }
+  }, [loading, isLoginPage, user?.executive_role, pathname, router]);
+
+  useEffect(() => {
     if (!user?.executive_role) return;
     fetch(`/api/executive/permissions/${user.executive_role}`)
       .then(res => res.json())

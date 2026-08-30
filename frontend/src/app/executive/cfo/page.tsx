@@ -36,7 +36,7 @@ interface CFOStats {
   revenueByMonth: { label: string; value: number }[];
   revenueByType: { label: string; value: number }[];
   paymentsByStatus: { label: string; value: number }[];
-  recentRefunds: { id: number; amount: number; status: string; created_at: string }[];
+  recentRefunds: { id: number; amount_rwf: number; status: string; created_at: string }[];
   alerts: { id: string; type: 'payment' | 'support' | 'report' | 'system'; message: string; severity: 'low' | 'medium' | 'high'; createdAt: string }[];
 }
 
@@ -170,7 +170,7 @@ export default function CFODashboardPage() {
   const handleExport = async () => {
     setExporting(true);
     try {
-      const { data } = await api.get('/executive/export', { params: { role: 'CFO', startDate, endDate }, responseType: 'blob' });
+      const { data } = await api.get('/executive/export', { params: { role: 'cfo', startDate, endDate }, responseType: 'blob' });
       const url = window.URL.createObjectURL(new Blob([data]));
       const link = document.createElement('a');
       link.href = url;
@@ -413,7 +413,7 @@ export default function CFODashboardPage() {
                 </div>
                 <div className="text-right">
                   <p className="text-sm font-extrabold" style={{ color: '#d29922' }}>
-                    RWF {refund.amount.toLocaleString()}
+                    RWF {refund.amount_rwf.toLocaleString()}
                   </p>
                   <span className="text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded"
                     style={{ background: 'rgba(210,153,34,0.1)', color: '#d29922' }}>

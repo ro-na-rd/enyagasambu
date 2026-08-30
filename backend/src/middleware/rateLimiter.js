@@ -1,8 +1,11 @@
 const hits = new Map();
 
-function createLimiter({ windowMs, max, message }) {
+function createLimiter({ windowMs, max, message, skipLoopback }) {
   return (req, res, next) => {
     const key = req.ip || req.connection.remoteAddress;
+    if (skipLoopback && /^::1$|^127\.0\.0\.1$|^::ffff:127\.0\.0\.1$/.test(key || '')) {
+      return next();
+    }
     const now = Date.now();
     const record = hits.get(key);
 
@@ -30,6 +33,7 @@ const loginLimiter = createLimiter({
   windowMs: 15 * 60 * 1000,
   max: 10,
   message: 'Too many login attempts. Please try again later.',
+  skipLoopback: true,
 });
 
 const otpLimiter = createLimiter({

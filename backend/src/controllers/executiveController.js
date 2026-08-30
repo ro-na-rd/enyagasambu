@@ -213,11 +213,11 @@ exports.getCIOHealth = async (req, res) => {
     backend: { available: true, latency: Math.round(process.uptime()) },
     database: { healthy: false, connectionPool: 0 },
     storage: { usedPercent: 0, totalGB: 10, usedGB: 0 },
-    minio: { available: !!process.env.S3_ENDPOINT || !!process.env.AWS_S3_BUCKET, bucketCount: process.env.S3_BUCKET ? 1 : 0 },
+    minio: { available: false, bucketCount: process.env.S3_BUCKET ? 1 : 0 },
     socketio: { connected: false, clientCount: 0 },
     scheduler: { renewal: true, expiry: true, auction: true },
-    emailService: { available: !!process.env.SMTP_HOST || !!process.env.EMAIL_API_KEY, queueSize: 0 },
-    smsService: { available: !!process.env.AT_SMS_API_KEY || !!process.env.AFRICASTALKING_API_KEY, queueSize: 0 },
+    emailService: { available: !!process.env.SMTP_HOST && !!process.env.SMTP_USER, queueSize: 0 },
+    smsService: { available: !!process.env.AT_API_KEY && !!process.env.AT_USERNAME, queueSize: 0 },
     mtnMomo: { available: !!process.env.MOMO_SUBSCRIPTION_KEY || !!process.env.MOMO_API_KEY, lastPing: new Date().toISOString() }
   };
 
@@ -247,6 +247,20 @@ exports.getCIOHealth = async (req, res) => {
       health.socketio.clientCount = io.engine?.clientsCount ?? 0;
     }
   } catch { /* ignore */ }
+
+  const minioEndpoint = process.env.S3_ENDPOINT
+    ? (process.env.S3_ENDPOINT.includes('://') ? process.env.S3_ENDPOINT : `http://${process.env.S3_ENDPOINT}`)
+    : process.env.S3_PUBLIC_URL;
+  if (minioEndpoint) {
+    try {
+      const url = new URL(minioEndpoint);
+      const probePath = process.env.S3_ENDPOINT ? '/minio/health/live' : (url.pathname || '/');
+      const resp = await fetch(`${url.origin}${probePath}`, { method: 'GET', signal: AbortSignal.timeout(4000) });
+      health.minio.available = resp.ok || resp.status === 403;
+    } catch {
+      health.minio.available = false;
+    }
+  }
 
   return res.json(health);
 };
@@ -597,12 +611,12 @@ exports.getCFODashboard = async (req, res) => {
     );
 
     const [[{ successfulPayments }]] = await pool.query(
-      `SELECT COUNT(*) AS successfulPayments FROM payments WHERE status = 'completed' AND ${df.where}`,
+      `SELECT COUNT(*) AS successfulPayments FROM payments WHERE status = 'confirmed' AND ${df.where}`,
       df.params
     );
 
     const [recentRefunds] = await pool.query(
-      `SELECT id, amount, status, created_at FROM payments
+      `SELECT id, amount_rwf, status, created_at FROM payments
        WHERE status = 'refunded' ORDER BY created_at DESC LIMIT 10`
     );
 
@@ -728,7 +742,7 @@ exports.exportDashboardData = async (req, res) => {
       return s.includes(',') || s.includes('"') || s.includes('\n')
         ? '"' + s.replace(/"/g, '""') + '"' : s;
     };
-    const header = (cols) => csvRows.push(cols.join(','));
+    const header = (cols) => csvRows.push(cols);
 
     if (role === 'ceo') {
       header(['Metric', 'Value']);
@@ -904,7 +918,7 @@ exports.getRolePermissions = async (req, res) => {
   return res.json({ role, permissions: permissions[role] || [] });
 };
 
-const STAFF_ALLOWED_ROLES = ['admin', 'staff', 'moderator'];
+const STAFF_ALLOWED_ROLES = ['admin', 'moderator'];
 
 exports.listStaff = async (req, res) => {
   try {
@@ -954,7 +968,7 @@ exports.createStaff = async (req, res) => {
     const [result] = await pool.query(
       `INSERT INTO staff (username, password_hash, phone, role, executive_role, is_active)
        VALUES (?, ?, ?, ?, ?, 1)`,
-      [username, hash, phone || null, role || 'staff', executive_role || null]
+      [username, hash, phone || null, role || 'admin', executive_role || null]
     );
 
     const ip = req.headers['x-forwarded-for'] || req.connection?.remoteAddress || 'unknown';

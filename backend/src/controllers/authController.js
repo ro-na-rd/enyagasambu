@@ -76,7 +76,7 @@ exports.login = async (req, res) => {
 
     // Fallback: check staff table (admins/moderators) by username or email
     const [[staff]] = await pool.query(
-      'SELECT id, username, phone, role, password_hash FROM staff WHERE (username = ? OR (email IS NOT NULL AND email = ?)) AND is_active = 1 LIMIT 1',
+      'SELECT id, username, phone, role, executive_role, password_hash FROM staff WHERE (username = ? OR (email IS NOT NULL AND email = ?)) AND is_active = 1 LIMIT 1',
       [email, email]
     );
     if (!staff) return res.status(401).json({ message: 'Invalid email or password' });
@@ -85,7 +85,7 @@ exports.login = async (req, res) => {
     if (!valid) return res.status(401).json({ message: 'Invalid email or password' });
 
     const token = jwt.sign(
-      { id: staff.id, username: staff.username, phone: staff.phone, role: staff.role, is_staff: true },
+      { id: staff.id, username: staff.username, phone: staff.phone, role: staff.role, is_staff: true, executive_role: staff.executive_role || null },
       process.env.JWT_SECRET,
       { expiresIn: '8h' }
     );
@@ -93,7 +93,7 @@ exports.login = async (req, res) => {
     return res.json({
       token,
       role: staff.role,
-      user: { id: staff.id, name: staff.username, email: staff.username, phone: staff.phone, role: staff.role },
+      user: { id: staff.id, name: staff.username, email: staff.username, phone: staff.phone, role: staff.role, executive_role: staff.executive_role || null },
     });
   } catch (err) {
     console.error(err);
@@ -107,7 +107,7 @@ exports.me = async (req, res) => {
     const table = isStaff ? 'staff' : 'users';
     let query;
     if (isStaff) {
-      query = 'SELECT id, username as name, email, phone, role, created_at FROM staff WHERE id = ?';
+      query = 'SELECT id, username as name, COALESCE(email, username) as email, phone, role, executive_role, created_at FROM staff WHERE id = ?';
     } else {
       query = 'SELECT id, name, email, phone, coins, role, referral_code, created_at FROM users WHERE id = ?';
     }

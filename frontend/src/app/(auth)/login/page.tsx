@@ -62,6 +62,14 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (!user) return;
+    const execRedirects: Record<string, string> = {
+      CEO: '/executive/ceo',
+      CIO: '/executive/cio',
+      COO: '/executive/coo',
+      CMO: '/executive/cmo',
+      CFO: '/executive/cfo',
+    };
+    const execOverride = user.executive_role ? execRedirects[user.executive_role] : null;
     const roleRedirects: Record<string, string> = {
       admin: '/admin',
       staff: '/admin',
@@ -70,7 +78,7 @@ export default function LoginPage() {
       ambassador: '/ambassador',
       supplier: '/supplier',
     };
-    router.replace(roleRedirects[user.role] || '/');
+    router.replace(execOverride || roleRedirects[user.role] || '/');
   }, [user, router]);
 
   useEffect(() => {
@@ -94,6 +102,15 @@ export default function LoginPage() {
 
       localStorage.setItem('nmo_token', res.token);
       await refreshUser();
+      const execRedirects: Record<string, string> = {
+        CEO: '/executive/ceo',
+        CIO: '/executive/cio',
+        COO: '/executive/coo',
+        CMO: '/executive/cmo',
+        CFO: '/executive/cfo',
+      };
+      const resUser = (res as { user?: { role?: string; executive_role?: string } }).user;
+      const execOverride = resUser?.executive_role ? execRedirects[resUser.executive_role] : null;
       const roleRedirects: Record<string, string> = {
         admin: '/admin',
         staff: '/admin',
@@ -102,8 +119,7 @@ export default function LoginPage() {
         ambassador: '/ambassador',
         supplier: '/supplier',
       };
-      const resUser = (res as { user?: { role?: string } }).user;
-      router.push(roleRedirects[resUser?.role || ''] || '/');
+      router.push(execOverride || roleRedirects[resUser?.role || ''] || '/');
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
         || (err as { message?: string })?.message

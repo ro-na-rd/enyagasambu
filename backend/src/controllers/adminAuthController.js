@@ -16,8 +16,8 @@ exports.login = async (req, res) => {
 
   try {
     const [[staff]] = await pool.query(
-      'SELECT * FROM staff WHERE username = ? AND is_active = 1 LIMIT 1',
-      [username]
+      'SELECT * FROM staff WHERE (username = ? OR email = ?) AND is_active = 1 LIMIT 1',
+      [username, email]
     );
     if (!staff) {
       return res.status(401).json({ message: 'Invalid credentials' });
@@ -55,9 +55,9 @@ exports.verifyOtp = async (req, res) => {
       `SELECT o.id, s.id AS staff_id, s.phone, s.role
        FROM staff_otps o
        JOIN staff s ON s.id = o.staff_id
-       WHERE s.username = ? AND o.code = ? AND o.used = 0 AND o.expires_at > NOW()
+       WHERE (s.username = ? OR s.email = ?) AND o.code = ? AND o.used = 0 AND o.expires_at > NOW()
        ORDER BY o.created_at DESC LIMIT 1`,
-      [username, code]
+      [username, email, code]
     );
 
     if (!otpRow) {

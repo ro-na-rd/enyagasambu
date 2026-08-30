@@ -13,7 +13,7 @@ const BRAND = {
 
 export default function ExecutiveProfilePage() {
   const { refreshUser } = useAuth();
-  const [profile, setProfile] = useState<{ username?: string; email?: string; phone?: string; role?: string } | null>(null);
+  const [profile, setProfile] = useState<{ username?: string; email?: string; phone?: string; role?: string; executive_role?: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
