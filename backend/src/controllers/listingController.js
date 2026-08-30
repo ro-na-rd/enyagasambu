@@ -60,7 +60,7 @@ exports.getListings = async (req, res) => {
   const { category, type, group, search, featured, page = 1, limit = 20 } = req.query;
   const offset = (parseInt(page) - 1) * parseInt(limit);
 
-  let where = "l.status IN ('active','sold','expired') AND l.is_deleted = 0";
+  let where = "l.status IN ('active','sold','expired')";
   const params = [];
 
   if (category) {
@@ -123,7 +123,7 @@ exports.getListing = async (req, res) => {
        FROM listings l
        JOIN categories c ON l.category_id = c.id
        JOIN users u ON l.user_id = u.id
-       WHERE l.id = ? AND l.status != 'deleted' AND l.is_deleted = 0`,
+       WHERE l.id = ? AND l.status != 'deleted'`,
       [id]
     );
 
