@@ -1,6 +1,34 @@
 const pool = require('../config/db');
+const crypto = require('crypto');
 const { uploadToS3, deleteFromS3Url } = require('../services/s3Service');
 const { notifyAdmins, notifyUser } = require('../services/notificationService');
+
+// Staff accounts (admin/moderator) live in the `staff` table, but listings.user_id
+// is a FK to `users(id)`. Map a staff member to a marketplace users row, creating one if needed.
+async function getOrCreateAdminUserId(conn, staffId) {
+  const [[staff]] = await conn.query('SELECT id, username, email, phone FROM staff WHERE id = ?', [staffId]);
+  if (!staff) throw new Error('Staff account not found');
+
+  if (staff.email) {
+    const [[existing]] = await conn.query('SELECT id FROM users WHERE email = ? LIMIT 1', [staff.email]);
+    if (existing) return existing.id;
+  }
+
+  if (staff.phone) {
+    const phoneDigits = staff.phone.replace(/\D/g, '');
+    if (phoneDigits) {
+      const [rows] = await conn.query('SELECT id, phone FROM users WHERE phone IS NOT NULL');
+      const match = rows.find((u) => (u.phone || '').replace(/\D/g, '') === phoneDigits);
+      if (match) return match.id;
+    }
+  }
+
+  const [result] = await conn.query(
+    'INSERT INTO users (name, email, phone, password_hash, role, coins) VALUES (?, ?, ?, ?, ?, 0)',
+    [staff.username, staff.email || null, staff.phone || null, crypto.randomBytes(32).toString('hex'), 'admin']
+  );
+  return result.insertId;
+}
 
 exports.getStats = async (req, res) => {
   try {
@@ -336,10 +364,12 @@ exports.createListing = async (req, res) => {
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 90);
     
+    const adminUserId = await getOrCreateAdminUserId(conn, req.user.id);
+    
     const [result] = await conn.query(
       `INSERT INTO listings (user_id, category_id, title, description, price, currency, location, listing_type, status, expires_at, is_featured)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, 1)`,
-      [req.user.id, category_id, title, description || null, price || null, currency || 'RWF', location || null, listing_type || 'sell', expiresAt]
+      [adminUserId, category_id, title, description || null, price || null, currency || 'RWF', location || null, listing_type || 'sell', expiresAt]
     );
     
     const listingId = result.insertId;
@@ -402,10 +432,12 @@ exports.createListingWithFiles = async (req, res) => {
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 90);
     
+    const adminUserId = await getOrCreateAdminUserId(conn, req.user.id);
+    
     const [result] = await conn.query(
       `INSERT INTO listings (user_id, category_id, title, description, price, currency, location, listing_type, status, expires_at, is_featured)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, 1)`,
-      [req.user.id, category_id, title, description || null, price || null, currency || 'RWF', location || null, listing_type || 'sell', expiresAt]
+      [adminUserId, category_id, title, description || null, price || null, currency || 'RWF', location || null, listing_type || 'sell', expiresAt]
     );
     
     const listingId = result.insertId;
