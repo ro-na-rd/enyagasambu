@@ -1,11 +1,12 @@
 const pool = require('../config/db');
+const { logger } = require('../config/logger');
 
 exports.getCategories = async (req, res) => {
   try {
     const [rows] = await pool.query('SELECT * FROM categories ORDER BY type, name');
     return res.json({ categories: rows });
   } catch (err) {
-    console.error(err);
+    logger.error(err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -22,7 +23,7 @@ exports.createCategory = async (req, res) => {
     return res.status(201).json({ id: result.insertId, name, slug, type });
   } catch (err) {
     if (err.code === 'ER_DUP_ENTRY') return res.status(409).json({ message: 'Category already exists' });
-    console.error(err);
+    logger.error(err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -42,7 +43,7 @@ exports.updateCategory = async (req, res) => {
     return res.json({ id: Number(id), name, slug, type });
   } catch (err) {
     if (err.code === 'ER_DUP_ENTRY') return res.status(409).json({ message: 'A category with that name already exists' });
-    console.error(err);
+    logger.error(err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -53,7 +54,7 @@ exports.deleteCategory = async (req, res) => {
     await pool.query('DELETE FROM categories WHERE id = ?', [id]);
     return res.json({ message: 'Category deleted' });
   } catch (err) {
-    console.error(err);
+    logger.error(err);
     return res.status(500).json({ message: 'Server error' });
   }
 };

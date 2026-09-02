@@ -1,6 +1,7 @@
 const pool = require('../config/db');
 const { uploadToS3 } = require('../services/s3Service');
 const { notifyAdmins, notifyUser } = require('../services/notificationService');
+const { logger } = require('../config/logger');
 
 const BROKER_LISTING_DAYS = 30;
 
@@ -41,7 +42,7 @@ exports.getListings = async (req, res) => {
     );
     return res.json({ listings: rows });
   } catch (err) {
-    console.error('[Broker listings list error]', err);
+    logger.error('[Broker listings list error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -110,7 +111,7 @@ exports.createListing = async (req, res) => {
     return res.status(201).json({ message: 'Listing created', listing });
   } catch (err) {
     await conn.rollback();
-    console.error('[Broker listing create error]', err);
+    logger.error('[Broker listing create error]', err);
     return res.status(500).json({ message: 'Server error' });
   } finally {
     conn.release();
@@ -162,7 +163,7 @@ exports.deleteListing = async (req, res) => {
     });
   } catch (err) {
     await conn.rollback();
-    console.error('[Broker delete listing error]', err);
+    logger.error('[Broker delete listing error]', err);
     return res.status(500).json({ message: 'Server error during deletion' });
   } finally {
     conn.release();

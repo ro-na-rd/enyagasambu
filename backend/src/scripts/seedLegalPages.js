@@ -1,6 +1,7 @@
 require('dotenv').config();
 const pool = require('../config/db');
 const { htmlToText } = require('../services/htmlToText');
+const { logger } = require('../config/logger');
 
 const PAGES = [
   {
@@ -140,6 +141,6 @@ async function run() {
 }
 
 run().catch((err) => {
-  console.error('Seed failed:', err.message);
+  logger.error('Seed failed:', err.message);
   process.exit(1);
 });

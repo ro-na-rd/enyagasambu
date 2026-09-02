@@ -1,4 +1,5 @@
 const pool = require('../config/db');
+const { logger } = require('../config/logger');
 
 const PLANS = {
   free:     { name: 'Free',     coins: 0,    listing_duration_days: 3,  max_active_listings: 5,  can_feature: false },
@@ -20,7 +21,7 @@ exports.getMySubscription = async (req, res) => {
     );
     return res.json({ subscription: sub || { plan: 'free', ...PLANS.free } });
   } catch (err) {
-    console.error(err);
+    logger.error(err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -64,7 +65,7 @@ exports.subscribe = async (req, res) => {
     return res.json({ message: `Subscribed to ${chosen.name} plan`, plan });
   } catch (err) {
     await conn.rollback();
-    console.error(err);
+    logger.error(err);
     return res.status(500).json({ message: 'Server error' });
   } finally {
     conn.release();

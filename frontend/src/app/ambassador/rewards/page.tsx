@@ -4,6 +4,8 @@ import api from '@/lib/api';
 import { Coins } from '@/lib/icons';
 import { useCurrency } from '@/context/CurrencyContext';
 
+const ORG = '#E85D04';
+
 export default function AmbassadorRewardsPage() {
   const { format } = useCurrency();
   const [referral, setReferral] = useState<{ totalReferrals?: number; bonusPaid?: number; bonusPerReferral?: number } | null>(null);

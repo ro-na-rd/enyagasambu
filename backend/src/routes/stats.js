@@ -1,5 +1,6 @@
 const express = require('express');
 const pool = require('../config/db');
+const { logger } = require('../config/logger');
 
 const router = express.Router();
 
@@ -39,7 +40,7 @@ router.get('/', async (req, res) => {
       },
     });
   } catch (err) {
-    console.error('[Stats error]', err);
+    logger.error('[Stats error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 });

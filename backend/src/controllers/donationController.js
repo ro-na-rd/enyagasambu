@@ -3,6 +3,7 @@ const crypto = require('crypto');
 const pool = require('../config/db');
 const { requestToPay, getPaymentStatus } = require('../services/momoService');
 const { sendSms } = require('../services/smsService');
+const { logger } = require('../config/logger');
 
 const MIN_DONATION = 100;
 const OTP_TTL_MINUTES = 5;
@@ -34,7 +35,7 @@ exports.getPublicStats = async (req, res) => {
     );
     return res.json({ totalRaised: total, donorCount: count, recent });
   } catch (err) {
-    console.error('[Donations public stats error]', err);
+    logger.error('[Donations public stats error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -75,7 +76,7 @@ exports.initiateMomo = async (req, res) => {
 
     return res.json({ referenceId, amount_rwf: amountRwf, message: `A payment request of ${amountRwf} RWF has been sent to ${phone}. Please approve it on your phone.` });
   } catch (err) {
-    console.error('[Donation MoMo initiate error]', err?.response?.data || err.message);
+    logger.error('[Donation MoMo initiate error]', err?.response?.data || err.message);
     return res.status(502).json({ message: 'Failed to send payment request. Please try again.' });
   }
 };
@@ -127,7 +128,7 @@ exports.checkPayment = async (req, res) => {
 
     return res.json({ status: 'pending' });
   } catch (err) {
-    console.error('[Donation check error]', err?.response?.data || err.message);
+    logger.error('[Donation check error]', err?.response?.data || err.message);
     return res.status(502).json({ message: 'Could not check payment status.' });
   }
 };
@@ -186,7 +187,7 @@ exports.verifyOtp = async (req, res) => {
     return res.json({ donationId: donation.id, message: 'Thank you for your donation!' });
   } catch (err) {
     await conn.rollback();
-    console.error('[Donation OTP verify error]', err);
+    logger.error('[Donation OTP verify error]', err);
     return res.status(500).json({ message: 'Server error' });
   } finally {
     conn.release();
@@ -221,7 +222,7 @@ exports.resendOtp = async (req, res) => {
 
     return res.json({ message: `New verification code sent to ${donation.donor_phone}` });
   } catch (err) {
-    console.error('[Donation resend error]', err);
+    logger.error('[Donation resend error]', err);
     return res.status(500).json({ message: 'Failed to resend verification code' });
   }
 };
@@ -261,7 +262,7 @@ exports.processCard = async (req, res) => {
 
     return res.json({ donationId: result.insertId, message: 'Donation successful. Thank you for your support!' });
   } catch (err) {
-    console.error('[Donation card error]', err);
+    logger.error('[Donation card error]', err);
     return res.status(500).json({ message: 'Failed to process card donation' });
   }
 };

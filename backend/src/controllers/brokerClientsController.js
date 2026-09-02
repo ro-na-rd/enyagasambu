@@ -1,4 +1,5 @@
 const pool = require('../config/db');
+const { logger } = require('../config/logger');
 
 const sanitize = (v) => (typeof v === 'string' ? v.trim() : v);
 
@@ -13,7 +14,7 @@ exports.getClients = async (req, res) => {
     );
     return res.json({ clients: rows });
   } catch (err) {
-    console.error('[Broker clients list error]', err);
+    logger.error('[Broker clients list error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -43,7 +44,7 @@ exports.createClient = async (req, res) => {
     );
     return res.status(201).json({ client });
   } catch (err) {
-    console.error('[Broker client create error]', err);
+    logger.error('[Broker client create error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -84,7 +85,7 @@ exports.updateClient = async (req, res) => {
     );
     return res.json({ client });
   } catch (err) {
-    console.error('[Broker client update error]', err);
+    logger.error('[Broker client update error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -101,7 +102,7 @@ exports.deleteClient = async (req, res) => {
     }
     return res.json({ success: true });
   } catch (err) {
-    console.error('[Broker client delete error]', err);
+    logger.error('[Broker client delete error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };

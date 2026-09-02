@@ -1,5 +1,6 @@
 require('dotenv').config();
 const pool = require('../config/db');
+const { logger } = require('../config/logger');
 
 async function main() {
   // 1. executive_roles
@@ -217,6 +218,6 @@ async function main() {
 }
 
 main().catch((err) => {
-  console.error('Migration failed:', err.message);
+  logger.error('Migration failed:', err.message);
   process.exit(1);
 });

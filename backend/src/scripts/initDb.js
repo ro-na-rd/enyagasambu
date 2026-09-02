@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const pool = require('../config/db');
+const { logger } = require('../config/logger');
 
 async function runSqlFile(filePath) {
   const sql = fs.readFileSync(filePath, 'utf8');
@@ -28,5 +29,5 @@ async function init() {
   await pool.end();
 }
 
-if (require.main===module) init().catch(e=>{console.error(e);process.exit(1)});
+if (require.main===module) init().catch(e=>{logger.error(e);process.exit(1)});
 module.exports = { init };

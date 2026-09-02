@@ -1,6 +1,7 @@
 require('dotenv').config();
 const pool = require('../config/db');
 const { htmlToText } = require('../services/htmlToText');
+const { logger } = require('../config/logger');
 
 async function run() {
   console.log('Converting existing content_pages HTML to plain text...');
@@ -16,6 +17,6 @@ async function run() {
 }
 
 run().catch((err) => {
-  console.error('Migration failed:', err.message);
+  logger.error('Migration failed:', err.message);
   process.exit(1);
 });

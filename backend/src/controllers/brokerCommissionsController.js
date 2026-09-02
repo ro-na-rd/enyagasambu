@@ -1,4 +1,5 @@
 const { getSummary, getEntries } = require('../services/brokerCommissionService');
+const { logger } = require('../config/logger');
 
 exports.getCommissions = async (req, res) => {
   try {
@@ -8,7 +9,7 @@ exports.getCommissions = async (req, res) => {
     ]);
     return res.json({ summary, entries });
   } catch (err) {
-    console.error('[Broker commissions error]', err);
+    logger.error('[Broker commissions error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };

@@ -6,6 +6,7 @@ const { requestToPay, getPaymentStatus } = require('../services/momoService');
 const { sendSms } = require('../services/smsService');
 const { uploadToS3 } = require('../services/s3Service');
 const { notifyAdmins, notifyUser } = require('../services/notificationService');
+const { logger } = require('../config/logger');
 
 const LISTING_COST = 400;
 const CONNECT_COST = 300;
@@ -22,7 +23,7 @@ async function getListingPrices() {
     });
     return prices;
   } catch (err) {
-    console.error('Error fetching listing prices from settings:', err);
+    logger.error('Error fetching listing prices from settings:', err);
     return { 3: 500, 7: 1000, 30: 3500 }; // fallback to defaults
   }
 }
@@ -51,7 +52,7 @@ exports.getCategories = async (req, res) => {
     const [rows] = await pool.query('SELECT * FROM categories ORDER BY type, name');
     return res.json({ categories: rows });
   } catch (err) {
-    console.error(err);
+    logger.error(err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -105,7 +106,7 @@ exports.getListings = async (req, res) => {
 
     return res.json({ listings: rows, total, page: parseInt(page), limit: parseInt(limit) });
   } catch (err) {
-    console.error(err);
+    logger.error(err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -161,7 +162,7 @@ exports.getListing = async (req, res) => {
       listing: { ...listing, images, contactUnlocked, sellerPhone },
     });
   } catch (err) {
-    console.error(err);
+    logger.error(err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -344,7 +345,7 @@ exports.createListing = async (req, res) => {
     });
   } catch (err) {
     await conn.rollback();
-    console.error('[Create listing error]', err);
+    logger.error('[Create listing error]', err);
     return res.status(500).json({ message: 'Server error during listing creation' });
   } finally {
     conn.release();
@@ -413,7 +414,7 @@ exports.initiateListingPayment = async (req, res) => {
 
     return res.json({ referenceId, amount_rwf: amount });
   } catch (err) {
-    console.error('[Listing payment initiate error]', err?.response?.data || err.message);
+    logger.error('[Listing payment initiate error]', err?.response?.data || err.message);
     return res.status(502).json({ message: 'Failed to initiate listing payment' });
   }
 };
@@ -454,7 +455,7 @@ exports.confirmListingPayment = async (req, res) => {
 
     return res.json({ status: 'pending' });
   } catch (err) {
-    console.error('[Listing payment confirm error]', err?.response?.data || err.message);
+    logger.error('[Listing payment confirm error]', err?.response?.data || err.message);
     return res.status(502).json({ message: 'Could not verify payment status' });
   }
 };
@@ -494,7 +495,7 @@ exports.initiateRenewal = async (req, res) => {
 
     return res.json({ referenceId, amount_rwf: amount });
   } catch (err) {
-    console.error('[Renewal initiate error]', err?.response?.data || err.message);
+    logger.error('[Renewal initiate error]', err?.response?.data || err.message);
     return res.status(502).json({ message: 'Failed to initiate renewal payment' });
   }
 };
@@ -551,7 +552,7 @@ exports.confirmRenewal = async (req, res) => {
 
     return res.json({ status: 'pending' });
   } catch (err) {
-    console.error('[Renewal confirm error]', err?.response?.data || err.message);
+    logger.error('[Renewal confirm error]', err?.response?.data || err.message);
     return res.status(502).json({ message: 'Could not verify payment status' });
   }
 };
@@ -577,7 +578,7 @@ exports.sendRenewalToken = async (req, res) => {
     await pool.query('UPDATE renewal_tokens SET sent_at = NOW() WHERE id = ?', [tokenRow.id]);
     return res.json({ message: 'Renewal token sent' });
   } catch (err) {
-    console.error('[Send renewal token error]', err);
+    logger.error('[Send renewal token error]', err);
     return res.status(500).json({ message: 'Could not send renewal token' });
   }
 };
@@ -633,7 +634,7 @@ exports.unlockContact = async (req, res) => {
     return res.json({ sellerPhone: seller?.phone });
   } catch (err) {
     await conn.rollback();
-    console.error(err);
+    logger.error(err);
     return res.status(500).json({ message: 'Server error' });
   } finally {
     conn.release();
@@ -652,7 +653,7 @@ exports.myListings = async (req, res) => {
     );
     return res.json({ listings: rows });
   } catch (err) {
-    console.error(err);
+    logger.error(err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -688,7 +689,7 @@ exports.boostListing = async (req, res) => {
     return res.json({ message: 'Listing boosted for 7 days', featuredUntil });
   } catch (err) {
     await conn.rollback();
-    console.error(err);
+    logger.error(err);
     return res.status(500).json({ message: 'Server error' });
   } finally {
     conn.release();
@@ -750,7 +751,7 @@ exports.deleteListing = async (req, res) => {
     });
   } catch (err) {
     await conn.rollback();
-    console.error('[Delete listing error]', err);
+    logger.error('[Delete listing error]', err);
     return res.status(500).json({ message: 'Server error during deletion' });
   } finally {
     conn.release();

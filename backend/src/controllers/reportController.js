@@ -1,5 +1,6 @@
 const pool = require('../config/db');
 const { notifyAdmins } = require('../services/notificationService');
+const { logger } = require('../config/logger');
 
 const REASONS = ['spam', 'inappropriate', 'scam', 'misleading', 'illegal', 'other'];
 
@@ -37,7 +38,7 @@ exports.createReport = async (req, res) => {
 
     return res.status(201).json({ id: result.insertId, message: 'Report submitted. Our team will review it.' });
   } catch (err) {
-    console.error('[Report create error]', err);
+    logger.error('[Report create error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -64,7 +65,7 @@ exports.listReports = async (req, res) => {
     );
     return res.json({ reports: rows });
   } catch (err) {
-    console.error('[Report list error]', err);
+    logger.error('[Report list error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -104,7 +105,7 @@ exports.updateReport = async (req, res) => {
     return res.json({ message: 'Report updated' });
   } catch (err) {
     await conn.rollback();
-    console.error('[Report update error]', err);
+    logger.error('[Report update error]', err);
     return res.status(500).json({ message: 'Server error' });
   } finally {
     conn.release();

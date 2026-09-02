@@ -1,6 +1,7 @@
 require('dotenv').config();
 const pool = require('../config/db');
 const DEFAULTS = require('../config/siteContentDefaults');
+const { logger } = require('../config/logger');
 
 async function run() {
   console.log('Migrating site_content table...');
@@ -43,6 +44,6 @@ async function run() {
 }
 
 run().catch((err) => {
-  console.error('Migration failed:', err.message);
+  logger.error('Migration failed:', err.message);
   process.exit(1);
 });

@@ -1,5 +1,6 @@
 require('dotenv').config();
 const mysql = require('mysql2/promise');
+const { logger } = require('../config/logger');
 
 async function main() {
   const pool = mysql.createPool({
@@ -46,6 +47,6 @@ async function main() {
 }
 
 main().catch((err) => {
-  console.error(err);
+  logger.error(err);
   process.exit(1);
 });

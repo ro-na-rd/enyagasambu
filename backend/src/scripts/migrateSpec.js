@@ -1,5 +1,6 @@
 require('dotenv').config();
 const pool = require('../config/db');
+const { logger } = require('../config/logger');
 
 async function run() {
   console.log('Applying spec-alignment migrations...');
@@ -74,6 +75,6 @@ async function run() {
 }
 
 run().catch((err) => {
-  console.error('Migration failed:', err.message);
+  logger.error('Migration failed:', err.message);
   process.exit(1);
 });

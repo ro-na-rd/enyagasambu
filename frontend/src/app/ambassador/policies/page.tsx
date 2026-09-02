@@ -3,6 +3,8 @@ import { useState, useEffect } from 'react';
 import api from '@/lib/api';
 import { Shield, CheckCircle, FileText } from '@/lib/icons';
 
+const NAVY = '#0f1e42';
+
 interface PolicySection {
   heading: string;
   content?: string;
@@ -44,8 +46,8 @@ export default function AmbassadorPoliciesPage() {
     try {
       await api.post(`/ambassador/policies/${policyId}/acknowledge`);
       setAcknowledgedPolicies(new Set([...acknowledgedPolicies, policyId]));
-    } catch (error) {
-      console.error('Failed to acknowledge policy:', error);
+    } catch {
+      // acknowledgement failed; leave unchecked
     }
   };
 

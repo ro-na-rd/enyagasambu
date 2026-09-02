@@ -3,6 +3,7 @@ const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const pool = require('../config/db');
 const { sendSms } = require('../services/smsService');
+const { logger } = require('../config/logger');
 
 const OTP_TTL_MINUTES = 10;
 
@@ -59,7 +60,7 @@ exports.requestOtp = async (req, res) => {
     await sendSms(normalizedPhone, `Your NMO seller OTP is ${code}. It expires in ${OTP_TTL_MINUTES} minutes.`);
     return res.json({ message: `OTP sent to ${normalizedPhone}` });
   } catch (err) {
-    console.error('[Seller OTP error]', err);
+    logger.error('[Seller OTP error]', err);
     return res.status(500).json({ message: 'Failed to send OTP. Please try again.' });
   } finally {
     conn.release();
@@ -122,7 +123,7 @@ exports.verifyOtp = async (req, res) => {
     const token = await signSessionToken(user);
     return res.json({ token, user: { id: user.id, phone: user.phone, role: 'seller' } });
   } catch (err) {
-    console.error('[Seller verify OTP error]', err);
+    logger.error('[Seller verify OTP error]', err);
     return res.status(500).json({ message: 'Verification failed' });
   } finally {
     conn.release();

@@ -2,6 +2,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const pool = require('../config/db');
 const { applyReferral } = require('./referralController');
+const { logger } = require('../config/logger');
 
 const CERT_PRICE = 2000;
 
@@ -60,7 +61,7 @@ exports.register = async(req, res) => {
         });
     } catch (err) {
         await conn.rollback();
-        console.error('[Ambassador register error]', err);
+        logger.error('[Ambassador register error]', err);
         return res.status(500).json({ message: 'Server error' });
     } finally {
         conn.release();
@@ -83,7 +84,7 @@ exports.login = async(req, res) => {
         const { password_hash, ...safeUser } = user;
         return res.json({ token, user: safeUser });
     } catch (err) {
-        console.error(err);
+        logger.error(err);
         return res.status(500).json({ message: 'Server error' });
     }
 };
@@ -96,7 +97,7 @@ exports.me = async(req, res) => {
         if (rows.length === 0) return res.status(404).json({ message: 'User not found' });
         return res.json({ user: rows[0] });
     } catch (err) {
-        console.error('[Ambassador me error]', err);
+        logger.error('[Ambassador me error]', err);
         return res.status(500).json({ message: 'Server error' });
     }
 };
@@ -135,7 +136,7 @@ exports.updateProfile = async(req, res) => {
         
         return res.json({ message: 'Profile updated', user });
     } catch (err) {
-        console.error('[Ambassador updateProfile error]', err);
+        logger.error('[Ambassador updateProfile error]', err);
         return res.status(500).json({ message: 'Server error' });
     }
 };
@@ -174,7 +175,7 @@ exports.changePassword = async(req, res) => {
         
         return res.json({ message: 'Password changed successfully' });
     } catch (err) {
-        console.error('[Ambassador changePassword error]', err);
+        logger.error('[Ambassador changePassword error]', err);
         return res.status(500).json({ message: 'Server error' });
     }
 };

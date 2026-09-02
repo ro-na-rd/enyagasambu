@@ -1,5 +1,6 @@
 const pool = require('../config/db');
 const { emitToUser } = require('../config/socket');
+const { logger } = require('../config/logger');
 
 async function notifyUser(userId, title, message, type = 'info', link = null) {
   if (!userId) return;
@@ -11,7 +12,7 @@ async function notifyUser(userId, title, message, type = 'info', link = null) {
     );
     id = result.insertId;
   } catch (err) {
-    console.error('[Notification] notifyUser error:', err.message);
+    logger.error('[Notification] notifyUser error:', err.message);
   }
   if (id) {
     emitToUser(userId, 'notification:new', {
@@ -47,7 +48,7 @@ async function notifyAdmins(title, message, type = 'info', link = null) {
       });
     }
   } catch (err) {
-    console.error('[Notification] notifyAdmins error:', err.message);
+    logger.error('[Notification] notifyAdmins error:', err.message);
   }
 }
 

@@ -159,7 +159,7 @@ function PhotoUploadStep({ onPhoto, onSkip }: { onPhoto: (url: string) => void; 
         >
           {preview
             ? <img src={preview} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-            : <><Image size={48} className="mb-3" aria-hidden="true" alt="" /><p className="text-sm text-gray-400">Click or drag &amp; drop your photo here</p><p className="text-xs text-gray-300 mt-1">JPG, PNG, WEBP supported</p></>
+            : <><Image size={48} className="mb-3" aria-hidden="true" /><p className="text-sm text-gray-400">Click or drag &amp; drop your photo here</p><p className="text-xs text-gray-300 mt-1">JPG, PNG, WEBP supported</p></>
           }
         </div>
         <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f); }} />

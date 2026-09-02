@@ -1,4 +1,5 @@
 const pool = require('../config/db');
+const { logger } = require('../config/logger');
 
 exports.getOnboardingTasks = async (req, res) => {
   try {
@@ -38,7 +39,7 @@ exports.getOnboardingTasks = async (req, res) => {
 
     return res.json({ tasks });
   } catch (err) {
-    console.error('[Ambassador onboarding tasks error]', err);
+    logger.error('[Ambassador onboarding tasks error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -60,7 +61,7 @@ exports.toggleTask = async (req, res) => {
 
     return res.json({ message: newStatus ? 'Task completed' : 'Task uncompleted', completed: !!newStatus });
   } catch (err) {
-    console.error('[Ambassador toggle task error]', err);
+    logger.error('[Ambassador toggle task error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -78,7 +79,7 @@ exports.getOnboardingProgress = async (req, res) => {
     const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
     return res.json({ total, completed, percentage });
   } catch (err) {
-    console.error('[Ambassador onboarding progress error]', err);
+    logger.error('[Ambassador onboarding progress error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };

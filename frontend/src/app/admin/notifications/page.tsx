@@ -10,6 +10,7 @@ export default function AdminNotificationsPage() {
       subtitle="Stay updated with platform activities."
       emptyText="Updates about new listings, registrations, and ratings will appear here."
       onRead={refresh}
+      canClear
     />
   );
 }

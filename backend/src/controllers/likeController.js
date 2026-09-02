@@ -1,4 +1,5 @@
 const pool = require('../config/db');
+const { logger } = require('../config/logger');
 
 exports.toggleLike = async (req, res) => {
   const { id } = req.params;
@@ -24,7 +25,7 @@ exports.toggleLike = async (req, res) => {
 
     return res.json({ liked: !existing, count: total });
   } catch (err) {
-    console.error('[Like toggle error]', err);
+    logger.error('[Like toggle error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -50,7 +51,7 @@ exports.getLikeStatus = async (req, res) => {
 
     return res.json({ count: total, liked });
   } catch (err) {
-    console.error('[Like status error]', err);
+    logger.error('[Like status error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };

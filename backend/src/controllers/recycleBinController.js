@@ -1,6 +1,7 @@
 const pool = require('../config/db');
 const { deleteFromS3Url } = require('../services/s3Service');
 const { notifyAdmins, notifyUser } = require('../services/notificationService');
+const { logger } = require('../config/logger');
 
 const AUTO_DELETE_DAYS = 30; // Items in recycle bin are permanently deleted after 30 days
 
@@ -161,7 +162,7 @@ exports.recycleItem = async (req, res) => {
     });
   } catch (err) {
     await conn.rollback();
-    console.error('[Recycle bin error]', err);
+    logger.error('[Recycle bin error]', err);
     return res.status(500).json({ message: 'Server error during recycling' });
   } finally {
     conn.release();
@@ -215,7 +216,7 @@ exports.getRecycleBin = async (req, res) => {
       auto_delete_after_days: AUTO_DELETE_DAYS
     });
   } catch (err) {
-    console.error('[Get recycle bin error]', err);
+    logger.error('[Get recycle bin error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -287,7 +288,7 @@ exports.restoreItem = async (req, res) => {
     return res.json({ message: 'Item restored successfully' });
   } catch (err) {
     await conn.rollback();
-    console.error('[Restore item error]', err);
+    logger.error('[Restore item error]', err);
     return res.status(500).json({ message: 'Server error during restoration' });
   } finally {
     conn.release();
@@ -376,7 +377,7 @@ exports.permanentDelete = async (req, res) => {
     return res.json({ message: 'Item permanently deleted' });
   } catch (err) {
     await conn.rollback();
-    console.error('[Permanent delete error]', err);
+    logger.error('[Permanent delete error]', err);
     return res.status(500).json({ message: 'Server error during permanent deletion' });
   } finally {
     conn.release();
@@ -457,7 +458,7 @@ exports.emptyRecycleBin = async (req, res) => {
     return res.json({ message: `Recycle bin emptied. ${items.length} items permanently deleted.` });
   } catch (err) {
     await conn.rollback();
-    console.error('[Empty recycle bin error]', err);
+    logger.error('[Empty recycle bin error]', err);
     return res.status(500).json({ message: 'Server error' });
   } finally {
     conn.release();
@@ -495,7 +496,7 @@ exports.getRecycleBinStats = async (req, res) => {
       auto_delete_after_days: AUTO_DELETE_DAYS
     });
   } catch (err) {
-    console.error('[Recycle bin stats error]', err);
+    logger.error('[Recycle bin stats error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };

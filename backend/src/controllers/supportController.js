@@ -1,5 +1,6 @@
 const pool = require('../config/db');
 const { notifyAdmins } = require('../services/notificationService');
+const { logger } = require('../config/logger');
 
 const CATEGORIES = ['payment', 'listing', 'access', 'other'];
 
@@ -18,7 +19,7 @@ exports.submit = async (req, res) => {
     notifyAdmins('New support request', `${name} submitted a ${resolvedCategory} request.`, 'support');
     res.status(201).json({ message: 'Support request submitted successfully' });
   } catch (err) {
-    console.error('[Support] submit error:', err);
+    logger.error('[Support] submit error:', err);
     res.status(500).json({ message: 'Server error' });
   }
 };
@@ -33,7 +34,7 @@ exports.list = async (req, res) => {
     );
     res.json(rows);
   } catch (err) {
-    console.error('[Support] list error:', err);
+    logger.error('[Support] list error:', err);
     res.status(500).json({ message: 'Server error' });
   }
 };
@@ -48,7 +49,7 @@ exports.updateStatus = async (req, res) => {
     await pool.query('UPDATE support_requests SET status = ? WHERE id = ?', [status, req.params.id]);
     res.json({ message: 'Status updated' });
   } catch (err) {
-    console.error('[Support] updateStatus error:', err);
+    logger.error('[Support] updateStatus error:', err);
     res.status(500).json({ message: 'Server error' });
   }
 };

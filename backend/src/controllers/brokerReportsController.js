@@ -1,6 +1,7 @@
 const pool = require('../config/db');
 const { getSummary } = require('../services/brokerCommissionService');
 const { getLeadsForBroker } = require('../services/brokerLeadService');
+const { logger } = require('../config/logger');
 
 exports.getReport = async (req, res) => {
   try {
@@ -81,7 +82,7 @@ exports.getReport = async (req, res) => {
       recentLeads,
     });
   } catch (err) {
-    console.error('[Broker report error]', err);
+    logger.error('[Broker report error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };

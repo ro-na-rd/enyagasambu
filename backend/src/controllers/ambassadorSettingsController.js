@@ -1,5 +1,6 @@
 const pool = require('../config/db');
 const bcrypt = require('bcryptjs');
+const { logger } = require('../config/logger');
 
 exports.getSettings = async (req, res) => {
   try {
@@ -16,7 +17,7 @@ exports.getSettings = async (req, res) => {
       },
     });
   } catch (err) {
-    console.error('[Ambassador get settings error]', err);
+    logger.error('[Ambassador get settings error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -42,7 +43,7 @@ exports.updateSettings = async (req, res) => {
     }
     return res.json({ message: 'Settings saved', preferences });
   } catch (err) {
-    console.error('[Ambassador update settings error]', err);
+    logger.error('[Ambassador update settings error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -69,7 +70,7 @@ exports.changePassword = async (req, res) => {
     await pool.query('UPDATE users SET password_hash = ? WHERE id = ?', [hash, req.user.id]);
     return res.json({ message: 'Password changed successfully' });
   } catch (err) {
-    console.error('[Ambassador change password error]', err);
+    logger.error('[Ambassador change password error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -123,7 +124,7 @@ exports.exportData = async (req, res) => {
       exportedAt: new Date().toISOString(),
     });
   } catch (err) {
-    console.error('[Ambassador export data error]', err);
+    logger.error('[Ambassador export data error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };

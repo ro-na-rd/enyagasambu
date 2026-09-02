@@ -1,5 +1,6 @@
 require('dotenv').config();
 const pool = require('../config/db');
+const { logger } = require('../config/logger');
 
 async function main() {
   await pool.query(
@@ -16,6 +17,6 @@ async function main() {
 }
 
 main().catch((err) => {
-  console.error('Migration failed:', err.message);
+  logger.error('Migration failed:', err.message);
   process.exit(1);
 });

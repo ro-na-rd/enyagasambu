@@ -1,4 +1,5 @@
 const pool = require('../config/db');
+const { logger } = require('../config/logger');
 
 function maskPhone(phone) {
   if (!phone) return null;
@@ -146,7 +147,7 @@ exports.getCEODashboard = async (req, res) => {
       alerts
     });
   } catch (err) {
-    console.error('[CEO Dashboard error]', err);
+    logger.error('[CEO Dashboard error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -202,7 +203,7 @@ exports.getCIODashboard = async (req, res) => {
       recentAuditLog: recentAuditRows
     });
   } catch (err) {
-    console.error('[CIO Dashboard error]', err);
+    logger.error('[CIO Dashboard error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -394,7 +395,7 @@ exports.getCOODashboard = async (req, res) => {
       alerts
     });
   } catch (err) {
-    console.error('[COO Dashboard error]', err);
+    logger.error('[COO Dashboard error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -526,7 +527,7 @@ exports.getCMODashboard = async (req, res) => {
       alerts
     });
   } catch (err) {
-    console.error('[CMO Dashboard error]', err);
+    logger.error('[CMO Dashboard error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -634,7 +635,7 @@ exports.getCFODashboard = async (req, res) => {
       alerts
     });
   } catch (err) {
-    console.error('[CFO Dashboard error]', err);
+    logger.error('[CFO Dashboard error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -662,7 +663,7 @@ exports.getAuditLog = async (req, res) => {
     );
     return res.json({ entries: logs, logs, total, page: parseInt(page) });
   } catch (err) {
-    console.error('[Audit log error]', err);
+    logger.error('[Audit log error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -709,7 +710,7 @@ exports.getAlerts = async (req, res) => {
       authActivity
     });
   } catch (err) {
-    console.error('[Alerts error]', err);
+    logger.error('[Alerts error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -727,7 +728,7 @@ exports.dismissAlert = async (req, res) => {
 
     return res.json({ message: 'Alert dismissed' });
   } catch (err) {
-    console.error('[Dismiss alert error]', err);
+    logger.error('[Dismiss alert error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -785,7 +786,7 @@ exports.exportDashboardData = async (req, res) => {
     res.setHeader('Content-Disposition', `attachment; filename="${role}_dashboard_export.csv"`);
     return res.send(csv);
   } catch (err) {
-    console.error('[Export error]', err);
+    logger.error('[Export error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -809,7 +810,7 @@ exports.getApprovals = async (req, res) => {
     }));
     return res.json({ approvals });
   } catch (err) {
-    console.error('[Approvals error]', err);
+    logger.error('[Approvals error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -837,7 +838,7 @@ exports.getApprovalsByType = async (req, res) => {
     }));
     return res.json({ approvals });
   } catch (err) {
-    console.error('[Approvals by type error]', err);
+    logger.error('[Approvals by type error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -867,7 +868,7 @@ exports.createApproval = async (req, res) => {
 
     return res.status(201).json({ message: 'Approval request created', id: result.insertId });
   } catch (err) {
-    console.error('[Create approval error]', err);
+    logger.error('[Create approval error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -897,7 +898,7 @@ exports.reviewApproval = async (req, res) => {
 
     return res.json({ message: `Approval ${status}` });
   } catch (err) {
-    console.error('[Review approval error]', err);
+    logger.error('[Review approval error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -945,7 +946,7 @@ exports.listStaff = async (req, res) => {
     );
     return res.json({ staff, total, page: parseInt(page) });
   } catch (err) {
-    console.error('[List staff error]', err);
+    logger.error('[List staff error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -980,7 +981,7 @@ exports.createStaff = async (req, res) => {
 
     return res.status(201).json({ message: 'Staff account created', id: result.insertId });
   } catch (err) {
-    console.error('[Create staff error]', err);
+    logger.error('[Create staff error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -1022,7 +1023,7 @@ exports.updateStaff = async (req, res) => {
 
     return res.json({ message: 'Staff updated' });
   } catch (err) {
-    console.error('[Update staff error]', err);
+    logger.error('[Update staff error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -1050,7 +1051,7 @@ exports.deleteStaff = async (req, res) => {
 
     return res.json({ message: 'Staff deleted' });
   } catch (err) {
-    console.error('[Delete staff error]', err);
+    logger.error('[Delete staff error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -1080,7 +1081,7 @@ exports.changePassword = async (req, res) => {
 
     return res.json({ message: 'Password changed successfully' });
   } catch (err) {
-    console.error('[Change password error]', err);
+    logger.error('[Change password error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -1094,7 +1095,7 @@ exports.getProfile = async (req, res) => {
     if (!staff) return res.status(404).json({ message: 'Staff not found' });
     return res.json({ user: staff });
   } catch (err) {
-    console.error('[Get profile error]', err);
+    logger.error('[Get profile error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -1128,7 +1129,7 @@ exports.updateProfile = async (req, res) => {
     );
     return res.json({ message: 'Profile updated', user: updated });
   } catch (err) {
-    console.error('[Update profile error]', err);
+    logger.error('[Update profile error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };

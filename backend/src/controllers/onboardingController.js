@@ -1,4 +1,5 @@
 const pool = require('../config/db');
+const { logger } = require('../config/logger');
 
 exports.getMaterials = async (req, res) => {
   try {
@@ -19,7 +20,7 @@ exports.getMaterials = async (req, res) => {
     const [materials] = await pool.query(query, params);
     return res.json({ materials });
   } catch (err) {
-    console.error('[Onboarding materials error]', err);
+    logger.error('[Onboarding materials error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -31,7 +32,7 @@ exports.getMaterialById = async (req, res) => {
     if (!material) return res.status(404).json({ message: 'Material not found' });
     return res.json({ material });
   } catch (err) {
-    console.error('[Onboarding material error]', err);
+    logger.error('[Onboarding material error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -43,7 +44,7 @@ exports.getCategories = async (req, res) => {
     );
     return res.json({ categories: categories.map(c => c.category) });
   } catch (err) {
-    console.error('[Onboarding categories error]', err);
+    logger.error('[Onboarding categories error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -55,7 +56,7 @@ exports.getRequiredMaterials = async (req, res) => {
     );
     return res.json({ materials });
   } catch (err) {
-    console.error('[Required onboarding materials error]', err);
+    logger.error('[Required onboarding materials error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -77,7 +78,7 @@ exports.getProgress = async (req, res) => {
       }
     });
   } catch (err) {
-    console.error('[Onboarding progress error]', err);
+    logger.error('[Onboarding progress error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };

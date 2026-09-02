@@ -1,6 +1,7 @@
 const { randomUUID: uuidv4 } = require('crypto');
 const pool = require('../config/db');
 const { requestToPay, getPaymentStatus } = require('../services/momoService');
+const { logger } = require('../config/logger');
 
 const CONTACT_REVEAL_COST = 300;
 
@@ -38,7 +39,7 @@ exports.initiateReveal = async (req, res) => {
 
     return res.json({ referenceId, amount_rwf: CONTACT_REVEAL_COST });
   } catch (err) {
-    console.error('[Reveal initiate error]', err?.response?.data || err.message);
+    logger.error('[Reveal initiate error]', err?.response?.data || err.message);
     return res.status(502).json({ message: 'Failed to initiate contact reveal payment' });
   }
 };
@@ -93,7 +94,7 @@ exports.confirmReveal = async (req, res) => {
 
     return res.json({ status: 'pending' });
   } catch (err) {
-    console.error('[Reveal confirm error]', err?.response?.data || err.message);
+    logger.error('[Reveal confirm error]', err?.response?.data || err.message);
     return res.status(502).json({ message: 'Could not verify payment status' });
   }
 };
@@ -110,7 +111,7 @@ exports.checkReveal = async (req, res) => {
     );
     return res.json({ unlocked: !!reveal });
   } catch (err) {
-    console.error('[Reveal check error]', err);
+    logger.error('[Reveal check error]', err);
     return res.status(500).json({ message: 'Could not check reveal status' });
   }
 };

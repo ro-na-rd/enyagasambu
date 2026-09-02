@@ -1,4 +1,5 @@
 const pool = require('../config/db');
+const { logger } = require('../config/logger');
 
 async function expireListings() {
   try {
@@ -7,10 +8,10 @@ async function expireListings() {
        WHERE status = 'active' AND expires_at IS NOT NULL AND expires_at <= NOW()`
     );
     if (result.affectedRows > 0) {
-      console.log(`[Expiry scheduler] Expired ${result.affectedRows} listing(s)`);
+      logger.info(`[Expiry scheduler] Expired ${result.affectedRows} listing(s)`);
     }
   } catch (err) {
-    console.error('[Expiry scheduler error]', err);
+    logger.error('[Expiry scheduler error]', err);
   }
 }
 

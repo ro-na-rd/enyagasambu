@@ -1,6 +1,7 @@
 const pool = require('../config/db');
 const { emitToAuction } = require('../config/socket');
 const { notifyUser } = require('./notificationService');
+const { logger } = require('../config/logger');
 
 let auctionSchemaChecked = false;
 let auctionSchemaReady = false;
@@ -20,14 +21,14 @@ async function ensureAuctionSchemaReady() {
         const available = new Set(rows.map(r => r.COLUMN_NAME));
         auctionSchemaReady = ['highest_bid', 'highest_bidder_id', 'reserve_price'].every(col => available.has(col));
     } catch (err) {
-        console.error('[Auction scheduler] schema check error:', err.message);
+        logger.error('[Auction scheduler] schema check error:', err.message);
         auctionSchemaReady = false;
     } finally {
         auctionSchemaChecked = true;
     }
 
     if (!auctionSchemaReady) {
-        console.warn('[Auction scheduler] skipped: required auction columns missing from listings table. Run backend/src/scripts/migrateAuctions.js.');
+        logger.warn('[Auction scheduler] skipped: required auction columns missing from listings table. Run backend/src/scripts/migrateAuctions.js.');
     }
 
     return auctionSchemaReady;
@@ -46,7 +47,7 @@ async function settleExpiredAuctions() {
         );
         ended = rows;
     } catch (err) {
-        console.error('[Auction scheduler] query error:', err.message);
+        logger.error('[Auction scheduler] query error:', err.message);
         return;
     }
 
@@ -98,7 +99,7 @@ async function settleExpiredAuctions() {
             });
         } catch (err) {
             await conn.rollback();
-            console.error('[Auction scheduler] settle error:', err.message);
+            logger.error('[Auction scheduler] settle error:', err.message);
         } finally {
             conn.release();
         }

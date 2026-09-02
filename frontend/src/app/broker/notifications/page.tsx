@@ -10,6 +10,7 @@ export default function BrokerNotificationsPage() {
       subtitle="Stay updated with your broker activities."
       emptyText="Updates about leads, approvals, and commissions will appear here."
       onRead={refresh}
+      canClear
     />
   );
 }

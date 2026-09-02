@@ -27,11 +27,13 @@ interface Props {
   subtitle: string;
   emptyText: string;
   onRead?: () => void;
+  canClear?: boolean;
 }
 
-export default function NotificationsPage({ title, subtitle, emptyText, onRead }: Props) {
+export default function NotificationsPage({ title, subtitle, emptyText, onRead, canClear }: Props) {
   const [items, setItems] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
+  const [clearing, setClearing] = useState(false);
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
@@ -56,6 +58,19 @@ export default function NotificationsPage({ title, subtitle, emptyText, onRead }
     return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
   };
 
+  const clearAll = () => {
+    if (!items.length || clearing) return;
+    if (!window.confirm('Clear all notifications? This cannot be undone.')) return;
+    setClearing(true);
+    api.delete('/notifications')
+      .then(() => {
+        setItems([]);
+        onRead?.();
+      })
+      .catch(() => {})
+      .finally(() => setClearing(false));
+  };
+
   return (
     <div className="p-4 lg:p-8 max-w-2xl">
       <div className="flex items-center justify-between mb-6">
@@ -63,6 +78,15 @@ export default function NotificationsPage({ title, subtitle, emptyText, onRead }
           <h1 className="text-2xl font-bold text-gray-900">{title}</h1>
           <p className="text-sm text-gray-500 mt-1">{subtitle}</p>
         </div>
+        {canClear && items.length > 0 && (
+          <button
+            onClick={clearAll}
+            disabled={clearing}
+            className="text-sm text-red-600 hover:text-red-700 border border-red-200 hover:border-red-300 rounded-lg px-3 py-1.5 disabled:opacity-50"
+          >
+            {clearing ? 'Clearing…' : 'Clear all'}
+          </button>
+        )}
       </div>
 
       {loading ? (

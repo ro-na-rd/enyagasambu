@@ -3,6 +3,7 @@ const { randomUUID: uuidv4 } = require('crypto');
 const { requestToPay, getPaymentStatus } = require('../services/momoService');
 const { uploadToS3 } = require('../services/s3Service');
 const { notifyAdmins, notifyUser } = require('../services/notificationService');
+const { logger } = require('../config/logger');
 
 const DEFAULT_CERT_PRICE = 2000;
 const REFERRAL_REWARD = 200;
@@ -77,7 +78,7 @@ exports.getMyCertificate = async (req, res) => {
       },
     });
   } catch (err) {
-    console.error(err);
+    logger.error(err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -105,7 +106,7 @@ exports.uploadPhoto = async (req, res) => {
 
     return res.status(201).json({ message: 'Photo uploaded', certificateId: result.insertId, photo_url: photoUrl });
   } catch (err) {
-    console.error(err);
+    logger.error(err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -160,7 +161,7 @@ exports.initiatePayment = async (req, res) => {
       amount,
     });
   } catch (err) {
-    console.error('[Supplier Cert MoMo initiate error]', err?.response?.data || err.message);
+    logger.error('[Supplier Cert MoMo initiate error]', err?.response?.data || err.message);
     if (err.status) return res.status(err.status).json({ message: err.message });
     return res.status(502).json({ message: 'Failed to reach MTN. Please try again.' });
   }
@@ -232,7 +233,7 @@ exports.checkPayment = async (req, res) => {
 
     return res.json({ status: 'pending' });
   } catch (err) {
-    console.error('[Supplier Cert MoMo check error]', err?.response?.data || err.message);
+    logger.error('[Supplier Cert MoMo check error]', err?.response?.data || err.message);
     return res.status(502).json({ message: 'Could not reach MTN to check status.' });
   }
 };
@@ -291,7 +292,7 @@ exports.verifyCertificate = async (req, res) => {
       }
     });
   } catch (err) {
-    console.error('[Supplier certificate verification error]', err);
+    logger.error('[Supplier certificate verification error]', err);
     return res.status(500).json({ message: 'Server error during verification' });
   }
 };

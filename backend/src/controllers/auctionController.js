@@ -2,6 +2,7 @@ const pool = require('../config/db');
 const { uploadToS3 } = require('../services/s3Service');
 const { notifyUser } = require('../services/notificationService');
 const { emitToAuction } = require('../config/socket');
+const { logger } = require('../config/logger');
 
 const ENDING_SOON_MINUTES = 5;
 const DEFAULT_INCREMENT = 500;
@@ -201,7 +202,7 @@ exports.getAuctions = async (req, res) => {
       limit: parseInt(limit, 10),
     });
   } catch (err) {
-    console.error('[Auctions list error]', err);
+    logger.error('[Auctions list error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -247,7 +248,7 @@ exports.getAuction = async (req, res) => {
       },
     });
   } catch (err) {
-    console.error('[Auction detail error]', err);
+    logger.error('[Auction detail error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -266,7 +267,7 @@ exports.getEndedAuctions = async (req, res) => {
     });
     return res.json({ auctions: ended });
   } catch (err) {
-    console.error('[Ended auctions error]', err);
+    logger.error('[Ended auctions error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -288,7 +289,7 @@ exports.getFeed = async (req, res) => {
     );
     return res.json({ feed: rows.map((r) => ({ ...r, amount: Number(r.amount) })) });
   } catch (err) {
-    console.error('[Auction feed error]', err);
+    logger.error('[Auction feed error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -306,7 +307,7 @@ exports.getBids = async (req, res) => {
     );
     return res.json({ bids: rows.map((r) => ({ ...r, amount: Number(r.amount) })) });
   } catch (err) {
-    console.error('[Auction bids error]', err);
+    logger.error('[Auction bids error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -450,7 +451,7 @@ exports.placeBid = async (req, res) => {
     });
   } catch (err) {
     await conn.rollback();
-    console.error('[Place bid error]', err);
+    logger.error('[Place bid error]', err);
     return res.status(500).json({ message: 'Server error' });
   } finally {
     conn.release();
@@ -539,7 +540,7 @@ exports.createAuction = async (req, res) => {
     return res.status(201).json({ message: 'Auction created successfully.', auctionId });
   } catch (err) {
     await conn.rollback();
-    console.error('[Create auction error]', err);
+    logger.error('[Create auction error]', err);
     return res.status(500).json({ message: 'Server error' });
   } finally {
     conn.release();
@@ -556,7 +557,7 @@ exports.getMyAuctions = async (req, res) => {
     );
     return res.json({ auctions: rows.map(decorate) });
   } catch (err) {
-    console.error('[My auctions error]', err);
+    logger.error('[My auctions error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -572,7 +573,7 @@ exports.getWatched = async (req, res) => {
     );
     return res.json({ auctions: rows.map(decorate) });
   } catch (err) {
-    console.error('[Watched auctions error]', err);
+    logger.error('[Watched auctions error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -585,7 +586,7 @@ exports.watch = async (req, res) => {
     );
     return res.json({ watched: true });
   } catch (err) {
-    console.error('[Watch auction error]', err);
+    logger.error('[Watch auction error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -598,7 +599,7 @@ exports.unwatch = async (req, res) => {
     );
     return res.json({ watched: false });
   } catch (err) {
-    console.error('[Unwatch auction error]', err);
+    logger.error('[Unwatch auction error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };

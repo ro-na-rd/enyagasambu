@@ -1,5 +1,6 @@
 const pool = require('../config/db');
 const { notifyUser, notifyAdmins } = require('../services/notificationService');
+const { logger } = require('../config/logger');
 
 exports.getCertificates = async (req, res) => {
   const { status, page = 1 } = req.query;
@@ -32,7 +33,7 @@ exports.getCertificates = async (req, res) => {
 
     return res.json({ certificates: rows, total, page: parseInt(page), pages: Math.ceil(total / limit) });
   } catch (err) {
-    console.error(err);
+    logger.error(err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -84,7 +85,7 @@ exports.generateCertificate = async (req, res) => {
       },
     });
   } catch (err) {
-    console.error(err);
+    logger.error(err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -108,7 +109,7 @@ exports.confirmPayment = async (req, res) => {
 
     return res.json({ message: 'Payment confirmed. Certificate is ready to generate.' });
   } catch (err) {
-    console.error(err);
+    logger.error(err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -130,7 +131,7 @@ exports.getCertificateDetail = async (req, res) => {
     if (!cert) return res.status(404).json({ message: 'Certificate not found' });
     return res.json({ certificate: cert });
   } catch (err) {
-    console.error(err);
+    logger.error(err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -196,7 +197,7 @@ exports.bulkUpdateCertificates = async (req, res) => {
       });
     }
   } catch (err) {
-    console.error('[Admin bulkUpdateCertificates error]', err);
+    logger.error('[Admin bulkUpdateCertificates error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };

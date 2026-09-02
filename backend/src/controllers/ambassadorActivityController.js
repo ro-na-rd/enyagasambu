@@ -1,5 +1,6 @@
 const pool = require('../config/db');
 const crypto = require('crypto');
+const { logger } = require('../config/logger');
 
 exports.getActivities = async (req, res) => {
   try {
@@ -141,7 +142,7 @@ exports.getActivities = async (req, res) => {
 
     return res.json({ activities: activities.slice(0, 30) });
   } catch (err) {
-    console.error('[Ambassador activities error]', err);
+    logger.error('[Ambassador activities error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -204,7 +205,7 @@ exports.getDashboard = async (req, res) => {
       recentActivity,
     });
   } catch (err) {
-    console.error('[Ambassador dashboard error]', err);
+    logger.error('[Ambassador dashboard error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -229,7 +230,7 @@ exports.getReferralCode = async (req, res) => {
 
     return res.json({ referralCode });
   } catch (err) {
-    console.error('[Ambassador referral code error]', err);
+    logger.error('[Ambassador referral code error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -274,7 +275,7 @@ exports.getEarnings = async (req, res) => {
       },
     });
   } catch (err) {
-    console.error('[Ambassador earnings error]', err);
+    logger.error('[Ambassador earnings error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -295,7 +296,7 @@ exports.getReferrals = async (req, res) => {
 
     return res.json({ referrals });
   } catch (err) {
-    console.error('[Ambassador referrals error]', err);
+    logger.error('[Ambassador referrals error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };

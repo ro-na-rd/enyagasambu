@@ -1,6 +1,7 @@
 const mysql = require('mysql2/promise');
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '../../.env') });
+const { logger } = require('../config/logger');
 
 async function run() {
   const pool = mysql.createPool({
@@ -32,4 +33,4 @@ async function run() {
   process.exit(0);
 }
 
-run().catch(err => { console.error('Migration error:', err.message); process.exit(1); });
+run().catch(err => { logger.error('Migration error:', err.message); process.exit(1); });

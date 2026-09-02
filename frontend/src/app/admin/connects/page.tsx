@@ -124,8 +124,8 @@ export default function AdminConnectsPage() {
     try {
       await api.patch(`/admin/connects/${id}/sale-status`, { sale_status: newStatus });
       setConnects(prev => prev.map(c => c.id === id ? { ...c, sale_status: newStatus } : c));
-    } catch (err) {
-      console.error(err);
+    } catch {
+      // error handled by UI state
     } finally {
       setUpdatingId(null);
     }
@@ -155,8 +155,8 @@ export default function AdminConnectsPage() {
       a.download = `connects-${new Date().toISOString().slice(0, 10)}.csv`;
       a.click();
       URL.revokeObjectURL(url);
-    } catch (err) {
-      console.error(err);
+    } catch {
+      // export failed silently
     }
   };
 

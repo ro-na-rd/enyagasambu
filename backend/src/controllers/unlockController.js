@@ -1,4 +1,5 @@
 const pool = require('../config/db');
+const { logger } = require('../config/logger');
 
 const CONNECT_COST = 300;
 const UNLOCK_MINUTES = 3;
@@ -58,7 +59,7 @@ exports.unlock = async (req, res) => {
 
     return res.json({ sellerPhone: seller?.phone, expiresAt: expiresAt.toISOString() });
   } catch (err) {
-    console.error('[unlock error]', err);
+    logger.error('[unlock error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };

@@ -2,6 +2,7 @@ const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const pool = require('../config/db');
+const { logger } = require('../config/logger');
 
 const OTP_TTL_MINUTES = 10;
 
@@ -40,7 +41,7 @@ exports.login = async (req, res) => {
       user: { id: staff.id, name: staff.username, email: staff.email || staff.username, phone: staff.phone, role: staff.role, executive_role: staff.executive_role || null },
     });
   } catch (err) {
-    console.error('[Admin login error]', err);
+    logger.error('[Admin login error]', err);
     return res.status(500).json({ message: 'Login failed' });
   }
 };
@@ -77,7 +78,7 @@ exports.verifyOtp = async (req, res) => {
 
     return res.json({ token, role: otpRow.role, user: { id: otpRow.staff_id, name: staffInfo?.username || 'Admin', email: staffInfo?.email || staffInfo?.username, phone: otpRow.phone, role: otpRow.role, executive_role: staffInfo?.executive_role || null } });
   } catch (err) {
-    console.error('[Admin verify OTP error]', err);
+    logger.error('[Admin verify OTP error]', err);
     return res.status(500).json({ message: 'Verification failed' });
   }
 };
@@ -91,7 +92,7 @@ exports.me = async (req, res) => {
     if (!staff) return res.status(401).json({ message: 'Staff not found' });
     return res.json({ user: staff });
   } catch (err) {
-    console.error('[Admin me error]', err);
+    logger.error('[Admin me error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };

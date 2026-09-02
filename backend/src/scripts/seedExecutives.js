@@ -1,6 +1,7 @@
 require('dotenv').config();
 const bcrypt = require('bcryptjs');
 const pool = require('../config/db');
+const { logger } = require('../config/logger');
 
 const EXECUTIVES = [
   { username: 'ceo', email: 'ceo@enyagasambu.rw', password: 'Admin@123', executive_role: 'CEO' },
@@ -65,6 +66,6 @@ async function main() {
 }
 
 main().catch((err) => {
-  console.error('Seed failed:', err.message);
+  logger.error('Seed failed:', err.message);
   process.exit(1);
 });

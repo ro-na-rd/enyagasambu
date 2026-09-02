@@ -2,6 +2,7 @@ const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 const pool = require('../config/db');
 const { sendPasswordResetEmail } = require('../services/emailService');
+const { logger } = require('../config/logger');
 
 const FRONTEND_URL = process.env.FRONTEND_URL || 'https://enyagasambu.rw';
 
@@ -32,14 +33,14 @@ exports.forgotPassword = async (req, res) => {
     try {
       await sendPasswordResetEmail(email, resetUrl);
     } catch (emailErr) {
-      console.error('[forgotPassword] email send failed:', emailErr.message);
+      logger.error('[forgotPassword] email send failed:', emailErr.message);
     }
 
     return res.json({
       message: 'If that email is registered, a reset link has been sent.',
     });
   } catch (err) {
-    console.error('[forgotPassword]', err);
+    logger.error('[forgotPassword]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -72,7 +73,7 @@ exports.resetPassword = async (req, res) => {
 
     return res.json({ message: 'Password reset successful. You can now log in with your new password.' });
   } catch (err) {
-    console.error('[resetPassword]', err);
+    logger.error('[resetPassword]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };

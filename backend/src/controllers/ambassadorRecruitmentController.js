@@ -1,4 +1,5 @@
 const pool = require('../config/db');
+const { logger } = require('../config/logger');
 
 exports.getRecruitments = async (req, res) => {
   try {
@@ -13,7 +14,7 @@ exports.getRecruitments = async (req, res) => {
     );
     return res.json({ recruitments });
   } catch (err) {
-    console.error('[Ambassador recruitments error]', err);
+    logger.error('[Ambassador recruitments error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -35,7 +36,7 @@ exports.createRecruitment = async (req, res) => {
     const [[recruitment]] = await pool.query('SELECT * FROM ambassador_recruitments WHERE id = ?', [result.insertId]);
     return res.status(201).json({ message: 'Recruitment recorded', recruitment });
   } catch (err) {
-    console.error('[Ambassador create recruitment error]', err);
+    logger.error('[Ambassador create recruitment error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -62,7 +63,7 @@ exports.updateRecruitment = async (req, res) => {
     const [[updated]] = await pool.query('SELECT * FROM ambassador_recruitments WHERE id = ?', [id]);
     return res.json({ message: 'Updated', recruitment: updated });
   } catch (err) {
-    console.error('[Ambassador update recruitment error]', err);
+    logger.error('[Ambassador update recruitment error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -91,7 +92,7 @@ exports.getRecruitmentStats = async (req, res) => {
     );
     return res.json({ total, suppliers, vendors, onboarded, pending });
   } catch (err) {
-    console.error('[Ambassador recruitment stats error]', err);
+    logger.error('[Ambassador recruitment stats error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -107,7 +108,7 @@ exports.deleteRecruitment = async (req, res) => {
     await pool.query('DELETE FROM ambassador_recruitments WHERE id = ?', [id]);
     return res.json({ message: 'Deleted' });
   } catch (err) {
-    console.error('[Ambassador delete recruitment error]', err);
+    logger.error('[Ambassador delete recruitment error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };

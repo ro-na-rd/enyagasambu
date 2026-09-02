@@ -2,6 +2,7 @@ const pool = require('../config/db');
 const crypto = require('crypto');
 const { uploadToS3, deleteFromS3Url } = require('../services/s3Service');
 const { notifyAdmins, notifyUser } = require('../services/notificationService');
+const { logger } = require('../config/logger');
 
 // Staff accounts (admin/moderator) live in the `staff` table, but listings.user_id
 // is a FK to `users(id)`. Map a staff member to a marketplace users row, creating one if needed.
@@ -64,7 +65,7 @@ exports.getStats = async (req, res) => {
       recentListings,
     });
   } catch (err) {
-    console.error(err);
+    logger.error(err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -91,7 +92,7 @@ exports.getUsers = async (req, res) => {
     const [[{ total }]] = await pool.query(`SELECT COUNT(*) AS total FROM users WHERE ${where}`, params);
     return res.json({ users, total, page: parseInt(page) });
   } catch (err) {
-    console.error(err);
+    logger.error(err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -111,7 +112,7 @@ exports.toggleFreePosting = async (req, res) => {
     await pool.query('UPDATE users SET can_post_free = ? WHERE id = ?', [newVal, id]);
     return res.json({ can_post_free: !!newVal, message: newVal ? 'User can now post for free' : 'Free posting removed' });
   } catch (err) {
-    console.error(err);
+    logger.error(err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -133,7 +134,7 @@ exports.updateUserRole = async (req, res) => {
     }
     return res.json({ message: 'Role updated' });
   } catch (err) {
-    console.error(err);
+    logger.error(err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -158,7 +159,7 @@ exports.listSuppliers = async (req, res) => {
     );
     return res.json({ suppliers: rows });
   } catch (err) {
-    console.error('[Admin listSuppliers error]', err);
+    logger.error('[Admin listSuppliers error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -175,7 +176,7 @@ exports.verifySupplier = async (req, res) => {
     if (result.affectedRows === 0) return res.status(404).json({ message: 'Supplier not found' });
     return res.json({ message: verified ? 'Supplier verified' : 'Supplier unverified' });
   } catch (err) {
-    console.error('[Admin verifySupplier error]', err);
+    logger.error('[Admin verifySupplier error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -196,7 +197,7 @@ exports.grantCoins = async (req, res) => {
     return res.json({ message: `${coins} coins granted` });
   } catch (err) {
     await conn.rollback();
-    console.error(err);
+    logger.error(err);
     return res.status(500).json({ message: 'Server error' });
   } finally {
     conn.release();
@@ -224,7 +225,7 @@ exports.getAdminListings = async (req, res) => {
     );
     return res.json({ listings, total, page: parseInt(page) });
   } catch (err) {
-    console.error(err);
+    logger.error(err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -275,7 +276,7 @@ exports.deleteListing = async (req, res) => {
     });
   } catch (err) {
     await conn.rollback();
-    console.error('[Admin delete listing error]', err);
+    logger.error('[Admin delete listing error]', err);
     return res.status(500).json({ message: 'Server error' });
   } finally {
     conn.release();
@@ -292,7 +293,7 @@ exports.toggleListingStatus = async (req, res) => {
     await pool.query('UPDATE listings SET status = ? WHERE id = ?', [status, id]);
     return res.json({ message: `Listing status changed to ${status}` });
   } catch (err) {
-    console.error(err);
+    logger.error(err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -315,7 +316,7 @@ exports.getParticipants = async (req, res) => {
 
     return res.json({ sellers, buyers, brokers, ambassadors, totalActiveListings, completedDeals });
   } catch (err) {
-    console.error(err);
+    logger.error(err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -340,7 +341,7 @@ exports.getRevenueChart = async (req, res) => {
     );
     return res.json({ chart: rows.reverse() });
   } catch (err) {
-    console.error(err);
+    logger.error(err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -395,7 +396,7 @@ exports.createListing = async (req, res) => {
     });
   } catch (err) {
     await conn.rollback();
-    console.error('[Admin createListing error]', err);
+    logger.error('[Admin createListing error]', err);
     return res.status(500).json({ message: 'Server error' });
   } finally {
     conn.release();
@@ -459,7 +460,7 @@ exports.createListingWithFiles = async (req, res) => {
     });
   } catch (err) {
     await conn.rollback();
-    console.error('[Admin createListingWithFiles error]', err);
+    logger.error('[Admin createListingWithFiles error]', err);
     return res.status(500).json({ message: 'Server error' });
   } finally {
     conn.release();
@@ -477,7 +478,7 @@ exports.createPromo = async (req, res) => {
     return res.status(201).json({ message: 'Promo code created' });
   } catch (err) {
     if (err.code === 'ER_DUP_ENTRY') return res.status(409).json({ message: 'Code already exists' });
-    console.error(err);
+    logger.error(err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -500,7 +501,7 @@ exports.getPromos = async (req, res) => {
     );
     return res.json({ promos });
   } catch (err) {
-    console.error(err);
+    logger.error(err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -522,7 +523,7 @@ exports.updatePromo = async (req, res) => {
     return res.json({ message: 'Promo updated' });
   } catch (err) {
     if (err.code === 'ER_DUP_ENTRY') return res.status(409).json({ message: 'Code already exists' });
-    console.error(err);
+    logger.error(err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -534,7 +535,7 @@ exports.deletePromo = async (req, res) => {
     if (result.affectedRows === 0) return res.status(404).json({ message: 'Promo not found' });
     return res.json({ message: 'Promo deleted' });
   } catch (err) {
-    console.error(err);
+    logger.error(err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -718,7 +719,7 @@ exports.getConnects = async (req, res) => {
       sellerSummary,
     });
   } catch (err) {
-    console.error('[Admin getConnects error]', err);
+    logger.error('[Admin getConnects error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -747,14 +748,14 @@ exports.updateContactSaleStatus = async (req, res) => {
             const { recordCommission } = require('../services/brokerCommissionService');
             await recordCommission(pool, owner.user_id, row.listing_id);
           } catch (err) {
-            console.error('[Commission record error]', err);
+            logger.error('[Commission record error]', err);
           }
         }
       }
     }
     return res.json({ message: 'Sale status updated', sale_status });
   } catch (err) {
-    console.error('[Admin updateContactSaleStatus error]', err);
+    logger.error('[Admin updateContactSaleStatus error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -844,7 +845,7 @@ exports.exportConnects = async (req, res) => {
 
     return res.json({ connects: all });
   } catch (err) {
-    console.error('[Admin exportConnects error]', err);
+    logger.error('[Admin exportConnects error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -859,7 +860,7 @@ exports.updateProfile = async (req, res) => {
     }
     return res.json({ message: 'Profile updated' });
   } catch (err) {
-    console.error(err);
+    logger.error(err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -911,7 +912,7 @@ exports.getDonations = async (req, res) => {
 
     return res.json({ donations, total, page: parseInt(page), stats });
   } catch (err) {
-    console.error('[Admin getDonations error]', err);
+    logger.error('[Admin getDonations error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -958,7 +959,7 @@ exports.bulkUpdateListings = async (req, res) => {
       affectedRows: result.affectedRows
     });
   } catch (err) {
-    console.error('[Admin bulkUpdateListings error]', err);
+    logger.error('[Admin bulkUpdateListings error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -972,7 +973,7 @@ exports.getSystemSettings = async (req, res) => {
     });
     return res.json({ settings: settingsMap });
   } catch (err) {
-    console.error('[Admin getSystemSettings error]', err);
+    logger.error('[Admin getSystemSettings error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -992,7 +993,7 @@ exports.updateSystemSettings = async (req, res) => {
     }
     return res.json({ message: 'Settings updated' });
   } catch (err) {
-    console.error('[Admin updateSystemSettings error]', err);
+    logger.error('[Admin updateSystemSettings error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -1042,7 +1043,7 @@ exports.getUserDetails = async (req, res) => {
 
     return res.json({ user, listings, transactions, certificate });
   } catch (err) {
-    console.error('[Admin getUserDetails error]', err);
+    logger.error('[Admin getUserDetails error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -1073,7 +1074,7 @@ exports.suspendUser = async (req, res) => {
 
     return res.json({ message: 'User suspended successfully' });
   } catch (err) {
-    console.error('[Admin suspendUser error]', err);
+    logger.error('[Admin suspendUser error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -1091,7 +1092,7 @@ exports.unsuspendUser = async (req, res) => {
 
     return res.json({ message: 'User unsuspended successfully' });
   } catch (err) {
-    console.error('[Admin unsuspendUser error]', err);
+    logger.error('[Admin unsuspendUser error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -1137,7 +1138,7 @@ exports.getAdminAuctions = async (req, res) => {
     }));
     return res.json({ auctions, total, page: parseInt(page) });
   } catch (err) {
-    console.error('[Admin getAdminAuctions error]', err);
+    logger.error('[Admin getAdminAuctions error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -1155,7 +1156,7 @@ exports.getAuctionBids = async (req, res) => {
     );
     return res.json({ bids });
   } catch (err) {
-    console.error('[Admin getAuctionBids error]', err);
+    logger.error('[Admin getAuctionBids error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -1192,7 +1193,7 @@ exports.deleteAuction = async (req, res) => {
     return res.json({ message: 'Auction permanently deleted' });
   } catch (err) {
     await conn.rollback();
-    console.error('[Admin deleteAuction error]', err);
+    logger.error('[Admin deleteAuction error]', err);
     return res.status(500).json({ message: 'Server error' });
   } finally {
     conn.release();
@@ -1217,7 +1218,7 @@ exports.deleteUser = async (req, res) => {
     return res.json({ message: 'User deleted successfully' });
   } catch (err) {
     await conn.rollback();
-    console.error('[Admin deleteUser error]', err);
+    logger.error('[Admin deleteUser error]', err);
     return res.status(500).json({ message: 'Server error' });
   } finally {
     conn.release();

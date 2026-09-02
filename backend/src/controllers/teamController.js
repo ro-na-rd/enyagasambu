@@ -1,5 +1,6 @@
 const pool = require('../config/db');
 const { uploadToS3, deleteFromS3Url } = require('../services/s3Service');
+const { logger } = require('../config/logger');
 
 function normalizeCategory(value) {
   return value === 'board' ? 'board' : 'team';
@@ -15,7 +16,7 @@ exports.getPublic = async (req, res) => {
     );
     res.json({ members: rows });
   } catch (err) {
-    console.error('[Team] getPublic error:', err);
+    logger.error('[Team] getPublic error:', err);
     res.status(500).json({ message: 'Server error' });
   }
 };
@@ -31,7 +32,7 @@ exports.getAll = async (req, res) => {
     );
     res.json({ members: rows });
   } catch (err) {
-    console.error('[Team] getAll error:', err);
+    logger.error('[Team] getAll error:', err);
     res.status(500).json({ message: 'Server error' });
   }
 };
@@ -65,7 +66,7 @@ exports.create = async (req, res) => {
     const [[row]] = await pool.query('SELECT * FROM team_members WHERE id = ?', [result.insertId]);
     res.status(201).json({ member: row });
   } catch (err) {
-    console.error('[Team] create error:', err);
+    logger.error('[Team] create error:', err);
     res.status(500).json({ message: 'Server error' });
   }
 };
@@ -120,7 +121,7 @@ exports.update = async (req, res) => {
       await deleteFromS3Url(existing.photo_url);
     }
   } catch (err) {
-    console.error('[Team] update error:', err);
+    logger.error('[Team] update error:', err);
     res.status(500).json({ message: 'Server error' });
   }
 };
@@ -141,7 +142,7 @@ exports.remove = async (req, res) => {
 
     res.json({ message: 'Member deleted' });
   } catch (err) {
-    console.error('[Team] remove error:', err);
+    logger.error('[Team] remove error:', err);
     res.status(500).json({ message: 'Server error' });
   }
 };

@@ -6,6 +6,7 @@ const pool = require('../config/db');
 const { sendSms } = require('../services/smsService');
 const { uploadToS3 } = require('../services/s3Service');
 const { requestToPay, getPaymentStatus } = require('../services/momoService');
+const { logger } = require('../config/logger');
 
 const OTP_TTL_MINUTES = 10;
 const TOKEN_EXPIRY = '1h';
@@ -62,7 +63,7 @@ exports.requestAccess = async (req, res) => {
     await sendSms(normalizedPhone, `Your NMO access code is ${code}. It expires in ${OTP_TTL_MINUTES} minutes.`);
     return res.json({ message: `OTP sent to ${normalizedPhone}` });
   } catch (err) {
-    console.error('[Phone access request error]', err);
+    logger.error('[Phone access request error]', err);
     return res.status(500).json({ message: 'Failed to send OTP' });
   }
 };
@@ -109,7 +110,7 @@ exports.verifyAccess = async (req, res) => {
 
     return res.json({ token, listings });
   } catch (err) {
-    console.error('[Phone access verify error]', err);
+    logger.error('[Phone access verify error]', err);
     return res.status(500).json({ message: 'Verification failed' });
   }
 };
@@ -130,7 +131,7 @@ exports.getListings = async (req, res) => {
     );
     return res.json({ listings });
   } catch (err) {
-    console.error('[Phone listings list error]', err);
+    logger.error('[Phone listings list error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -176,7 +177,7 @@ exports.updateListing = async (req, res) => {
     return res.json({ message: 'Listing updated' });
   } catch (err) {
     await conn.rollback();
-    console.error('[Phone listing update error]', err);
+    logger.error('[Phone listing update error]', err);
     return res.status(500).json({ message: 'Server error' });
   } finally {
     conn.release();
@@ -198,7 +199,7 @@ exports.deleteListing = async (req, res) => {
     await pool.query("UPDATE listings SET status = 'deleted' WHERE id = ?", [id]);
     return res.json({ message: 'Listing deleted' });
   } catch (err) {
-    console.error('[Phone listing delete error]', err);
+    logger.error('[Phone listing delete error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -234,7 +235,7 @@ exports.repostListing = async (req, res) => {
     });
   } catch (err) {
     if (referenceId) repostPayments.delete(referenceId);
-    console.error('[Repost initiate error]', err?.response?.data || err.message);
+    logger.error('[Repost initiate error]', err?.response?.data || err.message);
     return res.status(502).json({ message: 'Failed to send payment request. Please try again.' });
   }
 };
@@ -266,7 +267,7 @@ exports.checkRepostPayment = async (req, res) => {
 
     return res.json({ status: 'pending' });
   } catch (err) {
-    console.error('[Repost check error]', err?.response?.data || err.message);
+    logger.error('[Repost check error]', err?.response?.data || err.message);
     return res.status(502).json({ message: 'Could not check payment status.' });
   }
 };

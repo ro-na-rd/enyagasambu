@@ -1,5 +1,6 @@
 require('dotenv').config();
 const mysql = require('mysql2/promise');
+const { logger } = require('../config/logger');
 
 async function columnExists(conn, table, column) {
     const [rows] = await conn.query(
@@ -133,6 +134,6 @@ async function migrate() {
 }
 
 migrate().catch((err) => {
-    console.error(err);
+    logger.error(err);
     process.exit(1);
 });

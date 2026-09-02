@@ -1,5 +1,6 @@
 const pool = require('../config/db');
 const { getSummary, getEntries } = require('../services/brokerCommissionService');
+const { logger } = require('../config/logger');
 
 exports.getStats = async (req, res) => {
   try {
@@ -58,7 +59,7 @@ exports.getStats = async (req, res) => {
       },
     });
   } catch (err) {
-    console.error('[Broker stats error]', err);
+    logger.error('[Broker stats error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -105,7 +106,7 @@ exports.getTransactions = async (req, res) => {
 
     return res.json({ transactions, stats });
   } catch (err) {
-    console.error('[Broker transactions error]', err);
+    logger.error('[Broker transactions error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };

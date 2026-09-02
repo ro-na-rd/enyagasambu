@@ -10,6 +10,7 @@ export default function AmbassadorNotificationsPage() {
       subtitle="Stay updated with your ambassador activities."
       emptyText="Updates about referrals, rewards, and announcements will appear here."
       onRead={refresh}
+      canClear
     />
   );
 }

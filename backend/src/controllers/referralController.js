@@ -1,5 +1,6 @@
 const pool = require('../config/db');
 const crypto = require('crypto');
+const { logger } = require('../config/logger');
 
 const REFERRAL_BONUS = 200; // RWF credited to referrer when referred ambassador pays for certificate
 
@@ -33,7 +34,7 @@ exports.getMyReferral = async (req, res) => {
       bonusPerReferral: REFERRAL_BONUS,
     });
   } catch (err) {
-    console.error(err);
+    logger.error(err);
     return res.status(500).json({ message: 'Server error' });
   }
 };

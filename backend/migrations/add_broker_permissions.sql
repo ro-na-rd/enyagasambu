@@ -60,33 +60,3 @@ INSERT IGNORE INTO broker_permissions (role, module, action) VALUES
 ('broker', 'messages', 'delete'),
 ('broker', 'reports', 'view'),
 ('broker', 'settings', 'manage');
-
--- View: Get all permissions for a broker role
-SELECT * FROM broker_permissions WHERE role = 'broker' ORDER BY module, action;
-
--- View: Check if broker has specific permission
-SELECT COUNT(*) AS has_permission FROM broker_permissions 
-WHERE role = 'broker' AND module = ? AND action = ? AND is_active = 1;
-
--- Example usage in middleware (similar to requireExecutiveRole):
--- const requireBrokerRole = (allowedModules, allowedActions) => {
---   return async (req, res, next) => {
---     if (req.user.role !== 'broker') return res.status(403).json({ message: 'Broker access required' });
-    
---     const [permissions] = await pool.query(
---       'SELECT module, action FROM broker_permissions WHERE role = ?',
---       ['broker']
---     );
-    
---     // Check if user has all required modules/actions
---     const hasAccess = allowedModules.every(mod => 
---       permissions.some(p => p.module === mod)
---     );
---     const hasActions = allowedActions.every(action => 
---       permissions.some(p => p.action === action)
---     );
-    
---     if (!hasAccess || !hasActions) return res.status(403).json({ message: 'Insufficient broker permissions' });
---     next();
---   };
--- };

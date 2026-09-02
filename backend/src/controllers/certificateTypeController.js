@@ -1,4 +1,5 @@
 const pool = require('../config/db');
+const { logger } = require('../config/logger');
 
 const SELECT = 'id, code, name, description, category, price_rwf, duration_years, active, created_at, updated_at';
 
@@ -9,7 +10,7 @@ exports.getPublicTypes = async (req, res) => {
     );
     return res.json({ types: rows });
   } catch (err) {
-    console.error(err);
+    logger.error(err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -19,7 +20,7 @@ exports.listTypes = async (req, res) => {
     const [rows] = await pool.query(`SELECT ${SELECT} FROM certificate_types ORDER BY category, price_rwf`);
     return res.json({ types: rows });
   } catch (err) {
-    console.error(err);
+    logger.error(err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -45,7 +46,7 @@ exports.createType = async (req, res) => {
     const [[type]] = await pool.query(`SELECT ${SELECT} FROM certificate_types WHERE id = ?`, [result.insertId]);
     return res.status(201).json({ message: 'Certificate type created', type });
   } catch (err) {
-    console.error(err);
+    logger.error(err);
     if (err.code === 'ER_DUP_ENTRY') return res.status(409).json({ message: 'Certificate type code already exists' });
     return res.status(500).json({ message: 'Server error' });
   }
@@ -81,7 +82,7 @@ exports.updateType = async (req, res) => {
     const [[type]] = await pool.query(`SELECT ${SELECT} FROM certificate_types WHERE id = ?`, [id]);
     return res.json({ message: 'Certificate type updated', type });
   } catch (err) {
-    console.error(err);
+    logger.error(err);
     if (err.code === 'ER_DUP_ENTRY') return res.status(409).json({ message: 'Certificate type code already exists' });
     return res.status(500).json({ message: 'Server error' });
   }
@@ -114,7 +115,7 @@ exports.deleteType = async (req, res) => {
 
     return res.json({ message: 'Certificate type deleted' });
   } catch (err) {
-    console.error(err);
+    logger.error(err);
     return res.status(500).json({ message: 'Server error' });
   }
 };

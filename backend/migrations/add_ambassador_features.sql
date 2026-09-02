@@ -1,5 +1,3 @@
-USE nmo_db;
-
 -- Ambassador promotions tracking
 CREATE TABLE IF NOT EXISTS ambassador_promotions (
   id INT AUTO_INCREMENT PRIMARY KEY,

@@ -1,5 +1,6 @@
 const { S3Client, PutObjectCommand, DeleteObjectCommand, HeadBucketCommand, CreateBucketCommand, PutBucketPolicyCommand, ListBucketsCommand } = require('@aws-sdk/client-s3');
 const crypto = require('crypto');
+const { logger } = require('../config/logger');
 
 const s3 = new S3Client({
   endpoint: process.env.S3_ENDPOINT,
@@ -17,7 +18,7 @@ const s3 = new S3Client({
 const BUCKET = process.env.S3_BUCKET || 'nmo-images';
 const PUBLIC_URL = process.env.S3_PUBLIC_URL;
 if (!PUBLIC_URL) {
-  console.error('[FATAL] S3_PUBLIC_URL must be set in environment');
+  logger.error('[FATAL] S3_PUBLIC_URL must be set in environment');
   process.exit(1);
 }
 
@@ -32,7 +33,7 @@ async function withRetry(fn, label, retries = 5, baseDelay = 2000) {
     } catch (err) {
       if (attempt === retries) throw err;
       const delay = baseDelay * Math.pow(2, attempt - 1);
-      console.warn(`[S3] ${label} attempt ${attempt}/${retries} failed: ${err.message}. Retrying in ${delay}ms...`);
+      logger.warn(`[S3] ${label} attempt ${attempt}/${retries} failed: ${err.message}. Retrying in ${delay}ms...`);
       await sleep(delay);
     }
   }
@@ -41,7 +42,7 @@ async function withRetry(fn, label, retries = 5, baseDelay = 2000) {
 async function waitForS3() {
   await withRetry(async () => {
     await s3.send(new ListBucketsCommand({}));
-    console.log('[S3] Connection established');
+    logger.info('[S3] Connection established');
   }, 'connect', 10, 2000);
 }
 
@@ -49,11 +50,11 @@ async function ensureBucket() {
   await withRetry(async () => {
     try {
       await s3.send(new HeadBucketCommand({ Bucket: BUCKET }));
-      console.log(`[S3] Bucket "${BUCKET}" already exists`);
+      logger.info(`[S3] Bucket "${BUCKET}" already exists`);
     } catch (err) {
       if (err.name === 'NotFound' || err.$metadata?.httpStatusCode === 404) {
         await s3.send(new CreateBucketCommand({ Bucket: BUCKET }));
-        console.log(`[S3] Created bucket: ${BUCKET}`);
+        logger.info(`[S3] Created bucket: ${BUCKET}`);
       } else {
         throw err;
       }
@@ -71,9 +72,9 @@ async function ensureBucket() {
       }],
     });
     await s3.send(new PutBucketPolicyCommand({ Bucket: BUCKET, Policy: policy }));
-    console.log(`[S3] Public read policy applied to "${BUCKET}"`);
+    logger.info(`[S3] Public read policy applied to "${BUCKET}"`);
   } catch (err) {
-    console.warn('[S3] Could not set bucket policy (non-blocking):', err.message);
+    logger.warn('[S3] Could not set bucket policy (non-blocking):', err.message);
   }
 }
 
@@ -97,7 +98,7 @@ async function deleteFromS3(key) {
   try {
     await s3.send(new DeleteObjectCommand({ Bucket: BUCKET, Key: key }));
   } catch (err) {
-    console.error('[S3] Delete error:', err.message);
+    logger.error('[S3] Delete error:', err.message);
   }
 }
 

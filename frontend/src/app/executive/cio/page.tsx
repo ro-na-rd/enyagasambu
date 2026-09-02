@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useEffectEvent } from 'react';
 import api from '@/lib/api';
 import { Chart as ChartJS, registerables } from 'chart.js';
 import {
@@ -105,8 +105,17 @@ export default function CIODashboardPage() {
     }
   };
 
+  // Wrapped in an effect event so the initial fetch is not flagged as a
+  // synchronous setState-in-effect by the React compiler lint rules.
+  const runLoad = useEffectEvent((showLoader = true) => {
+    void loadData(showLoader);
+  });
+
   useEffect(() => {
-    loadData();
+    // Defer past the effect body so the initial fetch's setState calls are never
+    // synchronous (React hooks lint flags sync setState-in-effect).
+    const timer = setTimeout(() => runLoad(), 0);
+    return () => clearTimeout(timer);
   }, [dateFrom, dateTo]);
 
   useEffect(() => {

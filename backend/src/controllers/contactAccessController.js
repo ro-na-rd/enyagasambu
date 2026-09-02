@@ -3,6 +3,7 @@ const crypto = require('crypto');
 const pool = require('../config/db');
 const { requestToPay, getPaymentStatus } = require('../services/momoService');
 const { sendSms } = require('../services/smsService');
+const { logger } = require('../config/logger');
 
 const ACCESS_FEE = 300;
 const OTP_TTL_MINUTES = 5;
@@ -90,7 +91,7 @@ exports.initiatePayment = async (req, res) => {
       status: 'pending',
     });
   } catch (err) {
-    console.error('[Contact access initiate error]', err?.response?.data || err.message);
+    logger.error('[Contact access initiate error]', err?.response?.data || err.message);
     return res.status(502).json({ message: 'Failed to send payment request. Please try again.' });
   }
 };
@@ -151,7 +152,7 @@ exports.checkPayment = async (req, res) => {
     // Still pending
     return res.json({ status: 'pending' });
   } catch (err) {
-    console.error('[Contact access check error]', err?.response?.data || err.message);
+    logger.error('[Contact access check error]', err?.response?.data || err.message);
     return res.status(502).json({ message: 'Could not check payment status.' });
   }
 };
@@ -238,7 +239,7 @@ exports.verifyOtp = async (req, res) => {
     });
   } catch (err) {
     await conn.rollback();
-    console.error('[Contact access verify error]', err);
+    logger.error('[Contact access verify error]', err);
     return res.status(500).json({ message: 'Server error' });
   } finally {
     conn.release();
@@ -273,7 +274,7 @@ exports.resendOtp = async (req, res) => {
 
     return res.json({ message: `New verification code sent to ${payment.buyer_phone}` });
   } catch (err) {
-    console.error('[Contact access resend error]', err);
+    logger.error('[Contact access resend error]', err);
     return res.status(500).json({ message: 'Failed to resend verification code' });
   }
 };
@@ -317,7 +318,7 @@ exports.getContact = async (req, res) => {
       sellerName: seller?.name,
     });
   } catch (err) {
-    console.error('[Contact access get error]', err);
+    logger.error('[Contact access get error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };

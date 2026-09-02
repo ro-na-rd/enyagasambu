@@ -1,4 +1,5 @@
 const pool = require('../config/db');
+const { logger } = require('../config/logger');
 
 exports.getComments = async (req, res) => {
   const { id } = req.params;
@@ -15,7 +16,7 @@ exports.getComments = async (req, res) => {
     );
     return res.json({ comments });
   } catch (err) {
-    console.error('[Comments list error]', err);
+    logger.error('[Comments list error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -53,7 +54,7 @@ exports.addComment = async (req, res) => {
 
     return res.json({ comment });
   } catch (err) {
-    console.error('[Comment add error]', err);
+    logger.error('[Comment add error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -78,7 +79,7 @@ exports.deleteComment = async (req, res) => {
     await pool.query('DELETE FROM listing_comments WHERE id = ?', [commentId]);
     return res.json({ message: 'Comment deleted' });
   } catch (err) {
-    console.error('[Comment delete error]', err);
+    logger.error('[Comment delete error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };

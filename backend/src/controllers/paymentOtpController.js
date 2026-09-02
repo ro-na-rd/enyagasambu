@@ -1,6 +1,7 @@
 const crypto = require('crypto');
 const pool = require('../config/db');
 const { sendSms } = require('../services/smsService');
+const { logger } = require('../config/logger');
 
 const OTP_TTL_MINUTES = 5;
 const MAX_OTP_ATTEMPTS = 3;
@@ -63,7 +64,7 @@ exports.sendPaymentOtp = async (req, res) => {
 
     return res.json({ message: `Verification code sent to ${phone}` });
   } catch (err) {
-    console.error('[Payment OTP send error]', err);
+    logger.error('[Payment OTP send error]', err);
     return res.status(500).json({ message: 'Failed to send verification code' });
   }
 };
@@ -178,7 +179,7 @@ exports.verifyPaymentOtp = async (req, res) => {
     return res.json({ listingId: listingResult.insertId, message: 'Post published successfully' });
   } catch (err) {
     await conn.rollback();
-    console.error('[Payment OTP verify error]', err);
+    logger.error('[Payment OTP verify error]', err);
     return res.status(500).json({ message: 'Server error' });
   } finally {
     conn.release();
@@ -220,7 +221,7 @@ exports.resendPaymentOtp = async (req, res) => {
 
     return res.json({ message: `New verification code sent to ${phone}` });
   } catch (err) {
-    console.error('[Payment OTP resend error]', err);
+    logger.error('[Payment OTP resend error]', err);
     return res.status(500).json({ message: 'Failed to resend verification code' });
   }
 };

@@ -1,4 +1,5 @@
 const pool = require('../config/db');
+const { logger } = require('../config/logger');
 
 exports.getAll = async (req, res) => {
   try {
@@ -10,7 +11,7 @@ exports.getAll = async (req, res) => {
     );
     res.json(rows);
   } catch (err) {
-    console.error('[SiteContent] getAll error:', err);
+    logger.error('[SiteContent] getAll error:', err);
     res.status(500).json({ message: 'Server error' });
   }
 };
@@ -24,7 +25,7 @@ exports.getPublic = async (req, res) => {
     rows.forEach((r) => { map[r.content_key] = r.content; });
     res.json(map);
   } catch (err) {
-    console.error('[SiteContent] getPublic error:', err);
+    logger.error('[SiteContent] getPublic error:', err);
     res.status(500).json({ message: 'Server error' });
   }
 };
@@ -46,7 +47,7 @@ exports.create = async (req, res) => {
     res.status(201).json(row);
   } catch (err) {
     if (err.code === 'ER_DUP_ENTRY') return res.status(409).json({ message: 'A content key with that name already exists' });
-    console.error('[SiteContent] create error:', err);
+    logger.error('[SiteContent] create error:', err);
     res.status(500).json({ message: 'Server error' });
   }
 };
@@ -75,7 +76,7 @@ exports.update = async (req, res) => {
     res.json(row);
   } catch (err) {
     if (err.code === 'ER_DUP_ENTRY') return res.status(409).json({ message: 'A content key with that name already exists' });
-    console.error('[SiteContent] update error:', err);
+    logger.error('[SiteContent] update error:', err);
     res.status(500).json({ message: 'Server error' });
   }
 };
@@ -93,7 +94,7 @@ exports.toggleStatus = async (req, res) => {
     );
     res.json(row);
   } catch (err) {
-    console.error('[SiteContent] toggleStatus error:', err);
+    logger.error('[SiteContent] toggleStatus error:', err);
     res.status(500).json({ message: 'Server error' });
   }
 };
@@ -105,7 +106,7 @@ exports.remove = async (req, res) => {
     await pool.query('DELETE FROM site_content WHERE id = ?', [req.params.id]);
     res.json({ message: 'Deleted' });
   } catch (err) {
-    console.error('[SiteContent] remove error:', err);
+    logger.error('[SiteContent] remove error:', err);
     res.status(500).json({ message: 'Server error' });
   }
 };

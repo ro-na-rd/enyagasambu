@@ -1,4 +1,5 @@
 const pool = require('../config/db');
+const { logger } = require('../config/logger');
 
 exports.getPolicies = async (req, res) => {
   try {
@@ -7,7 +8,7 @@ exports.getPolicies = async (req, res) => {
     );
     return res.json({ policies });
   } catch (err) {
-    console.error('[Policies error]', err);
+    logger.error('[Policies error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -22,7 +23,7 @@ exports.getPolicyById = async (req, res) => {
     if (!policy) return res.status(404).json({ message: 'Policy not found' });
     return res.json({ policy });
   } catch (err) {
-    console.error('[Policy error]', err);
+    logger.error('[Policy error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -53,7 +54,7 @@ exports.acknowledgePolicy = async (req, res) => {
 
     return res.json({ message: 'Policy acknowledged successfully' });
   } catch (err) {
-    console.error('[Acknowledge policy error]', err);
+    logger.error('[Acknowledge policy error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -72,7 +73,7 @@ exports.getAcknowledgmentStatus = async (req, res) => {
     );
     return res.json({ policies });
   } catch (err) {
-    console.error('[Policy status error]', err);
+    logger.error('[Policy status error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -96,7 +97,7 @@ exports.getComplianceStats = async (req, res) => {
       }
     });
   } catch (err) {
-    console.error('[Compliance stats error]', err);
+    logger.error('[Compliance stats error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };

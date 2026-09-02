@@ -1,6 +1,7 @@
 const router = require('express').Router();
 const { authenticate, requireAdmin } = require('../middleware/auth');
 const pool = require('../config/db');
+const { logger } = require('../config/logger');
 
 router.get('/', async (req, res) => {
   try {
@@ -9,7 +10,7 @@ router.get('/', async (req, res) => {
     rows.forEach(r => { settings[r.setting_key] = r.setting_value; });
     return res.json({ settings });
   } catch (err) {
-    console.error(err);
+    logger.error(err);
     return res.status(500).json({ message: 'Server error' });
   }
 });
@@ -31,7 +32,7 @@ router.put('/', authenticate, requireAdmin, async (req, res) => {
     rows.forEach(r => { result[r.setting_key] = r.setting_value; });
     return res.json({ settings: result, message: 'Settings saved' });
   } catch (err) {
-    console.error(err);
+    logger.error(err);
     return res.status(500).json({ message: 'Server error' });
   }
 });

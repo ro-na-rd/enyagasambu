@@ -1,4 +1,5 @@
 const pool = require('../config/db');
+const { logger } = require('../config/logger');
 
 exports.getRecruitments = async (req, res) => {
   try {
@@ -15,7 +16,7 @@ exports.getRecruitments = async (req, res) => {
     const [recruitments] = await pool.query(query, params);
     return res.json({ recruitments });
   } catch (err) {
-    console.error('[Supplier recruitments error]', err);
+    logger.error('[Supplier recruitments error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -30,7 +31,7 @@ exports.getRecruitmentById = async (req, res) => {
     if (!recruitment) return res.status(404).json({ message: 'Recruitment not found' });
     return res.json({ recruitment });
   } catch (err) {
-    console.error('[Supplier recruitment error]', err);
+    logger.error('[Supplier recruitment error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -52,7 +53,7 @@ exports.createRecruitment = async (req, res) => {
     const [[recruitment]] = await pool.query('SELECT * FROM supplier_recruitments WHERE id = ?', [result.insertId]);
     return res.status(201).json({ recruitment });
   } catch (err) {
-    console.error('[Create supplier recruitment error]', err);
+    logger.error('[Create supplier recruitment error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -80,7 +81,7 @@ exports.updateRecruitment = async (req, res) => {
     const [[recruitment]] = await pool.query('SELECT * FROM supplier_recruitments WHERE id = ?', [id]);
     return res.json({ recruitment });
   } catch (err) {
-    console.error('[Update supplier recruitment error]', err);
+    logger.error('[Update supplier recruitment error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -97,7 +98,7 @@ exports.deleteRecruitment = async (req, res) => {
     await pool.query('DELETE FROM supplier_recruitments WHERE id = ? AND ambassador_id = ?', [id, req.user.id]);
     return res.json({ message: 'Recruitment deleted' });
   } catch (err) {
-    console.error('[Delete supplier recruitment error]', err);
+    logger.error('[Delete supplier recruitment error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -135,7 +136,7 @@ exports.getRecruitmentStats = async (req, res) => {
       }
     });
   } catch (err) {
-    console.error('[Supplier recruitment stats error]', err);
+    logger.error('[Supplier recruitment stats error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };

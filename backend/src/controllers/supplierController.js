@@ -1,4 +1,5 @@
 const pool = require('../config/db');
+const { logger } = require('../config/logger');
 
 exports.listSuppliers = async (req, res) => {
   try {
@@ -11,7 +12,7 @@ exports.listSuppliers = async (req, res) => {
     );
     return res.json({ suppliers: rows });
   } catch (err) {
-    console.error(err);
+    logger.error(err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -26,7 +27,7 @@ exports.myListings = async (req, res) => {
     );
     return res.json({ listings: rows });
   } catch (err) {
-    console.error(err);
+    logger.error(err);
     return res.status(500).json({ message: 'Server error' });
   }
 };

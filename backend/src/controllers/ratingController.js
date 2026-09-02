@@ -1,5 +1,6 @@
 const pool = require('../config/db');
 const { notifyAdmins } = require('../services/notificationService');
+const { logger } = require('../config/logger');
 
 exports.getRating = async (req, res) => {
   const { id } = req.params;
@@ -26,7 +27,7 @@ exports.getRating = async (req, res) => {
       myStars,
     });
   } catch (err) {
-    console.error('[Rating status error]', err);
+    logger.error('[Rating status error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -84,7 +85,7 @@ exports.rate = async (req, res) => {
       myStars: stars,
     });
   } catch (err) {
-    console.error('[Rate error]', err);
+    logger.error('[Rate error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };

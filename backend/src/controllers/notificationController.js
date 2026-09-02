@@ -1,4 +1,5 @@
 const pool = require('../config/db');
+const { logger } = require('../config/logger');
 
 function recipientCol(user) {
   return user.is_staff ? 'staff_id' : 'user_id';
@@ -14,7 +15,7 @@ exports.list = async (req, res) => {
     );
     res.json(rows);
   } catch (err) {
-    console.error('[Notifications list error]', err);
+    logger.error('[Notifications list error]', err);
     res.status(500).json({ message: 'Server error' });
   }
 };
@@ -28,7 +29,7 @@ exports.unreadCount = async (req, res) => {
     );
     res.json({ count });
   } catch (err) {
-    console.error('[Notifications unread error]', err);
+    logger.error('[Notifications unread error]', err);
     res.status(500).json({ message: 'Server error' });
   }
 };
@@ -42,7 +43,7 @@ exports.markRead = async (req, res) => {
     );
     res.json({ success: true });
   } catch (err) {
-    console.error('[Notifications markRead error]', err);
+    logger.error('[Notifications markRead error]', err);
     res.status(500).json({ message: 'Server error' });
   }
 };
@@ -56,7 +57,21 @@ exports.markAllRead = async (req, res) => {
     );
     res.json({ success: true });
   } catch (err) {
-    console.error('[Notifications markAllRead error]', err);
+    logger.error('[Notifications markAllRead error]', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+exports.clearAll = async (req, res) => {
+  try {
+    const col = recipientCol(req.user);
+    const [result] = await pool.query(
+      `DELETE FROM notifications WHERE ${col} = ?`,
+      [req.user.id]
+    );
+    res.json({ success: true, cleared: result.affectedRows });
+  } catch (err) {
+    logger.error('[Notifications clearAll error]', err);
     res.status(500).json({ message: 'Server error' });
   }
 };

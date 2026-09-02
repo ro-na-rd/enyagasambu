@@ -1,6 +1,7 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const pool = require('../config/db');
+const { logger } = require('../config/logger');
 
 const CERT_PRICE = 2000;
 
@@ -45,7 +46,7 @@ exports.register = async(req, res) => {
         });
     } catch (err) {
         await conn.rollback();
-        console.error(err);
+        logger.error(err);
         return res.status(500).json({ message: 'Server error' });
     } finally {
         conn.release();
@@ -68,7 +69,7 @@ exports.login = async(req, res) => {
         const { password_hash, ...safeUser } = user;
         return res.json({ token, user: safeUser });
     } catch (err) {
-        console.error(err);
+        logger.error(err);
         return res.status(500).json({ message: 'Server error' });
     }
 };
@@ -90,7 +91,7 @@ exports.updateMe = async(req, res) => {
         }
         return res.json({ message: 'Profile updated' });
     } catch (err) {
-        console.error(err);
+        logger.error(err);
         return res.status(500).json({ message: 'Server error' });
     }
 };
@@ -118,7 +119,7 @@ exports.me = async(req, res) => {
         if (!user.services) user.services = [];
         return res.json({ user });
     } catch (err) {
-        console.error(err);
+        logger.error(err);
         return res.status(500).json({ message: 'Server error' });
     }
 };

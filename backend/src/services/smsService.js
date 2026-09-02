@@ -1,4 +1,5 @@
 const AfricasTalking = require('africastalking');
+const { logger } = require('../config/logger');
 
 let at, sms;
 try {
@@ -7,15 +8,15 @@ try {
     username: process.env.AT_USERNAME,
   });
   sms = at.SMS;
-  console.log('[SMS] Africa\'s Talking SMS service initialized');
+  logger.info('[SMS] Africa\'s Talking SMS service initialized');
 } catch (err) {
-  console.warn('[SMS] Africa\'s Talking initialization failed:', err.message);
+  logger.warn('[SMS] Africa\'s Talking initialization failed:', err.message);
   sms = null;
 }
 
 async function sendSms(phone, message) {
   if (!sms) {
-    console.warn('[SMS] Service unavailable — SMS not sent to', phone);
+    logger.warn('[SMS] Service unavailable — SMS not sent to', phone);
     return;
   }
   if (!phone) throw new Error('Phone number required for SMS');

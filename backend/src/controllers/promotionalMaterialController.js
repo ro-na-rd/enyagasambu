@@ -1,4 +1,5 @@
 const pool = require('../config/db');
+const { logger } = require('../config/logger');
 
 exports.getMaterials = async (req, res) => {
   try {
@@ -19,7 +20,7 @@ exports.getMaterials = async (req, res) => {
     const [materials] = await pool.query(query, params);
     return res.json({ materials });
   } catch (err) {
-    console.error('[Promotional materials error]', err);
+    logger.error('[Promotional materials error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -34,7 +35,7 @@ exports.getMaterialById = async (req, res) => {
     if (!material) return res.status(404).json({ message: 'Material not found' });
     return res.json({ material });
   } catch (err) {
-    console.error('[Promotional material error]', err);
+    logger.error('[Promotional material error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -48,7 +49,7 @@ exports.trackDownload = async (req, res) => {
     );
     return res.json({ message: 'Download tracked' });
   } catch (err) {
-    console.error('[Track download error]', err);
+    logger.error('[Track download error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -60,7 +61,7 @@ exports.getCategories = async (req, res) => {
     );
     return res.json({ categories: categories.map(c => c.category) });
   } catch (err) {
-    console.error('[Categories error]', err);
+    logger.error('[Categories error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };

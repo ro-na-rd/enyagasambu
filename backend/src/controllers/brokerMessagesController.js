@@ -1,4 +1,5 @@
 const pool = require('../config/db');
+const { logger } = require('../config/logger');
 
 function convKey(msg) {
   if (msg.client_id) return `client:${msg.client_id}`;
@@ -71,7 +72,7 @@ exports.getConversations = async (req, res) => {
     const conversations = [...map.values()].sort((a, b) => new Date(b.lastAt) - new Date(a.lastAt));
     return res.json({ conversations });
   } catch (err) {
-    console.error('[Broker conversations error]', err);
+    logger.error('[Broker conversations error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -135,7 +136,7 @@ exports.getThread = async (req, res) => {
 
     return res.json({ conversation, messages });
   } catch (err) {
-    console.error('[Broker thread error]', err);
+    logger.error('[Broker thread error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -183,7 +184,7 @@ exports.sendMessage = async (req, res) => {
 
     return res.status(201).json({ message });
   } catch (err) {
-    console.error('[Broker send error]', err);
+    logger.error('[Broker send error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -216,7 +217,7 @@ exports.markRead = async (req, res) => {
     );
     return res.json({ success: true });
   } catch (err) {
-    console.error('[Broker mark-read error]', err);
+    logger.error('[Broker mark-read error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };

@@ -3,6 +3,10 @@ const http = require('http');
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
+const { logger } = require('./config/logger');
+const requestId = require('./middleware/requestId');
+const httpLogger = require('./middleware/httpLogger');
+const errorHandler = require('./middleware/errorHandler');
 const { startRenewalScheduler } = require('./services/renewalScheduler');
 const { startExpiryScheduler } = require('./services/expiryScheduler');
 const { startAuctionScheduler } = require('./services/auctionScheduler');
@@ -12,11 +16,11 @@ const { waitForS3, ensureBucket } = require('./services/s3Service');
 const REQUIRED_ENV = ['DB_HOST', 'DB_USER', 'DB_PASSWORD', 'DB_NAME', 'JWT_SECRET'];
 const missing = REQUIRED_ENV.filter((k) => !process.env[k]);
 if (missing.length) {
-  console.error(`[FATAL] Missing required environment variables: ${missing.join(', ')}`);
+  logger.error(`[FATAL] Missing required environment variables: ${missing.join(', ')}`);
   process.exit(1);
 }
 if ((process.env.JWT_SECRET || '').length < 32) {
-  console.error('[FATAL] JWT_SECRET must be at least 32 characters');
+  logger.error('[FATAL] JWT_SECRET must be at least 32 characters');
   process.exit(1);
 }
 
@@ -27,18 +31,21 @@ app.use(helmet());
 
 const clientUrls = (process.env.CLIENT_URL || '').split(',').map((o) => o.trim()).filter(Boolean);
 if (clientUrls.length === 0) {
-  console.error('[FATAL] CLIENT_URL must be set in production (comma-separated list of allowed origins)');
+  logger.error('[FATAL] CLIENT_URL must be set in production (comma-separated list of allowed origins)');
   process.exit(1);
 }
 app.use(cors({ origin: clientUrls, credentials: true }));
 app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ extended: true, limit: '2mb' }));
 
+app.use(requestId);
+app.use(httpLogger);
+
 async function init() {
   await waitForS3();
   await ensureBucket();
 }
-init().catch((err) => console.error('[S3] Initialization failed:', err.message));
+init().catch((err) => logger.error(`[S3] Initialization failed: ${err.message}`));
 
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/auth/seller', require('./routes/sellerAuth'));
@@ -78,6 +85,7 @@ app.use('/api/team', require('./routes/team'));
 app.use('/api/home-buttons', require('./routes/homeButtons'));
 app.use('/api/support', require('./routes/support'));
 app.use('/api/stats', require('./routes/stats'));
+  app.use('/api/analytics', require('./routes/analytics'));
 app.use('/api/donations', require('./routes/donations'));
 app.use('/api/notifications', require('./routes/notifications'));
 app.use('/api/announcements', require('./routes/announcements'));
@@ -93,17 +101,12 @@ app.use('/api/ambassador/supplier-recruitments', require('./routes/supplierRecru
 app.use('/api/admin/announcements', require('./routes/adminAnnouncements'));
 app.use('/api/recycle-bin', require('./routes/recycleBin'));
 app.use('/api/executive', require('./routes/executive'));
+app.use('/api/newsletter', require('./routes/newsletter'));
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok', platform: 'NMO' }));
 
-app.use((req, res) => {
-  res.status(404).json({ message: 'Route not found' });
-});
-
-app.use((err, req, res, _next) => {
-  console.error('[Unhandled error]', err);
-  res.status(500).json({ message: 'Internal server error' });
-});
+app.use(errorHandler.notFound);
+app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
 const server = http.createServer(app);
@@ -111,4 +114,4 @@ initSocket(server);
 startRenewalScheduler();
 startExpiryScheduler();
 startAuctionScheduler();
-server.listen(PORT, () => console.log(`NMO API + Socket.IO running on port ${PORT}`));
+server.listen(PORT, () => logger.info(`NMO API + Socket.IO running on port ${PORT}`, { port: PORT }));

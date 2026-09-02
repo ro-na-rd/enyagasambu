@@ -46,8 +46,8 @@ export default function ApprovalsPage() {
     try {
       await api.post(`/executive/approvals/${id}/review`, { status });
       setApprovals(prev => prev.filter(a => a.id !== id));
-    } catch (err) {
-      console.error('Review failed:', err);
+    } catch {
+      // review failed; kept in list for retry
     } finally {
       setProcessing(null);
     }

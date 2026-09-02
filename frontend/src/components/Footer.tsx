@@ -3,6 +3,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useLanguage } from '@/context/LanguageContext';
 import { useSiteContent } from '@/lib/useSiteContent';
+import api from '@/lib/api';
 import { MapPin, Phone, Mail, CheckCircle } from '@/lib/icons';
 
 const socials = [
@@ -33,12 +34,23 @@ export default function Footer() {
   const { get } = useSiteContent();
   const [email, setEmail] = useState('');
   const [subscribed, setSubscribed] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const subscribe = (e: React.FormEvent) => {
+  const subscribe = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.trim()) return;
-    setSubscribed(true);
-    setEmail('');
+    if (!email.trim() || loading) return;
+    setLoading(true);
+    setError('');
+    try {
+      await api.post('/newsletter', { email, source: 'footer' });
+      setSubscribed(true);
+      setEmail('');
+    } catch {
+      setError('Something went wrong. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -136,23 +148,27 @@ export default function Footer() {
                   <CheckCircle size={16} /> {T.subscribed}
                 </div>
               ) : (
-                <div className="mt-3 flex overflow-hidden rounded-lg bg-white/5 ring-1 ring-white/15 focus-within:ring-2 focus-within:ring-[#E85D04]">
-                  <input
-                    type="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder={T.newsletterPlaceholder}
-                    className="w-full bg-transparent px-3.5 py-2.5 text-sm text-white placeholder:text-white/40 focus:outline-none"
-                  />
-                  <button
-                    type="submit"
-                    style={{ background: '#E85D04' }}
-                    className="shrink-0 px-4 text-sm font-semibold text-white transition hover:opacity-90"
-                  >
-                    {T.subscribe}
-                  </button>
-                </div>
+                <>
+                  <div className="mt-3 flex overflow-hidden rounded-lg bg-white/5 ring-1 ring-white/15 focus-within:ring-2 focus-within:ring-[#E85D04]">
+                    <input
+                      type="email"
+                      required
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder={T.newsletterPlaceholder}
+                      className="w-full bg-transparent px-3.5 py-2.5 text-sm text-white placeholder:text-white/40 focus:outline-none"
+                    />
+                    <button
+                      type="submit"
+                      disabled={loading}
+                      style={{ background: '#E85D04' }}
+                      className="shrink-0 px-4 text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {loading ? '…' : T.subscribe}
+                    </button>
+                  </div>
+                  {error && <p className="mt-2 text-xs text-red-300">{error}</p>}
+                </>
               )}
             </form>
           </div>

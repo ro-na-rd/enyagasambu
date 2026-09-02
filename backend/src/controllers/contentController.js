@@ -1,4 +1,5 @@
 const pool = require('../config/db');
+const { logger } = require('../config/logger');
 
 exports.getAll = async (req, res) => {
   try {
@@ -10,7 +11,7 @@ exports.getAll = async (req, res) => {
     );
     res.json(rows);
   } catch (err) {
-    console.error('[Content] getAll error:', err);
+    logger.error('[Content] getAll error:', err);
     res.status(500).json({ message: 'Server error' });
   }
 };
@@ -24,7 +25,7 @@ exports.getBySlug = async (req, res) => {
     if (!row) return res.status(404).json({ message: 'Not found' });
     res.json(row);
   } catch (err) {
-    console.error('[Content] getBySlug error:', err);
+    logger.error('[Content] getBySlug error:', err);
     res.status(500).json({ message: 'Server error' });
   }
 };
@@ -35,7 +36,7 @@ exports.getById = async (req, res) => {
     if (!row) return res.status(404).json({ message: 'Not found' });
     res.json(row);
   } catch (err) {
-    console.error('[Content] getById error:', err);
+    logger.error('[Content] getById error:', err);
     res.status(500).json({ message: 'Server error' });
   }
 };
@@ -53,7 +54,7 @@ exports.create = async (req, res) => {
     res.status(201).json(row);
   } catch (err) {
     if (err.code === 'ER_DUP_ENTRY') return res.status(409).json({ message: 'A page with that slug already exists' });
-    console.error('[Content] create error:', err);
+    logger.error('[Content] create error:', err);
     res.status(500).json({ message: 'Server error' });
   }
 };
@@ -74,7 +75,7 @@ exports.update = async (req, res) => {
     res.json(row);
   } catch (err) {
     if (err.code === 'ER_DUP_ENTRY') return res.status(409).json({ message: 'A page with that slug already exists' });
-    console.error('[Content] update error:', err);
+    logger.error('[Content] update error:', err);
     res.status(500).json({ message: 'Server error' });
   }
 };
@@ -88,7 +89,7 @@ exports.toggleStatus = async (req, res) => {
     const [[row]] = await pool.query('SELECT * FROM content_pages WHERE id = ?', [req.params.id]);
     res.json(row);
   } catch (err) {
-    console.error('[Content] toggleStatus error:', err);
+    logger.error('[Content] toggleStatus error:', err);
     res.status(500).json({ message: 'Server error' });
   }
 };
@@ -100,7 +101,7 @@ exports.remove = async (req, res) => {
     await pool.query('DELETE FROM content_pages WHERE id = ?', [req.params.id]);
     res.json({ message: 'Deleted' });
   } catch (err) {
-    console.error('[Content] remove error:', err);
+    logger.error('[Content] remove error:', err);
     res.status(500).json({ message: 'Server error' });
   }
 };

@@ -1,4 +1,5 @@
 const pool = require('../config/db');
+const { logger } = require('../config/logger');
 
 exports.getCampaigns = async (req, res) => {
   try {
@@ -15,7 +16,7 @@ exports.getCampaigns = async (req, res) => {
     const [campaigns] = await pool.query(query, params);
     return res.json({ campaigns });
   } catch (err) {
-    console.error('[Campaigns error]', err);
+    logger.error('[Campaigns error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -30,7 +31,7 @@ exports.getCampaignById = async (req, res) => {
     if (!campaign) return res.status(404).json({ message: 'Campaign not found' });
     return res.json({ campaign });
   } catch (err) {
-    console.error('[Campaign error]', err);
+    logger.error('[Campaign error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -52,7 +53,7 @@ exports.createCampaign = async (req, res) => {
     const [[campaign]] = await pool.query('SELECT * FROM ambassador_campaigns WHERE id = ?', [result.insertId]);
     return res.status(201).json({ campaign });
   } catch (err) {
-    console.error('[Create campaign error]', err);
+    logger.error('[Create campaign error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -80,7 +81,7 @@ exports.updateCampaign = async (req, res) => {
     const [[campaign]] = await pool.query('SELECT * FROM ambassador_campaigns WHERE id = ?', [id]);
     return res.json({ campaign });
   } catch (err) {
-    console.error('[Update campaign error]', err);
+    logger.error('[Update campaign error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -97,7 +98,7 @@ exports.deleteCampaign = async (req, res) => {
     await pool.query('DELETE FROM ambassador_campaigns WHERE id = ? AND ambassador_id = ?', [id, req.user.id]);
     return res.json({ message: 'Campaign deleted' });
   } catch (err) {
-    console.error('[Delete campaign error]', err);
+    logger.error('[Delete campaign error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -125,7 +126,7 @@ exports.getCampaignStats = async (req, res) => {
       }
     });
   } catch (err) {
-    console.error('[Campaign stats error]', err);
+    logger.error('[Campaign stats error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };

@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken');
 const pool = require('../config/db');
 const { applyReferral } = require('./referralController');
 const { notifyAdmins } = require('../services/notificationService');
+const { logger } = require('../config/logger');
 
 const signToken = (user) =>
   jwt.sign(
@@ -50,7 +51,7 @@ exports.register = async (req, res) => {
     });
   } catch (err) {
     await conn.rollback();
-    console.error(err);
+    logger.error(err);
     return res.status(500).json({ message: 'Server error' });
   } finally {
     conn.release();
@@ -96,7 +97,7 @@ exports.login = async (req, res) => {
       user: { id: staff.id, name: staff.username, email: staff.username, phone: staff.phone, role: staff.role, executive_role: staff.executive_role || null },
     });
   } catch (err) {
-    console.error(err);
+    logger.error(err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -115,7 +116,7 @@ exports.me = async (req, res) => {
     if (rows.length === 0) return res.status(401).json({ message: 'User not found' });
     return res.json({ user: rows[0] });
   } catch (err) {
-    console.error(err);
+    logger.error(err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -126,7 +127,7 @@ exports.updateMe = async (req, res) => {
     await pool.query('UPDATE users SET name = COALESCE(?, name), phone = COALESCE(?, phone) WHERE id = ?', [name, phone, req.user.id]);
     return res.json({ message: 'Profile updated' });
   } catch (err) {
-    console.error(err);
+    logger.error(err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -156,7 +157,7 @@ exports.applyPromo = async (req, res) => {
     return res.json({ message: `${promo.discount_coins} coins added!`, coins: promo.discount_coins });
   } catch (err) {
     await conn.rollback();
-    console.error(err);
+    logger.error(err);
     return res.status(500).json({ message: 'Server error' });
   } finally {
     conn.release();

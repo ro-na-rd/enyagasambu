@@ -1,5 +1,6 @@
 const pool = require('../config/db');
 const { sendSms } = require('./smsService');
+const { logger } = require('../config/logger');
 
 async function deliverRenewalTokens() {
   try {
@@ -17,7 +18,7 @@ async function deliverRenewalTokens() {
       await pool.query('UPDATE renewal_tokens SET sent_at = NOW() WHERE id = ?', [row.token_id]);
     }
   } catch (err) {
-    console.error('[Renewal scheduler error]', err);
+    logger.error('[Renewal scheduler error]', err);
   }
 }
 

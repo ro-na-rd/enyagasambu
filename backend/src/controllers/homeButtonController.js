@@ -1,4 +1,5 @@
 const pool = require('../config/db');
+const { logger } = require('../config/logger');
 
 exports.getPublic = async (req, res) => {
   try {
@@ -10,7 +11,7 @@ exports.getPublic = async (req, res) => {
     );
     res.json({ buttons: rows });
   } catch (err) {
-    console.error('[HomeButtons] getPublic error:', err);
+    logger.error('[HomeButtons] getPublic error:', err);
     res.status(500).json({ message: 'Server error' });
   }
 };
@@ -26,7 +27,7 @@ exports.getAll = async (req, res) => {
     );
     res.json({ buttons: rows });
   } catch (err) {
-    console.error('[HomeButtons] getAll error:', err);
+    logger.error('[HomeButtons] getAll error:', err);
     res.status(500).json({ message: 'Server error' });
   }
 };
@@ -48,7 +49,7 @@ exports.create = async (req, res) => {
     const [[row]] = await pool.query('SELECT * FROM home_buttons WHERE id = ?', [result.insertId]);
     res.status(201).json({ button: row });
   } catch (err) {
-    console.error('[HomeButtons] create error:', err);
+    logger.error('[HomeButtons] create error:', err);
     res.status(500).json({ message: 'Server error' });
   }
 };
@@ -80,7 +81,7 @@ exports.update = async (req, res) => {
     const [[row]] = await pool.query('SELECT * FROM home_buttons WHERE id = ?', [req.params.id]);
     res.json({ button: row });
   } catch (err) {
-    console.error('[HomeButtons] update error:', err);
+    logger.error('[HomeButtons] update error:', err);
     res.status(500).json({ message: 'Server error' });
   }
 };
@@ -92,7 +93,7 @@ exports.remove = async (req, res) => {
     await pool.query('DELETE FROM home_buttons WHERE id = ?', [req.params.id]);
     res.json({ message: 'Button deleted' });
   } catch (err) {
-    console.error('[HomeButtons] remove error:', err);
+    logger.error('[HomeButtons] remove error:', err);
     res.status(500).json({ message: 'Server error' });
   }
 };

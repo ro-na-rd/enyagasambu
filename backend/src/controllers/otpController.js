@@ -1,5 +1,6 @@
 const pool = require('../config/db');
 const { sendSms } = require('../services/smsService');
+const { logger } = require('../config/logger');
 
 const CONNECT_COST = 300;
 const OTP_TTL_MINUTES = 10;
@@ -50,7 +51,7 @@ exports.sendOtp = async (req, res) => {
 
     return res.json({ message: `Verification code sent to ${phone}`, otpSent: true });
   } catch (err) {
-    console.error('[OTP send error]', err);
+    logger.error('[OTP send error]', err);
     return res.status(500).json({ message: 'Failed to send OTP. Check your phone number and try again.' });
   }
 };
@@ -99,7 +100,7 @@ exports.verifyOtp = async (req, res) => {
     return res.json({ sellerPhone: seller?.phone });
   } catch (err) {
     await conn.rollback();
-    console.error('[OTP verify error]', err);
+    logger.error('[OTP verify error]', err);
     return res.status(500).json({ message: 'Server error' });
   } finally {
     conn.release();

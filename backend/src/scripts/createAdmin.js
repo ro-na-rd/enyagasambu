@@ -1,6 +1,7 @@
 require('dotenv').config();
 const bcrypt = require('bcryptjs');
 const pool = require('../config/db');
+const { logger } = require('../config/logger');
 
 async function main() {
   const email = process.argv[2];
@@ -8,7 +9,7 @@ async function main() {
   const phone = process.argv[4] || '0000000000';
 
   if (!email || !password) {
-    console.error('Usage: node src/scripts/createAdmin.js <email> <password> [phone]');
+    logger.error('Usage: node src/scripts/createAdmin.js <email> <password> [phone]');
     process.exit(1);
   }
 
@@ -37,6 +38,6 @@ async function main() {
 }
 
 main().catch((err) => {
-  console.error('Failed:', err.message);
+  logger.error('Failed:', err.message);
   process.exit(1);
 });

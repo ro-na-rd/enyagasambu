@@ -1,4 +1,5 @@
 const pool = require('../config/db');
+const { logger } = require('../config/logger');
 
 const ROLE_AUDIENCE = {
   ambassador: 'ambassador',
@@ -21,7 +22,7 @@ exports.listForRole = async (req, res) => {
     );
     res.json(rows);
   } catch (err) {
-    console.error('[Announcements list error]', err);
+    logger.error('[Announcements list error]', err);
     res.status(500).json({ message: 'Server error' });
   }
 };
@@ -37,7 +38,7 @@ exports.adminList = async (req, res) => {
     );
     res.json(rows);
   } catch (err) {
-    console.error('[Announcements adminList error]', err);
+    logger.error('[Announcements adminList error]', err);
     res.status(500).json({ message: 'Server error' });
   }
 };
@@ -53,7 +54,7 @@ exports.adminCreate = async (req, res) => {
     );
     return res.status(201).json({ message: 'Announcement created', id: result.insertId });
   } catch (err) {
-    console.error('[Announcements adminCreate error]', err);
+    logger.error('[Announcements adminCreate error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -63,7 +64,7 @@ exports.adminDelete = async (req, res) => {
     await pool.query('DELETE FROM announcements WHERE id = ?', [req.params.id]);
     res.json({ success: true });
   } catch (err) {
-    console.error('[Announcements adminDelete error]', err);
+    logger.error('[Announcements adminDelete error]', err);
     res.status(500).json({ message: 'Server error' });
   }
 };

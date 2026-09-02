@@ -1,4 +1,5 @@
 const mysql = require('mysql2/promise');
+const { logger } = require('../config/logger');
 const pool = mysql.createPool({
   host: process.env.DB_HOST || 'localhost',
   user: process.env.DB_USER || 'root',
@@ -11,4 +12,4 @@ async function main() {
   console.log('listing_type ENUM updated (added auction)');
   await pool.end();
 }
-main().catch(e => { console.error(e); process.exit(1); });
+main().catch(e => { logger.error(e); process.exit(1); });

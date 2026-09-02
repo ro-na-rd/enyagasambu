@@ -42,3 +42,9 @@ build-err.log
 backend-dev.err.log
 backend-dev.log
 frontend-dev.log
+
+# Local dev helpers (machine-specific, not part of the product)
+*-hidden.vbs
+*-run.bat
+scripts/
+backend/schema-check.js

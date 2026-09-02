@@ -1,4 +1,5 @@
 const jwt = require('jsonwebtoken');
+const { logger } = require('./logger');
 
 let io = null;
 
@@ -55,10 +56,10 @@ function initSocket(server) {
       if (auctionId != null) socket.leave(roomAuction(auctionId));
     });
 
-    socket.on('disconnect', () => {});
+    socket.on('disconnect', () => { });
   });
 
-  console.log('Socket.IO initialized');
+  logger.info('Socket.IO initialized');
   return io;
 }
 

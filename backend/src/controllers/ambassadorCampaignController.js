@@ -1,4 +1,5 @@
 const pool = require('../config/db');
+const { logger } = require('../config/logger');
 
 exports.getCampaigns = async (req, res) => {
   try {
@@ -12,7 +13,7 @@ exports.getCampaigns = async (req, res) => {
     );
     return res.json({ campaigns });
   } catch (err) {
-    console.error('[Ambassador campaigns error]', err);
+    logger.error('[Ambassador campaigns error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -31,7 +32,7 @@ exports.createCampaign = async (req, res) => {
     const [[campaign]] = await pool.query('SELECT * FROM ambassador_campaigns WHERE id = ?', [result.insertId]);
     return res.status(201).json({ message: 'Campaign created', campaign });
   } catch (err) {
-    console.error('[Ambassador create campaign error]', err);
+    logger.error('[Ambassador create campaign error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -62,7 +63,7 @@ exports.updateCampaign = async (req, res) => {
     const [[updated]] = await pool.query('SELECT * FROM ambassador_campaigns WHERE id = ?', [id]);
     return res.json({ message: 'Updated', campaign: updated });
   } catch (err) {
-    console.error('[Ambassador update campaign error]', err);
+    logger.error('[Ambassador update campaign error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -84,7 +85,7 @@ exports.logCampaignAction = async (req, res) => {
     );
     return res.json({ message: 'Action logged' });
   } catch (err) {
-    console.error('[Ambassador log campaign action error]', err);
+    logger.error('[Ambassador log campaign action error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -111,7 +112,7 @@ exports.getCampaignStats = async (req, res) => {
     );
     return res.json({ total, active, completed, totalActions });
   } catch (err) {
-    console.error('[Ambassador campaign stats error]', err);
+    logger.error('[Ambassador campaign stats error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -128,7 +129,7 @@ exports.deleteCampaign = async (req, res) => {
     await pool.query('DELETE FROM ambassador_campaigns WHERE id = ?', [id]);
     return res.json({ message: 'Deleted' });
   } catch (err) {
-    console.error('[Ambassador delete campaign error]', err);
+    logger.error('[Ambassador delete campaign error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };

@@ -1,4 +1,5 @@
 const pool = require('../config/db');
+const { logger } = require('../config/logger');
 
 /**
  * Check if a broker has a specific permission for a module and action.
@@ -19,12 +20,12 @@ const checkBrokerPermission = async (req, res, next, module, action) => {
     );
     
     if (rows.length === 0) {
-      return res.status(403).json({ message: Broker permission denied:  -  });
+      return res.status(403).json({ message: `Broker permission denied: ${module} - ${action}` });
     }
     
     next();
   } catch (error) {
-    console.error('Error checking broker permission:', error);
+    logger.error('Error checking broker permission:', error);
     return res.status(500).json({ message: 'Internal server error while checking permissions' });
   }
 };
@@ -77,7 +78,7 @@ const requireBrokerRole = (options = {}) => {
       
       next();
     } catch (error) {
-      console.error('Error in requireBrokerRole middleware:', error);
+      logger.error('Error in requireBrokerRole middleware:', error);
       return res.status(500).json({ message: 'Internal server error while checking permissions' });
     }
   };

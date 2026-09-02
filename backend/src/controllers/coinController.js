@@ -1,6 +1,7 @@
 const { randomUUID: uuidv4 } = require('crypto');
 const pool = require('../config/db');
 const { requestToPay, getPaymentStatus } = require('../services/momoService');
+const { logger } = require('../config/logger');
 
 const COIN_PACKAGES = [
   { id: 1, coins: 500,  price_rwf: 1000, label: '500 coins' },
@@ -20,7 +21,7 @@ exports.getBalance = async (req, res) => {
     );
     return res.json({ coins: user?.coins ?? 0, transactions });
   } catch (err) {
-    console.error(err);
+    logger.error(err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -58,7 +59,7 @@ exports.initiateMomoPayment = async (req, res) => {
       referenceId,
     });
   } catch (err) {
-    console.error('[MoMo initiate error]', err?.response?.data || err.message);
+    logger.error('[MoMo initiate error]', err?.response?.data || err.message);
     return res.status(502).json({ message: 'Failed to reach MTN. Please try again.' });
   }
 };
@@ -117,7 +118,7 @@ exports.checkMomoPayment = async (req, res) => {
     // Still PENDING
     return res.json({ status: 'pending' });
   } catch (err) {
-    console.error('[MoMo check error]', err?.response?.data || err.message);
+    logger.error('[MoMo check error]', err?.response?.data || err.message);
     return res.status(502).json({ message: 'Could not reach MTN to check status.' });
   }
 };

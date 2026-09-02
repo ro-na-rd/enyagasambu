@@ -161,8 +161,8 @@ export default function ListingDetailPage({ params }: { params: Promise<{ id: st
         ).slice(0, 5);
         setRelatedListings(related);
         setHasMoreRelated(false); // Disable pagination for now
-      } catch (err) {
-        console.error('Failed to fetch related listings:', err);
+      } catch {
+        // related listings are best-effort; ignore failures
       } finally {
         setRelatedLoading(false);
       }

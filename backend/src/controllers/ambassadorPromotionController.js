@@ -1,4 +1,5 @@
 const pool = require('../config/db');
+const { logger } = require('../config/logger');
 
 exports.getPromotions = async (req, res) => {
   try {
@@ -12,7 +13,7 @@ exports.getPromotions = async (req, res) => {
     );
     return res.json({ promotions });
   } catch (err) {
-    console.error('[Ambassador promotions error]', err);
+    logger.error('[Ambassador promotions error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -31,7 +32,7 @@ exports.createPromotion = async (req, res) => {
     const [[promotion]] = await pool.query('SELECT * FROM ambassador_promotions WHERE id = ?', [result.insertId]);
     return res.status(201).json({ message: 'Promotion created', promotion });
   } catch (err) {
-    console.error('[Ambassador create promotion error]', err);
+    logger.error('[Ambassador create promotion error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -59,7 +60,7 @@ exports.trackShare = async (req, res) => {
 
     return res.json({ message: 'Share tracked' });
   } catch (err) {
-    console.error('[Ambassador track share error]', err);
+    logger.error('[Ambassador track share error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -102,7 +103,7 @@ exports.getPromoMaterials = async (req, res) => {
       referralCode,
     });
   } catch (err) {
-    console.error('[Ambassador promo materials error]', err);
+    logger.error('[Ambassador promo materials error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -123,7 +124,7 @@ exports.getShareStats = async (req, res) => {
     );
     return res.json({ totalShares, byPlatform });
   } catch (err) {
-    console.error('[Ambassador share stats error]', err);
+    logger.error('[Ambassador share stats error]', err);
     return res.status(500).json({ message: 'Server error' });
   }
 };

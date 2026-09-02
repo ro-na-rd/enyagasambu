@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build --webpack",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint --cache --cache-location .eslintcache",
+    "typecheck": "next typegen && tsc --noEmit"
   },
   "dependencies": {
     "@types/qrcode": "^1.5.6",
