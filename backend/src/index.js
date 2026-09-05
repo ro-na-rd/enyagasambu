@@ -97,7 +97,6 @@ app.use('/api/ambassador/campaigns', require('./routes/ambassadorCampaigns'));
 app.use('/api/ambassador/onboarding', require('./routes/ambassadorOnboarding'));
 app.use('/api/ambassador/settings', require('./routes/ambassadorSettings'));
 app.use('/api/ambassador/policies', require('./routes/policies'));
-app.use('/api/ambassador/supplier-recruitments', require('./routes/supplierRecruitments'));
 app.use('/api/admin/announcements', require('./routes/adminAnnouncements'));
 app.use('/api/recycle-bin', require('./routes/recycleBin'));
 app.use('/api/executive', require('./routes/executive'));

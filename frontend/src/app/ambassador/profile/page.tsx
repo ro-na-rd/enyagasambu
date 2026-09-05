@@ -16,7 +16,7 @@ export default function AmbassadorProfilePage() {
     e.preventDefault();
     setMsg('');
     try {
-      await api.put('/auth/update-profile', form);
+      await api.put('/auth/ambassador/profile', { name: form.name, phone: form.phone });
       setMsg('Profile updated');
     } catch {
       setMsg('Failed to update');
