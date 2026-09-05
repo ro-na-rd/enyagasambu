@@ -12,8 +12,10 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 ARG NEXT_PUBLIC_API_URL=http://localhost:5000/api
 ARG NEXT_PUBLIC_SITE_URL=http://localhost:3000
+ARG BACKEND_URL=http://backend:5000
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL
+ENV BACKEND_URL=$BACKEND_URL
 RUN npm run build
 
 FROM node:20-slim AS runner
@@ -28,7 +30,7 @@ COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/public ./public
 
-RUN chown -R appuser:appgroup /app
+RUN mkdir -p /app/.next/cache && chown -R appuser:appgroup /app/.next/cache
 USER appuser
 
 EXPOSE 3000

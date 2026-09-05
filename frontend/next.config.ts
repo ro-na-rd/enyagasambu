@@ -13,6 +13,13 @@ const nextConfig: NextConfig = {
   },
   typescript: { ignoreBuildErrors: false },
   poweredByHeader: false,
+  async rewrites() {
+    const backendUrl = process.env.BACKEND_URL || 'http://localhost:5000';
+    return [
+      { source: '/api/:path*', destination: `${backendUrl}/api/:path*` },
+      { source: '/socket.io/:path*', destination: `${backendUrl}/socket.io/:path*` },
+    ];
+  },
   async headers() {
     return [
       {

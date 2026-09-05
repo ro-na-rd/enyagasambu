@@ -27,7 +27,7 @@ export default function ReferralPage() {
     if (user) api.get('/referrals/me').then(({ data }) => setInfo(data));
   }, [user]);
 
-  const referralLink = info ? `${window.location.origin}/register?ref=${info.referralCode}` : '';
+  const referralLink = info ? `${window.location.origin}/ambassador/register?ref=${info.referralCode}` : '';
 
   const copy = () => {
     navigator.clipboard.writeText(referralLink);

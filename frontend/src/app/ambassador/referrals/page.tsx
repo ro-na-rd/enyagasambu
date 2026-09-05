@@ -20,7 +20,7 @@ export default function AmbassadorReferralsPage() {
   }, []);
 
   const copyLink = () => {
-    const link = window.location.origin + '/register?ref=' + (referral?.referralCode || '');
+    const link = window.location.origin + '/ambassador/register?ref=' + (referral?.referralCode || '');
     navigator.clipboard.writeText(link);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);

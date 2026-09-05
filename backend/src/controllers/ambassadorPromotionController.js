@@ -72,31 +72,31 @@ exports.getPromoMaterials = async (req, res) => {
     if (!user.referral_code) {
       await pool.query('UPDATE users SET referral_code = ? WHERE id = ?', [referralCode, req.user.id]);
     }
-    const baseUrl = process.env.CLIENT_URL || 'http://localhost:3000';
+    const baseUrl = (process.env.CLIENT_URL || 'http://localhost:3000').split(',')[0];
     return res.json({
       materials: [
         {
           type: 'referral_link',
           title: 'Referral Registration Link',
-          content: `${baseUrl}/register?ref=${referralCode}`,
+          content: `${baseUrl}/ambassador/register?ref=${referralCode}`,
           description: 'Share this link for new ambassadors to register with your referral code',
         },
         {
           type: 'whatsapp',
           title: 'WhatsApp Message',
-          content: `Join E-Nyagasambu, Rwanda's #1 marketplace! Use my referral code ${referralCode} to sign up as an ambassador. ${baseUrl}/register?ref=${referralCode}`,
+          content: `Join E-Nyagasambu, Rwanda's #1 marketplace! Use my referral code ${referralCode} to sign up as an ambassador. ${baseUrl}/ambassador/register?ref=${referralCode}`,
           description: 'Pre-written message for WhatsApp sharing',
         },
         {
           type: 'social_post',
           title: 'Social Media Post',
-          content: `I'm a certified Ambassador for E-Nyagasambu - the smart marketplace! Want to join? Use my code ${referralCode} at ${baseUrl}/register?ref=${referralCode} #ENyagasambu #RwandaMarketplace #Ambassador`,
+          content: `I'm a certified Ambassador for E-Nyagasambu - the smart marketplace! Want to join? Use my code ${referralCode} at ${baseUrl}/ambassador/register?ref=${referralCode} #ENyagasambu #RwandaMarketplace #Ambassador`,
           description: 'Ready-to-share social media content',
         },
         {
           type: 'email',
           title: 'Email Template',
-          content: `Subject: Join E-Nyagasambu as an Ambassador!\n\nHi,\n\nI'm an ambassador for E-Nyagasambu, Rwanda's leading online marketplace for buying, selling, and renting.\n\nI'd love for you to join as an ambassador too! Use my referral code: ${referralCode}\n\nRegister here: ${baseUrl}/register?ref=${referralCode}\n\nBest regards,\n${user.name}`,
+          content: `Subject: Join E-Nyagasambu as an Ambassador!\n\nHi,\n\nI'm an ambassador for E-Nyagasambu, Rwanda's leading online marketplace for buying, selling, and renting.\n\nI'd love for you to join as an ambassador too! Use my referral code: ${referralCode}\n\nRegister here: ${baseUrl}/ambassador/register?ref=${referralCode}\n\nBest regards,\n${user.name}`,
           description: 'Professional email template for outreach',
         },
       ],

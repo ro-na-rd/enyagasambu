@@ -1,7 +1,7 @@
 'use client';
 import { useForm } from 'react-hook-form';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import api from '@/lib/api';
 import AuthRegisterLayout from '@/components/AuthRegisterLayout';
 
@@ -19,6 +19,12 @@ interface AmbassadorRegisterForm {
 export default function AmbassadorRegisterPage() {
   const { register, handleSubmit, watch, formState: { errors, isSubmitting } } = useForm<AmbassadorRegisterForm>();
   const [error, setError] = useState('');
+  const [referralCode, setReferralCode] = useState('');
+
+  useEffect(() => {
+    const ref = new URLSearchParams(window.location.search).get('ref');
+    if (ref) setReferralCode(ref);
+  }, []);
 
   const onSubmit = async (data: AmbassadorRegisterForm) => {
     setError('');
@@ -28,6 +34,7 @@ export default function AmbassadorRegisterPage() {
         email: data.email,
         phone: data.phone,
         password: data.password,
+        referral_code: referralCode || undefined,
       });
       localStorage.setItem('nmo_token', res.token);
       window.location.href = '/ambassador/certificate';

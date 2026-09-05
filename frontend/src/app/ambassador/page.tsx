@@ -147,7 +147,7 @@ export default function AmbassadorDashboardPage() {
                   <p className="text-xs text-gray-400 mt-2 mb-4">Share this code with ambassadors to earn {format(referral?.bonusPerReferral ?? 200)} when they get certified!</p>
                   <button
                     onClick={() => {
-                      const link = `${window.location.origin}/register?ref=${referral?.referralCode || ''}`;
+                      const link = `${window.location.origin}/ambassador/register?ref=${referral?.referralCode || ''}`;
                       navigator.clipboard.writeText(link);
                       alert('Referral link copied!');
                     }}

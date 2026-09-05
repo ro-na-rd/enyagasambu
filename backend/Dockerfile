@@ -8,7 +8,6 @@ COPY package*.json ./
 RUN npm install --omit=dev
 COPY . .
 
-RUN chown -R appuser:appgroup /app
 USER appuser
 
 EXPOSE 5000
