@@ -12,6 +12,7 @@ const { startExpiryScheduler } = require('./services/expiryScheduler');
 const { startAuctionScheduler } = require('./services/auctionScheduler');
 const { initSocket } = require('./config/socket');
 const { waitForS3, ensureBucket } = require('./services/s3Service');
+const { checkDatabase } = require('./config/db');
 
 const REQUIRED_ENV = ['DB_HOST', 'DB_USER', 'DB_PASSWORD', 'DB_NAME', 'JWT_SECRET'];
 const missing = REQUIRED_ENV.filter((k) => !process.env[k]);
@@ -25,6 +26,7 @@ if ((process.env.JWT_SECRET || '').length < 32) {
 }
 
 const app = express();
+let dependenciesReady = false;
 
 app.set('trust proxy', 1);
 app.use(helmet());
@@ -42,10 +44,12 @@ app.use(requestId);
 app.use(httpLogger);
 
 async function init() {
+  await checkDatabase();
   await waitForS3();
   await ensureBucket();
+  dependenciesReady = true;
 }
-init().catch((err) => logger.error(`[S3] Initialization failed: ${err.message}`));
+init().catch((err) => logger.error(`[Startup] Dependency initialization failed: ${err.message}`));
 
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/auth/seller', require('./routes/sellerAuth'));
@@ -103,6 +107,10 @@ app.use('/api/executive', require('./routes/executive'));
 app.use('/api/newsletter', require('./routes/newsletter'));
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok', platform: 'NMO' }));
+app.get('/api/ready', (req, res) => {
+  if (!dependenciesReady) return res.status(503).json({ status: 'not_ready', platform: 'NMO' });
+  return res.json({ status: 'ready', platform: 'NMO' });
+});
 
 app.use(errorHandler.notFound);
 app.use(errorHandler);
@@ -110,7 +118,12 @@ app.use(errorHandler);
 const PORT = process.env.PORT || 5000;
 const server = http.createServer(app);
 initSocket(server);
-startRenewalScheduler();
-startExpiryScheduler();
-startAuctionScheduler();
+if (process.env.ENABLE_SCHEDULERS === 'true') {
+  startRenewalScheduler();
+  startExpiryScheduler();
+  startAuctionScheduler();
+  logger.info('Background schedulers enabled for this process');
+} else {
+  logger.info('Background schedulers disabled for this process');
+}
 server.listen(PORT, () => logger.info(`NMO API + Socket.IO running on port ${PORT}`, { port: PORT }));

@@ -15,4 +15,14 @@ const pool = mysql.createPool({
   keepAliveInitialDelay: 10000,
 });
 
+async function checkDatabase() {
+  const connection = await pool.getConnection();
+  try {
+    await connection.query('SELECT 1');
+  } finally {
+    connection.release();
+  }
+}
+
 module.exports = pool;
+module.exports.checkDatabase = checkDatabase;

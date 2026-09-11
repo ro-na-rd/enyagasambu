@@ -146,6 +146,8 @@ enyagasambu-main/
   - **Auction Scheduler** — manages auction lifecycle (start, end, close).
 - Initializes Socket.IO for real-time features.
 - Provides a `/api/health` endpoint for health checks.
+- Provides `/api/health` for liveness and `/api/ready` for dependency readiness. The latter returns HTTP 503 until MariaDB and object storage are initialized.
+- Background schedulers are disabled by default. Set `ENABLE_SCHEDULERS=true` only on a single dedicated worker process until distributed job locking is introduced.
 
 ### Routes
 
