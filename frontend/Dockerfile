@@ -1,4 +1,4 @@
-FROM node:20-slim AS deps
+FROM node:24-slim AS deps
 WORKDIR /app
 COPY package.json package-lock.json* yarn.lock* pnpm-lock.yaml* ./
 RUN if [ -f pnpm-lock.yaml ]; then corepack enable && pnpm install --frozen-lockfile; \
@@ -6,7 +6,7 @@ RUN if [ -f pnpm-lock.yaml ]; then corepack enable && pnpm install --frozen-lock
     elif [ -f package-lock.json ]; then npm ci; \
     else npm install; fi
 
-FROM node:20-slim AS builder
+FROM node:24-slim AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
@@ -18,7 +18,7 @@ ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL
 ENV BACKEND_URL=$BACKEND_URL
 RUN npm run build
 
-FROM node:20-slim AS runner
+FROM node:24-slim AS runner
 RUN apt-get update && apt-get install -y --no-install-recommends wget && rm -rf /var/lib/apt/lists/*
 
 RUN groupadd -r appgroup && useradd -r -g appgroup appuser
