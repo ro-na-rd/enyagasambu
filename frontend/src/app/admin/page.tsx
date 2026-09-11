@@ -6,7 +6,7 @@ import { Chart as ChartJS, registerables } from 'chart.js';
 import {
   Users, Package, Coins, Phone, Handshake, Store, Award, Ban,
   LayoutDashboard, Folder, Ticket, CheckCircle, User,
-  ArrowUpRight, ChevronRight, Calendar, Sparkles, AlertTriangle
+  ArrowUpRight, ChevronRight, Calendar, Sparkles, AlertTriangle, RefreshCw
 } from '@/lib/icons';
 
 ChartJS.register(...registerables);
@@ -36,18 +36,28 @@ export default function AdminDashboardPage() {
   const [participants, setParticipants] = useState<Record<string, number> | null>(null);
   const [period, setPeriod] = useState('monthly');
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState('');
   const chartRef = useRef<HTMLCanvasElement>(null);
   const chartInstance = useRef<ChartJS | null>(null);
 
-  useEffect(() => {
-    api.get('/admin/stats')
-      .then((s) => {
-        setStats(s.data.stats);
-        setRecentUsers(s.data.recentUsers);
-        setRecentListings(s.data.recentListings);
-      })
-      .finally(() => setLoading(false));
-  }, []);
+  const loadDashboard = async (isRefresh = false) => {
+    if (isRefresh) setRefreshing(true);
+    setError('');
+    try {
+      const { data } = await api.get('/admin/stats');
+      setStats(data.stats);
+      setRecentUsers(data.recentUsers || []);
+      setRecentListings(data.recentListings || []);
+    } catch {
+      setError('We could not load the latest dashboard data. Please try again.');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  useEffect(() => { loadDashboard(); }, []);
 
   useEffect(() => {
     api.get(`/admin/participants?period=${period}`)
@@ -183,16 +193,29 @@ export default function AdminDashboardPage() {
             <h1 className="text-2xl lg:text-3xl font-extrabold text-white mb-1 tracking-tight">Welcome back, Admin</h1>
             <p className="text-sm text-white/40">Here&apos;s what&apos;s happening with E-Nyagasambu today.</p>
           </div>
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gray-100 border-gray-200">
+          <div className="flex flex-wrap items-center gap-3">
+            <button type="button" onClick={() => loadDashboard(true)} disabled={refreshing}
+              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold text-white/80 border border-white/15 hover:bg-white/10 hover:text-white transition disabled:opacity-50"
+              aria-label="Refresh dashboard data">
+              <RefreshCw size={14} className={refreshing ? 'animate-spin' : ''} />
+              {refreshing ? 'Refreshing' : 'Refresh'}
+            </button>
+            <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/10 border border-white/10">
               <Calendar size={14} className="text-black/60" />
-              <span className="text-xs font-medium text-black">
+              <span className="text-xs font-medium text-white/80">
                 {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
               </span>
             </div>
           </div>
         </div>
       </div>
+
+      {error && (
+        <div role="alert" className="flex items-center justify-between gap-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <span>{error}</span>
+          <button type="button" onClick={() => loadDashboard(true)} className="shrink-0 font-bold underline">Retry</button>
+        </div>
+      )}
 
       {/* Pending Certificates Alert */}
       {pendingCerts > 0 && (
@@ -337,7 +360,7 @@ export default function AdminDashboardPage() {
                   style={{ background: `${action.color}15`, color: action.color }}>
                   {action.icon}
                 </div>
-                <span className="text-[13px] font-medium text-gray-700 group-hover:text-white">{action.label}</span>
+                <span className="text-[13px] font-medium text-gray-700 group-hover:text-gray-900">{action.label}</span>
                 <ChevronRight size={14} className="ml-auto text-gray-700 group-hover:text-gray-500 transition-colors" />
               </Link>
             ))}
