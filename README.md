@@ -147,7 +147,7 @@ enyagasambu-main/
 - Initializes Socket.IO for real-time features.
 - Provides a `/api/health` endpoint for health checks.
 - Provides `/api/health` for liveness and `/api/ready` for dependency readiness. The latter returns HTTP 503 until MariaDB and object storage are initialized.
-- Background schedulers are disabled by default. Set `ENABLE_SCHEDULERS=true` only on a single dedicated worker process until distributed job locking is introduced.
+- Background schedulers run in the dedicated `worker` Compose service instead of API processes. Keep `ENABLE_SCHEDULERS=false` on API replicas and enable it only on one worker until distributed job locking is introduced.
 
 ### Routes
 
