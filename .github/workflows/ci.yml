@@ -28,11 +28,25 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Configure test environment
+        run: |
+          cat > .env <<'EOF'
+          NODE_ENV=test
+          DB_HOST=127.0.0.1
+          DB_PORT=3306
+          DB_USER=ci
+          DB_PASSWORD=ci
+          DB_NAME=nmo_ci
+          JWT_SECRET=ci-test-secret-that-is-at-least-32-characters-long
+          CLIENT_URL=http://localhost:3000
+          S3_PUBLIC_URL=http://localhost:9000/nmo-images
+          EOF
+
       - name: Syntax-check all sources
         run: node -e "const fs=require('fs'),cp=require('child_process');const walk=d=>fs.readdirSync(d,{withFileTypes:true}).forEach(e=>{const p=d+'/'+e.name;e.isDirectory()?walk(p):e.name.endsWith('.js')&&cp.execSync('node --check \"'+p+'\"',{stdio:'inherit'})});walk('src')"
 
       - name: Unit tests
-        run: node --test test/logger.test.js test/middleware.test.js test/migrate.test.js
+        run: npm run test:unit
 
   frontend:
     name: Frontend (lint + typecheck)
