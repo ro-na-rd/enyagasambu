@@ -27,8 +27,8 @@ const CATEGORY_META: Record<string, { title: string; icon: string }> = {
 
 const routeFor = (category: string, userRole: string | undefined, isAuth: boolean) => {
   if (category === 'broker') return isAuth && userRole === 'broker' ? '/broker/certificate' : '/broker/register';
-  if (category === 'ambassador') return isAuth && userRole === 'ambassador' ? '/ambassador' : '/register';
-  return isAuth && userRole === 'supplier' ? '/supplier' : '/register';
+  if (category === 'ambassador') return isAuth && userRole === 'ambassador' ? '/ambassador' : '/ambassador/register';
+  return isAuth && userRole === 'supplier' ? '/supplier' : '/supplier/register';
 };
 
 const actionFor = (category: string, userRole: string | undefined, isAuth: boolean) => {

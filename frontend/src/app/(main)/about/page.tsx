@@ -76,8 +76,6 @@ const SUPPLIERS: RegisteredPerson[] = [
   { name: 'Kagame Hardware',    role: 'Building Materials', initials: 'KH', color: '#0f1e42', status: 'Pending' },
 ];
 
-const REGISTERED: RegisteredPerson[] = [...BROKERS, ...AMBASSADORS, ...SUPPLIERS];
-
 function AvatarStack({ people, label, accent, count, countLabel, link, linkLabel }: {
   people: RegisteredPerson[];
   label: string;
@@ -270,11 +268,10 @@ export default function AboutPage() {
             {T.aboutRegisteredSub}
           </p>
 
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
             <AvatarStack people={BROKERS}     label={T.aboutRegBrokers}     accent={org}     count={BROKERS.length}     countLabel={T.aboutRegistered} link="/broker/register"    linkLabel={T.aboutBecomeBroker} />
             <AvatarStack people={AMBASSADORS} label={T.aboutRegAmbassadors} accent="#3b82f6" count={AMBASSADORS.length} countLabel={T.aboutRegistered} link="/ambassador/register" linkLabel={T.aboutBecomeAmbassador} />
             <AvatarStack people={SUPPLIERS}   label={T.aboutRegSuppliers}   accent="#1a6b3a" count={SUPPLIERS.length}   countLabel={T.aboutRegistered} link="/supplier/register"  linkLabel={T.aboutBecomeSupplier} />
-            <AvatarStack people={REGISTERED}  label={T.aboutRegMembers}     accent="#7c3a8a" count={REGISTERED.length}  countLabel={T.aboutRegistered} link="/register"           linkLabel={T.aboutRegisterNow} />
           </div>
         </div>
       </section>

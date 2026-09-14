@@ -60,8 +60,7 @@ const PARTNERS = [
 const EMPTY_PARTNER_SLOTS = 5;
 
 const FALLBACK_JOIN_BUTTONS = [
-  { label: 'Buyer Registration', href: '/register' },
-  { label: 'Supplier Registration', href: '/register' },
+  { label: 'Supplier Registration', href: '/supplier/register' },
   { label: 'Ambassador Portal', href: '/ambassador/register' },
   { label: 'Broker Portal', href: '/broker/register' },
   { label: 'Donate / Support', href: '/donate' },
@@ -99,6 +98,7 @@ export default function HomePage() {
         if (data?.buttons?.length) {
           const seen = new Set();
           const unique = data.buttons.filter((b: { label: string; href: string }) => {
+            if (b.href === '/register') return false;
             const k = `${b.label}-${b.href}`;
             if (seen.has(k)) return false;
             seen.add(k);
