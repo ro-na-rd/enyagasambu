@@ -57,7 +57,25 @@ export default function AdminDashboardPage() {
     }
   };
 
-  useEffect(() => { loadDashboard(); }, []);
+  useEffect(() => {
+    let active = true;
+
+    api.get('/admin/stats')
+      .then(({ data }) => {
+        if (!active) return;
+        setStats(data.stats);
+        setRecentUsers(data.recentUsers || []);
+        setRecentListings(data.recentListings || []);
+      })
+      .catch(() => {
+        if (active) setError('We could not load the latest dashboard data. Please try again.');
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+
+    return () => { active = false; };
+  }, []);
 
   useEffect(() => {
     api.get(`/admin/participants?period=${period}`)
