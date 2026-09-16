@@ -158,11 +158,25 @@ export default function AboutPage() {
 
   const [teamMembers, setTeamMembers] = useState<Member[]>(LEADERSHIP);
   const [boardMembers, setBoardMembers] = useState<Member[]>(BOARD);
+  const [registeredMembers, setRegisteredMembers] = useState<RegisteredPerson[]>([]);
 
   useEffect(() => {
-    api.get('/team/public')
-      .then(({ data }) => {
-        if (!data?.members?.length) return;
+    Promise.all([
+      api.get('/team/public'),
+      api.get('/directory'),
+    ]).then(([{ data: teamData }, { data: directoryData }]) => {
+        if (directoryData?.members?.length) {
+          setRegisteredMembers(directoryData.members.map((m: { id: number; name: string; role: string; status: string; category: string }) => ({
+            name: m.name,
+            role: m.role,
+            initials: initialsOf(m.name),
+            color: m.category === 'broker' ? '#1a6b3a' : m.category === 'ambassador' ? '#7c3a8a' : m.category === 'supplier' ? '#0a6494' : '#374151',
+            status: m.status,
+          })));
+        }
+
+        if (teamData?.members?.length) {
+        if (!teamData?.members?.length) return;
         const toMember = (m: { name: string; role: string; photo_url: string | null; photo_position?: string | null; photo_zoom?: number | null }): Member => ({
           name: m.name,
           role: m.role || '',
@@ -172,16 +186,22 @@ export default function AboutPage() {
           photoPosition: m.photo_position || 'center',
           photoZoom: m.photo_zoom && m.photo_zoom > 0 ? m.photo_zoom : 1,
         });
-        const team = data.members.filter((m: { category: string }) => m.category === 'team').map(toMember);
-        const board = data.members.filter((m: { category: string }) => m.category === 'board').map(toMember);
+        const team = teamData.members.filter((m: { category: string }) => m.category === 'team').map(toMember);
+        const board = teamData.members.filter((m: { category: string }) => m.category === 'board').map(toMember);
         if (team.length) setTeamMembers(team);
         if (board.length) setBoardMembers(board);
+        }
       })
       .catch(() => {});
   }, []);
 
   const LEAD = teamMembers.map(m => ({ ...m, role: tr(m.role) }));
   const BOD  = boardMembers.map(m => ({ ...m, role: tr(m.role) }));
+  const brokers = registeredMembers.filter(m => m.role.toLowerCase().includes('broker'));
+  const ambassadors = registeredMembers.filter(m => m.role.toLowerCase().includes('ambassador'));
+  const suppliers = registeredMembers.filter(m => m.role.toLowerCase().includes('supplier'));
+  const members = registeredMembers.filter(m => m.role.toLowerCase().includes('member'));
+  const hasDirectory = registeredMembers.length > 0;
 
   const steps = [
     { step: '01', title: T.aboutStep1Title, desc: T.aboutStep1Desc },
@@ -269,9 +289,10 @@ export default function AboutPage() {
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-            <AvatarStack people={BROKERS}     label={T.aboutRegBrokers}     accent={org}     count={BROKERS.length}     countLabel={T.aboutRegistered} link="/broker/register"    linkLabel={T.aboutBecomeBroker} />
-            <AvatarStack people={AMBASSADORS} label={T.aboutRegAmbassadors} accent="#3b82f6" count={AMBASSADORS.length} countLabel={T.aboutRegistered} link="/ambassador/register" linkLabel={T.aboutBecomeAmbassador} />
-            <AvatarStack people={SUPPLIERS}   label={T.aboutRegSuppliers}   accent="#1a6b3a" count={SUPPLIERS.length}   countLabel={T.aboutRegistered} link="/supplier/register"  linkLabel={T.aboutBecomeSupplier} />
+            <AvatarStack people={hasDirectory ? brokers : BROKERS}     label={T.aboutRegBrokers}     accent={org}     count={hasDirectory ? brokers.length : BROKERS.length}     countLabel={T.aboutRegistered} link="/broker/register"    linkLabel={T.aboutBecomeBroker} />
+            <AvatarStack people={hasDirectory ? ambassadors : AMBASSADORS} label={T.aboutRegAmbassadors} accent="#3b82f6" count={hasDirectory ? ambassadors.length : AMBASSADORS.length} countLabel={T.aboutRegistered} link="/ambassador/register" linkLabel={T.aboutBecomeAmbassador} />
+            <AvatarStack people={hasDirectory ? suppliers : SUPPLIERS}   label={T.aboutRegSuppliers}   accent="#1a6b3a" count={hasDirectory ? suppliers.length : SUPPLIERS.length}   countLabel={T.aboutRegistered} link="/supplier/register"  linkLabel={T.aboutBecomeSupplier} />
+            {hasDirectory && <AvatarStack people={members} label="Registered Members" accent="#374151" count={members.length} countLabel={T.aboutRegistered} link="/login" linkLabel="Register Now" />}
           </div>
         </div>
       </section>

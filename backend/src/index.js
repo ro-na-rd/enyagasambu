@@ -68,6 +68,7 @@ app.use('/api/auth/broker', require('./routes/brokerAuth'));
 app.use('/api/auth/ambassador', require('./routes/ambassadorAuth'));
 app.use('/api/auth/supplier', require('./routes/supplierAuth'));
 app.use('/api/suppliers', require('./routes/suppliers'));
+app.use('/api/directory', require('./routes/publicDirectory'));
 app.use('/api/reports', require('./routes/reports'));
 app.use('/api/broker/certificate', require('./routes/brokerCertificate'));
 app.use('/api/broker', require('./routes/broker'));
