@@ -10,6 +10,7 @@ const errorHandler = require('./middleware/errorHandler');
 const { startRenewalScheduler } = require('./services/renewalScheduler');
 const { startExpiryScheduler } = require('./services/expiryScheduler');
 const { startAuctionScheduler } = require('./services/auctionScheduler');
+const { startPaymentReconciliationScheduler } = require('./services/paymentReconciliationScheduler');
 const { initSocket } = require('./config/socket');
 const { waitForS3, ensureBucket } = require('./services/s3Service');
 const { checkDatabase } = require('./config/db');
@@ -122,6 +123,7 @@ if (process.env.ENABLE_SCHEDULERS === 'true') {
   startRenewalScheduler();
   startExpiryScheduler();
   startAuctionScheduler();
+  startPaymentReconciliationScheduler();
   logger.info('Background schedulers enabled for this process');
 } else {
   logger.info('Background schedulers disabled for this process');

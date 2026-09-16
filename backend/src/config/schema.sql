@@ -216,6 +216,7 @@ CREATE TABLE IF NOT EXISTS payments (
   listing_id INT,
   payload TEXT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_payments_status_created (status, created_at),
   FOREIGN KEY (listing_id) REFERENCES listings(id) ON DELETE SET NULL
 );
 
