@@ -29,13 +29,20 @@ exports.initiateReveal = async (req, res) => {
       ['contact_reveal', normalizedPhone, provider, CONTACT_REVEAL_COST, 'pending', referenceId, listing_id]
     );
 
-    await requestToPay({
-      referenceId,
-      amount: CONTACT_REVEAL_COST,
-      payerPhone: normalizedPhone,
-      payerMessage: `NMO contact reveal fee for listing ${listing_id}`,
-      payeeNote: 'Nyagasambu Market Online contact reveal',
-    });
+    try {
+      await requestToPay({
+        referenceId,
+        amount: CONTACT_REVEAL_COST,
+        payerPhone: normalizedPhone,
+        payerMessage: `NMO contact reveal fee for listing ${listing_id}`,
+        payeeNote: 'Nyagasambu Market Online contact reveal',
+      });
+    } catch (providerError) {
+      // Do not leave a payment marked pending when the provider never
+      // accepted the collection request.
+      await pool.query("UPDATE payments SET status = 'failed' WHERE provider_ref = ? AND status = 'pending'", [referenceId]);
+      throw providerError;
+    }
 
     return res.json({ referenceId, amount_rwf: CONTACT_REVEAL_COST });
   } catch (err) {
@@ -67,11 +74,32 @@ exports.confirmReveal = async (req, res) => {
       const conn = await pool.getConnection();
       try {
         await conn.beginTransaction();
-        await conn.query('UPDATE payments SET status = ? WHERE id = ?', ['confirmed', payment.id]);
-        await conn.query(
-          'INSERT INTO contact_reveals (listing_id, buyer_phone, payment_ref, amount_rwf) VALUES (?, ?, ?, ?)',
-          [payment.listing_id, payment.phone, referenceId, payment.amount_rwf]
+        // Lock the payment row so concurrent browser retries can never apply
+        // the same provider confirmation twice.
+        const [[lockedPayment]] = await conn.query(
+          'SELECT * FROM payments WHERE id = ? FOR UPDATE',
+          [payment.id]
         );
+        if (!lockedPayment) throw new Error('Payment record disappeared during confirmation');
+
+        if (lockedPayment.status !== 'confirmed') {
+          const [[activeListing]] = await conn.query(
+            "SELECT id FROM listings WHERE id = ? AND status = 'active' AND (expires_at IS NULL OR expires_at > NOW()) FOR UPDATE",
+            [lockedPayment.listing_id]
+          );
+          if (!activeListing) {
+            await conn.query("UPDATE payments SET status = 'failed' WHERE id = ? AND status = 'pending'", [lockedPayment.id]);
+            await conn.commit();
+            return res.status(409).json({ message: 'Listing is no longer available for contact reveal' });
+          }
+
+          await conn.query('UPDATE payments SET status = ? WHERE id = ?', ['confirmed', lockedPayment.id]);
+          // The database unique key is the final idempotency guard.
+          await conn.query(
+            'INSERT IGNORE INTO contact_reveals (listing_id, buyer_phone, payment_ref, amount_rwf) VALUES (?, ?, ?, ?)',
+            [lockedPayment.listing_id, lockedPayment.phone, referenceId, lockedPayment.amount_rwf]
+          );
+        }
         await conn.commit();
       } catch (err) {
         await conn.rollback();
