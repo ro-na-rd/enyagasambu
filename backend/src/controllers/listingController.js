@@ -603,7 +603,11 @@ exports.unlockContact = async (req, res) => {
     await conn.beginTransaction();
 
     const [[listing]] = await conn.query(
-      "SELECT id, user_id, status FROM listings WHERE id = ? AND status = 'active'",
+      `SELECT id, user_id, status
+       FROM listings
+       WHERE id = ?
+         AND status = 'active'
+         AND (expires_at IS NULL OR expires_at > NOW())`,
       [id]
     );
     if (!listing) {
