@@ -47,7 +47,10 @@ services:
     restart: unless-stopped
     ports:
       - "5000:5000"
-    command: sh -c "node src/scripts/initDb.js; node src/index.js"
+    # Build from the current backend directory and apply every tracked
+    # migration before starting the API. This keeps the container schema and
+    # application source aligned with the project checkout.
+    command: sh -c "node src/scripts/initDb.js && node src/scripts/migrate.js --apply && node src/index.js"
     volumes:
       - ./backend/ca-avast.pem:/app/ca-avast.pem:ro
     environment:

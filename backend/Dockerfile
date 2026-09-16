@@ -11,4 +11,4 @@ COPY . .
 USER appuser
 
 EXPOSE 5000
-CMD ["sh","-c","node src/scripts/initDb.js; node src/scripts/migrateBrokerClients.js 2>/dev/null; node src/scripts/migrateBrokerMessages.js 2>/dev/null; node src/scripts/migrateBrokerServices.js 2>/dev/null; node src/scripts/migrateExecutiveMIS.js 2>/dev/null; node src/scripts/migrateAuctions.js 2>/dev/null; node src/scripts/migrateCertificateTypes.js 2>/dev/null; node src/scripts/migrateBrokerCerts.js 2>/dev/null; node src/scripts/migrateBrokerCommissions.js 2>/dev/null; node src/scripts/migrateSupplierCerts.js 2>/dev/null; node src/scripts/migrateListingRatings.js 2>/dev/null; node src/scripts/migrateListingClientName.js 2>/dev/null; node src/scripts/migrateSpec.js 2>/dev/null; node src/index.js"]
+CMD ["sh", "-c", "node src/scripts/initDb.js && node src/scripts/migrate.js --apply && node src/index.js"]
