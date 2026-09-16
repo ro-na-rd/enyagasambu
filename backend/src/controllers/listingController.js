@@ -61,7 +61,10 @@ exports.getListings = async (req, res) => {
   const { category, type, group, search, featured, page = 1, limit = 20 } = req.query;
   const offset = (parseInt(page) - 1) * parseInt(limit);
 
-  let where = "l.status IN ('active','sold','expired')";
+  // Public marketplace results must never include listings that can no longer
+  // be contacted or purchased. Owners retrieve their historical listings via
+  // the authenticated `/my` endpoint instead.
+  let where = "l.status = 'active' AND (l.expires_at IS NULL OR l.expires_at > NOW())";
   const params = [];
 
   if (category) {
@@ -124,11 +127,21 @@ exports.getListing = async (req, res) => {
        FROM listings l
        JOIN categories c ON l.category_id = c.id
        JOIN users u ON l.user_id = u.id
-       WHERE l.id = ? AND l.status != 'deleted'`,
+       WHERE l.id = ?`,
       [id]
     );
 
     if (!listing) return res.status(404).json({ message: 'Listing not found' });
+
+    // Anonymous visitors and other users must not be able to inspect expired,
+    // sold, disabled, or deleted listings. The owner can still access a
+    // historical listing to manage or renew it through this endpoint.
+    const isOwner = userId && userId === listing.seller_id;
+    const isPubliclyVisible = listing.status === 'active'
+      && (!listing.expires_at || new Date(listing.expires_at) > new Date());
+    if (!isOwner && !isPubliclyVisible) {
+      return res.status(404).json({ message: 'Listing not found' });
+    }
 
     await pool.query('UPDATE listings SET views = views + 1 WHERE id = ?', [id]);
 
@@ -141,7 +154,7 @@ exports.getListing = async (req, res) => {
     let sellerPhone = null;
 
     if (userId) {
-      if (userId === listing.seller_id) {
+      if (isOwner) {
         const [[seller]] = await pool.query('SELECT phone FROM users WHERE id = ?', [userId]);
         sellerPhone = seller?.phone;
         contactUnlocked = true;
