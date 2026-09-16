@@ -30,6 +30,13 @@ interface Auction {
   ends_at: string;
 }
 
+interface Partner {
+  id: number;
+  name: string;
+  logo_url?: string | null;
+  website_url?: string | null;
+}
+
 const STATS_ICONS: Record<string, React.FC<{ size?: number }>> = {
   products: Package,
   properties: Building2,
@@ -57,8 +64,6 @@ const SELL_LINKS = [
 const PARTNERS = [
   { name: 'KBL', logo: '/partners/kbl.png', bg: '#fff', label: 'Kigali Business Lab' },
 ];
-const EMPTY_PARTNER_SLOTS = 5;
-
 const FALLBACK_JOIN_BUTTONS = [
   { label: 'Supplier Registration', href: '/supplier/register' },
   { label: 'Ambassador Portal', href: '/ambassador/register' },
@@ -79,6 +84,7 @@ export default function HomePage() {
   const [auctions, setAuctions] = useState<Auction[]>([]);
   const [stats, setStats] = useState<Record<string, number>>({ products: 0, properties: 0, vehicles: 0, suppliers: 0 });
   const [joinButtons, setJoinButtons] = useState(FALLBACK_JOIN_BUTTONS);
+  const [partners, setPartners] = useState<Partner[]>([]);
 
   useEffect(() => {
     api.get('/listings?limit=4')
@@ -107,6 +113,9 @@ export default function HomePage() {
           setJoinButtons(unique);
         }
       })
+      .catch(() => {});
+    api.get('/partners')
+      .then(({ data }) => setPartners(data?.partners ?? []))
       .catch(() => {});
   }, []);
 
@@ -312,22 +321,14 @@ export default function HomePage() {
       <div className="bg-white border-t border-gray-200 px-6 py-4">
         <p className="text-xs text-gray-400 uppercase tracking-widest mb-3 text-center">{get('home.partners_title', 'Our Partners')}</p>
         <div className="flex flex-wrap justify-center items-center gap-6">
-          {PARTNERS.map(p => (
-            <div key={p.name} className="flex flex-col items-center gap-1 group">
+          {(partners.length ? partners : PARTNERS.map((p, index) => ({ id: index, name: p.label, logo_url: p.logo }))).map(p => (
+            <div key={p.id} className="flex flex-col items-center gap-1 group">
               <div className="rounded-lg overflow-hidden flex items-center justify-center border border-gray-100 transition group-hover:shadow-md"
-                style={{ width: 90, height: 48, background: p.bg, padding: 6 }}>
+                style={{ width: 90, height: 48, background: '#fff', padding: 6 }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={p.logo} alt={p.label} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
+                <img src={p.logo_url || '/partners/placeholder.svg'} alt={p.name} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
               </div>
-              <span className="text-[10px] text-gray-400 font-medium">{p.label}</span>
-            </div>
-          ))}
-          {Array.from({ length: EMPTY_PARTNER_SLOTS }).map((_, i) => (
-            <div key={`slot-${i}`} className="flex flex-col items-center gap-1">
-              <div className="rounded-lg border-2 border-dashed border-gray-200 flex items-center justify-center"
-                style={{ width: 90, height: 48 }}>
-                <span className="text-[10px] text-gray-300 font-medium">Partner</span>
-              </div>
+              <span className="text-[10px] text-gray-400 font-medium">{p.name}</span>
             </div>
           ))}
         </div>
