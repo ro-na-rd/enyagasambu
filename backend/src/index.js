@@ -28,6 +28,7 @@ if ((process.env.JWT_SECRET || '').length < 32) {
 
 const app = express();
 let dependenciesReady = false;
+let shuttingDown = false;
 
 app.set('trust proxy', 1);
 app.use(helmet());
@@ -43,6 +44,16 @@ app.use(express.urlencoded({ extended: true, limit: '2mb' }));
 
 app.use(requestId);
 app.use(httpLogger);
+
+// Once shutdown starts, do not accept work that may be interrupted halfway
+// through. Existing requests are allowed to complete below.
+app.use((req, res, next) => {
+  if (shuttingDown) {
+    res.set('Connection', 'close');
+    return res.status(503).json({ message: 'Service is shutting down' });
+  }
+  return next();
+});
 
 async function init() {
   await checkDatabase();
@@ -111,7 +122,7 @@ app.use('/api/newsletter', require('./routes/newsletter'));
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok', platform: 'NMO' }));
 app.get('/api/ready', (req, res) => {
-  if (!dependenciesReady) return res.status(503).json({ status: 'not_ready', platform: 'NMO' });
+  if (!dependenciesReady || shuttingDown) return res.status(503).json({ status: 'not_ready', platform: 'NMO' });
   return res.json({ status: 'ready', platform: 'NMO' });
 });
 
@@ -131,3 +142,33 @@ if (process.env.ENABLE_SCHEDULERS === 'true') {
   logger.info('Background schedulers disabled for this process');
 }
 server.listen(PORT, () => logger.info(`NMO API + Socket.IO running on port ${PORT}`, { port: PORT }));
+
+function shutdown(signal) {
+  if (shuttingDown) return;
+  shuttingDown = true;
+  dependenciesReady = false;
+  logger.info(`[Shutdown] Received ${signal}. Draining HTTP connections.`);
+
+  // Stop accepting new connections and give in-flight requests time to finish.
+  server.close(async (closeError) => {
+    if (closeError) logger.error(closeError, { event: 'server_close_failed' });
+    try {
+      const pool = require('./config/db');
+      await pool.end();
+      logger.info('[Shutdown] Database pool closed');
+    } catch (err) {
+      logger.error(err, { event: 'database_pool_close_failed' });
+    }
+    process.exit(closeError ? 1 : 0);
+  });
+
+  // A hung request must not prevent an orchestrator from replacing this process.
+  const forceExitTimer = setTimeout(() => {
+    logger.error('[Shutdown] Timed out waiting for connections to close');
+    process.exit(1);
+  }, Number(process.env.SHUTDOWN_TIMEOUT_MS) || 30_000);
+  forceExitTimer.unref();
+}
+
+process.once('SIGTERM', () => shutdown('SIGTERM'));
+process.once('SIGINT', () => shutdown('SIGINT'));

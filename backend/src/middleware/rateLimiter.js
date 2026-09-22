@@ -3,7 +3,9 @@ const hits = new Map();
 function createLimiter({ windowMs, max, message, skipLoopback }) {
   return (req, res, next) => {
     const key = req.ip || req.connection.remoteAddress;
-    if (skipLoopback && /^::1$|^127\.0\.0\.1$|^::ffff:127\.0\.0\.1$/.test(key || '')) {
+    // Local bypasses are helpful during development, but must never weaken
+    // production controls when a proxy or an internal network is misconfigured.
+    if (skipLoopback && process.env.NODE_ENV !== 'production' && /^::1$|^127\.0\.0\.1$|^::ffff:127\.0\.0\.1$/.test(key || '')) {
       return next();
     }
     const now = Date.now();
@@ -16,6 +18,8 @@ function createLimiter({ windowMs, max, message, skipLoopback }) {
 
     record.count++;
     if (record.count > max) {
+      const retryAfterSeconds = Math.max(1, Math.ceil((record.start + windowMs - now) / 1000));
+      res.set('Retry-After', String(retryAfterSeconds));
       return res.status(429).json({ message });
     }
     next();
@@ -27,7 +31,7 @@ setInterval(() => {
   for (const [key, record] of hits) {
     if (now - record.start > 60 * 60 * 1000) hits.delete(key);
   }
-}, 5 * 60 * 1000);
+}, 5 * 60 * 1000).unref();
 
 const loginLimiter = createLimiter({
   windowMs: 15 * 60 * 1000,
