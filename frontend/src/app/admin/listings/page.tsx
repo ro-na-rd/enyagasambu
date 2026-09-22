@@ -1,4 +1,5 @@
 'use client';
+import AppImage from '@/components/AppImage';
 import { useEffect, useState } from 'react';
 import api from '@/lib/api';
 import { Package, Search, Filter, Plus, X, Loader2, CheckCircle, AlertCircle, Upload, Camera } from '@/lib/icons';
@@ -332,7 +333,7 @@ export default function AdminListingsPage() {
                   <div className="flex flex-wrap gap-2 mt-2">
                     {previews.map((p, i) => (
                       <div key={i} className="relative w-16 h-16 rounded-lg overflow-hidden group">
-                        <img src={p} alt={`Preview ${i + 1}`} className="w-full h-full object-cover" />
+                        <AppImage src={p} alt={`Preview ${i + 1}`} className="w-full h-full object-cover" />
                         <button type="button" onClick={() => removeImage(i)}
                           className="absolute top-0.5 right-0.5 p-0.5 rounded-full bg-black/60 text-white opacity-0 group-hover:opacity-100 transition">
                           <X size={12} />

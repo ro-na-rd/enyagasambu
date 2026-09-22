@@ -1,7 +1,9 @@
 'use client';
+import AppImage from '@/components/AppImage';
 import Link from 'next/link';
 import { useLanguage } from '@/context/LanguageContext';
 import { useAuth } from '@/context/AuthContext';
+import { useRegistrationStatus } from '@/hooks/useRegistrationStatus';
 import { useEffect, useState } from 'react';
 import api from '@/lib/api';
 import { useSiteContent } from '@/lib/useSiteContent';
@@ -83,8 +85,10 @@ export default function HomePage() {
   const [featured, setFeatured] = useState<Listing[]>([]);
   const [auctions, setAuctions] = useState<Auction[]>([]);
   const [stats, setStats] = useState<Record<string, number>>({ products: 0, properties: 0, vehicles: 0, suppliers: 0 });
-  const [joinButtons, setJoinButtons] = useState(FALLBACK_JOIN_BUTTONS);
+const [joinButtons, setJoinButtons] = useState(FALLBACK_JOIN_BUTTONS);
   const [partners, setPartners] = useState<Partner[]>([]);
+  const registrationOpen = useRegistrationStatus();
+  const visibleJoinButtons = joinButtons.filter((b) => registrationOpen !== false || !b.href.endsWith('/register'));
 
   useEffect(() => {
     api.get('/listings?limit=4')
@@ -253,7 +257,7 @@ export default function HomePage() {
                     className="bg-white border border-gray-200 rounded-lg overflow-hidden hover:border-blue-300 transition block group flex flex-col">
                     <div className="aspect-square flex items-center justify-center bg-gray-50 overflow-hidden">
                       {l.primary_image ? (
-                        <img src={l.primary_image} alt={l.title}
+                        <AppImage src={l.primary_image} alt={l.title}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                       ) : (
                         <div style={{ color: org }}><Package size={40} /></div>
@@ -309,7 +313,7 @@ export default function HomePage() {
               {get('home.join_desc', 'Register as a buyer, seller, broker or ambassador and grow your business digitally.')}
             </p>
             <div className="flex gap-2 flex-wrap">
-              {joinButtons.map((b) => (
+              {visibleJoinButtons.map((b) => (
                 <RegBtn key={`${b.label}-${b.href}`} href={b.href} primary>{(b.label).replace(/→\s*$/, '').trim()} →</RegBtn>
               ))}
             </div>
@@ -325,8 +329,8 @@ export default function HomePage() {
             <div key={p.id} className="flex flex-col items-center gap-1 group">
               <div className="rounded-lg overflow-hidden flex items-center justify-center border border-gray-100 transition group-hover:shadow-md"
                 style={{ width: 90, height: 48, background: '#fff', padding: 6 }}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={p.logo_url || '/partners/placeholder.svg'} alt={p.name} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
+                { }
+                <AppImage src={p.logo_url || '/partners/placeholder.svg'} alt={p.name} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
               </div>
               <span className="text-[10px] text-gray-400 font-medium">{p.name}</span>
             </div>

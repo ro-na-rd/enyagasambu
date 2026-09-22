@@ -1,4 +1,5 @@
 'use client';
+import AppImage from '@/components/AppImage';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -466,8 +467,8 @@ export default function AuctionPage() {
               >
                 <div className="relative">
                   {a.primary_image ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={a.primary_image} alt={a.title} className="w-full h-32 object-cover group-hover:scale-105 transition-transform duration-500" />
+                     
+                    <AppImage src={a.primary_image} alt={a.title} className="w-full h-32 object-cover group-hover:scale-105 transition-transform duration-500" />
                   ) : (
                     <CategoryImage auction={a} className="w-full h-32" />
                   )}
@@ -551,8 +552,8 @@ function HeroAuction({
         {/* image */}
         <div className="relative min-h-56 md:min-h-full">
           {auction.primary_image ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={auction.primary_image} alt={auction.title} className="absolute inset-0 w-full h-full object-cover" />
+             
+            <AppImage src={auction.primary_image} alt={auction.title} className="absolute inset-0 w-full h-full object-cover" />
           ) : (
             <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-[#eef1f9] to-[#fdeee0]">
               {CAT_ICON[auction.category_slug] || <Package size={72} />}
@@ -728,8 +729,8 @@ function AuctionCard({
     <div className="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-md transition flex flex-col">
       <Link href={`/auction/${auction.id}`} className="block relative group">
         {auction.primary_image ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={auction.primary_image} alt={auction.title} className="w-full aspect-[4/3] object-cover group-hover:scale-105 transition-transform duration-500" />
+           
+          <AppImage src={auction.primary_image} alt={auction.title} className="w-full aspect-[4/3] object-cover group-hover:scale-105 transition-transform duration-500" />
         ) : (
           <CategoryImage auction={auction} className="w-full aspect-[4/3]" />
         )}

@@ -1,4 +1,5 @@
 'use client';
+import AppImage from '@/components/AppImage';
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
@@ -68,7 +69,7 @@ export default function BrokerPhotoPage() {
           style={{ borderColor: dragging ? ORG : '#d1d5db', width: 240, height: 240, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', background: dragging ? '#fff7f2' : '#f9fafb', borderRadius: '50%' }}
         >
           {preview
-            ? <img src={preview} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+            ? <AppImage src={preview} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
             : <><Image size={40} className="mb-3" aria-hidden="true" /><p className="text-sm text-gray-400">Click or drag photo</p></>
           }
         </div>

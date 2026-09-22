@@ -1,4 +1,5 @@
 'use client';
+import AppImage from '@/components/AppImage';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ZoomIn, ZoomOut, RefreshCw, Move } from '@/lib/icons';
 
@@ -114,7 +115,7 @@ export default function PhotoCropEditor({
         style={{ width: size, height: size, border: '3px solid #E85D04', boxShadow: '0 4px 16px rgba(0,0,0,0.15)' }}
         title="Drag to pan · Scroll to zoom"
       >
-        <img
+        <AppImage
           src={src}
           alt="crop preview"
           draggable={false}

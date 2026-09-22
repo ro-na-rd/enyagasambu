@@ -1,4 +1,5 @@
 'use client';
+import AppImage from '@/components/AppImage';
 import { useEffect, useState, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import api from '@/lib/api';
@@ -34,7 +35,7 @@ function CertPreview({ name, businessName, photo, certNo, issued, validUntil }: 
       <div className="absolute top-4 bottom-4 right-5 w-0.5 opacity-30" style={{background:`linear-gradient(180deg,${ORG},transparent 40%,transparent 60%,${ORG})`}}/>
       <div className="relative z-10 p-8">
         <div className="flex items-center gap-4 mb-6">
-          <img src="/assets/logo.png" alt="E-Nyagasambu" className="w-14 h-14 object-contain" />
+          <AppImage src="/assets/logo.png" alt="E-Nyagasambu" className="w-14 h-14 object-contain" />
           <div>
             <p className="font-extrabold text-lg leading-tight" style={{color:NAVY}}>E-NYAGASAMBU</p>
             <p className="font-bold tracking-widest" style={{fontSize:10,color:ORG}}>DIGITAL MARKET PLACE</p>
@@ -44,7 +45,7 @@ function CertPreview({ name, businessName, photo, certNo, issued, validUntil }: 
           {photo && (
             <div className="mb-4 flex justify-center">
               <div className="w-24 h-24 rounded-full overflow-hidden border-4 shadow-lg" style={{borderColor:ORG}}>
-                <img src={photo} alt={name} className="w-full h-full object-cover" />
+                <AppImage src={photo} alt={name} className="w-full h-full object-cover" />
               </div>
             </div>
           )}
@@ -72,7 +73,7 @@ function CertPreview({ name, businessName, photo, certNo, issued, validUntil }: 
           </div>
         </div>
         <div className="mt-4 flex justify-center">
-          <img src={qrUrl} alt="Verification QR" width={80} height={80} className="rounded border border-gray-300" />
+          <AppImage src={qrUrl} alt="Verification QR" width={80} height={80} className="rounded border border-gray-300" />
         </div>
       </div>
     </div>

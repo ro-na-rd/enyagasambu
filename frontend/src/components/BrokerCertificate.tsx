@@ -1,4 +1,5 @@
 'use client';
+import AppImage from '@/components/AppImage';
 import { SITE_DOMAIN } from '@/lib/config';
 import { MapPin, Phone, Mail, Globe, User, BadgeCheck, Check } from '@/lib/icons';
 import { useQrDataUrl } from './QrCode';
@@ -39,7 +40,7 @@ function BrokerFront({ name, brokerId, district, phone, email, qr, photo }: {
       <div style={{ position: 'relative', zIndex: 2, display: 'flex', height: '100%', padding: 26, gap: 12 }}>
         <div style={{ flex: '1.6', display: 'flex', flexDirection: 'column' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-            <img src="/assets/logo.png" alt="E-Nyagasambu" style={{ width: 38, height: 38, objectFit: 'contain', flexShrink: 0 }} />
+            <AppImage src="/assets/logo.png" alt="E-Nyagasambu" style={{ width: 38, height: 38, objectFit: 'contain', flexShrink: 0 }} />
             <div>
               <div style={{ fontWeight: 900, fontSize: 14.5, letterSpacing: 0.5, color: '#fff', lineHeight: 1.15, fontFamily: "'Literata', serif" }}>E-NYAGASAMBU</div>
               <div style={{ fontSize: 7, fontWeight: 600, letterSpacing: 1.8, color: '#ffb585' }}>DIGITAL MARKET PLACE</div>
@@ -73,14 +74,14 @@ function BrokerFront({ name, brokerId, district, phone, email, qr, photo }: {
           <div style={{ borderRadius: '50%', background: ORG, padding: 4, boxShadow: '0 6px 14px rgba(0,0,0,0.25)' }}>
             <div style={{ width: 84, height: 84, borderRadius: '50%', border: '3px solid #fff', overflow: 'hidden', background: '#dfe3ef', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               {photo
-                ? <img src={photo} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                ? <AppImage src={photo} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 : <User size={46} color="#98a1bd" />
               }
             </div>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
             <div style={{ background: '#fff', borderRadius: 8, padding: 4, boxShadow: '0 4px 10px rgba(0,0,0,0.12)' }}>
-              <img src={qr} alt="QR" width={54} height={54} style={{ display: 'block' }} />
+              <AppImage src={qr} alt="QR" width={54} height={54} style={{ display: 'block' }} />
             </div>
             <div style={{ fontSize: 7, fontWeight: 700, color: '#ffb585', letterSpacing: 0.8, marginTop: 3 }}>SCAN TO VERIFY</div>
           </div>
@@ -129,7 +130,7 @@ function BrokerBack({ qr, services }: { qr: string; services: string[] }) {
 
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
             <div style={{ border: '1px solid rgba(23,42,99,0.15)', borderRadius: 8, padding: 4 }}>
-              <img src={qr} alt="QR" width={60} height={60} style={{ display: 'block' }} />
+              <AppImage src={qr} alt="QR" width={60} height={60} style={{ display: 'block' }} />
             </div>
             <div style={{ fontSize: 7.5, fontWeight: 700, color: NAVY, letterSpacing: 0.8 }}>SCAN TO VERIFY</div>
           </div>

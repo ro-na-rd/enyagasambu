@@ -1,9 +1,11 @@
 'use client';
+import AppImage from '@/components/AppImage';
 import { useForm } from 'react-hook-form';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import api from '@/lib/api';
 import AuthRegisterLayout from '@/components/AuthRegisterLayout';
+import RegistrationGuard from '@/components/RegistrationGuard';
 
 const NAVY = '#0f1e42';
 const ORG = '#E85D04';
@@ -45,9 +47,10 @@ export default function AmbassadorRegisterPage() {
   };
 
   return (
-    <AuthRegisterLayout badge="Ambassador Program">
+    <RegistrationGuard>
+      <AuthRegisterLayout badge="Ambassador Program">
       <div className="flex items-center gap-2 mb-6">
-        <img src="/assets/logo.png" alt="E-Nyagasambu" className="w-9 h-9 object-contain" />
+        <AppImage src="/assets/logo.png" alt="E-Nyagasambu" className="w-9 h-9 object-contain" />
         <div>
           <p className="font-extrabold text-sm leading-tight" style={{ color: NAVY }}>Ambassador Portal</p>
           <p className="text-[9px] font-bold tracking-widest uppercase" style={{ color: ORG }}>Program</p>
@@ -105,6 +108,7 @@ export default function AmbassadorRegisterPage() {
           Already have an account?{' '}
           <Link href="/ambassador/login" className="font-semibold hover:underline" style={{ color: ORG }}>Sign In</Link>
         </p>
-    </AuthRegisterLayout>
+      </AuthRegisterLayout>
+    </RegistrationGuard>
   );
 }

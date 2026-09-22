@@ -1,4 +1,5 @@
 'use client';
+import AppImage from '@/components/AppImage';
 import { useForm } from 'react-hook-form';
 import Link from 'next/link';
 import { useState, useSyncExternalStore } from 'react';
@@ -60,7 +61,7 @@ export default function ForgotPasswordPage() {
           }}>
 
           <div className="flex items-center justify-center gap-3 mb-8">
-            <img src="/assets/logo.png" alt="E-Nyagasambu" className="w-11 h-11 object-contain" />
+            <AppImage src="/assets/logo.png" alt="E-Nyagasambu" className="w-11 h-11 object-contain" />
             <div>
               <span className="text-gray-900 font-extrabold text-lg tracking-tight block leading-tight">E-Nyagasambu</span>
               <span className="text-[9px] font-bold tracking-[0.25em] uppercase" style={{ color: `${ORG}bb` }}>Digital Market Place</span>

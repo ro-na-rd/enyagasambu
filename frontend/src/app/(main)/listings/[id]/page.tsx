@@ -1,4 +1,5 @@
 'use client';
+import AppImage from '@/components/AppImage';
 import { use, useEffect, useState, useRef, useCallback } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import api from '@/lib/api';
@@ -400,7 +401,7 @@ export default function ListingDetailPage({ params }: { params: Promise<{ id: st
                   style={{ paddingTop: '75%' }}
                   onClick={() => setLightboxOpen(true)}
                 >
-                  <img
+                  <AppImage
                     src={listing.images[activeImg]?.image_url}
                     alt={listing.title}
                     className="absolute inset-0 w-full h-full object-contain hover:scale-105 transition-transform duration-500"
@@ -430,7 +431,7 @@ export default function ListingDetailPage({ params }: { params: Promise<{ id: st
                           ? 'border-[#E85D04] shadow-md scale-105'
                           : 'border-transparent opacity-60 hover:opacity-100'
                           }`}>
-                        <img src={img.image_url} alt="" className="w-full h-full object-cover" />
+                        <AppImage src={img.image_url} alt="" className="w-full h-full object-cover" />
                       </button>
                     ))}
                   </div>
@@ -517,7 +518,7 @@ export default function ListingDetailPage({ params }: { params: Promise<{ id: st
                     <div className="bg-gray-50 rounded-xl overflow-hidden border border-gray-100 hover:border-[#E85D04] transition-all duration-300 hover:shadow-lg">
                       <div className="aspect-square bg-gray-100 relative overflow-hidden">
                         {related.primary_image ? (
-                          <img
+                          <AppImage
                             src={related.primary_image}
                             alt={related.title}
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
@@ -881,7 +882,7 @@ export default function ListingDetailPage({ params }: { params: Promise<{ id: st
           <div className="absolute bottom-8 left-1/2 -translate-x-1/2 text-white text-sm bg-black/50 px-4 py-2 rounded-full">
             {activeImg + 1} / {listing.images.length}
           </div>
-          <img
+          <AppImage
             src={listing.images[activeImg]?.image_url}
             alt={listing.title}
             className="max-w-[90vw] max-h-[90vh] object-contain"

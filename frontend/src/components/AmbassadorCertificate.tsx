@@ -1,4 +1,5 @@
 'use client';
+import AppImage from '@/components/AppImage';
 import { SITE_URL } from '@/lib/config';
 import { useEffect } from 'react';
 import styles from './AmbassadorCertificate.module.css';
@@ -54,14 +55,14 @@ export default function AmbassadorCertificate({
         {/* Logo above badge + text beside logo */}
         <div className={styles.medalStack}>
           <div className={styles.stackBrandRow}>
-            <img src="/assets/logo.png" alt="E-Nyagasambu" className={styles.stackLogo} />
+            <AppImage src="/assets/logo.png" alt="E-Nyagasambu" className={styles.stackLogo} />
             <div className={styles.stackBrandText}>
               <h1 className={styles.brandName}>E-NYAGASAMBU</h1>
               <p className={styles.brandTagline}>Digital Market Place</p>
               <p className={styles.brandSite}>www.enyagasambu.rw</p>
             </div>
           </div>
-          <img src="/assets/Barge.png" alt="Official Brand Ambassador" className={styles.medalImage} />
+          <AppImage src="/assets/Barge.png" alt="Official Brand Ambassador" className={styles.medalImage} />
         </div>
 
         {/* White card */}
@@ -148,7 +149,7 @@ export default function AmbassadorCertificate({
                 </div>
 
                 <div className={styles.sealWrap}>
-                  <img src="/assets/seal.png" alt="E-Nyagasambu Seal" className={styles.sealImage} />
+                  <AppImage src="/assets/seal.png" alt="E-Nyagasambu Seal" className={styles.sealImage} />
                 </div>
 
                 <div className={styles.signatureCol}>

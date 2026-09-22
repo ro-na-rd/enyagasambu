@@ -1,4 +1,5 @@
 'use client';
+import AppImage from '@/components/AppImage';
 import { Suspense, useState, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useSearchParams } from 'next/navigation';
@@ -31,7 +32,7 @@ function BrokerFront({ name, brokerId, district, phone, email, qr, photo }: {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-              <img src="/assets/logo.png" alt="E-Nyagasambu" style={{ width: 38, height: 38, objectFit: 'contain', flexShrink: 0 }} />
+              <AppImage src="/assets/logo.png" alt="E-Nyagasambu" style={{ width: 38, height: 38, objectFit: 'contain', flexShrink: 0 }} />
               <div>
                 <div style={{ fontSize: 11, fontWeight: 900, color: '#fff', letterSpacing: 1.5, lineHeight: 1.1 }}>E-NYAGASAMBU</div>
                 <div style={{ fontSize: 7, color: ORG, letterSpacing: 1.5, fontWeight: 700 }}>DIGITAL MARKET PLACE</div>
@@ -42,7 +43,7 @@ function BrokerFront({ name, brokerId, district, phone, email, qr, photo }: {
           {/* Photo */}
           <div style={{ width: 82, height: 90, borderRadius: 8, overflow: 'hidden', border: `2.5px solid ${ORG}`, background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginRight: 4 }}>
             {photo
-              ? <img src={photo} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              ? <AppImage src={photo} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               : <svg viewBox="0 0 40 45" width="40" height="45" fill="rgba(255,255,255,0.35)"><circle cx="20" cy="14" r="11" /><ellipse cx="20" cy="40" rx="18" ry="12" /></svg>
             }
           </div>
@@ -74,8 +75,8 @@ function BrokerFront({ name, brokerId, district, phone, email, qr, photo }: {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
           <div style={{ fontSize: 8, color: 'rgba(255,255,255,0.4)' }}>www.{SITE_DOMAIN}</div>
           <div style={{ textAlign: 'center' }}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={qr} alt="QR" width={58} height={58} style={{ border: '2px solid rgba(255,255,255,0.3)', borderRadius: 4, display: 'block' }} />
+            { }
+            <AppImage src={qr} alt="QR" width={58} height={58} style={{ border: '2px solid rgba(255,255,255,0.3)', borderRadius: 4, display: 'block' }} />
             <div style={{ fontSize: 7, color: 'rgba(255,255,255,0.4)', marginTop: 2, letterSpacing: 0.5 }}>SCAN TO VERIFY</div>
           </div>
         </div>
@@ -115,8 +116,8 @@ function BrokerBack({ qr }: { qr: string }) {
             </div>
           ))}
           <div style={{ textAlign: 'center', marginTop: 4 }}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={qr} alt="QR" width={56} height={56} style={{ border: '1px solid #ddd', borderRadius: 4, display: 'block', margin: '0 auto' }} />
+            { }
+            <AppImage src={qr} alt="QR" width={56} height={56} style={{ border: '1px solid #ddd', borderRadius: 4, display: 'block', margin: '0 auto' }} />
             <div style={{ fontSize: 7, color: '#bbb', marginTop: 2, letterSpacing: 0.5 }}>SCAN TO VERIFY</div>
           </div>
         </div>
@@ -158,7 +159,7 @@ function PhotoUploadStep({ onPhoto, onSkip }: { onPhoto: (url: string) => void; 
           style={{ borderColor: dragging ? ORG : '#d1d5db', height: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', background: dragging ? '#fff7f2' : '#f9fafb' }}
         >
           {preview
-            ? <img src={preview} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            ? <AppImage src={preview} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             : <><Image size={48} className="mb-3" aria-hidden="true" /><p className="text-sm text-gray-400">Click or drag &amp; drop your photo here</p><p className="text-xs text-gray-300 mt-1">JPG, PNG, WEBP supported</p></>
           }
         </div>
@@ -218,7 +219,7 @@ function CertContent() {
       <div style={{ background: '#e8ebf4', minHeight: '100vh' }}>
         <div className="flex items-center justify-between px-6 py-3 bg-white border-b shadow-sm">
           <div className="flex items-center gap-2">
-            <img src="/assets/logo.png" alt="E-Nyagasambu" className="w-8 h-8 object-contain" />
+            <AppImage src="/assets/logo.png" alt="E-Nyagasambu" className="w-8 h-8 object-contain" />
             <span className="font-semibold text-sm" style={{ color: NAVY }}>Broker ID Card — Photo Upload</span>
           </div>
           <Link href="/my-listings" className="text-xs text-gray-400 hover:text-gray-600">← My Listings</Link>

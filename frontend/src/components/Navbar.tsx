@@ -1,9 +1,11 @@
 'use client';
+import AppImage from '@/components/AppImage';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
 import { useCurrency } from '@/context/CurrencyContext';
+import { useRegistrationStatus } from '@/hooks/useRegistrationStatus';
 import { Suspense, useState } from 'react';
 import type { Lang } from '@/lib/translations';
 import { Search, UserPlus, Star, Heart, Menu, X, Coins, List, Gift, Wrench, LogOut, Home } from '@/lib/icons';
@@ -27,7 +29,8 @@ export default function Navbar() {
 function NavbarInner() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  return <NavbarView pathname={pathname} tab={searchParams.get('tab') || ''} />;
+  const registrationOpen = useRegistrationStatus();
+  return <NavbarView pathname={pathname} tab={searchParams.get('tab') || ''} registrationOpen={registrationOpen} />;
 }
 
 function SearchForm({ placeholder, onDone }: { placeholder: string; onDone?: () => void }) {
@@ -52,7 +55,7 @@ function SearchForm({ placeholder, onDone }: { placeholder: string; onDone?: () 
   );
 }
 
-function NavbarView({ pathname, tab }: { pathname: string | null; tab: string | null }) {
+function NavbarView({ pathname, tab, registrationOpen }: { pathname: string | null; tab: string | null; registrationOpen?: boolean | null }) {
   const { user, logout } = useAuth();
   const { lang, setLang, T } = useLanguage();
   const { currency, setCurrency, currencies } = useCurrency();
@@ -245,7 +248,7 @@ function NavbarView({ pathname, tab }: { pathname: string | null; tab: string | 
       >
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 sm:gap-3 shrink-0 min-w-0">
-          <img src="/assets/logo.png" alt="E-Nyagasambu" className="w-11 h-11 object-contain shrink-0" />
+          <AppImage src="/assets/logo.png" alt="E-Nyagasambu" className="w-11 h-11 object-contain shrink-0" />
           <div className="min-w-0">
             <h1 className="font-medium text-lg sm:text-xl leading-tight truncate" style={{ color: navy }}>
               <span style={{ color: org }}>E</span>-Nyagasambu
@@ -265,14 +268,18 @@ function NavbarView({ pathname, tab }: { pathname: string | null; tab: string | 
 
           {/* Header links row */}
           <div className="flex items-center gap-2 sm:gap-3" style={{ fontSize: 12 }}>
-            <Link href="/supplier/register" className="hidden lg:flex items-center gap-1 transition hover:opacity-70" style={{ color: navy, textDecoration: 'none' }}>
-              <UserPlus size={13} />
-              {T.supplierRegistration}
-            </Link>
-            <Link href="/ambassador/register" className="hidden lg:flex items-center gap-1 transition hover:opacity-70" style={{ color: navy, textDecoration: 'none' }}>
-              <Star size={13} />
-              {T.ambassadorRegistration}
-            </Link>
+            {registrationOpen !== false && (
+            <>
+              <Link href="/supplier/register" className="hidden lg:flex items-center gap-1 transition hover:opacity-70" style={{ color: navy, textDecoration: 'none' }}>
+                <UserPlus size={13} />
+                {T.supplierRegistration}
+              </Link>
+              <Link href="/ambassador/register" className="hidden lg:flex items-center gap-1 transition hover:opacity-70" style={{ color: navy, textDecoration: 'none' }}>
+                <Star size={13} />
+                {T.ambassadorRegistration}
+              </Link>
+            </>
+          )}
             <Link href="/donate" className="hidden lg:flex items-center gap-1 transition hover:opacity-70" style={{ color: navy, textDecoration: 'none' }}>
               <Heart size={13} />
               {T.donate}
@@ -380,21 +387,27 @@ function NavbarView({ pathname, tab }: { pathname: string | null; tab: string | 
 
             {/* Quick links */}
             <div className="flex flex-col gap-1 pt-3 border-t border-gray-100">
-              <Link href="/supplier/register" onClick={closeMobile} className="py-1.5 text-sm" style={{ color: navy, textDecoration: 'none' }}>
-                <UserPlus size={13} className="inline mr-1" style={{ verticalAlign: '-2px' }} /> {T.supplierRegistration}
-              </Link>
-              <Link href="/ambassador/register" onClick={closeMobile} className="py-1.5 text-sm" style={{ color: navy, textDecoration: 'none' }}>
-                <Star size={13} className="inline mr-1" style={{ verticalAlign: '-2px' }} /> {T.ambassadorRegistration}
-              </Link>
+              {registrationOpen !== false && (
+                <>
+                  <Link href="/supplier/register" onClick={closeMobile} className="py-1.5 text-sm" style={{ color: navy, textDecoration: 'none' }}>
+                    <UserPlus size={13} className="inline mr-1" style={{ verticalAlign: '-2px' }} /> {T.supplierRegistration}
+                  </Link>
+                  <Link href="/ambassador/register" onClick={closeMobile} className="py-1.5 text-sm" style={{ color: navy, textDecoration: 'none' }}>
+                    <Star size={13} className="inline mr-1" style={{ verticalAlign: '-2px' }} /> {T.ambassadorRegistration}
+                  </Link>
+                </>
+              )}
               <Link href="/donate" onClick={closeMobile} className="py-1.5 text-sm" style={{ color: navy, textDecoration: 'none' }}>
                 <Heart size={13} className="inline mr-1" style={{ verticalAlign: '-2px' }} /> {T.donate}
               </Link>
               <Link href="/my-listings" onClick={closeMobile} className="py-1.5 text-sm" style={{ color: navy, textDecoration: 'none' }}>
                 <List size={13} className="inline mr-1" style={{ verticalAlign: '-2px' }} /> {T.myListings}
               </Link>
-              <Link href="/broker/register" onClick={closeMobile} className="py-1.5 text-sm" style={{ color: navy, textDecoration: 'none' }}>
-                {T.brokerPortal}
-              </Link>
+              {registrationOpen !== false && (
+                <Link href="/broker/register" onClick={closeMobile} className="py-1.5 text-sm" style={{ color: navy, textDecoration: 'none' }}>
+                  {T.brokerPortal}
+                </Link>
+              )}
               <Link href="/listings" onClick={closeMobile} className="py-1.5 text-sm" style={{ color: navy, textDecoration: 'none' }}>
                 {T.allSuppliers}
               </Link>
@@ -569,11 +582,13 @@ function NavbarView({ pathname, tab }: { pathname: string | null; tab: string | 
           })}
         </div>
         <div className="flex items-center gap-5 shrink-0">
-          <Link href="/broker/register" className="text-sm py-3 transition" style={{ color: '#cdd4f0', textDecoration: 'none' }}
-            onMouseEnter={e => (e.currentTarget.style.color = '#fff')}
-            onMouseLeave={e => (e.currentTarget.style.color = '#cdd4f0')}>
-            {T.brokerPortal}
-          </Link>
+          {registrationOpen !== false && (
+            <Link href="/broker/register" className="text-sm py-3 transition" style={{ color: '#cdd4f0', textDecoration: 'none' }}
+              onMouseEnter={e => (e.currentTarget.style.color = '#fff')}
+              onMouseLeave={e => (e.currentTarget.style.color = '#cdd4f0')}>
+              {T.brokerPortal}
+            </Link>
+          )}
           <Link href="/listings" className="text-sm py-3 transition" style={{ color: '#cdd4f0', textDecoration: 'none' }}
             onMouseEnter={e => (e.currentTarget.style.color = '#fff')}
             onMouseLeave={e => (e.currentTarget.style.color = '#cdd4f0')}>

@@ -1,4 +1,5 @@
 'use client';
+import AppImage from '@/components/AppImage';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useCurrency } from '@/context/CurrencyContext';
@@ -66,7 +67,7 @@ function PhotoUploadStep({ onPhoto, onSkip }: { onPhoto: (url: string) => void; 
           style={{ borderColor: dragging ? ORG : '#d1d5db', height: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', background: dragging ? '#fff7f2' : '#f9fafb' }}
         >
           {preview
-            ? <img src={preview} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            ? <AppImage src={preview} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             : <><Image size={40} className="mb-3" aria-hidden="true" /><p className="text-sm text-gray-400">Click or drag &amp; drop your photo here</p><p className="text-xs text-gray-300 mt-1">JPG, PNG, WEBP supported</p></>
           }
         </div>
@@ -337,7 +338,7 @@ export default function BrokerCertificatePage() {
     return (
       <div className="p-4 lg:p-8">
         <div className="flex items-center gap-2 mb-6">
-          <img src="/assets/logo.png" alt="E-Nyagasambu" className="w-8 h-8 object-contain" />
+          <AppImage src="/assets/logo.png" alt="E-Nyagasambu" className="w-8 h-8 object-contain" />
           <span className="font-semibold text-sm" style={{ color: NAVY }}>Broker ID Card — Photo Upload</span>
         </div>
         <PhotoUploadStep

@@ -1,4 +1,5 @@
 'use client';
+import AppImage from '@/components/AppImage';
 import { useState, useCallback, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import api from '@/lib/api';
@@ -306,7 +307,7 @@ export default function MyListingsPage() {
               <div key={l.id} className="bg-white rounded-xl shadow-sm flex flex-wrap items-center gap-4 p-4">
                 <Link href={`/listings/${l.id}`} className="h-16 w-16 rounded-lg bg-gray-100 overflow-hidden shrink-0 block">
                   {l.primary_image
-                    ? <img src={l.primary_image} alt="" className="w-full h-full object-cover" />
+                    ? <AppImage src={l.primary_image} alt="" className="w-full h-full object-cover" />
                     : <div className="w-full h-full flex items-center justify-center"><Package size={24} className="opacity-30" /></div>
                   }
                 </Link>

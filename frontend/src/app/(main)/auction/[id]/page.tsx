@@ -1,4 +1,5 @@
 'use client';
+import AppImage from '@/components/AppImage';
 import { use, useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -473,8 +474,8 @@ export default function AuctionDetailPage({ params }: { params: Promise<{ id: st
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
             <div className="relative aspect-[4/3] md:aspect-[16/9] bg-gradient-to-br from-[#f0f2fa] to-[#fdeee0]">
               {activeImage ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={activeImage} alt={auction.title} className="w-full h-full object-cover" />
+                 
+                <AppImage src={activeImage} alt={auction.title} className="w-full h-full object-cover" />
               ) : (
                 <div className="absolute inset-0 flex items-center justify-center">
                   <CategoryImage auction={auction} className="w-full h-full" />
@@ -500,8 +501,8 @@ export default function AuctionDetailPage({ params }: { params: Promise<{ id: st
                     onClick={() => setActiveImg(i)}
                     className={`w-16 h-16 rounded-lg overflow-hidden border-2 shrink-0 transition ${i === activeImg ? 'border-[#E85D04]' : 'border-transparent hover:border-gray-200'}`}
                   >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={img.image_url} alt={`${auction.title} ${i + 1}`} className="w-full h-full object-cover" />
+                    { }
+                    <AppImage src={img.image_url} alt={`${auction.title} ${i + 1}`} className="w-full h-full object-cover" />
                   </button>
                 ))}
               </div>

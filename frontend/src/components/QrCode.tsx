@@ -1,4 +1,5 @@
 'use client';
+import AppImage from '@/components/AppImage';
 import { useEffect, useState } from 'react';
 import QRCode from 'qrcode';
 
@@ -82,5 +83,5 @@ export default function QrCode({
     return <span style={{ display: 'inline-block', width: size, height: size, ...style }} className={className} aria-hidden />;
   }
 
-  return <img src={src} width={size} height={size} className={className} style={style} alt={alt} />;
+  return <AppImage src={src} width={size} height={size} className={className} style={style} alt={alt} />;
 }

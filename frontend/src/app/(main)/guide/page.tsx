@@ -1,4 +1,5 @@
 'use client';
+import AppImage from '@/components/AppImage';
 import { useState, useRef } from 'react';
 import Link from 'next/link';
 import { useSiteContent } from '@/lib/useSiteContent';
@@ -206,7 +207,7 @@ export default function GuidePage() {
             }} />
         </div>
         <div className="relative z-10 max-w-5xl mx-auto px-4 pt-12 pb-16 text-center">
-          <img src="/assets/logo.png" alt="E-Nyagasambu" className="w-14 h-14 mx-auto mb-5 object-contain" />
+          <AppImage src="/assets/logo.png" alt="E-Nyagasambu" className="w-14 h-14 mx-auto mb-5 object-contain" />
           <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-3">
             {get('guide.hero_title', 'How It Works')}
           </h1>

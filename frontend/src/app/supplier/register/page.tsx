@@ -5,6 +5,7 @@ import Link from 'next/link';
 import api from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 import AuthRegisterLayout from '@/components/AuthRegisterLayout';
+import RegistrationGuard from '@/components/RegistrationGuard';
 import { Store, Loader2, AlertCircle, CheckCircle } from '@/lib/icons';
 
 const NAVY = '#0f1e42';
@@ -55,7 +56,8 @@ export default function SupplierRegisterPage() {
   const inputCls = "w-full rounded-xl pl-4 pr-4 py-3 text-sm bg-white border border-gray-200 outline-none focus:border-[#E85D04] transition";
 
   return (
-    <AuthRegisterLayout badge="Supplier Program">
+    <RegistrationGuard>
+      <AuthRegisterLayout badge="Supplier Program">
       <div className="text-center mb-6">
         <div className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-3" style={{ background: `linear-gradient(135deg, ${NAVY}, ${ORG})` }}>
           <Store size={22} style={{ color: '#fff' }} />
@@ -133,6 +135,7 @@ export default function SupplierRegisterPage() {
             Already have an account?{' '}
             <Link href="/login" className="font-semibold hover:underline" style={{ color: ORG }}>Sign in</Link>
           </p>
-    </AuthRegisterLayout>
+      </AuthRegisterLayout>
+    </RegistrationGuard>
   );
 }

@@ -4,6 +4,7 @@ const { register, login, me, updateMe, applyPromo } = require('../controllers/au
 const { forgotPassword, resetPassword } = require('../controllers/resetPasswordController');
 const { authenticate } = require('../middleware/auth');
 const { loginLimiter, passwordResetLimiter } = require('../middleware/rateLimiter');
+const { requireRegistrationOpen } = require('../middleware/registrationOpen');
 
 const validate = (req, res, next) => {
   const errs = validationResult(req);
@@ -15,6 +16,7 @@ const validate = (req, res, next) => {
 
 router.post(
   '/register',
+  requireRegistrationOpen,
   [
     body('name').trim().notEmpty().withMessage('Name is required'),
     body('email').isEmail().normalizeEmail().withMessage('Valid email required'),

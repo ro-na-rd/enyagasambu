@@ -1,4 +1,5 @@
 'use client';
+import AppImage from '@/components/AppImage';
 import { useEffect, useState } from 'react';
 import api from '@/lib/api';
 import { Users, Check, Clock, Coins, Link, Copy, Sparkles } from '@/lib/icons';
@@ -30,7 +31,7 @@ export default function AmbassadorReferralsPage() {
     return (
       <div className="p-4 lg:p-8 animate-fadeInUp">
         <div className="text-center py-16">
-          <img src="/assets/logo.png" alt="E-Nyagasambu" className="w-10 h-10 mx-auto mb-3 object-contain" />
+          <AppImage src="/assets/logo.png" alt="E-Nyagasambu" className="w-10 h-10 mx-auto mb-3 object-contain" />
           <p className="text-gray-400 text-sm animate-pulse">Loading your referrals...</p>
         </div>
       </div>

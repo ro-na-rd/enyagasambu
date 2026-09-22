@@ -1,4 +1,5 @@
 'use client';
+import AppImage from '@/components/AppImage';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import api from '@/lib/api';
 import { Plus, Search, X, Home, Loader2, AlertCircle, CheckCircle } from '@/lib/icons';
@@ -254,7 +255,7 @@ export default function BrokerListingsPage() {
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3 min-w-[180px]">
                         {l.primary_image ? (
-                          <img src={l.primary_image} alt="" className="w-10 h-10 rounded-lg object-cover border border-gray-100 shrink-0" />
+                          <AppImage src={l.primary_image} alt="" className="w-10 h-10 rounded-lg object-cover border border-gray-100 shrink-0" />
                         ) : (
                           <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center text-gray-400 shrink-0">
                             <Home size={16} />
@@ -408,7 +409,7 @@ export default function BrokerListingsPage() {
                   <div className="flex gap-2 mt-3 flex-wrap">
                     {previews.map((url, i) => (
                       <div key={i} className="w-16 h-16 rounded-lg overflow-hidden border border-gray-200 relative">
-                        <img src={url} alt={`Preview ${i + 1}`} className="w-full h-full object-cover" />
+                        <AppImage src={url} alt={`Preview ${i + 1}`} className="w-full h-full object-cover" />
                       </div>
                     ))}
                   </div>

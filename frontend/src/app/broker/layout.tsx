@@ -1,4 +1,5 @@
 'use client';
+import AppImage from '@/components/AppImage';
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import api from '@/lib/api';
@@ -170,7 +171,7 @@ export default function BrokerLayout({ children }: { children: React.ReactNode }
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: '#f8f9fc' }}>
         <div className="text-center">
-          <img src="/assets/logo.png" alt="E-Nyagasambu" className="w-14 h-14 mx-auto mb-4 object-contain" />
+          <AppImage src="/assets/logo.png" alt="E-Nyagasambu" className="w-14 h-14 mx-auto mb-4 object-contain" />
           <p className="text-gray-500 text-sm animate-pulse">Loading broker dashboard…</p>
         </div>
       </div>
@@ -204,7 +205,7 @@ export default function BrokerLayout({ children }: { children: React.ReactNode }
         {/* Company Brand */}
         <div className="px-4 py-4 border-b border-gray-100">
           <Link href="/broker" className="flex items-center gap-3">
-            <img src="/assets/LOGO1.png" alt="E-Nyagasambu" className="w-10 h-10 object-contain shrink-0" />
+            <AppImage src="/assets/LOGO1.png" alt="E-Nyagasambu" className="w-10 h-10 object-contain shrink-0" />
             <div className="leading-tight min-w-0">
               <p className="text-sm font-bold text-gray-900 truncate">E-Nyagasambu</p>
               <p className="text-[9px] font-semibold tracking-[0.22em] uppercase" style={{ color: `${ORG}cc` }}>Broker Portal</p>

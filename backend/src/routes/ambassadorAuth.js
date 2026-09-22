@@ -2,6 +2,7 @@ const router = require('express').Router();
 const { body, validationResult } = require('express-validator');
 const { authenticate, requireAmbassador } = require('../middleware/auth');
 const { loginLimiter } = require('../middleware/rateLimiter');
+const { requireRegistrationOpen } = require('../middleware/registrationOpen');
 const { register, login, me, updateProfile, changePassword } = require('../controllers/ambassadorAuthController');
 
 const validate = (req, res, next) => {
@@ -14,6 +15,7 @@ const validate = (req, res, next) => {
 
 router.post(
   '/register',
+  requireRegistrationOpen,
   [
     body('name').trim().notEmpty().withMessage('Name is required'),
     body('email').isEmail().normalizeEmail().withMessage('Valid email required'),

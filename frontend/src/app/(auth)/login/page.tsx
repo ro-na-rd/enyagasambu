@@ -1,4 +1,5 @@
 'use client';
+import AppImage from '@/components/AppImage';
 import { useForm } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -6,6 +7,7 @@ import { useState, useEffect } from 'react';
 import api from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 import AuthRegisterLayout from '@/components/AuthRegisterLayout';
+import { useRegistrationStatus } from '@/hooks/useRegistrationStatus';
 import { Mail, Lock, Eye, EyeOff, X, AlertTriangle, Loader2, ArrowRight, Megaphone, Handshake, Store, ChevronRight } from '@/lib/icons';
 
 const ORG = '#E85D04';
@@ -59,6 +61,10 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [capsLock, setCapsLock] = useState(false);
   const [showAccountTypeModal, setShowAccountTypeModal] = useState(false);
+  const [registrationClosed] = useState(() =>
+    typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('registration') === 'closed'
+  );
+  const registrationOpen = useRegistrationStatus();
 
   useEffect(() => {
     if (!user) return;
@@ -133,7 +139,7 @@ export default function LoginPage() {
 
       {/* Logo */}
       <div className="flex items-center justify-center gap-3 mb-8">
-        <img src="/assets/logo.png" alt="E-Nyagasambu" className="w-11 h-11 object-contain" />
+        <AppImage src="/assets/logo.png" alt="E-Nyagasambu" className="w-11 h-11 object-contain" />
         <div>
           <span className="text-gray-900 font-extrabold text-lg tracking-tight block leading-tight">E-Nyagasambu</span>
           <span className="text-[9px] font-bold tracking-[0.25em] uppercase" style={{ color: `${ORG}bb` }}>Digital Market Place</span>
@@ -152,6 +158,15 @@ export default function LoginPage() {
           style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', color: '#fca5a5' }}>
           <X size={16} className="shrink-0" />
           {error}
+        </div>
+      )}
+
+      {/* Registration closed notice */}
+      {registrationClosed && !registrationOpen && (
+        <div className="flex items-center gap-2.5 text-sm rounded-xl px-4 py-3 mb-6"
+          style={{ background: 'rgba(234, 179, 8, 0.1)', border: '1px solid rgba(234, 179, 8, 0.3)', color: '#fde047' }}>
+          <AlertTriangle size={16} className="shrink-0" />
+          Registration is currently closed. Please contact support.
         </div>
       )}
 
@@ -249,18 +264,20 @@ export default function LoginPage() {
       </div>
 
       {/* Create Account Button */}
-      <div className="text-center mb-5">
-        <button
-          onClick={() => setShowAccountTypeModal(true)}
-          className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold transition-all duration-200 text-white hover:shadow-lg active:scale-[0.98]"
-          style={{
-            background: `linear-gradient(135deg, ${ORG}, #c44d00)`,
-            boxShadow: `0 4px 15px ${ORG}33`,
-          }}>
-          Create an Account
-          <ArrowRight size={16} />
-        </button>
-      </div>
+      {registrationOpen !== false && (
+        <div className="text-center mb-5">
+          <button
+            onClick={() => setShowAccountTypeModal(true)}
+            className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold transition-all duration-200 text-white hover:shadow-lg active:scale-[0.98]"
+            style={{
+              background: `linear-gradient(135deg, ${ORG}, #c44d00)`,
+              boxShadow: `0 4px 15px ${ORG}33`,
+            }}>
+            Create an Account
+            <ArrowRight size={16} />
+          </button>
+        </div>
+      )}
 
       {/* Footer */}
       <p className="text-center text-[10px] mt-7" style={{ color: 'rgba(0,0,0,0.25)' }}>
@@ -268,7 +285,7 @@ export default function LoginPage() {
       </p>
 
       {/* Account Type Selection Modal */}
-      {showAccountTypeModal && (
+      {showAccountTypeModal && registrationOpen !== false && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           {/* Backdrop */}
           <div

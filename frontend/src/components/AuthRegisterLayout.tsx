@@ -1,4 +1,5 @@
 'use client';
+import AppImage from '@/components/AppImage';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { Home, BadgeCheck, MapPin, Star } from '@/lib/icons';
@@ -37,7 +38,7 @@ export default function AuthRegisterLayout({ badge = 'Featured Apartment', child
             key={src}
             className={`absolute inset-0 transition-opacity duration-[1800ms] ease-in-out ${i === idx ? 'opacity-100' : 'opacity-0'}`}
           >
-            <img src={src} alt="" className="w-full h-full object-cover kenburns" />
+            <AppImage src={src} alt="" className="w-full h-full object-cover kenburns" />
           </div>
         ))}
         <div
@@ -62,7 +63,7 @@ export default function AuthRegisterLayout({ badge = 'Featured Apartment', child
         {/* Left: best apartment image */}
         <div className="hidden lg:flex flex-col gap-6 max-w-xl">
           <div className="relative rounded-3xl overflow-hidden shadow-2xl ring-1 ring-white/15">
-            <img src={FEATURED_IMAGE} alt="Best apartment" className="w-full h-[440px] object-cover" />
+            <AppImage src={FEATURED_IMAGE} alt="Best apartment" className="w-full h-[440px] object-cover" />
             <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent" />
             <div className="absolute top-4 left-4 flex items-center gap-1.5 rounded-full bg-amber-400 px-3 py-1 text-xs font-black text-nmo-navy">
               <Star size={13} /> 4.9

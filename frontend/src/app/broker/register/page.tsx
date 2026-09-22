@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useState } from 'react';
 import api from '@/lib/api';
 import AuthRegisterLayout from '@/components/AuthRegisterLayout';
+import RegistrationGuard from '@/components/RegistrationGuard';
 
 interface BrokerRegisterForm {
   name: string;
@@ -35,7 +36,8 @@ export default function BrokerRegisterPage() {
   };
 
   return (
-    <AuthRegisterLayout badge="Broker Program">
+    <RegistrationGuard>
+      <AuthRegisterLayout badge="Broker Program">
       {error && <div className="bg-red-50 text-red-700 text-sm rounded-lg px-4 py-3 mb-4 border border-red-100">{error}</div>}
 
         <h1 className="text-2xl font-bold mb-1" style={{ color: '#0f1e42' }}>Register as Broker</h1>
@@ -89,6 +91,7 @@ export default function BrokerRegisterPage() {
           Already have an account?{' '}
           <Link href="/broker/login" className="font-semibold hover:underline" style={{ color: '#E85D04' }}>Sign In</Link>
         </p>
-    </AuthRegisterLayout>
+      </AuthRegisterLayout>
+    </RegistrationGuard>
   );
 }

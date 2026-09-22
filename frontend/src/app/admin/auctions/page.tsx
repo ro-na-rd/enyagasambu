@@ -1,4 +1,5 @@
 'use client';
+import AppImage from '@/components/AppImage';
 import { Fragment, useEffect, useState } from 'react';
 import api from '@/lib/api';
 import { Gavel, Search, Trash2, Eye, Activity } from '@/lib/icons';
@@ -149,7 +150,7 @@ export default function AdminAuctionsPage() {
                       <td className="px-4 py-3.5">
                         <div className="flex items-center gap-3">
                           {a.primary_image
-                            ? <img src={a.primary_image} alt="" className="w-10 h-10 rounded-lg object-cover shrink-0" />
+                            ? <AppImage src={a.primary_image} alt="" className="w-10 h-10 rounded-lg object-cover shrink-0" />
                             : <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0" style={{ background: `${ORG}10`, color: ORG }}>
                                 <Gavel size={16} />
                               </div>}

@@ -1,4 +1,5 @@
 'use client';
+import AppImage from '@/components/AppImage';
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
@@ -467,7 +468,7 @@ export default function CreateListingPage() {
             <div className="flex gap-2 mt-3 flex-wrap">
               {previews.map((url, i) => (
                 <div key={i} className="w-16 h-16 rounded-lg overflow-hidden border border-gray-200">
-                  <img src={url} alt={`Preview ${i + 1}`} className="w-full h-full object-cover" />
+                  <AppImage src={url} alt={`Preview ${i + 1}`} className="w-full h-full object-cover" />
                 </div>
               ))}
             </div>

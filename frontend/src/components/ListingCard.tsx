@@ -1,4 +1,5 @@
 'use client';
+import AppImage from '@/components/AppImage';
 import Link from 'next/link';
 import { useLanguage } from '@/context/LanguageContext';
 import { useCurrency } from '@/context/CurrencyContext';
@@ -207,7 +208,7 @@ export default function ListingCard({ listing }: { listing: Listing }) {
             )}
 
             {listing.primary_image && !imgError ? (
-              <img
+              <AppImage
                 src={listing.primary_image}
                 alt={listing.title}
                 onError={() => setImgError(true)}
@@ -224,7 +225,7 @@ export default function ListingCard({ listing }: { listing: Listing }) {
 
             {isSold && (
               <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/40">
-                <img
+                <AppImage
                   src="/assets/sold.png"
                   alt="Sold"
                   className="w-4/5 h-4/5 object-contain"
@@ -316,7 +317,7 @@ export default function ListingCard({ listing }: { listing: Listing }) {
 
             <div className="flex gap-3 mb-4 p-3 bg-gray-50 rounded-xl items-center">
               {listing.primary_image && !imgError ? (
-                <img src={listing.primary_image} alt={listing.title} className="w-16 h-16 object-cover rounded-lg flex-shrink-0" />
+                <AppImage src={listing.primary_image} alt={listing.title} className="w-16 h-16 object-cover rounded-lg flex-shrink-0" />
               ) : (
                 <div className="w-16 h-16 bg-gray-200 rounded-lg flex items-center justify-center flex-shrink-0">
                   <Package size={24} />

@@ -1,4 +1,5 @@
 'use client';
+import AppImage from '@/components/AppImage';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -330,8 +331,8 @@ export default function CreateAuctionPage() {
             <div className="flex gap-2 mt-3 flex-wrap">
               {previews.map((url, i) => (
                 <div key={i} className="w-16 h-16 rounded-lg overflow-hidden border border-gray-200">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={url} alt={`Preview ${i + 1}`} className="w-full h-full object-cover" />
+                  { }
+                  <AppImage src={url} alt={`Preview ${i + 1}`} className="w-full h-full object-cover" />
                 </div>
               ))}
             </div>

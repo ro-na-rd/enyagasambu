@@ -1,4 +1,5 @@
 'use client';
+import AppImage from '@/components/AppImage';
 import { useEffect, useState, useCallback } from 'react';
 import api from '@/lib/api';
 import {
@@ -221,7 +222,7 @@ export default function AdminTeamPage() {
                 <div className="w-24 h-24 rounded-full flex items-center justify-center text-white text-2xl font-bold overflow-hidden"
                   style={{ background: m.photo_url ? 'transparent' : BRAND.navy, border: `3px solid ${BRAND.orange}` }}>
                   {m.photo_url
-                    ? <img src={m.photo_url} alt={m.name} className="w-full h-full object-cover"
+                    ? <AppImage src={m.photo_url} alt={m.name} className="w-full h-full object-cover"
                         style={{
                           objectPosition: m.photo_position && m.photo_position !== 'center' ? (m.photo_position as string) : 'center',
                           transform: m.photo_zoom && m.photo_zoom > 0 ? `scale(${m.photo_zoom})` : undefined,
@@ -286,7 +287,7 @@ export default function AdminTeamPage() {
                   <div className="w-24 h-24 rounded-full mx-auto flex items-center justify-center text-white text-3xl font-bold overflow-hidden relative"
                     style={{ background: form.photoPreview ? 'transparent' : BRAND.navy, border: `3px solid ${BRAND.orange}` }}>
                     {form.photoPreview
-                      ? <img src={form.photoPreview} alt="preview" className="w-full h-full object-cover"
+                      ? <AppImage src={form.photoPreview} alt="preview" className="w-full h-full object-cover"
                           style={{
                             objectPosition: form.photoPosition && form.photoPosition !== 'center' ? form.photoPosition : 'center',
                             transform: form.photoZoom && form.photoZoom > 0 ? `scale(${form.photoZoom})` : undefined,

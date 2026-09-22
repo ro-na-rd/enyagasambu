@@ -1,4 +1,5 @@
 'use client';
+import AppImage from '@/components/AppImage';
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
@@ -47,7 +48,7 @@ export default function StaffDashboard() {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: '#f5f6fa' }}>
         <div className="text-center">
-          <img src="/assets/logo.png" alt="E-Nyagasambu" className="w-12 h-12 mx-auto mb-3 object-contain" />
+          <AppImage src="/assets/logo.png" alt="E-Nyagasambu" className="w-12 h-12 mx-auto mb-3 object-contain" />
           <p className="text-gray-500 text-sm">Loading Staff Dashboard…</p>
         </div>
       </div>

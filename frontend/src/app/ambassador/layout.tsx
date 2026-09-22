@@ -1,4 +1,5 @@
 'use client';
+import AppImage from '@/components/AppImage';
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter, usePathname } from 'next/navigation';
@@ -80,7 +81,7 @@ export default function AmbassadorLayout({ children }: { children: React.ReactNo
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: '#f8f9fc' }}>
         <div className="text-center">
-          <img src="/assets/logo.png" alt="E-Nyagasambu" className="w-14 h-14 mx-auto mb-4 object-contain" />
+          <AppImage src="/assets/logo.png" alt="E-Nyagasambu" className="w-14 h-14 mx-auto mb-4 object-contain" />
           <p className="text-gray-500 text-sm animate-pulse">Loading ambassador dashboard…</p>
         </div>
       </div>
@@ -106,7 +107,7 @@ export default function AmbassadorLayout({ children }: { children: React.ReactNo
         {/* Company Brand */}
         <div className="px-4 py-4 border-b border-gray-100">
           <Link href="/ambassador" className="flex items-center gap-3">
-            <img src="/assets/logo.png" alt="E-Nyagasambu" className="w-10 h-10 object-contain shrink-0" />
+            <AppImage src="/assets/logo.png" alt="E-Nyagasambu" className="w-10 h-10 object-contain shrink-0" />
             <div className="leading-tight min-w-0">
               <p className="text-sm font-bold text-gray-900 truncate">E-Nyagasambu</p>
               <p className="text-[9px] font-semibold tracking-[0.22em] uppercase" style={{ color: `${ORG}cc` }}>Ambassador Portal</p>

@@ -18,6 +18,7 @@ export default function AdminSettingsPage() {
   const [duration3Days, setDuration3Days] = useState('500');
   const [duration7Days, setDuration7Days] = useState('1000');
   const [duration30Days, setDuration30Days] = useState('3500');
+  const [allowRegistration, setAllowRegistration] = useState(true);
 
   useEffect(() => {
     api.get('/settings').then(({ data }) => {
@@ -27,6 +28,7 @@ export default function AdminSettingsPage() {
       setDuration3Days(s.listing_duration_3_days || '500');
       setDuration7Days(s.listing_duration_7_days || '1000');
       setDuration30Days(s.listing_duration_30_days || '3500');
+      setAllowRegistration(s.allow_registration !== 'false');
     }).catch(() => { }).finally(() => setLoading(false));
   }, []);
 
@@ -40,6 +42,7 @@ export default function AdminSettingsPage() {
           listing_duration_3_days: duration3Days,
           listing_duration_7_days: duration7Days,
           listing_duration_30_days: duration30Days,
+          allow_registration: allowRegistration ? 'true' : 'false',
         }
       });
       setSaved(true);
@@ -80,7 +83,8 @@ export default function AdminSettingsPage() {
                 style={{ background: '#f6f8fa', borderColor: '#d0d7de', color: '#1a1a1a' }} />
             </div>
             <div className="flex items-center gap-3">
-              <input type="checkbox" id="reg" defaultChecked className="rounded accent-orange-500"
+              <input type="checkbox" id="reg" checked={allowRegistration} onChange={(e) => setAllowRegistration(e.target.checked)}
+                className="rounded accent-orange-500"
                 style={{ background: '#f6f8fa', borderColor: '#d0d7de' }} />
               <label htmlFor="reg" className="text-sm text-gray-500">Allow new user registration</label>
             </div>

@@ -1,4 +1,5 @@
 'use client';
+import AppImage from '@/components/AppImage';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Target, Eye, Diamond } from '@/lib/icons';
@@ -135,7 +136,7 @@ function Avatar({ member }: { member: Member }) {
         }}
       >
         {member.photo
-          ? <img src={member.photo} alt={member.name} className="w-full h-full object-cover"
+          ? <AppImage src={member.photo} alt={member.name} className="w-full h-full object-cover"
               style={{
                 objectPosition: member.photoPosition ?? 'center',
                 transform: member.photoZoom && member.photoZoom > 0 ? `scale(${member.photoZoom})` : undefined,
@@ -327,8 +328,8 @@ export default function AboutPage() {
             <div key={p.name} className="flex flex-col items-center gap-2 group">
               <div className="rounded-xl overflow-hidden flex items-center justify-center border border-gray-100 transition group-hover:shadow-lg group-hover:border-gray-200"
                 style={{ width: 120, height: 64, background: p.bg, padding: 8 }}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={p.logo} alt={p.label} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
+                { }
+                <AppImage src={p.logo} alt={p.label} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
               </div>
               <span className="text-xs text-gray-500 font-semibold">{p.label}</span>
             </div>
