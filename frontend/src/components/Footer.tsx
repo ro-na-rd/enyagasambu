@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useLanguage } from '@/context/LanguageContext';
 import { useSiteContent } from '@/lib/useSiteContent';
@@ -62,7 +63,7 @@ export default function Footer() {
           <div className="lg:col-span-4">
             <Link href="/" className="inline-block">
               <div className="flex items-center gap-3">
-                <img src="/assets/LOGO1.png" alt="E-Nyagasambu" className="w-12 h-12 object-contain shrink-0" />
+                <Image src="/assets/LOGO1.png" alt="E-Nyagasambu" width={48} height={48} className="w-12 h-12 object-contain shrink-0" />
                 <div>
                   <p className="text-2xl font-extrabold tracking-tight">
                     <span style={{ color: '#E85D04' }}>E-</span>Nyagasambu
