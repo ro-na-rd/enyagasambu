@@ -2,7 +2,7 @@
 import AppImage from '@/components/AppImage';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { useCurrency } from '@/context/CurrencyContext';
+import { formatRWF } from '@/lib/currencies';
 import api from '@/lib/api';
 import { Lock, Camera, Image, BadgeCheck, CheckCircle, Clock, Coins } from '@/lib/icons';
 import { useQrDataUrl } from '@/components/QrCode';
@@ -89,7 +89,6 @@ function PhotoUploadStep({ onPhoto, onSkip }: { onPhoto: (url: string) => void; 
 
 /* ── CATALOG STEP ──────────────────────────────────────── */
 function CatalogStep({ types, onSelect }: { types: CertType[]; onSelect: (t: CertType) => void }) {
-  const { format } = useCurrency();
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2">
@@ -110,7 +109,7 @@ function CatalogStep({ types, onSelect }: { types: CertType[]; onSelect: (t: Cer
                 </p>
               </div>
               <div className="text-right shrink-0">
-                <p className="text-lg font-extrabold" style={{ color: NAVY }}>{format(t.price_rwf)}</p>
+                <p className="text-lg font-extrabold" style={{ color: NAVY }}>{formatRWF(t.price_rwf)}</p>
                 <span className="text-[11px] font-bold text-white px-3 py-1.5 rounded-lg inline-block" style={{ background: ORG }}>
                   Get Certified →
                 </span>
@@ -162,7 +161,6 @@ const statusMeta: Record<string, { label: string; color: string; bg: string }> =
 };
 
 export default function BrokerCertificatePage() {
-  const { format } = useCurrency();
   const { user, loading } = useAuth();
   const [photo, setPhoto] = useState<string[]>([]); // Array of photo URLs, first is main
   const [photoStep, setPhotoStep] = useState(true);
@@ -418,7 +416,7 @@ export default function BrokerCertificatePage() {
                   <div>
                     <p className="text-sm font-bold text-gray-900">{selectedType.name}</p>
                     <p className="text-xs text-gray-500 mt-0.5">{selectedType.description}</p>
-                    <p className="text-sm font-extrabold mt-2" style={{ color: NAVY }}>{format(selectedType.price_rwf)}</p>
+                    <p className="text-sm font-extrabold mt-2" style={{ color: NAVY }}>{formatRWF(selectedType.price_rwf)}</p>
                   </div>
                 </div>
                 <div className="flex gap-2">
@@ -435,7 +433,7 @@ export default function BrokerCertificatePage() {
                     className="text-white font-bold px-6 py-2.5 rounded-lg transition hover:opacity-90 text-sm flex-1"
                     style={{ background: ORG }}
                   >
-                    {busy ? 'Processing...' : `Request & Pay ${format(selectedType.price_rwf)} →`}
+                    {busy ? 'Processing...' : `Request & Pay ${formatRWF(selectedType.price_rwf)} →`}
                   </button>
                 </div>
               </div>
@@ -453,7 +451,7 @@ export default function BrokerCertificatePage() {
                 {/* Pending: show payment instructions */}
                 {certStatus === 'pending' && (
                   <div className="space-y-4 border-t border-gray-100 pt-4">
-                    <p className="text-sm font-semibold text-gray-700">Pay {format(price)} to proceed</p>
+                    <p className="text-sm font-semibold text-gray-700">Pay {formatRWF(price)} to proceed</p>
                     <div>
                       <label className="text-xs font-medium text-gray-500 block mb-1">Your phone number (MTN / Airtel)</label>
                       <div className="flex gap-2">

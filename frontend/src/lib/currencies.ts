@@ -39,3 +39,7 @@ export function formatPrice(amountRWF: number, toCode: string): string {
   const converted = convertCurrency(amountRWF, toCode);
   return `${currency.symbol} ${converted.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
 }
+
+export function formatRWF(amountRWF: number): string {
+  return `RWF ${amountRWF.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+}

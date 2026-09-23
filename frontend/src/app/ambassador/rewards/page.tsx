@@ -2,12 +2,11 @@
 import { useEffect, useState } from 'react';
 import api from '@/lib/api';
 import { Coins } from '@/lib/icons';
-import { useCurrency } from '@/context/CurrencyContext';
+import { formatRWF } from '@/lib/currencies';
 
 const ORG = '#E85D04';
 
 export default function AmbassadorRewardsPage() {
-  const { format } = useCurrency();
   const [referral, setReferral] = useState<{ totalReferrals?: number; bonusPaid?: number; bonusPerReferral?: number } | null>(null);
 
   useEffect(() => {
@@ -25,8 +24,8 @@ export default function AmbassadorRewardsPage() {
 
       <div className="grid lg:grid-cols-2 gap-4 mb-8">
         {[
-          { label: 'Total Earned', value: format(totalEarned), icon: <Coins size={24} />, sub: 'From certificate referrals', color: ORG },
-          { label: 'Referral Bonus', value: format((referral?.bonusPaid ?? 0) * (referral?.bonusPerReferral ?? 200)), icon: <Coins size={24} />, sub: `${referral?.bonusPaid ?? 0} successful referral(s)`, color: '#059669' },
+          { label: 'Total Earned', value: formatRWF(totalEarned), icon: <Coins size={24} />, sub: 'From certificate referrals', color: ORG },
+          { label: 'Referral Bonus', value: formatRWF((referral?.bonusPaid ?? 0) * (referral?.bonusPerReferral ?? 200)), icon: <Coins size={24} />, sub: `${referral?.bonusPaid ?? 0} successful referral(s)`, color: '#059669' },
         ].map((s) => (
           <div key={s.label} className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
             <div className="flex items-center justify-between mb-2">
@@ -51,7 +50,7 @@ export default function AmbassadorRewardsPage() {
                   <p className="text-xs text-gray-400">{referral.bonusPaid ?? 0} successful referral(s) paid for certificate</p>
                 </div>
               </div>
-              <span className="text-sm font-bold text-green-600">+{format((referral.bonusPaid ?? 0) * (referral.bonusPerReferral ?? 200))}</span>
+              <span className="text-sm font-bold text-green-600">+{formatRWF((referral.bonusPaid ?? 0) * (referral.bonusPerReferral ?? 200))}</span>
             </div>
           )}
           {(!referral || (referral.bonusPaid ?? 0) === 0) && (

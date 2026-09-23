@@ -1,9 +1,9 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { useCurrency } from '@/context/CurrencyContext';
 import Link from 'next/link';
 import api from '@/lib/api';
+import { formatRWF } from '@/lib/currencies';
 import { Package, Store, Car, CheckCircle, Handshake, Users, Coins, FileText, TrendingUp, User, Award } from '@/lib/icons';
 
 const NAVY = '#0f1e42';
@@ -32,7 +32,6 @@ interface BrokerStats {
 
 export default function BrokerDashboardPage() {
   const { user } = useAuth();
-  const { format } = useCurrency();
   const [cert, setCert] = useState<{ status: string; cert_no?: string; amount_rwf?: number; type_name?: string; type_price?: number } | null>(null);
   const [statsData, setStatsData] = useState<BrokerStats | null>(null);
   const [report, setReport] = useState<{
@@ -146,7 +145,7 @@ export default function BrokerDashboardPage() {
                 </div>
               </div>
               <Link href="/broker/certificate" className="px-4 py-2 bg-[#0f1e42] hover:bg-[#0a1530] text-white rounded-lg font-semibold text-sm transition shrink-0">
-                Get Certified ({format(certPrice)})
+                Get Certified ({formatRWF(certPrice)})
               </Link>
             </div>
           )}
@@ -200,13 +199,13 @@ export default function BrokerDashboardPage() {
               <div className="flex items-start justify-between mb-3">
                 <div>
                   <p className="text-gray-500 text-sm font-medium">Total Earnings</p>
-                  <p className="text-2xl font-extrabold" style={{ color: ORG }} >{format(statsData?.totalCommission ?? 0)}</p>
+                  <p className="text-2xl font-extrabold" style={{ color: ORG }} >{formatRWF(statsData?.totalCommission ?? 0)}</p>
                 </div>
                 <div className="w-12 h-12 rounded-lg" style={{ background: `${ORG}15` }}>
                   <Coins size={24} style={{ color: ORG }} className="w-full h-full p-2" />
                 </div>
               </div>
-              <p className="text-xs text-gray-500">+{format(statsData?.commissionThisMonth ?? 0)} this month</p>
+              <p className="text-xs text-gray-500">+{formatRWF(statsData?.commissionThisMonth ?? 0)} this month</p>
             </div>
           </div>
 

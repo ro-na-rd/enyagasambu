@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect, useCallback } from 'react';
-import { useCurrency } from '@/context/CurrencyContext';
+import { formatRWF } from '@/lib/currencies';
 import api from '@/lib/api';
 import { Loader2, Users, Store, CheckCircle, Clock, Coins, UserPlus, TrendingUp, BarChart3 } from '@/lib/icons';
 
@@ -24,7 +24,6 @@ interface Report {
 }
 
 export default function BrokerReportsPage() {
-  const { format } = useCurrency();
   const [report, setReport] = useState<Report | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -52,7 +51,7 @@ export default function BrokerReportsPage() {
     { label: 'Sold Deals', value: String(s?.soldListings ?? 0), icon: <CheckCircle size={20} />, color: '#0f1e42', bg: '#f0f2f6' },
     { label: 'Leads', value: String(s?.totalLeads ?? 0), icon: <UserPlus size={20} />, color: '#2563eb', bg: '#eff6ff' },
     { label: 'Pending/Expired', value: String(s?.pendingListings ?? 0), icon: <Clock size={20} />, color: '#d97706', bg: '#fffbeb' },
-    { label: 'Total Commission', value: format(s?.totalCommission ?? 0), icon: <Coins size={20} />, color: ORG, bg: '#fff7ed' },
+    { label: 'Total Commission', value: formatRWF(s?.totalCommission ?? 0), icon: <Coins size={20} />, color: ORG, bg: '#fff7ed' },
   ];
 
   const maxMonth = Math.max(1, ...(report?.byMonth || []).map((m) => m.count));

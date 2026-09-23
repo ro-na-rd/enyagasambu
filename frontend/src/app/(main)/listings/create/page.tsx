@@ -4,8 +4,8 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
 import { useLanguage } from '@/context/LanguageContext';
-import { useCurrency } from '@/context/CurrencyContext';
 import api from '@/lib/api';
+import { formatRWF } from '@/lib/currencies';
 import { Smartphone, Clock, CheckCircle, Sparkles } from '@/lib/icons';
 
 interface CreateForm {
@@ -22,7 +22,6 @@ interface Category { id: number; name: string; slug: string; type: string; }
 
 export default function CreateListingPage() {
   const { T } = useLanguage();
-  const { format } = useCurrency();
   const router = useRouter();
   const [categories, setCategories] = useState<Category[]>([]);
   const [durationPrices, setDurationPrices] = useState<Record<number, number>>({ 3: 500, 7: 1000, 30: 3500 });
@@ -425,7 +424,7 @@ export default function CreateListingPage() {
                     }`}
                 >
                   <div>{d} days</div>
-                  <div className="text-xs mt-1 opacity-80">{format(durationPrices[d])}</div>
+                  <div className="text-xs mt-1 opacity-80">{formatRWF(durationPrices[d])}</div>
                 </button>
               ))}
             </div>
@@ -480,7 +479,7 @@ export default function CreateListingPage() {
           disabled={isSubmitting || postSuccess}
           className="w-full bg-[#E85D04] text-white font-semibold py-3 rounded-lg hover:bg-[#e05d00] transition disabled:opacity-60"
         >
-          {postSuccess ? 'Posted!' : isSubmitting ? 'Processing...' : postingFree ? 'Post Listing (Free)' : `Pay & Post (${format(durationPrices[durationDays])})`}
+          {postSuccess ? 'Posted!' : isSubmitting ? 'Processing...' : postingFree ? 'Post Listing (Free)' : `Pay & Post (${formatRWF(durationPrices[durationDays])})`}
         </button>
       </form>
     </div>

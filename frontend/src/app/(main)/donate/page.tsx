@@ -2,7 +2,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import api from '@/lib/api';
 import { useLanguage } from '@/context/LanguageContext';
-import { useCurrency } from '@/context/CurrencyContext';
+import { formatRWF } from '@/lib/currencies';
 import { Heart, Phone, CreditCard, CheckCircle, Loader2, Sparkles, Shield, Smartphone } from '@/lib/icons';
 
 const NAVY = '#0f1e42';
@@ -20,7 +20,6 @@ interface RecentDonor {
 
 export default function DonatePage() {
   const { T } = useLanguage();
-  const { format } = useCurrency();
   const [step, setStep] = useState<Step>('form');
   const [method, setMethod] = useState<'momo' | 'card'>('momo');
   const [provider, setProvider] = useState<'mtn' | 'airtel'>('mtn');
@@ -69,7 +68,7 @@ export default function DonatePage() {
     if (!name.trim()) return 'Please enter your name.';
     const amountValue = parseInt(customAmount);
     if (!customAmount || isNaN(amountValue) || amountValue < 100) {
-      return `Please enter a donation amount of at least ${format(100)}.`;
+      return `Please enter a donation amount of at least ${formatRWF(100)}.`;
     }
     return '';
   };
@@ -326,7 +325,7 @@ export default function DonatePage() {
                     style={{ background: ORG }}
                   >
                     {submitting ? <Loader2 size={18} className="animate-spin" /> : <Heart size={18} />}
-                    {T.donateNow} — {format(parseInt(customAmount) || 0)}
+                    {T.donateNow} — {formatRWF(parseInt(customAmount) || 0)}
                   </button>
                 </div>
               ) : (
@@ -386,7 +385,7 @@ export default function DonatePage() {
                     style={{ background: ORG }}
                   >
                     {submitting ? <Loader2 size={18} className="animate-spin" /> : <Heart size={18} />}
-                    {T.donateNow} — {format(parseInt(customAmount) || 0)}
+                    {T.donateNow} — {formatRWF(parseInt(customAmount) || 0)}
                   </button>
                 </div>
               )}
@@ -402,7 +401,7 @@ export default function DonatePage() {
               <div className="bg-orange-50 rounded-xl px-4 py-3 text-sm text-gray-700">
                 <p className="font-medium">{T.donorPhone}: {phone}</p>
                 <p className="text-xs text-gray-500 mt-1">
-                  {format(parseInt(customAmount) || 0)} via {provider === 'mtn' ? 'MTN MoMo' : 'Airtel Money'} — approve the prompt on your phone.
+                  {formatRWF(parseInt(customAmount) || 0)} via {provider === 'mtn' ? 'MTN MoMo' : 'Airtel Money'} — approve the prompt on your phone.
                 </p>
               </div>
               <button
@@ -474,7 +473,7 @@ export default function DonatePage() {
               </div>
               <h2 className="text-2xl font-extrabold text-gray-900">{T.thankYou}</h2>
               <p className="text-gray-500 text-sm max-w-sm mx-auto">
-                Your donation of <strong>{format(effectiveAmount)}</strong> has been received
+                Your donation of <strong>{formatRWF(effectiveAmount)}</strong> has been received
                 {donationId ? ` (Ref #${donationId})` : ''}. It will appear in the supporter list below shortly.
               </p>
               <button
@@ -511,7 +510,7 @@ export default function DonatePage() {
                   </p>
                 </div>
                 <span className="text-sm font-bold whitespace-nowrap" style={{ color: ORG }}>
-                  {format(d.amount_rwf)}
+                  {formatRWF(d.amount_rwf)}
                 </span>
               </div>
             ))}
