@@ -135,7 +135,7 @@ services:
       service: backend
     container_name: nmo-worker
     command: node src/worker.js
-    ports: []
+    ports: !reset []
     environment:
       ENABLE_SCHEDULERS: "true"
     healthcheck:
