@@ -14,6 +14,7 @@ interface Listing {
   seller_name: string; primary_image: string | null; created_at: string;
 }
 interface Category { id: number; name: string; slug: string; type: string; }
+interface Announcement { id: number; title: string; body: string; created_at: string; }
 
 const ORG = '#E85D04';
 const NAVY = '#0f1e42';
@@ -68,10 +69,13 @@ function ListingsContent() {
   const search = searchParams.get('search') || '';
   const [listings, setListings] = useState<Listing[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [adverts, setAdverts] = useState<Announcement[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const perPage = 60;
+
+  const currentTab = useMemo(() => TABS.find(t => t.key === tab) || null, [tab]);
 
   const filterKey = [category, type, search, tab].join('|');
   const [lastFilterKey, setLastFilterKey] = useState(filterKey);
@@ -85,14 +89,17 @@ function ListingsContent() {
     api.get('/listings/categories').then(({ data }) => setCategories(data.categories));
   }, []);
 
+  useEffect(() => {
+    if (currentTab?.key !== 'adverts') return;
+    api.get('/announcements/public').then(({ data }) => setAdverts(data)).catch(() => setAdverts([]));
+  }, [currentTab]);
+
   const [stats, setStats] = useState({ activeListings: 0, categories: 0, sellers: 0, productImages: 0 });
   useEffect(() => {
     api.get('/stats').then(({ data }) => {
       if (data?.stats) setStats(data.stats);
     }).catch(() => {});
   }, []);
-
-  const currentTab = useMemo(() => TABS.find(t => t.key === tab) || null, [tab]);
 
   useEffect(() => {
     if (currentTab?.key === 'adverts') {
@@ -161,6 +168,23 @@ function ListingsContent() {
               </p>
             </div>
           </div>
+
+          <section>
+            <h3 className="text-xl font-bold text-gray-900 mb-4">Latest Adverts</h3>
+            {adverts.length === 0 ? (
+              <p className="bg-white rounded-xl border border-gray-100 p-6 text-sm text-gray-500">No adverts have been published yet.</p>
+            ) : (
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {adverts.map(advert => (
+                  <article key={advert.id} className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
+                    <p className="text-xs font-semibold mb-2" style={{ color: ORG }}>{new Date(advert.created_at).toLocaleDateString()}</p>
+                    <h4 className="font-bold text-gray-900 mb-2">{advert.title}</h4>
+                    <p className="text-sm text-gray-600 whitespace-pre-line">{advert.body}</p>
+                  </article>
+                ))}
+              </div>
+            )}
+          </section>
 
           {/* Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

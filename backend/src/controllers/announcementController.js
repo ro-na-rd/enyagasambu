@@ -27,6 +27,21 @@ exports.listForRole = async (req, res) => {
   }
 };
 
+exports.listPublic = async (req, res) => {
+  try {
+    const [rows] = await pool.query(
+      `SELECT id, title, body, created_at
+       FROM announcements
+       WHERE is_published = 1 AND audience = 'all'
+       ORDER BY created_at DESC LIMIT 30`
+    );
+    res.json(rows);
+  } catch (err) {
+    logger.error('[Announcements public list error]', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
 exports.adminList = async (req, res) => {
   try {
     const [rows] = await pool.query(
