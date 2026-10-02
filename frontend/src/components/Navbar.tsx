@@ -78,6 +78,7 @@ function NavbarView({ pathname, tab, registrationOpen }: { pathname: string | nu
     { key: 'services', href: '/listings?tab=services', label: T.services },
     { key: 'auction', href: '/auction', label: T.auction },
     { key: 'adverts', href: '/listings?tab=adverts', label: T.adverts },
+    { key: 'tax-advisory', href: '/listings?tab=services&search=Tax%20Advisory', label: 'Tax Advisory' },
   ];
 
   const CAT_LINKS: { label: string; href: string; disabled?: boolean }[] = [
