@@ -15,7 +15,10 @@ const { initSocket } = require('./config/socket');
 const { waitForS3, ensureBucket } = require('./services/s3Service');
 const { checkDatabase } = require('./config/db');
 
-const REQUIRED_ENV = ['DB_HOST', 'DB_USER', 'DB_PASSWORD', 'DB_NAME', 'JWT_SECRET'];
+// Local MariaDB installations may intentionally use a blank root password.
+// Require the connection identity and database name, but allow DB_PASSWORD to
+// be omitted or empty so mysql2 can use passwordless authentication.
+const REQUIRED_ENV = ['DB_HOST', 'DB_USER', 'DB_NAME', 'JWT_SECRET'];
 const missing = REQUIRED_ENV.filter((k) => !process.env[k]);
 if (missing.length) {
   logger.error(`[FATAL] Missing required environment variables: ${missing.join(', ')}`);

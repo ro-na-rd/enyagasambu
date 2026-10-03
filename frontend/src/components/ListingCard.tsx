@@ -5,7 +5,7 @@ import { useLanguage } from '@/context/LanguageContext';
 import { useCurrency } from '@/context/CurrencyContext';
 import { useEffect, useState, useRef, useCallback } from 'react';
 import api from '@/lib/api';
-import { Star, Package, MapPin, Phone, X, CheckCircle, Loader2, Clock, Check, AlertCircle, RefreshCw } from '@/lib/icons';
+import { Star, Package, MapPin, Phone, X, CheckCircle, Loader2, Clock, Check, AlertCircle, RefreshCw, MessageCircle } from '@/lib/icons';
 import StarRating from '@/components/StarRating';
 
 interface Listing {
@@ -194,6 +194,12 @@ export default function ListingCard({ listing }: { listing: Listing }) {
     return format(price);
   };
 
+  const shareOnWhatsApp = () => {
+    const url = `${window.location.origin}/listings/${listing.id}`;
+    const text = `Check out ${listing.title} on E-Nyagasambu: ${url}`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');
+  };
+
   return (
     <>
       <div className="bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden group border border-gray-100 hover:border-orange-200 hover:-translate-y-0.5">
@@ -286,7 +292,7 @@ export default function ListingCard({ listing }: { listing: Listing }) {
             </p>
           </div>
 
-          <div className="mt-3.5">
+          <div className="mt-3.5 grid grid-cols-[1fr_auto] gap-2">
             <button
               onClick={handleConnectClick}
               disabled={isSold}
@@ -295,6 +301,16 @@ export default function ListingCard({ listing }: { listing: Listing }) {
             >
               <Phone size={14} strokeWidth={2.5} />
               {isSold ? 'Sold Out' : 'Connect with Seller'}
+            </button>
+            <button
+              type="button"
+              onClick={shareOnWhatsApp}
+              aria-label={`Share ${listing.title} on WhatsApp`}
+              title="Share on WhatsApp"
+              className="w-11 rounded-xl text-white transition-all duration-200 hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center"
+              style={{ background: '#25D366' }}
+            >
+              <MessageCircle size={18} strokeWidth={2.5} />
             </button>
           </div>
         </div>

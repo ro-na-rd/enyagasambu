@@ -18,6 +18,10 @@ export default function AdminSettingsPage() {
   const [duration3Days, setDuration3Days] = useState('500');
   const [duration7Days, setDuration7Days] = useState('1000');
   const [duration30Days, setDuration30Days] = useState('3500');
+  const [duration60Days, setDuration60Days] = useState('6500');
+  const [duration90Days, setDuration90Days] = useState('9000');
+  const [duration180Days, setDuration180Days] = useState('17000');
+  const [duration365Days, setDuration365Days] = useState('32000');
   const [allowRegistration, setAllowRegistration] = useState(true);
 
   useEffect(() => {
@@ -28,6 +32,10 @@ export default function AdminSettingsPage() {
       setDuration3Days(s.listing_duration_3_days || '500');
       setDuration7Days(s.listing_duration_7_days || '1000');
       setDuration30Days(s.listing_duration_30_days || '3500');
+      setDuration60Days(s.listing_duration_60_days || '6500');
+      setDuration90Days(s.listing_duration_90_days || '9000');
+      setDuration180Days(s.listing_duration_180_days || '17000');
+      setDuration365Days(s.listing_duration_365_days || '32000');
       setAllowRegistration(s.allow_registration !== 'false');
     }).catch(() => { }).finally(() => setLoading(false));
   }, []);
@@ -42,6 +50,10 @@ export default function AdminSettingsPage() {
           listing_duration_3_days: duration3Days,
           listing_duration_7_days: duration7Days,
           listing_duration_30_days: duration30Days,
+          listing_duration_60_days: duration60Days,
+          listing_duration_90_days: duration90Days,
+          listing_duration_180_days: duration180Days,
+          listing_duration_365_days: duration365Days,
           allow_registration: allowRegistration ? 'true' : 'false',
         }
       });
@@ -175,6 +187,22 @@ export default function AdminSettingsPage() {
                 onChange={(e) => setDuration30Days(e.target.value)}
                 className="border rounded-lg px-3 py-2.5 text-sm w-full max-w-[200px] focus:outline-none focus:ring-2 focus:ring-orange-500/30"
                 style={{ background: '#f6f8fa', borderColor: '#d0d7de', color: '#1a1a1a' }} />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-600 mb-1">2 Months (RWF)</label>
+              <input type="number" value={duration60Days} onChange={(e) => setDuration60Days(e.target.value)} className="border rounded-lg px-3 py-2.5 text-sm w-full max-w-[200px] focus:outline-none focus:ring-2 focus:ring-orange-500/30" style={{ background: '#f6f8fa', borderColor: '#d0d7de', color: '#1a1a1a' }} />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-600 mb-1">3 Months (RWF)</label>
+              <input type="number" value={duration90Days} onChange={(e) => setDuration90Days(e.target.value)} className="border rounded-lg px-3 py-2.5 text-sm w-full max-w-[200px] focus:outline-none focus:ring-2 focus:ring-orange-500/30" style={{ background: '#f6f8fa', borderColor: '#d0d7de', color: '#1a1a1a' }} />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-600 mb-1">6 Months (RWF)</label>
+              <input type="number" value={duration180Days} onChange={(e) => setDuration180Days(e.target.value)} className="border rounded-lg px-3 py-2.5 text-sm w-full max-w-[200px] focus:outline-none focus:ring-2 focus:ring-orange-500/30" style={{ background: '#f6f8fa', borderColor: '#d0d7de', color: '#1a1a1a' }} />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-600 mb-1">1 Year (RWF)</label>
+              <input type="number" value={duration365Days} onChange={(e) => setDuration365Days(e.target.value)} className="border rounded-lg px-3 py-2.5 text-sm w-full max-w-[200px] focus:outline-none focus:ring-2 focus:ring-orange-500/30" style={{ background: '#f6f8fa', borderColor: '#d0d7de', color: '#1a1a1a' }} />
             </div>
           </div>
 

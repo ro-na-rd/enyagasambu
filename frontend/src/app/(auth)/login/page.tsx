@@ -8,11 +8,12 @@ import api from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 import AuthRegisterLayout from '@/components/AuthRegisterLayout';
 import { useRegistrationStatus } from '@/hooks/useRegistrationStatus';
-import { Mail, Lock, Eye, EyeOff, X, AlertTriangle, Loader2, ArrowRight, Megaphone, Handshake, Store, ChevronRight } from '@/lib/icons';
+import { Mail, Lock, Eye, EyeOff, X, AlertTriangle, Loader2, ArrowRight, Megaphone, Handshake, Store, ChevronRight, Heart, Star } from '@/lib/icons';
 
 const ORG = '#E85D04';
 
 interface LoginForm { email: string; password: string; }
+interface MarketplaceListing { id: number; title: string; price: number | null; currency?: string; like_count?: number; views?: number; }
 
 const ACCOUNT_TYPES = [
   {
@@ -61,6 +62,8 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [capsLock, setCapsLock] = useState(false);
   const [showAccountTypeModal, setShowAccountTypeModal] = useState(false);
+  const [bestPosts, setBestPosts] = useState<MarketplaceListing[]>([]);
+  const [likedPosts, setLikedPosts] = useState<MarketplaceListing[]>([]);
   const [registrationClosed] = useState(() =>
     typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('registration') === 'closed'
   );
@@ -95,6 +98,26 @@ export default function LoginPage() {
     }
     return () => { document.body.style.overflow = ''; };
   }, [showAccountTypeModal]);
+
+  useEffect(() => {
+    Promise.all([
+      api.get('/listings?featured=1&limit=2'),
+      api.get('/listings?sort=popular&limit=2'),
+    ]).then(([featured, popular]) => {
+      setBestPosts(featured.data?.listings || []);
+      setLikedPosts(popular.data?.listings || []);
+    }).catch(() => {});
+  }, []);
+
+  const postPreview = (post: MarketplaceListing, liked: boolean) => (
+    <Link key={post.id} href={`/listings/${post.id}`} className="block rounded-xl border border-white/15 bg-white/10 p-4 transition hover:bg-white/15">
+      <p className="truncate text-sm font-bold text-white">{post.title}</p>
+      <div className="mt-2 flex items-center justify-between gap-3 text-xs">
+        <span className="font-semibold text-orange-300">{post.price != null ? `${post.currency || 'RWF'} ${post.price.toLocaleString()}` : 'Price on request'}</span>
+        <span className="inline-flex items-center gap-1 text-white/70">{liked ? <Heart size={13} /> : <Star size={13} />}{liked ? post.like_count || 0 : post.views || 0}</span>
+      </div>
+    </Link>
+  );
 
   const onSubmit = async (data: LoginForm) => {
     setError('');
@@ -135,7 +158,18 @@ export default function LoginPage() {
   };
 
   return (
-    <AuthRegisterLayout badge="Sign In">
+    <AuthRegisterLayout badge="Sign In" aside={(
+      <div className="rounded-3xl bg-white/10 backdrop-blur-md border border-white/15 p-7 text-white shadow-2xl">
+        <h2 className="text-2xl font-bold">Marketplace highlights</h2>
+        <p className="mt-2 text-sm text-white/70">The best posts and the most liked listings, without decorative images.</p>
+        <div className="mt-6 space-y-3">
+          <p className="text-xs font-black uppercase tracking-widest text-orange-300">Best posts</p>
+          {bestPosts.length ? bestPosts.map((post) => postPreview(post, false)) : <p className="text-sm text-white/60">No featured posts yet.</p>}
+          <p className="pt-3 text-xs font-black uppercase tracking-widest text-orange-300">Most liked</p>
+          {likedPosts.length ? likedPosts.map((post) => postPreview(post, true)) : <p className="text-sm text-white/60">No liked posts yet.</p>}
+        </div>
+      </div>
+    )}>
 
       {/* Logo */}
       <div className="flex items-center justify-center gap-3 mb-8">
