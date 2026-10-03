@@ -6,13 +6,21 @@ import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
 import { useCurrency } from '@/context/CurrencyContext';
 import { useRegistrationStatus } from '@/hooks/useRegistrationStatus';
-import { Suspense, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import type { Lang } from '@/lib/translations';
 import { Search, UserPlus, Star, Heart, Menu, X, Coins, List, Gift, Wrench, LogOut, Home } from '@/lib/icons';
 import { categoryMap } from '@/lib/translations';
+import api from '@/lib/api';
 
 const navy = '#0f1e42';
 const org = '#E85D04';
+
+interface Announcement {
+  id: number;
+  title: string;
+  body: string;
+  created_at: string;
+}
 
 function catLabel(slug: string, lang: 'en' | 'fr' | 'rw') {
   return categoryMap[slug]?.[lang] ?? categoryMap[slug]?.en ?? slug;
@@ -63,6 +71,8 @@ function NavbarView({ pathname, tab, registrationOpen }: { pathname: string | nu
   const [catsOpen, setCatsOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [prefOpen, setPrefOpen] = useState(false);
+  const [adverts, setAdverts] = useState<Announcement[]>([]);
+  const [advertsLoaded, setAdvertsLoaded] = useState(false);
   const close = () => setMenuOpen(false);
   const closeMobile = () => setMobileOpen(false);
 
@@ -92,6 +102,15 @@ function NavbarView({ pathname, tab, registrationOpen }: { pathname: string | nu
     { label: catLabel('farmer-product', lang), href: '/listings?category=farmer-product' },
     { label: catLabel('supply-chain', lang), href: '/listings?category=supply-chain' },
   ];
+
+  useEffect(() => {
+    if (!catsOpen || advertsLoaded) return;
+
+    api.get('/announcements/public')
+      .then(({ data }) => setAdverts(Array.isArray(data) ? data.slice(0, 5) : []))
+      .catch(() => setAdverts([]))
+      .finally(() => setAdvertsLoaded(true));
+  }, [catsOpen, advertsLoaded]);
 
   return (
     <>
@@ -528,30 +547,43 @@ function NavbarView({ pathname, tab, registrationOpen }: { pathname: string | nu
                     {label} <span style={{ fontSize: 9 }}>▾</span>
                   </Link>
                   {catsOpen && (
-                    <div className="absolute left-0 top-full bg-white rounded-b-lg shadow-2xl border border-gray-100 z-30 py-2 min-w-56 max-h-[calc(100vh-80px)] overflow-y-auto">
-                      {CAT_LINKS.map(({ label: cLabel, href: cHref, disabled }) => (
-                        disabled ? (
-                          <span
-                            key={cLabel}
-                            className="block px-4 py-2 text-sm text-gray-400 cursor-not-allowed"
-                            title="Coming soon"
-                          >
-                            {cLabel}
-                          </span>
-                        ) : (
-                          <Link
-                            key={cLabel}
-                            href={cHref}
-                            className="block px-4 py-2 text-sm text-gray-700 transition"
-                            style={{ textDecoration: 'none' }}
-                            onMouseEnter={e => { e.currentTarget.style.background = '#fff4ec'; e.currentTarget.style.color = org; }}
-                            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#374151'; }}
-                            onClick={() => setCatsOpen(false)}
-                          >
-                            {cLabel}
-                          </Link>
-                        )
-                      ))}
+                    <div className="absolute left-0 top-full bg-white rounded-b-lg shadow-2xl border border-gray-100 z-30 min-w-80 max-w-96 overflow-hidden">
+                      <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between gap-4">
+                        <span className="text-xs font-bold uppercase tracking-wider" style={{ color: navy }}>Latest adverts</span>
+                        <Link
+                          href={href}
+                          className="text-xs font-semibold whitespace-nowrap"
+                          style={{ color: org, textDecoration: 'none' }}
+                          onClick={() => setCatsOpen(false)}
+                        >
+                          View all
+                        </Link>
+                      </div>
+                      {!advertsLoaded ? (
+                        <p className="px-4 py-4 text-sm text-gray-500">Loading adverts...</p>
+                      ) : adverts.length === 0 ? (
+                        <p className="px-4 py-4 text-sm text-gray-500">No adverts have been published yet.</p>
+                      ) : (
+                        <div className="divide-y divide-gray-100">
+                          {adverts.map(advert => (
+                            <Link
+                              key={advert.id}
+                              href={href}
+                              className="block px-4 py-3 transition"
+                              style={{ textDecoration: 'none' }}
+                              onMouseEnter={e => { e.currentTarget.style.background = '#fff4ec'; }}
+                              onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
+                              onClick={() => setCatsOpen(false)}
+                            >
+                              <p className="text-sm font-semibold truncate" style={{ color: navy }}>{advert.title}</p>
+                              <p className="mt-1 text-xs text-gray-600 line-clamp-2 whitespace-pre-line">{advert.body}</p>
+                              <p className="mt-1.5 text-[11px] font-medium" style={{ color: org }}>
+                                {new Date(advert.created_at).toLocaleDateString()}
+                              </p>
+                            </Link>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
