@@ -1,10 +1,23 @@
+# Never copy host-only dependencies or runtime data into the Linux image.
+node_modules/
+npm-debug.log*
+
+# Local environment files and secrets are supplied by Docker Compose at runtime.
 .env
 .env.*
-node_modules
-.git
-.gitignore
-*.md
+!.env.example
+
+# Local runtime/build artifacts.
 uploads/
-backend-dev.err.log
-backend-dev.log
+coverage/
+*.log
+
+# Editor and OS metadata.
+.git/
+.gitignore
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
 ca-avast.pem
+*.md

@@ -1,7 +1,24 @@
+# Dependencies are installed in the image for the target platform.
+node_modules/
+
+# Build output must be generated from the checked-out source inside Docker.
+.next/
+out/
+coverage/
+.eslintcache
+
+# Environment files are not build context. Public build values come from
+# docker-compose build args.
 .env
 .env.*
-node_modules
-.git
+!.env.example
+
+# Editor, VCS, and OS metadata.
+.git/
 .gitignore
-.next
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+npm-debug.log*
 *.md

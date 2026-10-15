@@ -1,7 +1,8 @@
+name: enyagasambu-main
+
 services:
   mysql:
     image: mariadb:10.11
-    container_name: nmo-mysql
     restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD in .env}
@@ -23,7 +24,6 @@ services:
 
   minio:
     image: minio/minio:RELEASE.2024-03-30T09-41-56Z
-    container_name: nmo-minio
     restart: unless-stopped
     command: server /data --console-address ":9001"
     environment:
@@ -43,7 +43,6 @@ services:
 
   backend:
     build: ./backend
-    container_name: nmo-backend
     restart: unless-stopped
     ports:
       - "5000:5000"
@@ -110,7 +109,6 @@ services:
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:?Set NEXT_PUBLIC_API_URL in .env}
         NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:?Set NEXT_PUBLIC_SITE_URL in .env}
         BACKEND_URL: ${BACKEND_URL:-http://backend:5000}
-    container_name: nmo-frontend
     restart: unless-stopped
     ports:
       - "3000:3000"
@@ -134,7 +132,6 @@ services:
   worker:
     extends:
       service: backend
-    container_name: nmo-worker
     command: node src/worker.js
     ports: !reset []
     environment:

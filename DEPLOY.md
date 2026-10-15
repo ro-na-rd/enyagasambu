@@ -67,8 +67,8 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml restart
 # Stop everything
 docker compose -f docker-compose.yml -f docker-compose.prod.yml down
 
-# Rebuild after code changes
-docker compose -f docker-compose.yml -f docker-compose.prod.yml build --no-cache && docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+# Rebuild after code changes and replace containers with the new project image
+docker compose -f docker-compose.yml -f docker-compose.prod.yml build --no-cache && docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --force-recreate --remove-orphans
 
 # Check health
 curl -k https://enyagasambu.rw/api/health

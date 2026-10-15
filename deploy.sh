@@ -48,7 +48,7 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml build --no-cache
 
 # 5. Start services
 echo "[5/7] Starting services..."
-docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --force-recreate --remove-orphans
 
 # 6. Wait for health checks
 echo "[6/7] Waiting for services to be healthy..."
