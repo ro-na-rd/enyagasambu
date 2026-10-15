@@ -23,6 +23,7 @@ export default function AdminSettingsPage() {
   const [duration180Days, setDuration180Days] = useState('17000');
   const [duration365Days, setDuration365Days] = useState('32000');
   const [allowRegistration, setAllowRegistration] = useState(true);
+  const [repostDiscount, setRepostDiscount] = useState('0');
 
   useEffect(() => {
     api.get('/settings').then(({ data }) => {
@@ -37,6 +38,7 @@ export default function AdminSettingsPage() {
       setDuration180Days(s.listing_duration_180_days || '17000');
       setDuration365Days(s.listing_duration_365_days || '32000');
       setAllowRegistration(s.allow_registration !== 'false');
+      setRepostDiscount(s.repost_discount_percent || '0');
     }).catch(() => { }).finally(() => setLoading(false));
   }, []);
 
@@ -55,6 +57,7 @@ export default function AdminSettingsPage() {
           listing_duration_180_days: duration180Days,
           listing_duration_365_days: duration365Days,
           allow_registration: allowRegistration ? 'true' : 'false',
+          repost_discount_percent: String(Math.min(100, Math.max(0, Number(repostDiscount) || 0))),
         }
       });
       setSaved(true);
@@ -230,6 +233,27 @@ export default function AdminSettingsPage() {
                 className="border rounded-lg px-3 py-2.5 text-sm w-full max-w-[200px] focus:outline-none focus:ring-2 focus:ring-orange-500/30"
                 style={{ background: '#f6f8fa', borderColor: '#d0d7de', color: '#1a1a1a' }} />
             </div>
+            <div>
+              <label className="block text-xs text-gray-600 mb-1">Repost Discount (%)</label>
+              <input
+                type="number"
+                min={0}
+                max={100}
+                value={repostDiscount}
+                onChange={(e) => setRepostDiscount(e.target.value)}
+                className="border rounded-lg px-3 py-2.5 text-sm w-full max-w-[200px] focus:outline-none focus:ring-2 focus:ring-orange-500/30"
+                style={{ background: '#f6f8fa', borderColor: '#d0d7de', color: '#1a1a1a' }} />
+              <p className="text-[11px] text-gray-500 mt-1">
+                Off the 400 RWF repost fee, for sold listings that are still live and not yet reported to admins. 0 disables it.
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 pt-4">
+            <button onClick={handleSave} className="text-white text-sm font-semibold px-5 py-2.5 rounded-lg transition"
+              style={{ background: `linear-gradient(135deg, ${BRAND.orange}, ${BRAND.orangeDark})` }}>
+              Save Other Pricing
+            </button>
+            {saved && <span className="text-sm font-medium" style={{ color: '#2ea043' }}><Check size={14} className="inline" /> Saved</span>}
           </div>
         </div>
       </div>

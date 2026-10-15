@@ -1,6 +1,7 @@
 const pool = require('../config/db');
 const { uploadToS3 } = require('../services/s3Service');
 const { notifyAdmins, notifyUser } = require('../services/notificationService');
+const { loadCategoryFields, sanitizeAttributes } = require('../services/categoryFieldsService');
 const { logger } = require('../config/logger');
 
 const BROKER_LISTING_DAYS = 30;
@@ -64,11 +65,19 @@ exports.createListing = async (req, res) => {
   try {
     await conn.beginTransaction();
 
+    const categoryFields = await loadCategoryFields(category_id, conn);
+    const { values: attributes, errors: attributeErrors } = sanitizeAttributes(categoryFields, req.body.attributes);
+    if (attributeErrors.length) {
+      await conn.rollback();
+      return res.status(422).json({ message: attributeErrors.join(', ') });
+    }
+    const attributesJson = Object.keys(attributes).length ? JSON.stringify(attributes) : null;
+
     const expiresAt = new Date(Date.now() + BROKER_LISTING_DAYS * 24 * 60 * 60 * 1000);
 
     const [result] = await conn.query(
-      `INSERT INTO listings (user_id, category_id, title, description, price, price_type, currency, location, listing_type, client_name, expires_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO listings (user_id, category_id, title, description, price, price_type, currency, location, listing_type, attributes, client_name, expires_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         req.user.id,
         parseInt(category_id, 10),
@@ -79,6 +88,7 @@ exports.createListing = async (req, res) => {
         currency || 'RWF',
         location ? String(location).trim() : null,
         listing_type || 'sell',
+        attributesJson,
         client_name ? String(client_name).trim() : null,
         expiresAt,
       ]

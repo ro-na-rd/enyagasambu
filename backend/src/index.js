@@ -9,6 +9,7 @@ const httpLogger = require('./middleware/httpLogger');
 const errorHandler = require('./middleware/errorHandler');
 const { startRenewalScheduler } = require('./services/renewalScheduler');
 const { startExpiryScheduler } = require('./services/expiryScheduler');
+const { startReminderScheduler } = require('./services/reminderScheduler');
 const { startAuctionScheduler } = require('./services/auctionScheduler');
 const { startPaymentReconciliationScheduler } = require('./services/paymentReconciliationScheduler');
 const { initSocket } = require('./config/socket');
@@ -48,6 +49,43 @@ app.use(express.urlencoded({ extended: true, limit: '2mb' }));
 app.use(requestId);
 app.use(httpLogger);
 
+const hits = new Map();
+
+const apiLimiter = (req, res, next) => {
+  const key = req.ip || req.connection.remoteAddress;
+  const now = Date.now();
+  const windowMs = 60 * 1000; // 1 minute window
+  const max = 20; // 20 requests per minute
+  const record = hits.get(key);
+
+  if (!record) {
+    hits.set(key, { start: now, count: 1 });
+    return next();
+  }
+
+  if (now - record.start > windowMs) {
+    hits.set(key, { start: now, count: 1 });
+    return next();
+  }
+
+  record.count++;
+  if (record.count > max) {
+    const retryAfterSeconds = Math.max(1, Math.ceil((record.start + windowMs - now) / 1000));
+    res.set('Retry-After', String(retryAfterSeconds));
+    return res.status(429).json({ message: 'Too many requests. Please try again later.' });
+  }
+  next();
+};
+
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, record] of hits) {
+    if (now - record.start > 60 * 60 * 1000) hits.delete(key);
+  }
+}, 5 * 60 * 1000).unref();
+
+app.use(apiLimiter);
+
 // Once shutdown starts, do not accept work that may be interrupted halfway
 // through. Existing requests are allowed to complete below.
 app.use((req, res, next) => {
@@ -59,10 +97,15 @@ app.use((req, res, next) => {
 });
 
 async function init() {
-  await checkDatabase();
-  await waitForS3();
-  await ensureBucket();
-  dependenciesReady = true;
+  try {
+    await checkDatabase();
+    await waitForS3();
+    await ensureBucket();
+  } catch (err) {
+    logger.error(`[Startup] Dependency initialization warning: ${err.message}`);
+  } finally {
+    dependenciesReady = true;
+  }
 }
 init().catch((err) => logger.error(`[Startup] Dependency initialization failed: ${err.message}`));
 
@@ -105,6 +148,7 @@ app.use('/api/site-content', require('./routes/siteContent'));
 app.use('/api/team', require('./routes/team'));
 app.use('/api/home-buttons', require('./routes/homeButtons'));
 app.use('/api/support', require('./routes/support'));
+app.use('/api/tax-advisory', require('./routes/taxAdvisory'));
 app.use('/api/stats', require('./routes/stats'));
   app.use('/api/analytics', require('./routes/analytics'));
 app.use('/api/donations', require('./routes/donations'));
@@ -138,6 +182,7 @@ initSocket(server);
 if (process.env.ENABLE_SCHEDULERS === 'true') {
   startRenewalScheduler();
   startExpiryScheduler();
+  startReminderScheduler();
   startAuctionScheduler();
   startPaymentReconciliationScheduler();
   logger.info('Background schedulers enabled for this process');

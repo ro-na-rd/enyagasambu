@@ -1,4 +1,4 @@
-const { S3Client, PutObjectCommand, DeleteObjectCommand, HeadBucketCommand, CreateBucketCommand, PutBucketPolicyCommand, ListBucketsCommand } = require('@aws-sdk/client-s3');
+const { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand, HeadBucketCommand, CreateBucketCommand, PutBucketPolicyCommand, ListBucketsCommand } = require('@aws-sdk/client-s3');
 const crypto = require('crypto');
 const { logger } = require('../config/logger');
 
@@ -116,4 +116,53 @@ async function deleteFromS3Url(url) {
   await deleteFromS3(key);
 }
 
-module.exports = { uploadToS3, deleteFromS3, deleteFromS3Url, ensureBucket, waitForS3 };
+// Private bucket for sensitive uploads (tax documents). It never receives a
+// public-read policy, so objects are only reachable through authenticated
+// endpoints that stream them.
+const PRIVATE_BUCKET = process.env.S3_PRIVATE_BUCKET || 'nmo-private-documents';
+let privateBucketReady = false;
+
+async function ensurePrivateBucket() {
+  if (privateBucketReady) return;
+  await withRetry(async () => {
+    try {
+      await s3.send(new HeadBucketCommand({ Bucket: PRIVATE_BUCKET }));
+    } catch (err) {
+      if (err.name === 'NotFound' || err.$metadata?.httpStatusCode === 404) {
+        await s3.send(new CreateBucketCommand({ Bucket: PRIVATE_BUCKET }));
+        logger.info(`[S3] Created private bucket: ${PRIVATE_BUCKET}`);
+      } else {
+        throw err;
+      }
+    }
+  }, `ensurePrivateBucket "${PRIVATE_BUCKET}"`, 3, 1000);
+  privateBucketReady = true;
+}
+
+async function uploadPrivateToS3(file, prefix) {
+  await ensurePrivateBucket();
+  const ext = (file.originalname.split('.').pop() || 'bin').toLowerCase().replace(/[^a-z0-9]/g, '');
+  const key = `${prefix}/${Date.now()}-${crypto.randomBytes(8).toString('hex')}.${ext}`;
+  await s3.send(new PutObjectCommand({
+    Bucket: PRIVATE_BUCKET,
+    Key: key,
+    Body: file.buffer,
+    ContentType: file.mimetype,
+  }));
+  return { key };
+}
+
+async function getPrivateObject(key) {
+  await ensurePrivateBucket();
+  return s3.send(new GetObjectCommand({ Bucket: PRIVATE_BUCKET, Key: key }));
+}
+
+async function deletePrivateObject(key) {
+  try {
+    await s3.send(new DeleteObjectCommand({ Bucket: PRIVATE_BUCKET, Key: key }));
+  } catch (err) {
+    logger.error('[S3] Private delete error:', err.message);
+  }
+}
+
+module.exports = { uploadToS3, deleteFromS3, deleteFromS3Url, ensureBucket, waitForS3, uploadPrivateToS3, getPrivateObject, deletePrivateObject };

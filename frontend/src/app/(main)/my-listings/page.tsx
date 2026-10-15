@@ -5,6 +5,7 @@ import Link from 'next/link';
 import api from '@/lib/api';
 import { FileText, Smartphone, Package } from '@/lib/icons';
 import { useLanguage } from '@/context/LanguageContext';
+import CategoryFieldsInput, { findMissingRequiredField, type CategoryField } from '@/components/CategoryFieldsInput';
 
 interface Listing {
   id: number;
@@ -21,10 +22,11 @@ interface Listing {
   created_at: string;
   category_name: string;
   category_id: number;
+  attributes?: string | Record<string, string | number | boolean> | null;
   primary_image: string | null;
 }
 
-interface Category { id: number; name: string; slug: string; }
+interface Category { id: number; name: string; slug: string; fields: CategoryField[]; }
 
 const ORG = '#E85D04';
 const NAVY = '#0f1e42';
@@ -43,11 +45,22 @@ export default function MyListingsPage() {
   const [editListing, setEditListing] = useState<Listing | null>(null);
   const [editForm, setEditForm] = useState({ title: '', description: '', price: '', currency: 'RWF', location: '', category_id: '', negotiable: false });
   const [editImages, setEditImages] = useState<File[]>([]);
+  const [editAttributes, setEditAttributes] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
 
-  const [confirmDelete, setConfirmDelete] = useState<number | null>(null);
+  const editCategoryFields = categories.find((c) => String(c.id) === editForm.category_id)?.fields || [];
 
-  const [repostInfo, setRepostInfo] = useState<{ listingId: number; referenceId: string } | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<number | null>(null);
+  const [confirmSold, setConfirmSold] = useState<number | null>(null);
+
+  const [repostInfo, setRepostInfo] = useState<{
+    listingId: number;
+    referenceId: string | null;
+    amount: number;
+    baseCost: number;
+    discountPercent: number;
+    discountAmount: number;
+  } | null>(null);
   const [repostStep, setRepostStep] = useState<'idle' | 'pay' | 'waiting'>('idle');
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -111,6 +124,14 @@ export default function MyListingsPage() {
       negotiable: l.price_type === 'negotiable',
     });
     setEditImages([]);
+    try {
+      const parsed = typeof l.attributes === 'string' ? JSON.parse(l.attributes) : l.attributes;
+      const asStrings: Record<string, string> = {};
+      Object.entries(parsed || {}).forEach(([key, value]) => { asStrings[key] = String(value); });
+      setEditAttributes(asStrings);
+    } catch {
+      setEditAttributes({});
+    }
   };
 
   const handleUpdate = async () => {
@@ -119,6 +140,8 @@ export default function MyListingsPage() {
       setError(T.mlErrPriceRequired);
       return;
     }
+    const missing = findMissingRequiredField(editCategoryFields, editAttributes);
+    if (missing) { setError(`${missing.label} is required`); return; }
     setSaving(true); setError('');
     try {
       const form = new FormData();
@@ -129,6 +152,7 @@ export default function MyListingsPage() {
       form.append('currency', editForm.currency);
       form.append('location', editForm.location);
       form.append('category_id', editForm.category_id);
+      form.append('attributes', JSON.stringify(editAttributes));
       editImages.forEach(f => form.append('images', f));
       await api.put(`/listings/phone-access/${editListing.id}`, form, {
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' },
@@ -153,16 +177,37 @@ export default function MyListingsPage() {
     }
   };
 
-  const REPOST_COST = 400;
+  const handleMarkSold = async (id: number) => {
+    setError('');
+    try {
+      await api.post(`/listings/phone-access/${id}/mark-sold`, {}, authHeaders());
+      setListings(prev => prev.map(l => l.id === id ? { ...l, status: 'sold' } : l));
+      setConfirmSold(null);
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message: string } } })?.response?.data?.message;
+      setError(msg || T.mlErrMarkSold);
+    }
+  };
 
   const handleRepost = async (id: number) => {
     setError('');
     try {
       const { data } = await api.post(`/listings/phone-access/${id}/repost`, {}, authHeaders());
-      setRepostInfo({ listingId: id, referenceId: data.referenceId });
+      if (!data.referenceId) {
+        setListings(prev => prev.map(l => l.id === id ? { ...l, status: 'active', expires_at: data.expires_at } : l));
+        return;
+      }
+      setRepostInfo({
+        listingId: id,
+        referenceId: data.referenceId,
+        amount: data.amount,
+        baseCost: data.baseCost,
+        discountPercent: data.discountPercent,
+        discountAmount: data.discountAmount,
+      });
       setRepostStep('pay');
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      const msg = (err as { response?: { data?: { message: string } } })?.response?.data?.message;
       setError(msg || T.mlErrRepost);
     }
   };
@@ -332,6 +377,18 @@ export default function MyListingsPage() {
                       {T.mlRepost}
                     </button>
                   )}
+                  {l.status === 'active' && !expired && (
+                    confirmSold === l.id ? (
+                      <div className="flex items-center gap-1">
+                        <button onClick={() => handleMarkSold(l.id)} className="text-xs font-medium px-2 py-1.5 rounded-lg bg-green-600 text-white">{T.mlYes}</button>
+                        <button onClick={() => setConfirmSold(null)} className="text-xs font-medium px-2 py-1.5 rounded-lg border border-gray-200">{T.mlNo}</button>
+                      </div>
+                    ) : (
+                      <button onClick={() => setConfirmSold(l.id)} className="text-xs font-medium px-3 py-1.5 rounded-lg border border-green-200 text-green-700 hover:bg-green-50 transition" title={T.mlMarkSold}>
+                        {T.mlMarkSold}
+                      </button>
+                    )
+                  )}
                   {confirmDelete === l.id ? (
                     <div className="flex items-center gap-1">
                       <button onClick={() => handleDelete(l.id)} className="text-xs font-medium px-2 py-1.5 rounded-lg bg-red-600 text-white">{T.mlYes}</button>
@@ -353,11 +410,17 @@ export default function MyListingsPage() {
         <div className="fixed inset-0 bg-black/60 z-[9999] flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl w-full max-w-sm p-8 relative text-center">
             <h2 className="text-xl font-bold text-gray-900 mb-2">{T.mlRepostTitle}</h2>
-            {repostStep === 'pay' && (
+            {repostStep === 'pay' && repostInfo && (
               <>
                 <p className="text-gray-500 text-sm mb-4">
-                  {T.mlRepostPay(REPOST_COST)}
+                  {T.mlRepostPay(repostInfo.amount)}
                 </p>
+                {repostInfo.discountAmount > 0 && (
+                  <p className="text-xs font-medium text-green-700 -mt-2 mb-4">
+                    <s className="text-gray-400 font-normal">{repostInfo.baseCost} RWF</s>{' '}
+                    {T.mlRepostDiscount(repostInfo.discountPercent)}
+                  </p>
+                )}
                 <div className="bg-orange-50 rounded-lg px-4 py-3 text-sm text-gray-700 mb-4">
                   <p className="font-medium">{phone}</p>
                   <p className="text-xs text-gray-500 mt-1">{T.mlPaymentRequestSent}</p>
@@ -434,6 +497,16 @@ export default function MyListingsPage() {
                   </div>
                 </div>
               </div>
+
+              {editCategoryFields.length > 0 && (
+                <CategoryFieldsInput
+                  fields={editCategoryFields}
+                  values={editAttributes}
+                  onChange={setEditAttributes}
+                  heading={`${categories.find((c) => String(c.id) === editForm.category_id)?.name || ''} details`}
+                />
+              )}
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">{T.locationLabel}</label>
                 <input value={editForm.location} onChange={e => setEditForm(p => ({ ...p, location: e.target.value }))}

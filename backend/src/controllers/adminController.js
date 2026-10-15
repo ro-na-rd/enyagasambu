@@ -2,6 +2,7 @@ const pool = require('../config/db');
 const crypto = require('crypto');
 const { uploadToS3, deleteFromS3Url } = require('../services/s3Service');
 const { notifyAdmins, notifyUser } = require('../services/notificationService');
+const { loadCategoryFields, sanitizeAttributes } = require('../services/categoryFieldsService');
 const { logger } = require('../config/logger');
 
 // Staff accounts (admin/moderator) live in the `staff` table, but listings.user_id
@@ -367,10 +368,20 @@ exports.createListing = async (req, res) => {
     
     const adminUserId = await getOrCreateAdminUserId(conn, req.user.id);
     
+    const { values: attributes, errors: attributeErrors } = sanitizeAttributes(
+      await loadCategoryFields(category_id, conn),
+      req.body.attributes
+    );
+    if (attributeErrors.length) {
+      await conn.rollback();
+      return res.status(422).json({ message: attributeErrors.join(', ') });
+    }
+    const attributesJson = Object.keys(attributes).length ? JSON.stringify(attributes) : null;
+
     const [result] = await conn.query(
-      `INSERT INTO listings (user_id, category_id, title, description, price, currency, location, listing_type, status, expires_at, is_featured)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, 1)`,
-      [adminUserId, category_id, title, description || null, price || null, currency || 'RWF', location || null, listing_type || 'sell', expiresAt]
+      `INSERT INTO listings (user_id, category_id, title, description, price, currency, location, listing_type, attributes, status, expires_at, is_featured)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, 1)`,
+      [adminUserId, category_id, title, description || null, price || null, currency || 'RWF', location || null, listing_type || 'sell', attributesJson, expiresAt]
     );
     
     const listingId = result.insertId;
@@ -435,10 +446,20 @@ exports.createListingWithFiles = async (req, res) => {
     
     const adminUserId = await getOrCreateAdminUserId(conn, req.user.id);
     
+    const { values: attributes, errors: attributeErrors } = sanitizeAttributes(
+      await loadCategoryFields(category_id, conn),
+      req.body.attributes
+    );
+    if (attributeErrors.length) {
+      await conn.rollback();
+      return res.status(422).json({ message: attributeErrors.join(', ') });
+    }
+    const attributesJson = Object.keys(attributes).length ? JSON.stringify(attributes) : null;
+
     const [result] = await conn.query(
-      `INSERT INTO listings (user_id, category_id, title, description, price, currency, location, listing_type, status, expires_at, is_featured)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, 1)`,
-      [adminUserId, category_id, title, description || null, price || null, currency || 'RWF', location || null, listing_type || 'sell', expiresAt]
+      `INSERT INTO listings (user_id, category_id, title, description, price, currency, location, listing_type, attributes, status, expires_at, is_featured)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, 1)`,
+      [adminUserId, category_id, title, description || null, price || null, currency || 'RWF', location || null, listing_type || 'sell', attributesJson, expiresAt]
     );
     
     const listingId = result.insertId;

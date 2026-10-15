@@ -16,7 +16,7 @@
     "migrate": "node src/scripts/migrate.js --apply",
     "migrate:status": "node src/scripts/migrate.js --status",
     "test": "npm run test:unit",
-    "test:unit": "node --test test/momoService.test.js test/smsService.test.js",
+    "test:unit": "node --test test/momoService.test.js test/smsService.test.js test/categoryFieldsService.test.js test/taxAdvisory.test.js test/repostPricing.test.js test/reminderPolicy.test.js",
     "snapshot": "node src/scripts/snapshotReport.js"
   },
   "dependencies": {

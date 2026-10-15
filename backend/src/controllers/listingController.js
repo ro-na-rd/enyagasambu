@@ -6,6 +6,7 @@ const { requestToPay, getPaymentStatus } = require('../services/momoService');
 const { sendSms } = require('../services/smsService');
 const { uploadToS3 } = require('../services/s3Service');
 const { notifyAdmins, notifyUser } = require('../services/notificationService');
+const { loadCategoryFields, sanitizeAttributes, parseAttributes } = require('../services/categoryFieldsService');
 const { logger } = require('../config/logger');
 
 const LISTING_COST = 400;
@@ -47,18 +48,8 @@ async function createRenewalToken(conn, listingId, sellerPhone, expiresAt) {
   return token;
 }
 
-exports.getCategories = async (req, res) => {
-  try {
-    const [rows] = await pool.query('SELECT * FROM categories ORDER BY type, name');
-    return res.json({ categories: rows });
-  } catch (err) {
-    logger.error(err);
-    return res.status(500).json({ message: 'Server error' });
-  }
-};
-
 exports.getListings = async (req, res) => {
-  const { category, type, group, search, featured, page = 1, limit = 20 } = req.query;
+  const { category, type, group, search, featured, sort, page = 1, limit = 20 } = req.query;
   const offset = (parseInt(page) - 1) * parseInt(limit);
 
   // Public marketplace results must never include listings that can no longer
@@ -91,13 +82,16 @@ exports.getListings = async (req, res) => {
               c.name AS category_name, c.slug AS category_slug, c.type AS category_type,
               u.name AS seller_name,
               (SELECT image_url FROM listing_images WHERE listing_id = l.id AND is_primary = 1 LIMIT 1) AS primary_image,
+              (SELECT COUNT(*) FROM listing_likes WHERE listing_id = l.id) AS like_count,
               (SELECT COUNT(*) FROM listing_ratings WHERE listing_id = l.id) AS rating_count,
               (SELECT COALESCE(AVG(stars), 0) FROM listing_ratings WHERE listing_id = l.id) AS rating_avg
        FROM listings l
        JOIN categories c ON l.category_id = c.id
        JOIN users u ON l.user_id = u.id
        WHERE ${where}
-       ORDER BY ${featured ? 'l.is_featured DESC, l.views DESC, l.created_at DESC' : 'l.is_featured DESC, l.created_at DESC'}
+       ORDER BY ${sort === 'popular'
+         ? '(SELECT COUNT(*) FROM listing_likes WHERE listing_id = l.id) DESC, l.views DESC, l.created_at DESC'
+         : featured ? 'l.is_featured DESC, l.views DESC, l.created_at DESC' : 'l.is_featured DESC, l.created_at DESC'}
        LIMIT ? OFFSET ?`,
       [...params, parseInt(limit), offset]
     );
@@ -171,8 +165,18 @@ exports.getListing = async (req, res) => {
       }
     }
 
+    const categoryFields = await loadCategoryFields(listing.category_id);
+    const attributes = parseAttributes(listing.attributes);
+
     return res.json({
-      listing: { ...listing, images, contactUnlocked, sellerPhone },
+      listing: {
+        ...listing,
+        attributes,
+        category_fields: categoryFields.filter((field) => attributes[field.field_key] !== undefined),
+        images,
+        contactUnlocked,
+        sellerPhone,
+      },
     });
   } catch (err) {
     logger.error(err);
@@ -301,12 +305,20 @@ exports.createListing = async (req, res) => {
       return res.status(400).json({ message: 'Title must be less than 200 characters' });
     }
 
+    const categoryFields = await loadCategoryFields(category_id, conn);
+    const { values: attributes, errors: attributeErrors } = sanitizeAttributes(categoryFields, req.body.attributes);
+    if (attributeErrors.length) {
+      await conn.rollback();
+      return res.status(422).json({ message: attributeErrors.join(', ') });
+    }
+    const attributesJson = Object.keys(attributes).length ? JSON.stringify(attributes) : null;
+
     const expiresAt = new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000);
 
     const [result] = await conn.query(
-      `INSERT INTO listings (user_id, category_id, title, description, price, price_type, currency, location, listing_type, status, expires_at, is_featured)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?)`,
-      [userId, category_id, title.trim(), description || null, price || null, price_type || 'fixed', currency || 'RWF', location, listing_type || 'sell', expiresAt, isAdmin ? 1 : 0]
+      `INSERT INTO listings (user_id, category_id, title, description, price, price_type, currency, location, listing_type, attributes, status, expires_at, is_featured)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?)`,
+      [userId, category_id, title.trim(), description || null, price || null, price_type || 'fixed', currency || 'RWF', location, listing_type || 'sell', attributesJson, expiresAt, isAdmin ? 1 : 0]
     );
 
     // Record transaction if fee was paid
@@ -370,8 +382,15 @@ exports.initiateListingPayment = async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) return res.status(422).json({ errors: errors.array() });
 
-  const duration = [3, 7, 30].includes(parseInt(duration_days)) ? parseInt(duration_days) : 3;
+  const categoryFields = await loadCategoryFields(category_id);
+  const { values: attributes, errors: attributeErrors } = sanitizeAttributes(categoryFields, req.body.attributes);
+  if (attributeErrors.length) return res.status(422).json({ message: attributeErrors.join(', ') });
+
   const listingPrices = await getListingPrices();
+  const requestedDuration = parseInt(duration_days, 10);
+  const duration = Number.isInteger(requestedDuration) && listingPrices[requestedDuration] != null
+    ? requestedDuration
+    : Number(Object.keys(listingPrices).sort((a, b) => Number(a) - Number(b))[0] || 3);
   const amount = listingPrices[duration] || listingPrices[3];
 
   let sellerPhone;
@@ -404,6 +423,7 @@ exports.initiateListingPayment = async (req, res) => {
     location,
     listing_type: listing_type || 'sell',
     category_id,
+    attributes,
     duration_days: duration,
     images,
     guest_name: guestName,
@@ -488,8 +508,11 @@ exports.initiateRenewal = async (req, res) => {
     );
     if (!tokenRow) return res.status(400).json({ message: 'Invalid or expired renewal token' });
 
-    const renewDays = [3, 7, 30].includes(parseInt(days)) ? parseInt(days) : 3;
     const listingPrices = await getListingPrices();
+    const requestedDays = parseInt(days, 10);
+    const renewDays = Number.isInteger(requestedDays) && listingPrices[requestedDays] != null
+      ? requestedDays
+      : Number(Object.keys(listingPrices).sort((a, b) => Number(a) - Number(b))[0] || 3);
     const amount = listingPrices[renewDays] || listingPrices[3];
     const referenceId = uuidv4();
 

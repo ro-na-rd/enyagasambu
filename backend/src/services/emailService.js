@@ -10,6 +10,15 @@ const transporter = nodemailer.createTransport({
   },
 });
 
+async function sendEmail(to, subject, html) {
+  return transporter.sendMail({
+    from: process.env.SMTP_FROM || `"E-Nyagasambu" <${process.env.SMTP_USER}>`,
+    to,
+    subject,
+    html,
+  });
+}
+
 async function sendPasswordResetEmail(to, resetUrl) {
   const mailOptions = {
     from: process.env.SMTP_FROM || `"E-Nyagasambu" <${process.env.SMTP_USER}>`,
@@ -48,4 +57,4 @@ async function sendPasswordResetEmail(to, resetUrl) {
   return transporter.sendMail(mailOptions);
 }
 
-module.exports = { sendPasswordResetEmail };
+module.exports = { sendEmail, sendPasswordResetEmail };

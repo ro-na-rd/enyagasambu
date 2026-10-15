@@ -25,12 +25,30 @@ CREATE TABLE IF NOT EXISTS categories (
   icon VARCHAR(50)
 );
 
+CREATE TABLE IF NOT EXISTS category_fields (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  category_id INT NOT NULL,
+  field_key VARCHAR(100) NOT NULL,
+  label VARCHAR(150) NOT NULL,
+  field_type ENUM('text', 'textarea', 'number', 'select', 'boolean') NOT NULL DEFAULT 'text',
+  options TEXT NULL,
+  placeholder VARCHAR(200) NULL,
+  is_required TINYINT(1) NOT NULL DEFAULT 0,
+  sort_order INT NOT NULL DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uniq_category_field_key (category_id, field_key),
+  INDEX idx_category_fields_order (category_id, sort_order, id),
+  FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE
+);
+
 CREATE TABLE IF NOT EXISTS listings (
   id INT AUTO_INCREMENT PRIMARY KEY,
   user_id INT NOT NULL,
   category_id INT NOT NULL,
   title VARCHAR(200) NOT NULL,
   description TEXT,
+  -- answers to the category's own posting details, keyed by category_fields.field_key
+  attributes TEXT NULL,
   price DECIMAL(12, 2),
   price_type ENUM('fixed', 'negotiable', 'per_day', 'per_month') DEFAULT 'fixed',
   currency VARCHAR(10) DEFAULT 'RWF',
@@ -371,7 +389,11 @@ INSERT IGNORE INTO platform_settings (setting_key, setting_value) VALUES
   ('auction_default_increment', '500'),
   ('listing_duration_3_days', '500'),
   ('listing_duration_7_days', '1000'),
-  ('listing_duration_30_days', '3500');
+  ('listing_duration_30_days', '3500'),
+  ('listing_duration_60_days', '6500'),
+  ('listing_duration_90_days', '9000'),
+  ('listing_duration_180_days', '17000'),
+  ('listing_duration_365_days', '32000');
 
 CREATE TABLE IF NOT EXISTS contact_access_payments (
   id INT AUTO_INCREMENT PRIMARY KEY,

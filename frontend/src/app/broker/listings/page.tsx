@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import api from '@/lib/api';
 import { Plus, Search, X, Home, Loader2, AlertCircle, CheckCircle } from '@/lib/icons';
 import { useCurrency } from '@/context/CurrencyContext';
+import CategoryFieldsInput, { findMissingRequiredField, type CategoryField } from '@/components/CategoryFieldsInput';
 
 interface Listing {
   id: number;
@@ -23,7 +24,7 @@ interface Listing {
   primary_image: string | null;
 }
 
-interface Category { id: number; name: string; slug: string; type: string; }
+interface Category { id: number; name: string; slug: string; type: string; fields: CategoryField[]; }
 
 interface Client { id: number; name: string; }
 
@@ -85,6 +86,9 @@ export default function BrokerListingsPage() {
   const [images, setImages] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
   const fileRef = useRef<HTMLInputElement | null>(null);
+  const [attributes, setAttributes] = useState<Record<string, string>>({});
+
+  const categoryFields = categories.find((c) => String(c.id) === form.category_id)?.fields || [];
 
   const fetchListings = useCallback(async () => {
     setLoading(true);
@@ -121,6 +125,7 @@ export default function BrokerListingsPage() {
     setForm(emptyForm);
     setImages([]);
     setPreviews([]);
+    setAttributes({});
     setFormError('');
     setModalOpen(true);
   };
@@ -136,12 +141,15 @@ export default function BrokerListingsPage() {
   const submit = async () => {
     if (!form.title.trim()) { setFormError('Title is required.'); return; }
     if (!form.category_id) { setFormError('Please select a category.'); return; }
+    const missing = findMissingRequiredField(categoryFields, attributes);
+    if (missing) { setFormError(`${missing.label} is required.`); return; }
     setSaving(true);
     setFormError('');
     const fd = new FormData();
     fd.append('title', form.title.trim());
     fd.append('description', form.description.trim());
     fd.append('category_id', form.category_id);
+    fd.append('attributes', JSON.stringify(attributes));
     fd.append('listing_type', form.listing_type);
     fd.append('price', form.price.trim());
     fd.append('price_type', form.negotiable ? 'negotiable' : 'fixed');
@@ -333,6 +341,15 @@ export default function BrokerListingsPage() {
                   </select>
                 </div>
               </div>
+
+              {categoryFields.length > 0 && (
+                <CategoryFieldsInput
+                  fields={categoryFields}
+                  values={attributes}
+                  onChange={setAttributes}
+                  heading={`${categories.find((c) => String(c.id) === form.category_id)?.name || 'Category'} details`}
+                />
+              )}
 
               <div className="grid grid-cols-1 sm:grid-cols-[1fr_140px] gap-4">
                 <div>

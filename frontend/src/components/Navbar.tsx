@@ -76,7 +76,7 @@ function NavbarView({ pathname, tab, registrationOpen }: { pathname: string | nu
   const close = () => setMenuOpen(false);
   const closeMobile = () => setMobileOpen(false);
 
-  const activeKey = pathname === '/' ? 'home' : pathname === '/listings' ? (tab === '' ? 'products' : tab) : pathname === '/auction' ? 'auction' : null;
+  const activeKey = pathname === '/' ? 'home' : pathname === '/listings' ? (tab === '' ? 'products' : tab) : pathname === '/auction' ? 'auction' : pathname === '/tax-advisory' ? 'tax-advisory' : null;
   const isListings = pathname === '/listings';
 
   const NAV_LINKS = [
@@ -88,7 +88,7 @@ function NavbarView({ pathname, tab, registrationOpen }: { pathname: string | nu
     { key: 'services', href: '/listings?tab=services', label: T.services },
     { key: 'auction', href: '/auction', label: T.auction },
     { key: 'adverts', href: '/listings?tab=adverts', label: T.adverts },
-    { key: 'tax-advisory', href: '/listings?tab=services&search=Tax%20Advisory', label: 'Tax Advisory' },
+    { key: 'tax-advisory', href: '/tax-advisory', label: T.taxAdvisory },
   ];
 
   const CAT_LINKS: { label: string; href: string; disabled?: boolean }[] = [

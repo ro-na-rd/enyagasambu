@@ -3,13 +3,14 @@ import AppImage from '@/components/AppImage';
 import { useEffect, useState } from 'react';
 import api from '@/lib/api';
 import { Package, Search, Filter, Plus, X, Loader2, CheckCircle, AlertCircle, Upload, Camera } from '@/lib/icons';
+import CategoryFieldsInput, { findMissingRequiredField, type CategoryField } from '@/components/CategoryFieldsInput';
 
 const ORG = '#E85D04';
 const NAVY = '#0f1e42';
 
 interface Listing { id: number; title: string; status: string; listing_type: string; is_featured: boolean; seller_name: string; category_name: string; created_at: string; }
 
-interface Category { id: number; name: string; slug: string; type: string; }
+interface Category { id: number; name: string; slug: string; type: string; fields: CategoryField[]; }
 
 const statusColors: Record<string, string> = {
   active: 'bg-green-500/10 text-green-400',
@@ -44,6 +45,9 @@ export default function AdminListingsPage() {
   });
   const [images, setImages] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
+  const [attributes, setAttributes] = useState<Record<string, string>>({});
+
+  const categoryFields = categories.find((c) => String(c.id) === form.category_id)?.fields || [];
 
   const load = (q = '', status = '') => {
     const params = new URLSearchParams();
@@ -64,6 +68,7 @@ export default function AdminListingsPage() {
     setForm({ title: '', description: '', category_id: '', listing_type: 'sell', price: '', currency: 'RWF', location: '' });
     setImages([]);
     setPreviews([]);
+    setAttributes({});
     setCreateError('');
     setCreateSuccess('');
     setShowCreate(true);
@@ -88,6 +93,11 @@ export default function AdminListingsPage() {
       setCreateError('Title and category are required.');
       return;
     }
+    const missing = findMissingRequiredField(categoryFields, attributes);
+    if (missing) {
+      setCreateError(`${missing.label} is required.`);
+      return;
+    }
     setCreateLoading(true);
     setCreateError('');
     setCreateSuccess('');
@@ -95,10 +105,11 @@ export default function AdminListingsPage() {
       if (images.length > 0) {
         const fd = new FormData();
         Object.entries(form).forEach(([k, v]) => fd.append(k, v));
+        fd.append('attributes', JSON.stringify(attributes));
         images.forEach((f) => fd.append('images', f));
         await api.post('/admin/listings/with-files', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
       } else {
-        await api.post('/admin/listings', form);
+        await api.post('/admin/listings', { ...form, attributes: JSON.stringify(attributes) });
       }
       setCreateSuccess('Listing posted successfully. Free for Admin, featured, 90-day duration.');
       setShowCreate(false);
@@ -292,6 +303,15 @@ export default function AdminListingsPage() {
                   </select>
                 </div>
               </div>
+
+              {categoryFields.length > 0 && (
+                <CategoryFieldsInput
+                  fields={categoryFields}
+                  values={attributes}
+                  onChange={setAttributes}
+                  heading={`${categories.find((c) => String(c.id) === form.category_id)?.name || 'Category'} details`}
+                />
+              )}
 
               <div className="grid grid-cols-1 sm:grid-cols-[1fr_140px] gap-4">
                 <div>

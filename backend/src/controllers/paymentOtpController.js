@@ -1,6 +1,7 @@
 const crypto = require('crypto');
 const pool = require('../config/db');
 const { sendSms } = require('../services/smsService');
+const { loadCategoryFields, sanitizeAttributes } = require('../services/categoryFieldsService');
 const { logger } = require('../config/logger');
 
 const OTP_TTL_MINUTES = 5;
@@ -152,10 +153,12 @@ exports.verifyPaymentOtp = async (req, res) => {
 
     const durationDays = payload.duration_days || 3;
     const expiresAt = new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000);
+    const { values: attributes } = sanitizeAttributes(await loadCategoryFields(payload.category_id), payload.attributes);
+    const attributesJson = Object.keys(attributes).length ? JSON.stringify(attributes) : null;
     const [listingResult] = await conn.query(
-      `INSERT INTO listings (user_id, category_id, title, description, price, price_type, currency, location, listing_type, expires_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [userId, payload.category_id, payload.title, payload.description, payload.price, payload.price_type, payload.currency || 'RWF', payload.location, payload.listing_type, expiresAt]
+      `INSERT INTO listings (user_id, category_id, title, description, price, price_type, currency, location, listing_type, attributes, expires_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [userId, payload.category_id, payload.title, payload.description, payload.price, payload.price_type, payload.currency || 'RWF', payload.location, payload.listing_type, attributesJson, expiresAt]
     );
 
     if (payload.images?.length) {

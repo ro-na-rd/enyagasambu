@@ -30,6 +30,7 @@ router.put(
 
 router.delete('/:id', authenticatePhoneSeller, ctrl.deleteListing);
 router.post('/:id/repost', authenticatePhoneSeller, ctrl.repostListing);
+router.post('/:id/mark-sold', authenticatePhoneSeller, ctrl.markSold);
 router.get('/repost-check/:referenceId', authenticatePhoneSeller, ctrl.checkRepostPayment);
 
 module.exports = router;

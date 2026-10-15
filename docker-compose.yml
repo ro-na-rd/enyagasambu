@@ -89,6 +89,7 @@ services:
       S3_BUCKET: nmo-images
       S3_REGION: us-east-1
       S3_PUBLIC_URL: ${S3_PUBLIC_URL:?Set S3_PUBLIC_URL in .env}
+      S3_PRIVATE_BUCKET: ${S3_PRIVATE_BUCKET:-nmo-private-documents}
       ENABLE_SCHEDULERS: ${ENABLE_SCHEDULERS:-false}
     depends_on:
       mysql:

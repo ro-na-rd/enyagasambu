@@ -70,4 +70,10 @@ const executiveRateLimiter = createLimiter({
   message: 'Too many executive requests, please try again later',
 });
 
-module.exports = { loginLimiter, otpLimiter, passwordResetLimiter, revealLimiter, verifyOtpLimiter, executiveRateLimiter };
+const taxAdvisoryLimiter = createLimiter({
+  windowMs: 60 * 60 * 1000,
+  max: 10,
+  message: 'Too many tax advisory requests. Please try again later.',
+});
+
+module.exports = { loginLimiter, otpLimiter, passwordResetLimiter, revealLimiter, verifyOtpLimiter, executiveRateLimiter, taxAdvisoryLimiter };

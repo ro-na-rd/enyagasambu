@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useLanguage } from '@/context/LanguageContext';
 import api from '@/lib/api';
 import { formatRWF } from '@/lib/currencies';
+import CategoryFieldsInput, { findMissingRequiredField, type CategoryField } from '@/components/CategoryFieldsInput';
 import { Smartphone, Clock, CheckCircle, Sparkles } from '@/lib/icons';
 
 interface CreateForm {
@@ -18,13 +19,13 @@ interface CreateForm {
   location: string;
 }
 
-interface Category { id: number; name: string; slug: string; type: string; }
+interface Category { id: number; name: string; slug: string; type: string; fields: CategoryField[]; }
 
 export default function CreateListingPage() {
   const { T } = useLanguage();
   const router = useRouter();
   const [categories, setCategories] = useState<Category[]>([]);
-  const [durationPrices, setDurationPrices] = useState<Record<number, number>>({ 3: 500, 7: 1000, 30: 3500 });
+  const [durationPrices, setDurationPrices] = useState<Record<number, number>>({ 3: 500, 7: 1000, 30: 3500, 60: 6500, 90: 9000, 180: 17000, 365: 32000 });
   const [images, setImages] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
   const [error, setError] = useState('');
@@ -40,9 +41,26 @@ export default function CreateListingPage() {
   const [otpResendCooldown, setOtpResendCooldown] = useState(0);
   const [postSuccess, setPostSuccess] = useState(false);
   const [negotiable, setNegotiable] = useState(false);
-  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<CreateForm>({
+  const [attributes, setAttributes] = useState<Record<string, string>>({});
+  const { register, handleSubmit, watch, formState: { errors, isSubmitting } } = useForm<CreateForm>({
     defaultValues: { listing_type: 'sell', currency: 'RWF' },
   });
+
+  const selectedCategoryId = watch('category_id');
+  const selectedCategory = categories.find((c) => String(c.id) === selectedCategoryId);
+  const categoryFields = selectedCategory?.fields || [];
+  const durationOptions = Object.keys(durationPrices).map(Number).sort((a, b) => a - b);
+
+  const durationLabel = (days: number) => {
+    if (days === 365) return '1 year';
+    if (days % 30 === 0 && days >= 60) return `${days / 30} months`;
+    return `${days} days`;
+  };
+
+  // Each category collects its own answers, so drop anything typed for the previous one.
+  useEffect(() => {
+    setAttributes({});
+  }, [selectedCategoryId]);
 
   useEffect(() => {
     api.get('/listings/categories').then(({ data }) => setCategories(data.categories));
@@ -57,6 +75,7 @@ export default function CreateListingPage() {
       });
       if (Object.keys(prices).length > 0) {
         setDurationPrices(prices);
+        setDurationDays(Object.keys(prices).map(Number).sort((a, b) => a - b)[0]);
       }
     }).catch(() => { });
   }, []);
@@ -75,9 +94,12 @@ export default function CreateListingPage() {
     }
     const digits = sellerPhone.trim().replace(/\D/g, '');
     if (digits.length < 10) { setError('Please enter the full phone number (at least 10 digits)'); return; }
+    const missing = findMissingRequiredField(categoryFields, attributes);
+    if (missing) { setError(`${missing.label} is required`); return; }
     setError('');
     const form = new FormData();
     Object.entries(data).forEach(([k, v]) => form.append(k, v));
+    form.append('attributes', JSON.stringify(attributes));
     form.append('price_type', negotiable ? 'negotiable' : 'fixed');
     form.append('guest_name', sellerName.trim());
     form.append('guest_phone', sellerPhone.trim());
@@ -101,9 +123,12 @@ export default function CreateListingPage() {
     }
     const digits = sellerPhone.trim().replace(/\D/g, '');
     if (digits.length < 10) { setError('Please enter the full phone number (at least 10 digits)'); return; }
+    const missing = findMissingRequiredField(categoryFields, attributes);
+    if (missing) { setError(`${missing.label} is required`); return; }
     setError('');
     const form = new FormData();
     Object.entries(data).forEach(([k, v]) => form.append(k, v));
+    form.append('attributes', JSON.stringify(attributes));
     form.append('price_type', negotiable ? 'negotiable' : 'fixed');
     form.append('guest_name', sellerName.trim());
     form.append('guest_phone', sellerPhone.trim());
@@ -313,6 +338,40 @@ export default function CreateListingPage() {
 
       <form onSubmit={handleSubmit(postingFree ? onSubmitFree : onSubmitPaid)} className="bg-white rounded-2xl shadow p-6 space-y-5">
         <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">{T.category} *</label>
+          <select
+            {...register('category_id', { required: 'Select a category' })}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none"
+          >
+            <option value="">Select a category first…</option>
+            {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </select>
+          {errors.category_id && <p className="text-red-500 text-xs mt-1">{errors.category_id.message}</p>}
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{T.type} *</label>
+            <select
+              {...register('listing_type')}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none"
+            >
+              <option value="sell">{T.forSale}</option>
+              <option value="rent">{T.forRent}</option>
+            </select>
+          </div>
+        </div>
+
+        {categoryFields.length > 0 && (
+          <CategoryFieldsInput
+            fields={categoryFields}
+            values={attributes}
+            onChange={setAttributes}
+            heading={`${selectedCategory?.name} details`}
+          />
+        )}
+
+        <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">{T.titleField} *</label>
           <input
             {...register('title', { required: 'Title is required' })}
@@ -330,31 +389,6 @@ export default function CreateListingPage() {
             className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none"
             placeholder="Describe the item or service..."
           />
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{T.category} *</label>
-            <select
-              {...register('category_id', { required: 'Select a category' })}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none"
-            >
-              <option value="">Select…</option>
-              {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
-            {errors.category_id && <p className="text-red-500 text-xs mt-1">{errors.category_id.message}</p>}
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{T.type} *</label>
-            <select
-              {...register('listing_type')}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none"
-            >
-              <option value="sell">{T.forSale}</option>
-              <option value="rent">{T.forRent}</option>
-            </select>
-          </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-[1fr_140px] gap-4">
@@ -412,22 +446,17 @@ export default function CreateListingPage() {
         {!postingFree && (
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Listing Duration *</label>
-            <div className="grid grid-cols-3 gap-3">
-              {([3, 7, 30] as const).map((d) => (
-                <button
-                  key={d}
-                  type="button"
-                  onClick={() => setDurationDays(d)}
-                  className={`border rounded-lg px-3 py-3 text-sm font-medium transition ${durationDays === d
-                    ? 'border-[#E85D04] bg-orange-50 text-[#E85D04]'
-                    : 'border-gray-200 text-gray-600 hover:border-gray-300'
-                    }`}
-                >
-                  <div>{d} days</div>
-                  <div className="text-xs mt-1 opacity-80">{formatRWF(durationPrices[d])}</div>
-                </button>
+            <select
+              value={durationDays}
+              onChange={(e) => setDurationDays(Number(e.target.value))}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#E85D04] focus:border-[#E85D04] bg-white"
+            >
+              {durationOptions.map((d) => (
+                <option key={d} value={d}>
+                  {durationLabel(d)} - {formatRWF(durationPrices[d])}
+                </option>
               ))}
-            </div>
+            </select>
           </div>
         )}
 

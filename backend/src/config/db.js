@@ -10,17 +10,30 @@ const pool = mysql.createPool({
   connectionLimit: parseInt(process.env.DB_POOL_LIMIT, 10) || 10,
   queueLimit: 50,
   connectTimeout: 10000,
-  acquireTimeout: 10000,
   enableKeepAlive: true,
   keepAliveInitialDelay: 10000,
 });
 
 async function checkDatabase() {
-  const connection = await pool.getConnection();
-  try {
-    await connection.query('SELECT 1');
-  } finally {
-    connection.release();
+  const maxRetries = 5;
+  const retryDelay = 2000;
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const connection = await pool.getConnection();
+      try {
+        await connection.query('SELECT 1');
+        return; // Success
+      } finally {
+        connection.release();
+      }
+    } catch (err) {
+      logger.warn(`[DB] Connection attempt ${attempt}/${maxRetries} failed: ${err.message}`);
+      if (attempt < maxRetries) {
+        await new Promise((resolve) => setTimeout(resolve, retryDelay * attempt));
+      } else {
+        throw err; // Rethrow after final attempt
+      }
+    }
   }
 }
 

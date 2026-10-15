@@ -18,6 +18,12 @@ interface ListingDetail {
   location: string;
   listing_type: string;
   category_name: string;
+  attributes?: Record<string, string | number | boolean>;
+  category_fields?: {
+    field_key: string;
+    label: string;
+    field_type: string;
+  }[];
   seller_name: string;
   seller_id: number;
   seller_role?: string;
@@ -340,6 +346,14 @@ export default function ListingDetailPage({ params }: { params: Promise<{ id: st
     if (otpTimerRef.current) clearInterval(otpTimerRef.current);
   };
 
+  const detailRows = (listing?.category_fields || [])
+    .map((field) => {
+      const raw = listing?.attributes?.[field.field_key];
+      if (raw === undefined || raw === null || raw === '') return null;
+      return { label: field.label, value: field.field_type === 'boolean' ? (raw ? 'Yes' : 'No') : String(raw) };
+    })
+    .filter((row): row is { label: string; value: string } => row !== null);
+
   if (loading) {
     return (
       <div className="max-w-6xl mx-auto px-4 py-10">
@@ -446,6 +460,20 @@ export default function ListingDetailPage({ params }: { params: Promise<{ id: st
               </div>
             )}
           </div>
+
+          {detailRows.length > 0 && (
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mt-6">
+              <h2 className="text-sm font-bold uppercase tracking-wider text-gray-800 mb-3">Details</h2>
+              <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
+                {detailRows.map((row) => (
+                  <div key={row.label} className="flex items-baseline justify-between gap-4 border-b border-gray-50 pb-2">
+                    <dt className="text-sm text-gray-500">{row.label}</dt>
+                    <dd className="text-sm font-medium text-gray-800 text-right">{row.value}</dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
+          )}
 
           {/* Description */}
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mt-6">

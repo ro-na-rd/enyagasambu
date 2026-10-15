@@ -1,11 +1,28 @@
+require('dotenv').config();
+
 const fs = require('fs');
 const path = require('path');
 const pool = require('../config/db');
 const { logger } = require('../config/logger');
 
 async function runSqlFile(filePath) {
-  const sql = fs.readFileSync(filePath, 'utf8');
-  const statements = sql.split(';').map(s => s.trim()).filter(s => s && !s.startsWith('--'));
+  const raw = fs.readFileSync(filePath, 'utf8');
+  // The rollback section must never run here: the statement splitter would
+  // treat trailing DROP statements (the ones after "@END_DOWN") as real DDL.
+  const marker = /--\s*@DOWN\s*\r?\n/i;
+  const m = raw.match(marker);
+  const sql = m ? raw.slice(0, m.index) : raw;
+  // A migration often begins with an explanatory `--` comment. Remove comment
+  // lines before splitting so that the following DDL is not accidentally
+  // discarded with the comment block.
+  const statements = sql
+    .split(';')
+    .map((statement) => statement
+      .split(/\r?\n/)
+      .filter((line) => !line.trim().startsWith('--'))
+      .join('\n')
+      .trim())
+    .filter(Boolean);
   for (const stmt of statements) {
     if (!stmt) continue;
     try { await pool.query(stmt); } catch (e) { if (!e.message.includes('already exists') && !e.code?.includes('ER_TABLE_EXISTS')) console.warn('[initDb] warn:', e.message.slice(0,120)); }

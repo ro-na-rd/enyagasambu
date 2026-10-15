@@ -3,6 +3,7 @@ const multer = require('multer');
 const { body, validationResult } = require('express-validator');
 const { authenticate, authenticateOptional } = require('../middleware/auth');
 const ctrl = require('../controllers/listingController');
+const categoryCtrl = require('../controllers/categoryController');
 const paymentOtp = require('../controllers/paymentOtpController');
 
 const upload = multer({
@@ -21,7 +22,7 @@ const validate = (req, res, next) => {
   next();
 };
 
-router.get('/categories', ctrl.getCategories);
+router.get('/categories', categoryCtrl.getCategories);
 router.get('/', ctrl.getListings);
 router.get('/my', authenticate, ctrl.myListings);
 router.get('/:id', (req, res, next) => {
