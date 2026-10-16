@@ -1,0 +1,940 @@
+'use client';
+import AppImage from '@/components/AppImage';
+import { use, useEffect, useState, useRef, useCallback } from 'react';
+import { useAuth } from '@/context/AuthContext';
+import api from '@/lib/api';
+import Link from 'next/link';
+import { useLanguage } from '@/context/LanguageContext';
+import { ArrowLeft, Star, ChevronLeft, ChevronRight, Package, MapPin, Phone, Loader2, X, MessageCircle, Clock, CheckCircle, AlertCircle, RefreshCw, Heart, Send, AlertOctagon, Link as LinkIcon } from '@/lib/icons';
+import StarRating from '@/components/StarRating';
+import ShareButton from '@/components/ShareButton';
+
+interface ListingDetail {
+  id: number;
+  title: string;
+  description: string;
+  price: number | null;
+  price_type: string;
+  currency?: string;
+  location: string;
+  listing_type: string;
+  category_name: string;
+  attributes?: Record<string, string | number | boolean>;
+  category_fields?: {
+    field_key: string;
+    label: string;
+    field_type: string;
+  }[];
+  seller_name: string;
+  seller_id: number;
+  seller_role?: string;
+  status: string;
+  is_featured: boolean;
+  expires_at: string;
+  created_at: string;
+  images: { id: number; image_url: string; is_primary: boolean }[];
+  contactUnlocked: boolean;
+  sellerPhone: string | null;
+}
+
+interface Comment {
+  id: number;
+  user_id: number;
+  user_name: string;
+  content: string;
+  created_at: string;
+}
+
+interface RelatedListing {
+  id: number;
+  title: string;
+  price: number | null;
+  currency?: string;
+  location: string;
+  category_name: string;
+  primary_image?: string;
+}
+
+const ORG = '#E85D04';
+const NAVY = '#0f1e42';
+const CONTACT_FEE = 300;
+
+type ContactStep = 'enter_phone' | 'payment_pending' | 'otp_entry' | 'unlocked';
+
+export default function ListingDetailClient({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
+  const { user, refreshUser } = useAuth();
+  const { T } = useLanguage();
+  const [listing, setListing] = useState<ListingDetail | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState('');
+  const [activeImg, setActiveImg] = useState(0);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+
+  // Contact access flow
+  const [contactStep, setContactStep] = useState<ContactStep>('enter_phone');
+  const [phone, setPhone] = useState('');
+  const [referenceId, setReferenceId] = useState('');
+  const [otpCode, setOtpCode] = useState('');
+  const [working, setWorking] = useState(false);
+  const [contactError, setContactError] = useState('');
+  const [contactSuccess, setContactSuccess] = useState('');
+  const [sellerPhone, setSellerPhone] = useState<string | null>(null);
+  const [sellerName, setSellerName] = useState<string | null>(null);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [boosting, setBoosting] = useState(false);
+  const [otpCountdown, setOtpCountdown] = useState(0);
+  const otpTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Likes & Comments
+  const [liked, setLiked] = useState(false);
+  const [likeCount, setLikeCount] = useState(0);
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [commentText, setCommentText] = useState('');
+  const [commentSubmitting, setCommentSubmitting] = useState(false);
+  const [deletingCommentId, setDeletingCommentId] = useState<number | null>(null);
+
+  // Report
+  const [reportOpen, setReportOpen] = useState(false);
+  const [reportReason, setReportReason] = useState('');
+  const [reportDetails, setReportDetails] = useState('');
+  const [reportSubmitting, setReportSubmitting] = useState(false);
+  const [reportMsg, setReportMsg] = useState('');
+  const [reportSubmitted, setReportSubmitted] = useState(false);
+
+  // Copy link
+  const [copyState, setCopyState] = useState<'idle' | 'copied' | 'failed'>('idle');
+  const [copyTooltip, setCopyTooltip] = useState(false);
+  const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Related listings
+  const [relatedListings, setRelatedListings] = useState<RelatedListing[]>([]);
+  const [relatedLoading, setRelatedLoading] = useState(false);
+  const [relatedPage, setRelatedPage] = useState(1);
+  const [hasMoreRelated, setHasMoreRelated] = useState(false);
+
+  const handleCopyLink = async () => {
+    const url = `${window.location.origin}/listings/${id}`;
+    let ok = false;
+    try {
+      await navigator.clipboard.writeText(url);
+      ok = true;
+    } catch {
+      ok = false;
+    }
+    setCopyState(ok ? 'copied' : 'failed');
+    if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
+    copyTimerRef.current = setTimeout(() => setCopyState('idle'), 2000);
+  };
+
+  const handleSubmitReport = async () => {
+    if (!reportReason) { setReportMsg('Please select a reason'); return; }
+    setReportMsg('');
+    setReportSubmitting(true);
+    try {
+      await api.post('/reports', { listingId: parseInt(id), reason: reportReason, details: reportDetails.trim() || undefined });
+      setReportSubmitted(true);
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed to submit report. Please try again.';
+      setReportMsg(msg);
+    } finally {
+      setReportSubmitting(false);
+    }
+  };
+
+  useEffect(() => {
+    api.get(`/listings/${id}`)
+      .then(({ data }) => {
+        setListing(data.listing);
+        if (data.listing.contactUnlocked) {
+          setContactStep('unlocked');
+          setSellerPhone(data.listing.sellerPhone);
+        }
+      })
+      .catch((err) => setFetchError(err?.response?.data?.message || 'Listing not found'))
+      .finally(() => setLoading(false));
+  }, [id]);
+
+  // Fetch related listings when listing data is available
+  useEffect(() => {
+    if (!listing) return;
+    const fetchRelatedListings = async () => {
+      setRelatedLoading(true);
+      try {
+        const { data } = await api.get(`/listings?limit=5&page=${relatedPage}`);
+        const allListings = data.listings || [];
+        // Filter out current listing and same category
+        const related = allListings.filter((item: RelatedListing) =>
+          item.id !== parseInt(id) && item.category_name === listing.category_name
+        ).slice(0, 5);
+        setRelatedListings(related);
+        setHasMoreRelated(false); // Disable pagination for now
+      } catch {
+        // related listings are best-effort; ignore failures
+      } finally {
+        setRelatedLoading(false);
+      }
+    };
+    fetchRelatedListings();
+  }, [listing, relatedPage, id]);
+
+  useEffect(() => {
+    if (!listing) return;
+    api.get(`/likes/${id}`).then(({ data }) => {
+      setLiked(data.liked);
+      setLikeCount(data.count);
+    }).catch(() => { });
+    api.get(`/comments/${id}`).then(({ data }) => {
+      setComments(data.comments);
+    }).catch(() => { });
+  }, [id, listing]);
+
+  useEffect(() => {
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current);
+      if (otpTimerRef.current) clearInterval(otpTimerRef.current);
+      if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
+    };
+  }, []);
+
+  const startOtpCountdown = useCallback(() => {
+    setOtpCountdown(120);
+    if (otpTimerRef.current) clearInterval(otpTimerRef.current);
+    otpTimerRef.current = setInterval(() => {
+      setOtpCountdown((prev) => {
+        if (prev <= 1) {
+          if (otpTimerRef.current) clearInterval(otpTimerRef.current);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  }, []);
+
+  const startPaymentPolling = useCallback((refId: string) => {
+    if (pollRef.current) clearInterval(pollRef.current);
+    pollRef.current = setInterval(async () => {
+      try {
+        const { data } = await api.get(`/contact-access/status/${refId}`);
+        if (data.status === 'verified') {
+          if (pollRef.current) clearInterval(pollRef.current);
+          setContactStep('otp_entry');
+          setContactSuccess('Payment successful! A verification code has been sent to your phone.');
+          startOtpCountdown();
+        } else if (data.status === 'confirmed') {
+          if (pollRef.current) clearInterval(pollRef.current);
+          setSellerPhone(data.sellerPhone);
+          setSellerName(data.sellerName);
+          setContactStep('unlocked');
+        } else if (data.status === 'failed') {
+          if (pollRef.current) clearInterval(pollRef.current);
+          setContactError(data.message || 'Payment failed. Please try again.');
+          setContactStep('enter_phone');
+        }
+      } catch {
+        // Keep polling on transient errors
+      }
+    }, 5000);
+  }, [startOtpCountdown]);
+
+  const handleInitiatePayment = async () => {
+    if (!phone.trim()) { setContactError('Please enter your phone number'); return; }
+    const digits = phone.trim().replace(/\D/g, '');
+    if (digits.length < 10) { setContactError('Please enter the full phone number (at least 10 digits)'); return; }
+    setWorking(true); setContactError(''); setContactSuccess('');
+    try {
+      const { data } = await api.post('/contact-access/initiate', { listingId: parseInt(id), phone: phone.trim() });
+      if (data.alreadyUnlocked) {
+        setSellerPhone(data.sellerPhone);
+        setSellerName(data.sellerName);
+        setContactStep('unlocked');
+      } else if (data.referenceId) {
+        setReferenceId(data.referenceId);
+        setContactStep('payment_pending');
+        startPaymentPolling(data.referenceId);
+      }
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      setContactError(msg || 'Failed to initiate payment');
+    } finally { setWorking(false); }
+  };
+
+  const handleVerifyOtp = async () => {
+    if (!otpCode.trim() || otpCode.length !== 6) { setContactError('Please enter the 6-digit code'); return; }
+    setWorking(true); setContactError('');
+    try {
+      const { data } = await api.post('/contact-access/verify-otp', { referenceId, code: otpCode.trim() });
+      setSellerPhone(data.sellerPhone);
+      setSellerName(data.sellerName);
+      setContactStep('unlocked');
+      if (otpTimerRef.current) clearInterval(otpTimerRef.current);
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      setContactError(msg || 'Invalid verification code');
+    } finally { setWorking(false); }
+  };
+
+  const handleResendOtp = async () => {
+    setContactError(''); setContactSuccess('');
+    try {
+      await api.post('/contact-access/resend-otp', { referenceId });
+      setContactSuccess('New verification code sent!');
+      startOtpCountdown();
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      setContactError(msg || 'Failed to resend code');
+    }
+  };
+
+  const handleBoost = async () => {
+    setBoosting(true);
+    try {
+      await api.post(`/listings/${id}/boost`);
+      setListing((prev) => prev ? { ...prev, is_featured: true } : prev);
+      await refreshUser();
+      alert('Listing boosted for 7 days!');
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      alert(msg || 'Failed to boost listing');
+    } finally { setBoosting(false); }
+  };
+
+  const handleToggleLike = async () => {
+    if (!user) return;
+    try {
+      const { data } = await api.post(`/likes/${id}/toggle`);
+      setLiked(data.liked);
+      setLikeCount(data.count);
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      alert(msg || 'Failed to update like');
+    }
+  };
+
+  const handleAddComment = async () => {
+    if (!user || !commentText.trim()) return;
+    setCommentSubmitting(true);
+    try {
+      const { data } = await api.post(`/comments/${id}`, { content: commentText.trim() });
+      setComments((prev) => [...prev, data.comment]);
+      setCommentText('');
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      alert(msg || 'Failed to add comment');
+    } finally { setCommentSubmitting(false); }
+  };
+
+  const handleDeleteComment = async (commentId: number) => {
+    if (!user) return;
+    setDeletingCommentId(commentId);
+    try {
+      await api.delete(`/comments/${id}/${commentId}`);
+      setComments((prev) => prev.filter((c) => c.id !== commentId));
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      alert(msg || 'Failed to delete comment');
+    } finally { setDeletingCommentId(null); }
+  };
+
+  const resetContactFlow = () => {
+    setContactStep('enter_phone');
+    setPhone('');
+    setOtpCode('');
+    setReferenceId('');
+    setContactError('');
+    setContactSuccess('');
+    if (pollRef.current) clearInterval(pollRef.current);
+    if (otpTimerRef.current) clearInterval(otpTimerRef.current);
+  };
+
+  const detailRows = (listing?.category_fields || [])
+    .map((field) => {
+      const raw = listing?.attributes?.[field.field_key];
+      if (raw === undefined || raw === null || raw === '') return null;
+      return { label: field.label, value: field.field_type === 'boolean' ? (raw ? 'Yes' : 'No') : String(raw) };
+    })
+    .filter((row): row is { label: string; value: string } => row !== null);
+
+  if (loading) {
+    return (
+      <div className="max-w-6xl mx-auto px-4 py-10">
+        <div className="animate-pulse space-y-6">
+          <div className="h-6 bg-gray-100 rounded w-1/4" />
+          <div className="h-96 bg-gray-100 rounded-2xl" />
+          <div className="space-y-3">
+            <div className="h-6 bg-gray-100 rounded w-3/4" />
+            <div className="h-4 bg-gray-100 rounded w-1/2" />
+            <div className="h-4 bg-gray-100 rounded w-1/3" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+  if (!listing) {
+    if (fetchError) {
+      return (
+        <div className="max-w-6xl mx-auto px-4 py-20 text-center">
+          <div className="text-6xl mb-4 text-gray-300 flex justify-center"><Package size={64} /></div>
+          <h2 className="text-xl font-bold text-gray-800 mb-2">Listing Not Found</h2>
+          <p className="text-gray-500 mb-6">{fetchError}</p>
+          <Link href="/listings" className="inline-flex items-center gap-2 text-sm font-semibold px-5 py-2.5 rounded-lg text-white" style={{ background: '#E85D04' }}>
+            <ArrowLeft size={14} /> Browse Listings
+          </Link>
+        </div>
+      );
+    }
+    return null;
+  }
+
+  const priceLabel = listing.price
+    ? `${Number(listing.price).toLocaleString()} ${listing.currency || 'RWF'}${listing.price_type === 'per_day' ? '/day' : listing.price_type === 'per_month' ? '/mo' : ''}`
+    : T.priceOnRequest;
+  const isExpired = new Date(listing.expires_at) < new Date();
+  const isOwner = user?.id === listing.seller_id;
+
+  return (
+    <div className="max-w-6xl mx-auto px-4 py-8">
+      <Link href="/listings" className="inline-flex items-center gap-1 text-sm font-medium hover:underline mb-6" style={{ color: ORG }}>
+        <ArrowLeft size={16} />
+        {T.backToListings}
+      </Link>
+
+      <div className="grid lg:grid-cols-5 gap-8">
+        {/* Image Gallery - Left */}
+        <div className="lg:col-span-3">
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            {listing.is_featured && (
+              <div className="bg-gradient-to-r from-yellow-400 to-amber-500 text-gray-900 text-xs font-bold text-center py-2 tracking-wide flex items-center justify-center gap-1">
+                <Star size={14} /> {T.featuredListing}
+              </div>
+            )}
+
+            {listing.images.length > 0 ? (
+              <>
+                <div
+                  className="relative bg-gray-100 cursor-pointer overflow-hidden"
+                  style={{ paddingTop: '75%' }}
+                  onClick={() => setLightboxOpen(true)}
+                >
+                  <AppImage
+                    src={listing.images[activeImg]?.image_url}
+                    alt={listing.title}
+                    className="absolute inset-0 w-full h-full object-contain hover:scale-105 transition-transform duration-500"
+                  />
+                  <div className="absolute top-3 right-3 bg-black/50 text-white text-xs px-2.5 py-1 rounded-full backdrop-blur-sm">
+                    {activeImg + 1} / {listing.images.length}
+                  </div>
+                  {activeImg > 0 && (
+                    <button onClick={(e) => { e.stopPropagation(); setActiveImg(i => i - 1); }}
+                      className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/90 shadow-lg flex items-center justify-center hover:bg-white transition">
+                      <ChevronLeft size={18} />
+                    </button>
+                  )}
+                  {activeImg < listing.images.length - 1 && (
+                    <button onClick={(e) => { e.stopPropagation(); setActiveImg(i => i + 1); }}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/90 shadow-lg flex items-center justify-center hover:bg-white transition">
+                      <ChevronRight size={18} />
+                    </button>
+                  )}
+                </div>
+
+                {listing.images.length > 1 && (
+                  <div className="flex gap-2 p-3 overflow-x-auto bg-gray-50 border-t border-gray-100">
+                    {listing.images.map((img, i) => (
+                      <button key={img.id} onClick={() => setActiveImg(i)}
+                        className={`h-16 w-16 rounded-xl overflow-hidden shrink-0 border-2 transition-all ${activeImg === i
+                          ? 'border-[#E85D04] shadow-md scale-105'
+                          : 'border-transparent opacity-60 hover:opacity-100'
+                          }`}>
+                        <AppImage src={img.image_url} alt="" className="w-full h-full object-cover" />
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="flex items-center justify-center" style={{ height: 400 }}>
+                <div className="text-center">
+                  <span className="text-7xl opacity-30 block mb-3"><Package size={56} /></span>
+                  <span className="text-sm text-gray-400 font-medium">No images available</span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {detailRows.length > 0 && (
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mt-6">
+              <h2 className="text-sm font-bold uppercase tracking-wider text-gray-800 mb-3">Details</h2>
+              <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
+                {detailRows.map((row) => (
+                  <div key={row.label} className="flex items-baseline justify-between gap-4 border-b border-gray-50 pb-2">
+                    <dt className="text-sm text-gray-500">{row.label}</dt>
+                    <dd className="text-sm font-medium text-gray-800 text-right">{row.value}</dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
+          )}
+
+          {/* Description */}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mt-6">
+            <h2 className="text-sm font-bold uppercase tracking-wider text-gray-800 mb-3">{T.descriptionLabel}</h2>
+            <p className="text-gray-600 text-sm leading-relaxed whitespace-pre-line">
+              {listing.description || 'No description provided.'}
+            </p>
+          </div>
+
+          {/* Comments Section */}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mt-6">
+            <h2 className="text-sm font-bold uppercase tracking-wider text-gray-800 mb-4">Comments ({comments.length})</h2>
+
+            {user ? (
+              <div className="flex gap-3 mb-6">
+                <input
+                  type="text"
+                  value={commentText}
+                  onChange={(e) => setCommentText(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && !commentSubmitting && handleAddComment()}
+                  placeholder="Add a comment..."
+                  className="flex-1 border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#E85D04]/30 focus:border-[#E85D04] transition"
+                />
+                <button onClick={handleAddComment} disabled={commentSubmitting || !commentText.trim()}
+                  className="px-4 py-2.5 rounded-xl text-white text-sm font-bold hover:shadow-lg transition disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2 shrink-0"
+                  style={{ background: `linear-gradient(135deg, ${NAVY}, ${ORG})` }}>
+                  {commentSubmitting ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
+                  Post
+                </button>
+              </div>
+            ) : (
+              <p className="text-sm text-gray-400 italic mb-6">Sign in to leave a comment.</p>
+            )}
+
+            {comments.length === 0 ? (
+              <p className="text-sm text-gray-400 text-center py-4">No comments yet. Be the first!</p>
+            ) : (
+              <div className="space-y-4">
+                {comments.map((comment) => (
+                  <div key={comment.id} className="flex gap-3 group">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center shrink-0">
+                      <span className="text-xs font-bold text-gray-600">{comment.user_name.charAt(0).toUpperCase()}</span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-sm font-semibold text-gray-800">{comment.user_name}</span>
+                        <span className="text-xs text-gray-400">{new Date(comment.created_at).toLocaleDateString()}</span>
+                        {user && (user.id === comment.user_id) && (
+                          <button onClick={() => handleDeleteComment(comment.id)} disabled={deletingCommentId === comment.id}
+                            className="text-xs text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition ml-auto">
+                            {deletingCommentId === comment.id ? '...' : 'Delete'}
+                          </button>
+                        )}
+                      </div>
+                      <p className="text-sm text-gray-600 break-words">{comment.content}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Related Listings Section */}
+          {relatedListings.length > 0 && (
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mt-6">
+              <h2 className="text-sm font-bold uppercase tracking-wider text-gray-800 mb-4">Related Listings</h2>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                {relatedListings.map((related) => (
+                  <Link key={related.id} href={`/listings/${related.id}`} className="group">
+                    <div className="bg-gray-50 rounded-xl overflow-hidden border border-gray-100 hover:border-[#E85D04] transition-all duration-300 hover:shadow-lg">
+                      <div className="aspect-square bg-gray-100 relative overflow-hidden">
+                        {related.primary_image ? (
+                          <AppImage
+                            src={related.primary_image}
+                            alt={related.title}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-gray-300">
+                            <Package size={32} />
+                          </div>
+                        )}
+                      </div>
+                      <div className="p-3">
+                        <h3 className="text-xs font-semibold text-gray-800 line-clamp-2 mb-1 group-hover:text-[#E85D04] transition-colors">
+                          {related.title}
+                        </h3>
+                        <p className="text-xs font-bold" style={{ color: ORG }}>
+                          {related.price ? `${Number(related.price).toLocaleString()} ${related.currency || 'RWF'}` : 'On request'}
+                        </p>
+                        <p className="text-[10px] text-gray-500 mt-1 flex items-center gap-1">
+                          <MapPin size={10} /> {related.location || 'Kigali'}
+                        </p>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+              {hasMoreRelated && (
+                <button
+                  onClick={() => setRelatedPage(prev => prev + 1)}
+                  disabled={relatedLoading}
+                  className="w-full mt-4 py-2.5 rounded-xl text-sm font-semibold border-2 border-dashed border-gray-200 hover:border-[#E85D04] hover:text-[#E85D04] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {relatedLoading ? 'Loading...' : 'Load More Related Listings'}
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Info - Right */}
+        <div className="lg:col-span-2">
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 lg:sticky lg:top-24">
+            <div className="flex items-start justify-between gap-3 mb-3">
+              <span className={`text-[11px] font-extrabold px-2.5 py-1 rounded-full tracking-wider ${listing.listing_type === 'rent' ? 'bg-blue-100 text-blue-700' : 'bg-orange-100 text-[#E85D04]'
+                }`}>
+                {listing.listing_type === 'rent' ? T.forRent : T.forSale}
+              </span>
+              {isExpired && <span className="bg-red-100 text-red-700 text-xs font-semibold px-3 py-1 rounded-full shrink-0">Expired</span>}
+            </div>
+
+            <h1 className="text-xl font-bold text-gray-900 leading-tight">{listing.title}</h1>
+
+            <div className="mt-2">
+              <StarRating listingId={listing.id} size={20} isOwner={isOwner} />
+            </div>
+
+            <p className="text-2xl font-extrabold mt-3" style={{ color: ORG }}>{priceLabel}</p>
+
+            <div className="flex items-center gap-4 mt-3">
+              <div className="flex items-center gap-2 text-sm text-gray-500">
+                <MapPin size={14} />
+                {listing.location || 'Kigali'}
+              </div>
+              {user && (
+                <button onClick={handleToggleLike}
+                  className={`flex items-center gap-1.5 text-sm font-semibold transition ${liked ? 'text-red-500' : 'text-gray-400 hover:text-red-400'}`}>
+                  <Heart size={16} className={liked ? 'fill-current' : ''} />
+                  {likeCount > 0 && <span>{likeCount}</span>}
+                </button>
+              )}
+              {!user && likeCount > 0 && (
+                <span className="flex items-center gap-1.5 text-sm text-gray-400">
+                  <Heart size={14} /> {likeCount}
+                </span>
+              )}
+              <ShareButton
+                url={typeof window !== 'undefined' ? `${window.location.origin}/listings/${id}` : `https://enyagasambu.rw/listings/${id}`}
+                title={listing.title}
+              />
+            </div>
+
+            {/* Quick info grid */}
+            <div className="grid grid-cols-2 gap-3 mt-5 p-4 bg-gray-50 rounded-xl">
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-gray-500">{T.categoryLabel}</p>
+                <p className="text-sm font-semibold text-gray-800 mt-0.5">{listing.category_name}</p>
+              </div>
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-gray-500">{T.sellerLabel}</p>
+                <p className="text-sm font-semibold text-gray-800 mt-0.5">{listing.seller_name}</p>
+              </div>
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-gray-500">Status</p>
+                <p className="text-sm font-semibold text-green-600 mt-0.5">{listing.status}</p>
+              </div>
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-gray-500">Posted</p>
+                <p className="text-sm font-semibold text-gray-800 mt-0.5">{new Date(listing.created_at).toLocaleDateString()}</p>
+              </div>
+              <div
+                className="relative flex items-center justify-between gap-2 col-span-2 mt-1 pt-3 border-t border-gray-200"
+                onMouseEnter={() => setCopyTooltip(true)}
+                onMouseLeave={() => setCopyTooltip(false)}
+              >
+                <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500">{T.copyLink}</span>
+                <button
+                  type="button"
+                  onClick={handleCopyLink}
+                  aria-label={copyState === 'copied' ? T.linkCopied : T.copyLink}
+                  className="w-9 h-9 flex items-center justify-center rounded-full text-gray-600 hover:bg-gray-200 hover:text-gray-800 active:scale-95 transition-all"
+                >
+                  <LinkIcon size={19} strokeWidth={1.75} style={{ color: copyState === 'copied' ? '#16a34a' : undefined }} />
+                </button>
+                {(copyTooltip || copyState !== 'idle') && (
+                  <div
+                    role="status"
+                    className="absolute top-full right-0 mt-2 px-2.5 py-1 rounded-lg text-[11px] font-medium text-white bg-gray-900 shadow-lg whitespace-nowrap z-20"
+                  >
+                    {copyState === 'copied' ? T.linkCopied : copyState === 'failed' ? T.copyFailed : T.copyLink}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Owner actions */}
+            {isOwner && (
+              <div className="mt-6 pt-5 border-t border-gray-100">
+                <p className="text-sm text-gray-500 italic mb-3">{T.thisIsYourListing}</p>
+                {!listing.is_featured && (
+                  <button onClick={handleBoost} disabled={boosting}
+                    className="w-full bg-gradient-to-r from-yellow-400 to-amber-500 text-gray-900 font-bold px-4 py-2.5 rounded-xl text-sm hover:shadow-lg transition disabled:opacity-60 flex items-center justify-center gap-2">
+                    {boosting ? 'Boosting...' : <><Star size={14} /> Boost Listing (200 coins)</>}
+                  </button>
+                )}
+                {listing.is_featured && (
+                  <span className="block text-sm text-yellow-600 font-medium text-center py-2 flex items-center justify-center gap-1"><Star size={14} /> {T.featuredListing}</span>
+                )}
+              </div>
+            )}
+
+            {/* Connect Section — MoMo Payment */}
+            {!isOwner && (
+              <div className="mt-6 pt-5 border-t border-gray-100">
+                {contactStep === 'unlocked' ? (
+                  <div className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-2xl p-5 text-center">
+                    <div className="w-14 h-14 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-3">
+                      <CheckCircle size={28} style={{ color: '#059669' }} />
+                    </div>
+                    <p className="text-sm font-bold text-gray-800 mb-1">Seller Contact Unlocked</p>
+                    {sellerName && <p className="text-xs text-gray-500 mb-2">{sellerName}</p>}
+                    <p className="text-2xl font-extrabold" style={{ color: NAVY }}>{sellerPhone || 'Not provided'}</p>
+                    <div className="flex items-center justify-center gap-3 mt-4">
+                      {sellerPhone && (
+                        <a href={`tel:${sellerPhone}`}
+                          className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-white text-sm font-bold hover:shadow-lg transition"
+                          style={{ background: `linear-gradient(135deg, ${NAVY}, #0f1e42)` }}>
+                          <Phone size={16} /> Call
+                        </a>
+                      )}
+                      {sellerPhone && (
+                        <a href={`https://wa.me/${sellerPhone.replace(/^0/, '250')}`} target="_blank" rel="noopener noreferrer"
+                          className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-white text-sm font-bold hover:shadow-lg transition"
+                          style={{ background: 'linear-gradient(135deg, #25d366, #128c7e)' }}>
+                          <MessageCircle size={16} /> WhatsApp
+                        </a>
+                      )}
+                    </div>
+                    <button onClick={resetContactFlow}
+                      className="text-xs text-gray-400 hover:text-gray-600 mt-3 underline">Unlock another contact</button>
+                  </div>
+                ) : (
+                  <div>
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-50 to-orange-100 flex items-center justify-center text-xl">
+                        <Phone size={24} />
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-gray-800">Get Seller Contact</p>
+                        <p className="text-xs text-gray-500">One-time payment of {CONTACT_FEE} RWF</p>
+                      </div>
+                    </div>
+
+                    {contactError && (
+                      <div className="bg-red-50 border border-red-200 rounded-xl p-3 mb-3 flex items-start gap-2">
+                        <AlertCircle size={14} className="text-red-500 mt-0.5 shrink-0" />
+                        <p className="text-xs text-red-700">{contactError}</p>
+                      </div>
+                    )}
+                    {contactSuccess && (
+                      <div className="bg-green-50 border border-green-200 rounded-xl p-3 mb-3 flex items-start gap-2">
+                        <CheckCircle size={14} className="text-green-500 mt-0.5 shrink-0" />
+                        <p className="text-xs text-green-700">{contactSuccess}</p>
+                      </div>
+                    )}
+
+                    {/* Enter phone for MoMo payment */}
+                    {contactStep === 'enter_phone' && (
+                      <div>
+                        <p className="text-sm text-gray-600 mb-3">
+                          Pay <strong className="text-orange-600">{CONTACT_FEE} RWF</strong> via MTN MoMo to unlock the seller&apos;s phone number, WhatsApp, and call options.
+                        </p>
+                        <p className="text-xs text-gray-500 mb-3">A payment request of <strong className="text-orange-600">{CONTACT_FEE} RWF</strong> will be sent to this number.</p>
+                        <div className="relative mb-3">
+                          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                            <Phone size={16} />
+                          </div>
+                          <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && !working && handleInitiatePayment()}
+                            placeholder="+250 7XX XXX XXX"
+                            className="w-full border border-gray-300 rounded-xl pl-10 pr-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#E85D04]/30 focus:border-[#E85D04] transition" />
+                        </div>
+                        <button onClick={handleInitiatePayment} disabled={working || isExpired}
+                          className="w-full text-white font-bold py-3 rounded-xl text-sm hover:shadow-lg disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition"
+                          style={{ background: `linear-gradient(135deg, ${NAVY}, ${ORG})` }}>
+                          {working ? (
+                            <><Loader2 size={16} className="animate-spin" /> Sending request...</>
+                          ) : (
+                            <>Pay {CONTACT_FEE} RWF & Unlock</>
+                          )}
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Step 3: Payment pending — polling MoMo */}
+                    {contactStep === 'payment_pending' && (
+                      <div className="text-center py-4">
+                        <div className="w-14 h-14 rounded-full bg-orange-100 flex items-center justify-center mx-auto mb-3">
+                          <Loader2 size={28} className="animate-spin" style={{ color: ORG }} />
+                        </div>
+                        <p className="text-sm font-bold text-gray-800 mb-1">Waiting for payment</p>
+                        <p className="text-xs text-gray-500 mb-3">
+                          A payment request of <strong>{CONTACT_FEE} RWF</strong> has been sent to <strong>{phone}</strong>.
+                        </p>
+                        <p className="text-xs text-gray-400">Please approve the payment on your phone by entering your Mobile Money PIN.</p>
+                        <div className="flex items-center justify-center gap-2 mt-4 text-xs text-gray-400">
+                          <Clock size={12} />
+                          <span>Checking payment status...</span>
+                        </div>
+                        <button onClick={() => { if (pollRef.current) clearInterval(pollRef.current); setContactStep('enter_phone'); setContactError(''); }}
+                          className="text-gray-500 text-sm py-2 mt-3 hover:underline">Cancel</button>
+                      </div>
+                    )}
+
+                    {/* Step 4: Enter OTP */}
+                    {contactStep === 'otp_entry' && (
+                      <div>
+                        <p className="text-sm font-semibold text-gray-800 mb-1">Verify Your Phone</p>
+                        <p className="text-xs text-gray-500 mb-3">Enter the 6-digit code sent to <strong>{phone}</strong> as SMS</p>
+                        <input type="text" value={otpCode} onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                          placeholder="000000"
+                          maxLength={6}
+                          className="w-full border border-gray-300 rounded-xl px-4 py-3 text-center text-2xl font-mono tracking-[0.3em] focus:outline-none focus:ring-2 focus:ring-[#E85D04]/30 focus:border-[#E85D04] transition"
+                          style={{ letterSpacing: '0.3em' }} />
+                        <button onClick={handleVerifyOtp} disabled={working || otpCode.length !== 6}
+                          className="w-full text-white font-bold py-3 rounded-xl text-sm hover:shadow-lg disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition mt-3"
+                          style={{ background: `linear-gradient(135deg, ${NAVY}, ${ORG})` }}>
+                          {working ? (
+                            <><Loader2 size={16} className="animate-spin" /> Verifying...</>
+                          ) : (
+                            <>Verify & Unlock</>
+                          )}
+                        </button>
+                        <div className="flex items-center justify-center gap-4 mt-3">
+                          {otpCountdown > 0 ? (
+                            <span className="text-xs text-gray-400">Resend code in {Math.floor(otpCountdown / 60)}:{(otpCountdown % 60).toString().padStart(2, '0')}</span>
+                          ) : (
+                            <button onClick={handleResendOtp} className="text-xs font-semibold hover:underline flex items-center gap-1" style={{ color: ORG }}>
+                              <RefreshCw size={12} /> Resend code
+                            </button>
+                          )}
+                        </div>
+                        <button onClick={resetContactFlow}
+                          className="w-full text-gray-500 text-sm py-2 mt-1 hover:underline">Cancel</button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Report listing */}
+            {!isOwner && (
+              <div className="mt-5 pt-4 border-t border-gray-100">
+                <button onClick={() => { setReportOpen(true); setReportSubmitted(false); setReportMsg(''); setReportReason(''); setReportDetails(''); }}
+                  className="w-full text-sm font-medium text-gray-400 hover:text-red-500 transition flex items-center justify-center gap-1.5 py-2">
+                  <AlertOctagon size={15} /> Report this listing
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Report modal */}
+      {reportOpen && (
+        <div className="fixed inset-0 z-[9998] bg-black/60 flex items-center justify-center p-4" onClick={() => setReportOpen(false)}>
+          <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl p-6" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                <AlertOctagon size={18} style={{ color: '#dc2626' }} /> Report Listing
+              </h3>
+              <button onClick={() => setReportOpen(false)} className="text-gray-400 hover:text-gray-600">
+                <X size={20} />
+              </button>
+            </div>
+
+            {reportSubmitted ? (
+              <div className="text-center py-8">
+                <div className="w-14 h-14 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-3">
+                  <CheckCircle size={28} style={{ color: '#059669' }} />
+                </div>
+                <p className="text-sm font-bold text-gray-800 mb-1">Report Submitted</p>
+                <p className="text-xs text-gray-500 mb-5">Our moderation team will review this listing.</p>
+                <button onClick={() => setReportOpen(false)}
+                  className="px-5 py-2.5 rounded-xl text-white text-sm font-bold"
+                  style={{ background: '#E85D04' }}>Done</button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-semibold mb-1.5 text-gray-500">Reason *</label>
+                  <select value={reportReason} onChange={(e) => setReportReason(e.target.value)}
+                    className="w-full rounded-xl px-4 py-2.5 text-sm bg-white border border-gray-200 outline-none focus:border-[#E85D04] transition">
+                    <option value="">Select a reason</option>
+                    <option value="spam">Spam</option>
+                    <option value="inappropriate">Inappropriate content</option>
+                    <option value="scam">Scam or fraud</option>
+                    <option value="misleading">Misleading information</option>
+                    <option value="illegal">Illegal content</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold mb-1.5 text-gray-500">Details (optional)</label>
+                  <textarea value={reportDetails} onChange={(e) => setReportDetails(e.target.value)} rows={4}
+                    placeholder="Add more details to help our team review..."
+                    className="w-full rounded-xl px-4 py-3 text-sm bg-white border border-gray-200 outline-none focus:border-[#E85D04] transition resize-y" />
+                </div>
+                {reportMsg && (
+                  <div className="flex items-center gap-2 text-sm rounded-xl px-4 py-3" style={{ background: reportSubmitted ? '#f0fdf4' : '#fef2f2', border: `1px solid ${reportSubmitted ? '#bbf7d0' : '#fecaca'}`, color: reportSubmitted ? '#059669' : '#dc2626' }}>
+                    <AlertCircle size={16} /> {reportMsg}
+                  </div>
+                )}
+                <button onClick={handleSubmitReport} disabled={reportSubmitting}
+                  className="w-full text-white font-bold py-3 rounded-xl text-sm transition hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-2"
+                  style={{ background: '#dc2626' }}>
+                  {reportSubmitting ? <Loader2 size={16} className="animate-spin" /> : <AlertOctagon size={16} />}
+                  {reportSubmitting ? 'Submitting...' : 'Submit Report'}
+                </button>
+                <Link href={`/support?listing=${id}`} className="block text-center text-xs font-medium text-gray-400 hover:text-gray-600 underline">
+                  Prefer a different issue? Contact support
+                </Link>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Lightbox */}
+      {lightboxOpen && listing.images.length > 0 && (
+        <div className="fixed inset-0 bg-black/95 z-[9999] flex items-center justify-center" onClick={() => setLightboxOpen(false)}>
+          <button onClick={() => setLightboxOpen(false)}
+            className="absolute top-6 right-6 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition z-10">
+            <X size={24} />
+          </button>
+          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 text-white text-sm bg-black/50 px-4 py-2 rounded-full">
+            {activeImg + 1} / {listing.images.length}
+          </div>
+          <AppImage
+            src={listing.images[activeImg]?.image_url}
+            alt={listing.title}
+            className="max-w-[90vw] max-h-[90vh] object-contain"
+            onClick={(e) => e.stopPropagation()}
+          />
+          {activeImg > 0 && (
+            <button onClick={(e) => { e.stopPropagation(); setActiveImg(i => i - 1); }}
+              className="absolute left-6 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition">
+              <ChevronLeft size={24} />
+            </button>
+          )}
+          {activeImg < listing.images.length - 1 && (
+            <button onClick={(e) => { e.stopPropagation(); setActiveImg(i => i + 1); }}
+              className="absolute right-6 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition">
+              <ChevronRight size={24} />
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
