@@ -10,10 +10,12 @@ const upload = multer({
 });
 
 router.post('/', taxAdvisoryLimiter, upload.array('documents', 5), ctrl.submit);
-router.get('/', authenticate, requireAdmin, ctrl.list);
-router.get('/:id', authenticate, requireAdmin, ctrl.getOne);
-router.patch('/:id/status', authenticate, requireAdmin, ctrl.updateStatus);
+router.get('/specialists/list', authenticate, requireAdmin, ctrl.listSpecialists);
+router.get('/', authenticate, ctrl.list);
+router.get('/:id', authenticate, ctrl.getOne);
+router.patch('/:id/status', authenticate, ctrl.updateStatus);
+router.patch('/:id/approve', authenticate, requireAdmin, ctrl.approve);
 router.patch('/:id/assign', authenticate, requireAdmin, ctrl.assign);
-router.get('/:id/documents/:docId', authenticate, requireAdmin, ctrl.downloadDocument);
+router.get('/:id/documents/:docId', authenticate, ctrl.downloadDocument);
 
 module.exports = router;

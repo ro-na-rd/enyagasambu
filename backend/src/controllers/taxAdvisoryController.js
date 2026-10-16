@@ -1,11 +1,21 @@
 const crypto = require('crypto');
 const pool = require('../config/db');
 const { logger } = require('../config/logger');
-const { notifyAdmins } = require('../services/notificationService');
+const { notifyAdmins, notifyStaff } = require('../services/notificationService');
 const { uploadPrivateToS3, getPrivateObject } = require('../services/s3Service');
 const V = require('../utils/taxAdvisoryValidation');
 
 const POLICY_VERSION = 'v1.0';
+const TAX_ADVISORY_SPECIALIST_ROLE = 'Tax Advisory Client Support Specialist';
+const SPECIALIST_STATUSES = ['approved', 'awaiting_documents', 'scheduled', 'in_progress', 'resolved', 'closed'];
+
+function isTaxAdvisorySpecialist(user) {
+  return user?.is_staff === true && user.executive_role === TAX_ADVISORY_SPECIALIST_ROLE;
+}
+
+function canAccessRequest(user, request) {
+  return user?.role === 'admin' || (isTaxAdvisorySpecialist(user) && request.assigned_to === user.id);
+}
 
 function getPayload(req) {
   if (req.is('multipart/form-data')) {
@@ -200,17 +210,27 @@ exports.submit = async (req, res) => {
 
 exports.list = async (req, res) => {
   try {
+    const isAdmin = req.user?.role === 'admin';
+    if (!isAdmin && !isTaxAdvisorySpecialist(req.user)) {
+      return res.status(403).json({ message: 'Tax Advisory Client Support Specialist access required' });
+    }
+    const where = isAdmin ? '' : 'WHERE r.assigned_to = ?';
+    const params = isAdmin ? [] : [req.user.id];
     const [rows] = await pool.query(
       `SELECT r.*,
               GROUP_CONCAT(s.service ORDER BY s.service) AS services,
-              COALESCE(d.doc_count, 0) AS document_count
+              COALESCE(d.doc_count, 0) AS document_count,
+              assignee.username AS assigned_to_name
        FROM advisory_requests r
        LEFT JOIN advisory_request_services s ON s.request_id = r.id
        LEFT JOIN (SELECT request_id, COUNT(*) AS doc_count FROM advisory_request_documents GROUP BY request_id) d
          ON d.request_id = r.id
+       LEFT JOIN staff assignee ON assignee.id = r.assigned_to
+       ${where}
        GROUP BY r.id
        ORDER BY r.created_at DESC
-       LIMIT 200`
+       LIMIT 200`,
+      params
     );
     res.json(rows.map((r) => ({
       ...r,
@@ -227,6 +247,7 @@ exports.getOne = async (req, res) => {
     const id = Number(req.params.id);
     const [rows] = await pool.query('SELECT * FROM advisory_requests WHERE id = ?', [id]);
     if (!rows.length) return res.status(404).json({ message: 'Request not found' });
+    if (!canAccessRequest(req.user, rows[0])) return res.status(403).json({ message: 'You are not assigned to this request' });
     const [services] = await pool.query('SELECT service FROM advisory_request_services WHERE request_id = ?', [id]);
     const [docs] = await pool.query(
       'SELECT id, filename, mime_type, size_bytes, uploaded_at FROM advisory_request_documents WHERE request_id = ?',
@@ -250,8 +271,12 @@ exports.updateStatus = async (req, res) => {
   }
   try {
     const id = Number(req.params.id);
-    const [rows] = await pool.query('SELECT status FROM advisory_requests WHERE id = ?', [id]);
+    const [rows] = await pool.query('SELECT status, assigned_to FROM advisory_requests WHERE id = ?', [id]);
     if (!rows.length) return res.status(404).json({ message: 'Request not found' });
+    if (!canAccessRequest(req.user, rows[0])) return res.status(403).json({ message: 'You are not assigned to this request' });
+    if (isTaxAdvisorySpecialist(req.user) && !SPECIALIST_STATUSES.includes(status)) {
+      return res.status(400).json({ message: 'Specialists can only use approved workflow statuses' });
+    }
     const previous = rows[0].status;
     await pool.query('UPDATE advisory_requests SET status = ? WHERE id = ?', [status, id]);
     await pool.query(
@@ -262,6 +287,67 @@ exports.updateStatus = async (req, res) => {
   } catch (err) {
     logger.error('[TaxAdvisory] updateStatus error:', err);
     res.status(500).json({ message: 'Server error' });
+  }
+};
+
+exports.approve = async (req, res) => {
+  const specialistId = Number(req.body?.specialistId);
+  const note = V.str(req.body?.note).slice(0, 500) || null;
+  if (!Number.isInteger(specialistId) || specialistId <= 0) {
+    return res.status(400).json({ message: 'A Tax Advisory Client Support Specialist must be selected' });
+  }
+
+  const conn = await pool.getConnection();
+  try {
+    await conn.beginTransaction();
+    const id = Number(req.params.id);
+    const [[request]] = await conn.query('SELECT id, reference, full_name, status, approved_at FROM advisory_requests WHERE id = ? FOR UPDATE', [id]);
+    if (!request) {
+      await conn.rollback();
+      return res.status(404).json({ message: 'Request not found' });
+    }
+    if (request.approved_at) {
+      await conn.rollback();
+      return res.status(409).json({ message: 'This request has already been approved' });
+    }
+    const [[specialist]] = await conn.query(
+      'SELECT id, username FROM staff WHERE id = ? AND is_active = 1 AND executive_role = ?',
+      [specialistId, TAX_ADVISORY_SPECIALIST_ROLE]
+    );
+    if (!specialist) {
+      await conn.rollback();
+      return res.status(400).json({ message: 'Selected staff member is not an active Tax Advisory Client Support Specialist' });
+    }
+    await conn.query(
+      'UPDATE advisory_requests SET status = ?, assigned_to = ?, approved_by = ?, approved_at = NOW() WHERE id = ?',
+      ['approved', specialistId, req.user.id, id]
+    );
+    await conn.query(
+      'INSERT INTO advisory_request_status_history (request_id, from_status, to_status, note, changed_by) VALUES (?, ?, ?, ?, ?)',
+      [id, request.status, 'approved', note || `Approved and assigned to ${specialist.username}`, req.user.id]
+    );
+    await conn.commit();
+    await notifyStaff(specialistId, 'Tax advisory request assigned', `${request.reference}: ${request.full_name} was approved and assigned to you.`, 'tax-advisory', '/admin/tax-advisory');
+    return res.json({ message: 'Request approved and assigned', assignedTo: { id: specialist.id, name: specialist.username } });
+  } catch (err) {
+    await conn.rollback();
+    logger.error('[TaxAdvisory] approve error:', err);
+    return res.status(500).json({ message: 'Server error' });
+  } finally {
+    conn.release();
+  }
+};
+
+exports.listSpecialists = async (_req, res) => {
+  try {
+    const [staff] = await pool.query(
+      'SELECT id, username, email, phone FROM staff WHERE is_active = 1 AND executive_role = ? ORDER BY username ASC',
+      [TAX_ADVISORY_SPECIALIST_ROLE]
+    );
+    return res.json({ specialists: staff });
+  } catch (err) {
+    logger.error('[TaxAdvisory] listSpecialists error:', err);
+    return res.status(500).json({ message: 'Server error' });
   }
 };
 
@@ -292,6 +378,9 @@ exports.downloadDocument = async (req, res) => {
   try {
     const requestId = Number(req.params.id);
     const docId = Number(req.params.docId);
+    const [requestRows] = await pool.query('SELECT assigned_to FROM advisory_requests WHERE id = ?', [requestId]);
+    if (!requestRows.length) return res.status(404).json({ message: 'Request not found' });
+    if (!canAccessRequest(req.user, requestRows[0])) return res.status(403).json({ message: 'You are not assigned to this request' });
     const [rows] = await pool.query(
       'SELECT * FROM advisory_request_documents WHERE id = ? AND request_id = ?',
       [docId, requestId]

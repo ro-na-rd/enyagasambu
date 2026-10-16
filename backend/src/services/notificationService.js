@@ -52,4 +52,25 @@ async function notifyAdmins(title, message, type = 'info', link = null) {
   }
 }
 
-module.exports = { notifyUser, notifyAdmins };
+async function notifyStaff(staffId, title, message, type = 'info', link = null) {
+  if (!staffId) return;
+  try {
+    const [result] = await pool.query(
+      'INSERT INTO notifications (staff_id, title, message, type, link) VALUES (?, ?, ?, ?, ?)',
+      [staffId, title, message, type, link]
+    );
+    emitToUser(staffId, 'notification:new', {
+      id: result.insertId,
+      title,
+      message,
+      type,
+      link,
+      is_read: 0,
+      created_at: new Date().toISOString(),
+    });
+  } catch (err) {
+    logger.error('[Notification] notifyStaff error:', err.message);
+  }
+}
+
+module.exports = { notifyUser, notifyAdmins, notifyStaff };

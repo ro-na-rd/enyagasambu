@@ -45,6 +45,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: '/admin/notifications', icon: <Bell size={18} />, label: 'Notifications' },
   { href: '/admin/auctions', icon: <Gavel size={18} />, label: 'Auctions' },
   { href: '/admin/support', icon: <MessageSquare size={18} />, label: 'Support' },
+  { href: '/admin/tax-advisory', icon: <FileText size={18} />, label: 'Tax Advisory' },
   { href: '/admin/content', icon: <FileText size={18} />, label: 'Content' },
   { href: '/admin/team', icon: <Users size={18} />, label: 'Team & Board' },
   { href: '/admin/home-buttons', icon: <LinkIcon size={18} />, label: 'Join Buttons' },
