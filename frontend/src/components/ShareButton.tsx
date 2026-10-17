@@ -119,7 +119,7 @@ export default function ShareButton({ url, title }: ShareButtonProps) {
       <button
         type="button"
         onClick={() => {
-          if (navigator.share) {
+          if (typeof navigator.share === 'function') {
             handleNativeShare();
           } else {
             setOpen(!open);
