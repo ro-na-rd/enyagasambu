@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import api from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 
@@ -21,6 +21,12 @@ interface Request {
 }
 
 interface Specialist { id: number; username: string; email?: string; phone?: string; }
+type ApiError = { response?: { data?: { message?: unknown } } };
+
+function errorMessage(error: unknown, fallback: string) {
+  const message = (error as ApiError)?.response?.data?.message;
+  return typeof message === 'string' ? message : fallback;
+}
 
 const statusStyle: Record<string, string> = {
   new: 'bg-blue-100 text-blue-700', under_review: 'bg-amber-100 text-amber-700',
@@ -42,7 +48,7 @@ export default function TaxAdvisoryAdminPage() {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true); setError('');
     try {
       const [requestResponse, specialistResponse] = await Promise.all([
@@ -51,12 +57,12 @@ export default function TaxAdvisoryAdminPage() {
       ]);
       setRequests(requestResponse.data || []);
       setSpecialists(specialistResponse.data.specialists || []);
-    } catch (err: any) {
-      setError(err?.response?.data?.message || 'Unable to load tax advisory requests.');
+    } catch (err: unknown) {
+      setError(errorMessage(err, 'Unable to load tax advisory requests.'));
     } finally { setLoading(false); }
-  };
+  }, [isAdmin]);
 
-  useEffect(() => { if (user) load(); }, [user]);
+  useEffect(() => { if (user) load(); }, [user, load]);
 
   const pendingCount = useMemo(() => requests.filter((r) => ['new', 'under_review'].includes(r.status)).length, [requests]);
 
@@ -68,7 +74,7 @@ export default function TaxAdvisoryAdminPage() {
       setMessage(`${selected.reference} was approved and assigned.`);
       setSelected(null); setSpecialistId(''); setNote('');
       await load();
-    } catch (err: any) { setError(err?.response?.data?.message || 'Approval failed.'); }
+    } catch (err: unknown) { setError(errorMessage(err, 'Approval failed.')); }
     finally { setSaving(false); }
   };
 
@@ -78,7 +84,7 @@ export default function TaxAdvisoryAdminPage() {
       await api.patch(`/tax-advisory/${request.id}/status`, { status });
       setMessage(`${request.reference} updated to ${status.replace(/_/g, ' ')}.`);
       await load();
-    } catch (err: any) { setError(err?.response?.data?.message || 'Could not update request status.'); }
+    } catch (err: unknown) { setError(errorMessage(err, 'Could not update request status.')); }
     finally { setSaving(false); }
   };
 
