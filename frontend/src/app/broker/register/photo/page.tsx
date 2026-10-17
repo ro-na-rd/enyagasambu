@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import Link from 'next/link';
-import { Camera, Image } from '@/lib/icons';
+import { Camera, Image as ImageIcon } from '@/lib/icons';
 
 const NAVY = '#0f1e42';
 const ORG = '#E85D04';
@@ -70,7 +70,7 @@ export default function BrokerPhotoPage() {
         >
           {preview
             ? <AppImage src={preview} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
-            : <><Image size={40} className="mb-3" aria-hidden="true" /><p className="text-sm text-gray-400">Click or drag photo</p></>
+            : <><ImageIcon size={40} className="mb-3" aria-hidden="true" /><p className="text-sm text-gray-400">Click or drag photo</p></>
           }
         </div>
 

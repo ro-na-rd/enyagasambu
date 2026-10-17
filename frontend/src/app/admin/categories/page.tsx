@@ -59,7 +59,15 @@ export default function AdminCategoriesPage() {
   };
 
   useEffect(() => {
-    loadCategories().finally(() => setLoading(false));
+    let active = true;
+    api.get('/categories')
+      .then(({ data }) => {
+        if (active) setCategories(data.categories || []);
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => { active = false; };
   }, []);
 
   const handleCreate = async (e: React.FormEvent) => {

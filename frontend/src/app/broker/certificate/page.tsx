@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { formatRWF } from '@/lib/currencies';
 import api from '@/lib/api';
-import { Lock, Camera, Image, BadgeCheck, CheckCircle, Clock, Coins } from '@/lib/icons';
+import { Lock, Camera, Image as ImageIcon, BadgeCheck, CheckCircle, Clock, Coins } from '@/lib/icons';
 import { useQrDataUrl } from '@/components/QrCode';
 import { SITE_DOMAIN } from '@/lib/config';
 import BrokerCertificate from '@/components/BrokerCertificate';
@@ -68,7 +68,7 @@ function PhotoUploadStep({ onPhoto, onSkip }: { onPhoto: (url: string) => void; 
         >
           {preview
             ? <AppImage src={preview} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-            : <><Image size={40} className="mb-3" aria-hidden="true" /><p className="text-sm text-gray-400">Click or drag &amp; drop your photo here</p><p className="text-xs text-gray-300 mt-1">JPG, PNG, WEBP supported</p></>
+            : <><ImageIcon size={40} className="mb-3" aria-hidden="true" /><p className="text-sm text-gray-400">Click or drag &amp; drop your photo here</p><p className="text-xs text-gray-300 mt-1">JPG, PNG, WEBP supported</p></>
           }
         </div>
         <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f); }} />

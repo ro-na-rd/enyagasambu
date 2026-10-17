@@ -62,7 +62,27 @@ export default function TaxAdvisoryAdminPage() {
     } finally { setLoading(false); }
   }, [isAdmin]);
 
-  useEffect(() => { if (user) load(); }, [user, load]);
+  useEffect(() => {
+    if (!user) return;
+    let active = true;
+    Promise.all([
+      api.get('/tax-advisory'),
+      isAdmin ? api.get('/tax-advisory/specialists/list') : Promise.resolve({ data: { specialists: [] } }),
+    ])
+      .then(([requestResponse, specialistResponse]) => {
+        if (!active) return;
+        setRequests(requestResponse.data || []);
+        setSpecialists(specialistResponse.data.specialists || []);
+      })
+      .catch((err: unknown) => {
+        if (!active) return;
+        setError(errorMessage(err, 'Unable to load tax advisory requests.'));
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => { active = false; };
+  }, [user, isAdmin]);
 
   const pendingCount = useMemo(() => requests.filter((r) => ['new', 'under_review'].includes(r.status)).length, [requests]);
 

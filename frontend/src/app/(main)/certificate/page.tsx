@@ -5,7 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { SITE_DOMAIN } from '@/lib/config';
-import { Lock, MapPin, Phone, Mail, Globe, Camera, Image, Download } from '@/lib/icons';
+import { Lock, MapPin, Phone, Mail, Globe, Camera, Image as ImageIcon, Download } from '@/lib/icons';
 import { useQrDataUrl } from '@/components/QrCode';
 
 const NAVY   = '#0f1e42';
@@ -160,7 +160,7 @@ function PhotoUploadStep({ onPhoto, onSkip }: { onPhoto: (url: string) => void; 
         >
           {preview
             ? <AppImage src={preview} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-            : <><Image size={48} className="mb-3" aria-hidden="true" /><p className="text-sm text-gray-400">Click or drag &amp; drop your photo here</p><p className="text-xs text-gray-300 mt-1">JPG, PNG, WEBP supported</p></>
+            : <><ImageIcon size={48} className="mb-3" aria-hidden="true" /><p className="text-sm text-gray-400">Click or drag &amp; drop your photo here</p><p className="text-xs text-gray-300 mt-1">JPG, PNG, WEBP supported</p></>
           }
         </div>
         <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f); }} />
