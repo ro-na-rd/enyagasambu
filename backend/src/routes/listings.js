@@ -66,7 +66,7 @@ router.post(
     body('title').trim().notEmpty().withMessage('Title is required').isLength({ max: 200 }).withMessage('Title must be less than 200 characters'),
     body('category_id').isInt().withMessage('Category required'),
     body('listing_type').optional().isIn(['sell', 'rent', 'auction']).withMessage('Type must be sell, rent, or auction'),
-    body('duration_days').isIn([3, 7, 30]).withMessage('duration_days must be 3, 7, or 30'),
+    body('duration_days').isInt({ min: 1, max: 365 }).withMessage('duration_days must be a valid number of days'),
     body('phone').trim().notEmpty().withMessage('Phone number required for payment'),
   ],
   validate,

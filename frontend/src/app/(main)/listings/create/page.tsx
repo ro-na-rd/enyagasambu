@@ -7,6 +7,7 @@ import { useLanguage } from '@/context/LanguageContext';
 import api from '@/lib/api';
 import { formatRWF } from '@/lib/currencies';
 import CategoryFieldsInput, { findMissingRequiredField, type CategoryField } from '@/components/CategoryFieldsInput';
+import RwandaPropertyLocation, { isPropertyCategory } from '@/components/RwandaPropertyLocation';
 import { Smartphone, Clock, CheckCircle, Sparkles } from '@/lib/icons';
 
 interface CreateForm {
@@ -33,7 +34,7 @@ export default function CreateListingPage() {
   const [sellerPhone, setSellerPhone] = useState('');
   const [postingFree, setPostingFree] = useState(false);
   const [durationDays, setDurationDays] = useState(3);
-  const [step, setStep] = useState<'form' | 'pay' | 'waiting' | 'otp' | 'success'>('form');
+  const [step, setStep] = useState<'form' | 'pay' | 'waiting' | 'otp' | 'success' | 'failed'>('form');
   const [referenceId, setReferenceId] = useState('');
   const [otpCode, setOtpCode] = useState('');
   const [otpError, setOtpError] = useState('');
@@ -42,7 +43,7 @@ export default function CreateListingPage() {
   const [postSuccess, setPostSuccess] = useState(false);
   const [negotiable, setNegotiable] = useState(false);
   const [attributes, setAttributes] = useState<Record<string, string>>({});
-  const { register, handleSubmit, watch, formState: { errors, isSubmitting } } = useForm<CreateForm>({
+  const { register, handleSubmit, watch, setValue, formState: { errors, isSubmitting } } = useForm<CreateForm>({
     defaultValues: { listing_type: 'sell', currency: 'RWF' },
   });
 
@@ -96,6 +97,10 @@ export default function CreateListingPage() {
     if (digits.length < 10) { setError('Please enter the full phone number (at least 10 digits)'); return; }
     const missing = findMissingRequiredField(categoryFields, attributes);
     if (missing) { setError(`${missing.label} is required`); return; }
+    if (isPropertyCategory(selectedCategory) && !data.location?.trim()) {
+      setError('Select the Rwanda address for this property.');
+      return;
+    }
     setError('');
     const form = new FormData();
     Object.entries(data).forEach(([k, v]) => form.append(k, v));
@@ -103,6 +108,7 @@ export default function CreateListingPage() {
     form.append('price_type', negotiable ? 'negotiable' : 'fixed');
     form.append('guest_name', sellerName.trim());
     form.append('guest_phone', sellerPhone.trim());
+    form.append('phone', sellerPhone.trim());
     images.forEach((f) => form.append('images', f));
     try {
       const { data: res } = await api.post('/listings', form, { headers: { 'Content-Type': 'multipart/form-data' } });
@@ -125,6 +131,10 @@ export default function CreateListingPage() {
     if (digits.length < 10) { setError('Please enter the full phone number (at least 10 digits)'); return; }
     const missing = findMissingRequiredField(categoryFields, attributes);
     if (missing) { setError(`${missing.label} is required`); return; }
+    if (isPropertyCategory(selectedCategory) && !data.location?.trim()) {
+      setError('Select the Rwanda address for this property.');
+      return;
+    }
     setError('');
     const form = new FormData();
     Object.entries(data).forEach(([k, v]) => form.append(k, v));
@@ -155,8 +165,8 @@ export default function CreateListingPage() {
       } else if (res.listingId) {
         router.push(`/listings/${res.listingId}`);
       } else if (res.status === 'failed') {
-        setError(res.message || 'Payment failed. Please try again.');
-        setStep('form');
+        setError(res.message || 'The payment was not completed.');
+        setStep('failed');
       }
       return res;
     } catch {
@@ -168,12 +178,24 @@ export default function CreateListingPage() {
 
   const handlePaid = () => {
     setStep('waiting');
+    let attempts = 0;
     pollRef.current = setInterval(async () => {
+      attempts += 1;
       const res = await confirmPayment();
       if (res?.listingId || res?.status === 'failed' || res?.status === 'payment_verified') {
         if (pollRef.current) clearInterval(pollRef.current);
       }
+      if (attempts >= 30) {
+        if (pollRef.current) clearInterval(pollRef.current);
+        setError('We could not confirm the payment after 90 seconds. Check your phone and try again.');
+        setStep('failed');
+      }
     }, 3000);
+  };
+
+  const retryPayment = () => {
+    setError('');
+    handleSubmit(onSubmitPaid)();
   };
 
   useEffect(() => {
@@ -218,7 +240,7 @@ export default function CreateListingPage() {
 
   if (step === 'pay') {
     return (
-      <div className="max-w-md mx-auto px-4 py-20 text-center">
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 px-4 py-8 text-center">
         <div className="bg-white rounded-2xl shadow p-8 space-y-6">
           <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto">
             <span className="text-3xl"><Smartphone size={32} /></span>
@@ -245,7 +267,7 @@ export default function CreateListingPage() {
 
   if (step === 'waiting') {
     return (
-      <div className="max-w-md mx-auto px-4 py-20 text-center">
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 px-4 py-8 text-center">
         <div className="bg-white rounded-2xl shadow p-8 space-y-6">
           <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto animate-pulse">
             <span className="text-3xl"><Clock size={32} className="animate-spin" /></span>
@@ -259,7 +281,7 @@ export default function CreateListingPage() {
 
   if (step === 'otp') {
     return (
-      <div className="max-w-md mx-auto px-4 py-20 text-center">
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 px-4 py-8 text-center">
         <div className="bg-white rounded-2xl shadow p-8 space-y-6">
           <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto">
             <span className="text-3xl"><CheckCircle size={32} /></span>
@@ -302,7 +324,7 @@ export default function CreateListingPage() {
 
   if (step === 'success') {
     return (
-      <div className="max-w-md mx-auto px-4 py-20 text-center">
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 px-4 py-8 text-center">
         <div className="bg-white rounded-2xl shadow p-8 space-y-6">
           <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto">
             <span className="text-3xl"><Sparkles size={32} /></span>
@@ -311,6 +333,24 @@ export default function CreateListingPage() {
           <p className="text-green-600 font-medium flex items-center justify-center gap-1"><CheckCircle size={16} /> {T.otpVerified}</p>
           <p className="text-green-600 font-medium flex items-center justify-center gap-1"><Sparkles size={16} /> {T.postPublishedSuccess}</p>
           <p className="text-gray-500 text-sm">{T.redirectingToListing}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (step === 'failed') {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 px-4 py-8 text-center">
+        <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-xl space-y-5">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-red-100 text-2xl">!</div>
+          <h2 className="text-xl font-bold text-gray-900">Payment was not completed</h2>
+          <p className="text-sm text-gray-600">{error || 'We could not confirm the Mobile Money payment. You have not been charged by this page. Check your phone, then try again.'}</p>
+          <div className="rounded-lg bg-orange-50 px-4 py-3 text-left text-sm text-gray-700">
+            <p className="font-semibold">Before trying again</p>
+            <p className="mt-1 text-xs">Make sure your phone is available, approve the Mobile Money prompt, and enter your PIN only on your phone.</p>
+          </div>
+          <button onClick={retryPayment} className="w-full rounded-lg bg-[#E85D04] py-3 font-semibold text-white transition hover:bg-[#e05d00]">Try payment again</button>
+          <button onClick={() => { setError(''); setStep('form'); }} className="w-full py-2 text-sm font-semibold text-gray-600 hover:text-gray-900">Edit listing details</button>
         </div>
       </div>
     );
@@ -434,14 +474,20 @@ export default function CreateListingPage() {
           </div>
         </div>
 
-        <div>
+        {isPropertyCategory(selectedCategory) ? (
+          <RwandaPropertyLocation
+            value={watch('location') || ''}
+            onChange={(location) => setValue('location', location, { shouldDirty: true })}
+            required
+          />
+        ) : <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">{T.locationField}</label>
           <input
             {...register('location')}
             className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none"
             placeholder="e.g. Kicukiro, Kigali"
           />
-        </div>
+        </div>}
 
         {!postingFree && (
           <div>
