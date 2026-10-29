@@ -628,6 +628,27 @@ export default function ListingDetailClient({ params }: { params: Promise<{ id: 
               />
             </div>
 
+            {listing.location && (
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-3 text-xs font-semibold">
+                <a
+                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(listing.location)}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-[#E85D04] hover:underline"
+                >
+                  {T.directionsGoogle}
+                </a>
+                <a
+                  href={`https://www.openstreetmap.org/search?query=${encodeURIComponent(listing.location)}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-[#E85D04] hover:underline"
+                >
+                  {T.directionsOsm}
+                </a>
+              </div>
+            )}
+
             {/* Quick info grid */}
             <div className="grid grid-cols-2 gap-3 mt-5 p-4 bg-gray-50 rounded-xl">
               <div>

@@ -147,6 +147,7 @@ app.use('/api/content', require('./routes/content'));
 app.use('/api/site-content', require('./routes/siteContent'));
 app.use('/api/team', require('./routes/team'));
 app.use('/api/home-buttons', require('./routes/homeButtons'));
+app.use('/api/location-shares', require('./routes/locationSharing'));
 app.use('/api/support', require('./routes/support'));
 app.use('/api/tax-advisory', require('./routes/taxAdvisory'));
 app.use('/api/stats', require('./routes/stats'));
