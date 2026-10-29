@@ -48,12 +48,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="min-h-screen bg-gray-50 flex flex-col" suppressHydrationWarning>
         <LanguageProvider>
-        <CurrencyProvider>
         <AuthProvider>
+        <CurrencyProvider>
           {children}
           <WhatsAppButton />
-        </AuthProvider>
         </CurrencyProvider>
+        </AuthProvider>
         </LanguageProvider>
       </body>
     </html>

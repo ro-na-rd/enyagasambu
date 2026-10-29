@@ -36,6 +36,21 @@ exports.initiateMomoPayment = async (req, res) => {
   if (!pkg) return res.status(400).json({ message: 'Invalid package' });
   if (!phone) return res.status(400).json({ message: 'Phone number required for MoMo payment' });
 
+  // Buy coins is gated by a platform setting; only admin/CEO can bypass it.
+  try {
+    const [[setting]] = await pool.query(
+      "SELECT setting_value FROM platform_settings WHERE setting_key = 'allow_buy_coins' LIMIT 1"
+    );
+    const allowed = setting?.setting_value === 'true';
+    const privileged = req.user?.role === 'admin' || req.user?.executive_role === 'CEO';
+    if (!allowed && !privileged) {
+      return res.status(403).json({ message: 'Buying coins is currently disabled.' });
+    }
+  } catch (err) {
+    logger.error(err);
+    return res.status(500).json({ message: 'Server error' });
+  }
+
   const referenceId = uuidv4();
 
   try {

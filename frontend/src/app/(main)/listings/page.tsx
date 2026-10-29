@@ -3,10 +3,11 @@ import { Suspense, useEffect, useState, useMemo } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import api from '@/lib/api';
 import ListingCard from '@/components/ListingCard';
+import AppImage from '@/components/AppImage';
 import { useLanguage } from '@/context/LanguageContext';
 import { categoryMap } from '@/lib/translations';
 import Link from 'next/link';
-import { ShoppingCart, Store, List, Car, Wrench, Gavel, Megaphone, Package, Users, Image, Globe, Smartphone, Coins, Shield, BarChart3, FileText, Handshake, Star, Ticket, User, Building2, Check, Search, SlidersHorizontal } from '@/lib/icons';
+import { ShoppingCart, Store, List, Car, Wrench, Gavel, Megaphone, Search, SlidersHorizontal, TrendingUp } from '@/lib/icons';
 
 interface Listing {
   id: number; title: string; price: number | null; price_type: string;
@@ -14,7 +15,7 @@ interface Listing {
   seller_name: string; primary_image: string | null; created_at: string;
 }
 interface Category { id: number; name: string; slug: string; type: string; }
-interface Announcement { id: number; title: string; body: string; created_at: string; }
+interface Announcement { id: number; title: string; body: string; image_url: string | null; is_trending: boolean; created_at: string; }
 
 const ORG = '#E85D04';
 const NAVY = '#0f1e42';
@@ -35,29 +36,21 @@ const typeFilters = [
   { value: 'rent', label: 'For Rent' },
 ];
 
-function CountUp({ target, suffix }: { target: number; suffix?: string }) {
-  const [value, setValue] = useState(0);
-  useEffect(() => {
-    let frame = 0;
-    const duration = 2000;
-    const start = performance.now();
-    const tick = (now: number) => {
-      const progress = Math.min((now - start) / duration, 1);
-      setValue(Math.floor(progress * target));
-      if (progress < 1) frame = requestAnimationFrame(tick);
-    };
-    frame = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(frame);
-  }, [target]);
-  return <>{value.toLocaleString('en-US')}{suffix}</>;
-}
-
 const typeLabels: Record<string, string> = {
   product: 'Products',
   rental_property: 'Properties',
   rental_vehicle: 'Vehicles',
   service: 'Services',
 };
+
+function AdvertImage({ advert }: { advert: Announcement }) {
+  if (!advert.image_url) return null;
+  return (
+    <div className="relative w-full rounded-xl overflow-hidden mb-3" style={{ paddingTop: '60%' }}>
+      <AppImage src={advert.image_url} alt={advert.title} className="absolute inset-0 w-full h-full object-cover" />
+    </div>
+  );
+}
 
 function ListingsContent() {
   const { T, lang } = useLanguage();
@@ -93,13 +86,6 @@ function ListingsContent() {
     if (currentTab?.key !== 'adverts') return;
     api.get('/announcements/public').then(({ data }) => setAdverts(data)).catch(() => setAdverts([]));
   }, [currentTab]);
-
-  const [stats, setStats] = useState({ activeListings: 0, categories: 0, sellers: 0, productImages: 0 });
-  useEffect(() => {
-    api.get('/stats').then(({ data }) => {
-      if (data?.stats) setStats(data.stats);
-    }).catch(() => {});
-  }, []);
 
   useEffect(() => {
     if (currentTab?.key === 'adverts') {
@@ -139,6 +125,9 @@ function ListingsContent() {
     groupedCategories[c.type].push(c);
   });
 
+  const trendingAdverts = adverts.filter(a => a.is_trending);
+  const otherAdverts = adverts.filter(a => !a.is_trending);
+
   const tabLabels = [
     { key: 'products',    label: 'Products',    icon: <ShoppingCart size={18} /> },
     { key: 'properties',  label: 'Properties',  icon: <Store size={18} /> },
@@ -154,174 +143,67 @@ function ListingsContent() {
       {currentTab?.key === 'adverts' ? (
         /* ─── ADVERTS TAB ─── */
         <div className="space-y-8">
-
-          {/* Hero */}
-          <div className="bg-gradient-to-br from-[#0f1e42] to-[#E85D04] rounded-2xl p-8 md:p-12 text-center text-white relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
-            <div className="absolute bottom-0 left-0 w-48 h-48 bg-black/10 rounded-full translate-y-1/2 -translate-x-1/2" />
-            <div className="relative z-10">
-              <div className="text-5xl mb-4"><Megaphone size={48} /></div>
-              <h2 className="text-3xl md:text-4xl font-bold mb-3">E-Nyagasambu Digital Marketplace</h2>
-              <p className="text-lg text-white/80 max-w-2xl mx-auto">
-                Rwanda&apos;s premier online marketplace — buy, sell, rent, and connect across 
-                23 categories with thousands of active listings.
-              </p>
-            </div>
-          </div>
-
-          <section>
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Latest Adverts</h3>
-            {adverts.length === 0 ? (
-              <p className="bg-white rounded-xl border border-gray-100 p-6 text-sm text-gray-500">No adverts have been published yet.</p>
-            ) : (
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {adverts.map(advert => (
-                  <article key={advert.id} className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
-                    <p className="text-xs font-semibold mb-2" style={{ color: ORG }}>{new Date(advert.created_at).toLocaleDateString()}</p>
-                    <h4 className="font-bold text-gray-900 mb-2">{advert.title}</h4>
-                    <p className="text-sm text-gray-600 whitespace-pre-line">{advert.body}</p>
-                  </article>
-                ))}
-              </div>
-            )}
-          </section>
-
-          {/* Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {[
-              { value: stats.activeListings, suffix: '+', label: 'Active Listings', icon: <Package size={30} />, color: '#E85D04' },
-              { value: stats.categories, suffix: '', label: 'Categories', icon: <Store size={30} />, color: '#0f1e42' },
-              { value: stats.sellers, suffix: '+', label: 'Trusted Sellers', icon: <Users size={30} />, color: '#E85D04' },
-              { value: stats.productImages, suffix: '+', label: 'Product Images', icon: <Image size={30} aria-hidden="true" />, color: '#0f1e42' },
-            ].map((s, i) => (
-              <div key={i} className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 text-center">
-                <div className="text-3xl mb-1">{s.icon}</div>
-                <div className="text-2xl font-bold" style={{ color: s.color }}><CountUp target={s.value} suffix={s.suffix} /></div>
-                <div className="text-xs text-gray-500 font-medium">{s.label}</div>
-              </div>
-            ))}
-          </div>
-
-          {/* Why Advertise */}
-          <div>
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Why Advertise on E-Nyagasambu</h3>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {[
-                { icon: <Globe size={28} />, title: 'Rwanda Focused', desc: 'Targeted reach to Rwandan buyers and sellers across all districts. Your products seen by local customers ready to purchase.' },
-                { icon: <Smartphone size={28} />, title: 'Mobile First', desc: 'Optimized for mobile users across Kigali and beyond. MTN MoMo integration for seamless payments.' },
-                { icon: <Coins size={28} />, title: 'Coin Economy', desc: 'Unique coin-based system for connecting with sellers, boosting listings, and accessing premium features.' },
-                { icon: <Shield size={28} />, title: 'Verified Sellers', desc: 'Trusted seller network with broker and ambassador certificate verification. Safe and secure transactions.' },
-                { icon: <BarChart3 size={28} />, title: 'Analytics & Reports', desc: 'Track your listing performance with detailed views, inquiries, and engagement metrics.' },
-                { icon: <Globe size={28} />, title: 'Multi-Language', desc: 'Reach customers in English, French, and Kinyarwanda. Break language barriers and expand your market.' },
-              ].map((item, i) => (
-                <div key={i} className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-                  <div className="text-2xl mb-2">{item.icon}</div>
-                  <h4 className="font-bold text-gray-900 mb-1">{item.title}</h4>
-                  <p className="text-sm text-gray-500">{item.desc}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* How It Works */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 md:p-8">
-            <h3 className="text-xl font-bold text-gray-900 mb-6 text-center">How It Works</h3>
-            <div className="grid sm:grid-cols-3 gap-6">
-              {[
-                { step: '1', icon: <FileText size={28} />, title: 'Create Your Listing', desc: 'Sign up as a seller and post your products, properties, or services with photos and pricing.' },
-                { step: '2', icon: <Megaphone size={28} />, title: 'Promote & Boost', desc: 'Boost your listings with coins to appear as featured. Get noticed by more buyers.' },
-                { step: '3', icon: <Handshake size={28} />, title: 'Connect & Sell', desc: 'Buyers unlock your contact details. Negotiate, close deals, and grow your business.' },
-              ].map((item, i) => (
-                <div key={i} className="text-center">
-                  <div className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-3 text-white text-xl font-bold"
-                    style={{ background: `linear-gradient(135deg, ${NAVY}, ${ORG})` }}>{item.step}</div>
-                  <div className="text-2xl mb-1">{item.icon}</div>
-                  <h4 className="font-bold text-gray-900 mb-1">{item.title}</h4>
-                  <p className="text-sm text-gray-500">{item.desc}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Platform Features */}
-          <div>
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Everything You Need</h3>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {[
-                { icon: <ShoppingCart size={24} />, title: 'Products', desc: 'Electronics, Fashion, Food & Beverage, Furniture, Beauty & Health, Books, Handcraft, Clothing, Farmer Products' },
-                { icon: <Store size={24} />, title: 'Properties', desc: 'Houses & Apartments, Offices for rent across Kigali, Butare, Rubavu, Musanze, and other Rwandan cities.' },
-                { icon: <Car size={24} />, title: 'Vehicles', desc: 'Cars and motorcycles for sale. From budget-friendly commuters to premium vehicles.' },
-                { icon: <Wrench size={24} />, title: 'Services', desc: 'Transport, Technician, Mechanical, Gardening, Arts & Tourism, Construction, Health, Education, Jobs, Supply Chain.' },
-                { icon: <Gavel size={24} />, title: 'Auctions', desc: 'Live auction listings for premium and rare items. Bid and win at the best prices.' },
-                { icon: <Handshake size={24} />, title: 'Broker Portal', desc: 'Dedicated broker system with client management, commission tracking, and certificate verification.' },
-                { icon: <Star size={24} />, title: 'Ambassador Program', desc: 'Earn rewards by referring new sellers and buyers. Track your referrals and bonuses.' },
-                { icon: <Ticket size={24} />, title: 'Promo Codes', desc: 'Create and manage discount promo codes. Attract more buyers with special offers.' },
-                { icon: <List size={24} />, title: 'Subscription Plans', desc: 'Free, Standard, and Premium plans. Longer listing durations, more active listings, and featured slots.' },
-              ].map((item, i) => (
-                <div key={i} className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition">
-                  <div className="flex items-start gap-3">
-                    <span className="text-2xl shrink-0">{item.icon}</span>
-                    <div>
-                      <h4 className="font-bold text-gray-900 mb-0.5">{item.title}</h4>
-                      <p className="text-sm text-gray-500">{item.desc}</p>
-                    </div>
+          {loading ? (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100">
+                  <div className="bg-gray-100 animate-pulse" style={{ paddingTop: '60%' }} />
+                  <div className="p-5 space-y-2">
+                    <div className="h-3 bg-gray-100 animate-pulse rounded w-3/4" />
+                    <div className="h-3 bg-gray-100 animate-pulse rounded w-full" />
+                    <div className="h-3 bg-gray-100 animate-pulse rounded w-2/3" />
                   </div>
                 </div>
               ))}
             </div>
-          </div>
-
-          {/* User Roles */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 md:p-8">
-            <h3 className="text-xl font-bold text-gray-900 mb-6 text-center">Who Can Join</h3>
-            <div className="grid sm:grid-cols-3 gap-6">
-              {[
-                { icon: <User size={30} />, title: 'Buyers', features: ['Browse 2,700+ listings', 'Connect with sellers via coins', 'Multi-language support', 'No account needed to browse'] },
-                { icon: <Store size={30} />, title: 'Sellers', features: ['Post products & services', 'Boost listings for visibility', 'Get direct buyer inquiries', 'Analytics & performance tracking'] },
-                { icon: <Building2 size={30} />, title: 'Brokers & Ambassadors', features: ['Certificate verification system', 'Commission tracking', 'Referral rewards program', 'Dedicated dashboard & reports'] },
-              ].map((role, i) => (
-                <div key={i} className="border border-gray-100 rounded-xl p-5">
-                  <div className="text-3xl mb-2">{role.icon}</div>
-                  <h4 className="font-bold text-gray-900 mb-2">{role.title}</h4>
-                  <ul className="space-y-1.5">
-                    {role.features.map((f, j) => (
-                      <li key={j} className="flex items-start gap-2 text-sm text-gray-600">
-                        <span className="text-green-500 mt-0.5 shrink-0"><Check size={14} /></span>
-                        <span>{f}</span>
-                      </li>
+          ) : adverts.length === 0 ? (
+            <div className="text-center py-24 bg-white rounded-2xl border border-gray-100 shadow-sm">
+              <div className="text-6xl mb-4"><Megaphone size={48} /></div>
+              <h3 className="text-lg font-bold text-gray-800 mb-1">No adverts yet</h3>
+              <p className="text-sm text-gray-400">Adverts posted by our team will appear here.</p>
+            </div>
+          ) : (
+            <>
+              {trendingAdverts.length > 0 && (
+                <section>
+                  <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                    <TrendingUp size={20} style={{ color: ORG }} /> Best Trending Products
+                  </h3>
+                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {trendingAdverts.map(advert => (
+                      <article key={advert.id} className="bg-white rounded-2xl border-2 border-orange-200 p-5 shadow-sm">
+                        <AdvertImage advert={advert} />
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-gradient-to-r from-amber-400 to-orange-500 text-white flex items-center gap-1">
+                            <TrendingUp size={11} /> Trending
+                          </span>
+                          <span className="text-xs text-gray-400">{new Date(advert.created_at).toLocaleDateString()}</span>
+                        </div>
+                        <h4 className="font-bold text-gray-900 mb-2">{advert.title}</h4>
+                        <p className="text-sm text-gray-600 whitespace-pre-line">{advert.body}</p>
+                      </article>
                     ))}
-                  </ul>
-                </div>
-              ))}
-            </div>
-          </div>
+                  </div>
+                </section>
+              )}
 
-          {/* CTA */}
-          <div className="bg-gradient-to-r from-[#0f1e42] to-[#E85D04] rounded-2xl p-8 md:p-10 text-center text-white relative overflow-hidden">
-            <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PHBhdGggZD0iTTM2IDM0djItSDI0di0yaDEyek0zNiAyNHYySDI0di0yaDEyeiIvPjwvZz48L2c+PC9zdmc+')] opacity-30" />
-            <div className="relative z-10">
-              <h3 className="text-2xl font-bold mb-3">Ready to Grow Your Business?</h3>
-              <p className="text-white/80 max-w-xl mx-auto mb-6">
-                Join thousands of sellers already using E-Nyagasambu to reach customers across Rwanda. 
-                Post your first listing today — it&apos;s free to start.
-              </p>
-              <div className="flex flex-wrap justify-center gap-3">
-                <Link href="/listings/create"
-                  className="inline-block bg-white text-[#0f1e42] font-bold px-8 py-3 rounded-xl hover:shadow-lg transition shadow-md">
-                  Start Selling Now
-                </Link>
-                <Link href="/login"
-                  className="inline-block border-2 border-white text-white font-bold px-8 py-3 rounded-xl hover:bg-white/10 transition">
-                  Create Account
-                </Link>
-                <Link href="/broker/register"
-                  className="inline-block border-2 border-white text-white font-bold px-8 py-3 rounded-xl hover:bg-white/10 transition">
-                  Become a Broker
-                </Link>
-              </div>
-            </div>
-          </div>
-
+              {otherAdverts.length > 0 && (
+                <section>
+                  <h3 className="text-xl font-bold text-gray-900 mb-4">Latest Adverts</h3>
+                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {otherAdverts.map(advert => (
+                      <article key={advert.id} className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
+                        <AdvertImage advert={advert} />
+                        <p className="text-xs font-semibold mb-2" style={{ color: ORG }}>{new Date(advert.created_at).toLocaleDateString()}</p>
+                        <h4 className="font-bold text-gray-900 mb-2">{advert.title}</h4>
+                        <p className="text-sm text-gray-600 whitespace-pre-line">{advert.body}</p>
+                      </article>
+                    ))}
+                  </div>
+                </section>
+              )}
+            </>
+          )}
         </div>
       ) : (
         /* ─── LISTINGS GRID ─── */

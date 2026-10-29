@@ -431,11 +431,13 @@ exports.initiateListingPayment = async (req, res) => {
   };
 
   const referenceId = uuidv4();
+  let paymentStored = false;
   try {
-    await pool.query(
+    const [paymentResult] = await pool.query(
       'INSERT INTO payments (type, phone, provider, amount_rwf, status, provider_ref, payload) VALUES (?, ?, ?, ?, ?, ?, ?)',
       ['listing_token', sellerPhone, provider, amount, 'pending', referenceId, JSON.stringify(payload)]
     );
+    paymentStored = paymentResult.affectedRows === 1;
 
     await requestToPay({
       referenceId,
@@ -447,6 +449,12 @@ exports.initiateListingPayment = async (req, res) => {
 
     return res.json({ referenceId, amount_rwf: amount });
   } catch (err) {
+    if (paymentStored) {
+      await pool.query(
+        "UPDATE payments SET status = 'failed' WHERE provider_ref = ? AND status = 'pending'",
+        [referenceId]
+      ).catch(() => {});
+    }
     logger.error('[Listing payment initiate error]', err?.response?.data || err.message);
     return res.status(502).json({ message: 'Failed to initiate listing payment' });
   }
@@ -465,10 +473,13 @@ exports.confirmListingPayment = async (req, res) => {
 
     const momoStatus = await getPaymentStatus(referenceId);
     if (momoStatus.status === 'SUCCESSFUL') {
-      await pool.query('UPDATE payments SET status = ? WHERE id = ?', ['verified', payment.id]);
+      const wasAlreadyVerified = payment.status === 'verified';
+      if (!wasAlreadyVerified) {
+        await pool.query('UPDATE payments SET status = ? WHERE id = ?', ['verified', payment.id]);
+      }
 
       const phone = normalizePhone(payment.phone);
-      if (phone) {
+      if (phone && !wasAlreadyVerified) {
         sendSms(phone, `Payment of ${payment.amount_rwf} RWF received for your listing. A verification code will be sent shortly.`).catch(() => { });
       }
 
@@ -515,21 +526,33 @@ exports.initiateRenewal = async (req, res) => {
       : Number(Object.keys(listingPrices).sort((a, b) => Number(a) - Number(b))[0] || 3);
     const amount = listingPrices[renewDays] || listingPrices[3];
     const referenceId = uuidv4();
+    let paymentStored = false;
 
-    await pool.query(
-      'INSERT INTO payments (type, phone, provider, amount_rwf, status, provider_ref, listing_id, payload) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-      ['listing_renewal', normalizedPhone, provider, amount, 'pending', referenceId, tokenRow.listing_id, JSON.stringify({ renewal_days: renewDays, renewal_token_id: tokenRow.id })]
-    );
+    try {
+      const [paymentResult] = await pool.query(
+        'INSERT INTO payments (type, phone, provider, amount_rwf, status, provider_ref, listing_id, payload) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+        ['listing_renewal', normalizedPhone, provider, amount, 'pending', referenceId, tokenRow.listing_id, JSON.stringify({ renewal_days: renewDays, renewal_token_id: tokenRow.id })]
+      );
+      paymentStored = paymentResult.affectedRows === 1;
 
-    await requestToPay({
-      referenceId,
-      amount,
-      payerPhone: normalizedPhone,
-      payerMessage: `NMO renewal fee for listing ${tokenRow.title}`,
-      payeeNote: 'Nyagasambu Market Online listing renewal',
-    });
+      await requestToPay({
+        referenceId,
+        amount,
+        payerPhone: normalizedPhone,
+        payerMessage: `NMO renewal fee for listing ${tokenRow.title}`,
+        payeeNote: 'Nyagasambu Market Online listing renewal',
+      });
 
-    return res.json({ referenceId, amount_rwf: amount });
+      return res.json({ referenceId, amount_rwf: amount });
+    } catch (err) {
+      if (paymentStored) {
+        await pool.query(
+          "UPDATE payments SET status = 'failed' WHERE provider_ref = ? AND status = 'pending'",
+          [referenceId]
+        ).catch(() => {});
+      }
+      throw err;
+    }
   } catch (err) {
     logger.error('[Renewal initiate error]', err?.response?.data || err.message);
     return res.status(502).json({ message: 'Failed to initiate renewal payment' });
@@ -552,11 +575,23 @@ exports.confirmRenewal = async (req, res) => {
       const conn = await pool.getConnection();
       try {
         await conn.beginTransaction();
+        const [[lockedPayment]] = await conn.query(
+          'SELECT status, listing_id, payload FROM payments WHERE id = ? FOR UPDATE',
+          [payment.id]
+        );
+        if (!lockedPayment) {
+          await conn.rollback();
+          return res.status(404).json({ message: 'Payment record not found' });
+        }
+        if (lockedPayment.status === 'confirmed') {
+          await conn.rollback();
+          return res.json({ message: 'Renewal already confirmed' });
+        }
         await conn.query('UPDATE payments SET status = ? WHERE id = ?', ['confirmed', payment.id]);
-        const payload = payment.payload ? JSON.parse(payment.payload) : {};
+        const payload = lockedPayment.payload ? JSON.parse(lockedPayment.payload) : {};
         const renewalDays = payload?.renewal_days || 3;
 
-        const [[listing]] = await conn.query('SELECT expires_at FROM listings WHERE id = ? FOR UPDATE', [payment.listing_id]);
+        const [[listing]] = await conn.query('SELECT expires_at FROM listings WHERE id = ? FOR UPDATE', [lockedPayment.listing_id]);
         if (!listing) {
           await conn.rollback();
           return res.status(404).json({ message: 'Listing not found' });
@@ -564,7 +599,7 @@ exports.confirmRenewal = async (req, res) => {
 
         const currentExpires = listing.expires_at && new Date(listing.expires_at) > new Date() ? new Date(listing.expires_at) : new Date();
         const newExpires = new Date(currentExpires.getTime() + renewalDays * 24 * 60 * 60 * 1000);
-        await conn.query('UPDATE listings SET expires_at = ? WHERE id = ?', [newExpires, payment.listing_id]);
+        await conn.query('UPDATE listings SET expires_at = ? WHERE id = ?', [newExpires, lockedPayment.listing_id]);
 
         const renewalTokenId = payload?.renewal_token_id;
         if (renewalTokenId) {

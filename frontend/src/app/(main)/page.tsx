@@ -47,13 +47,6 @@ const STATS_ICONS: Record<string, React.FC<{ size?: number }>> = {
 };
 const STAT_KEYS = ['products', 'properties', 'vehicles', 'suppliers'] as const;
 
-const FALLBACK_NOTICES = [
-  { tag: 'Property', auction: false, text: '3-bedroom house for sale – Kimironko, Kigali. Modern finish, gated compound.',               date: '22 Jun 2026' },
-  { tag: 'Auction',  auction: true,  text: 'Public auction: office furniture & equipment – Ministry of Finance surplus assets.',         date: '21 Jun 2026' },
-  { tag: 'Service',  auction: false, text: 'Professional plumbing & electrical installation services – Northern Province.',              date: '20 Jun 2026' },
-  { tag: 'Vehicle',  auction: false, text: 'Toyota Hilux 2020 double cabin – low mileage, accident-free, asking 28M RWF.',               date: '20 Jun 2026' },
-];
-
 const SELL_LINKS = [
   'Post a product',
   'Post a property',
@@ -146,7 +139,7 @@ const [joinButtons, setJoinButtons] = useState(FALLBACK_JOIN_BUTTONS);
           className="flex flex-col sm:flex-row max-w-xl mx-auto rounded overflow-hidden shadow-2xl"
         >
           <select
-            name="category"
+            name="tab"
             className="px-3 py-3 text-sm border-r border-b sm:border-b-0 border-gray-200 outline-none shrink-0 bg-white"
             style={{ color: '#333', background: '#fff' }}
           >
@@ -203,7 +196,7 @@ const [joinButtons, setJoinButtons] = useState(FALLBACK_JOIN_BUTTONS);
           {/* Sell */}
           <SideCard title={<><Store size={14} className="inline" /> {get('home.sell_card_title', 'Sell on E-Nyagasambu')}</>} titleBg={navy}>
             {SELL_LINKS.map(label => (
-              <SideLink key={label} href="/listings/create">
+              <SideLink key={label} href={label === 'Submit for auction' ? '/auction/create' : '/listings/create'}>
                 <span>{label}</span><Chevron />
               </SideLink>
             ))}
@@ -293,15 +286,11 @@ const [joinButtons, setJoinButtons] = useState(FALLBACK_JOIN_BUTTONS);
                       </div>
                     </Link>
                   ))
-                : FALLBACK_NOTICES.map(({ tag, auction, text, date }) => (
-                    <div key={text} className="flex items-start gap-3 px-3 py-2.5 border-b border-gray-100 last:border-b-0">
-                      <NoticeTag auction={auction}>{tag}</NoticeTag>
-                      <div>
-                        <p className="text-sm text-gray-800 leading-snug">{text}</p>
-                        <p className="text-xs text-gray-500 mt-0.5">{date}</p>
-                      </div>
-                    </div>
-                  ))
+                : (
+                    <p className="px-3 py-5 text-center text-sm text-gray-500">
+                      No listings are available yet. Please check back soon.
+                    </p>
+                  )
               }
             </div>
           </section>

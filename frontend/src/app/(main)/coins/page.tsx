@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
 import { Coins, Smartphone } from '@/lib/icons';
 import { formatRWF } from '@/lib/currencies';
+import { useBuyCoinsEnabled } from '@/hooks/useBuyCoinsEnabled';
 
 interface Package { id: number; coins: number; price_rwf: number; label: string; }
 interface Transaction { id: number; amount: number; type: string; created_at: string; }
@@ -14,6 +15,7 @@ type PayStep = 'idle' | 'enter_phone' | 'waiting' | 'success' | 'failed';
 export default function CoinsPage() {
   const { user, loading, refreshUser } = useAuth();
   const router = useRouter();
+  const canBuyCoins = useBuyCoinsEnabled();
   const [packages, setPackages] = useState<Package[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [promoCode, setPromoCode] = useState('');
@@ -216,21 +218,29 @@ export default function CoinsPage() {
       )}
 
       {/* Packages */}
-      <h2 className="text-lg font-semibold text-gray-800 mb-3">Top Up with MTN MoMo</h2>
-      <div className="grid grid-cols-2 gap-3 mb-8">
-        {packages.map((pkg) => (
-          <button
-            key={pkg.id}
-            onClick={() => openPayment(pkg)}
-            className="bg-white border-2 border-gray-200 hover:border-yellow-400 rounded-xl p-4 text-left transition group"
-          >
-            <p className="text-2xl font-bold" style={{ color: '#E85D04' }}><Coins size={20} /> {pkg.coins.toLocaleString()}</p>
-            <p className="text-gray-800 font-semibold text-sm mt-1">{formatRWF(pkg.price_rwf)}</p>
-            <p className="text-xs text-gray-400 mt-0.5">≈ {formatRWF((pkg.price_rwf / pkg.coins))}/coin</p>
-            <p className="text-xs text-yellow-600 mt-2 font-medium opacity-0 group-hover:opacity-100 transition">Pay via MoMo →</p>
-          </button>
-        ))}
-      </div>
+      {canBuyCoins ? (
+        <>
+          <h2 className="text-lg font-semibold text-gray-800 mb-3">Top Up with MTN MoMo</h2>
+          <div className="grid grid-cols-2 gap-3 mb-8">
+            {packages.map((pkg) => (
+              <button
+                key={pkg.id}
+                onClick={() => openPayment(pkg)}
+                className="bg-white border-2 border-gray-200 hover:border-yellow-400 rounded-xl p-4 text-left transition group"
+              >
+                <p className="text-2xl font-bold" style={{ color: '#E85D04' }}><Coins size={20} /> {pkg.coins.toLocaleString()}</p>
+                <p className="text-gray-800 font-semibold text-sm mt-1">{formatRWF(pkg.price_rwf)}</p>
+                <p className="text-xs text-gray-400 mt-0.5">≈ {formatRWF((pkg.price_rwf / pkg.coins))}/coin</p>
+                <p className="text-xs text-yellow-600 mt-2 font-medium opacity-0 group-hover:opacity-100 transition">Pay via MoMo →</p>
+              </button>
+            ))}
+          </div>
+        </>
+      ) : (
+        <div className="bg-gray-50 border border-gray-200 rounded-xl p-5 mb-8 text-center">
+          <p className="text-sm text-gray-600">Buying coins is currently disabled.</p>
+        </div>
+      )}
 
       {/* Transaction history */}
       <h2 className="text-lg font-semibold text-gray-800 mb-3">Recent Transactions</h2>

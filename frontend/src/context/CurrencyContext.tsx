@@ -1,6 +1,8 @@
 'use client';
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { CURRENCIES, Currency, convertCurrency, formatPrice } from '@/lib/currencies';
+import { useAuth } from '@/context/AuthContext';
+import api from '@/lib/api';
 
 interface CurrencyContextType {
   currency: string;
@@ -9,22 +11,44 @@ interface CurrencyContextType {
   convert: (amountRWF: number) => number;
   currencies: Currency[];
   getCurrency: () => Currency;
+  canChangeCurrency: boolean;
 }
 
 const CurrencyContext = createContext<CurrencyContextType | null>(null);
 
 export function CurrencyProvider({ children }: { children: ReactNode }) {
+  const { user } = useAuth();
   const [currency, setCurrencyState] = useState<string>('RWF');
+  const [changeAllowed, setChangeAllowed] = useState(false);
 
   useEffect(() => {
-    const saved = localStorage.getItem('nmo_currency');
-    if (saved && CURRENCIES.some((c) => c.code === saved)) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setCurrencyState(saved);
-    }
+    let active = true;
+    api.get('/settings')
+      .then(({ data }) => {
+        if (active) setChangeAllowed(data?.settings?.allow_currency_change === 'true');
+      })
+      .catch(() => {
+        if (active) setChangeAllowed(false);
+      });
+    return () => { active = false; };
   }, []);
 
+  const canChangeCurrency = changeAllowed || user?.role === 'admin';
+
+  useEffect(() => {
+    if (!canChangeCurrency) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setCurrencyState('RWF');
+      return;
+    }
+    const saved = localStorage.getItem('nmo_currency');
+    if (saved && CURRENCIES.some((c) => c.code === saved)) {
+      setCurrencyState(saved);
+    }
+  }, [canChangeCurrency]);
+
   const setCurrency = (c: string) => {
+    if (!canChangeCurrency) return;
     setCurrencyState(c);
     localStorage.setItem('nmo_currency', c);
   };
@@ -40,6 +64,7 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
         convert: (amountRWF: number) => convertCurrency(amountRWF, currency),
         currencies: CURRENCIES,
         getCurrency,
+        canChangeCurrency,
       }}
     >
       {children}

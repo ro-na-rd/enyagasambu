@@ -27,4 +27,17 @@ test('requestToPay always submits the charge in RWF', async (t) => {
   assert.equal(calls.length, 2);
   assert.equal(calls[1][1].currency, 'RWF');
   assert.equal(calls[1][1].amount, '1500');
+  assert.equal(calls[1][1].payer.partyId, '250788000000');
+});
+
+test('normalizeMomoPhone converts common Rwandan MSISDN formats', () => {
+  const modulePath = require.resolve('../src/services/momoService');
+  delete require.cache[modulePath];
+  const { normalizeMomoPhone } = require('../src/services/momoService');
+
+  assert.equal(normalizeMomoPhone('0788 000 000'), '250788000000');
+  assert.equal(normalizeMomoPhone('+250788000000'), '250788000000');
+  assert.equal(normalizeMomoPhone('00250788000000'), '250788000000');
+  assert.equal(normalizeMomoPhone('788000000'), '250788000000');
+  assert.throws(() => normalizeMomoPhone(''), /Payer phone number is required/);
 });

@@ -23,6 +23,8 @@ export default function AdminSettingsPage() {
   const [duration180Days, setDuration180Days] = useState('17000');
   const [duration365Days, setDuration365Days] = useState('32000');
   const [allowRegistration, setAllowRegistration] = useState(true);
+  const [allowCurrencyChange, setAllowCurrencyChange] = useState(false);
+  const [allowBuyCoins, setAllowBuyCoins] = useState(false);
   const [repostDiscount, setRepostDiscount] = useState('0');
 
   useEffect(() => {
@@ -38,6 +40,8 @@ export default function AdminSettingsPage() {
       setDuration180Days(s.listing_duration_180_days || '17000');
       setDuration365Days(s.listing_duration_365_days || '32000');
       setAllowRegistration(s.allow_registration !== 'false');
+      setAllowCurrencyChange(s.allow_currency_change === 'true');
+      setAllowBuyCoins(s.allow_buy_coins === 'true');
       setRepostDiscount(s.repost_discount_percent || '0');
     }).catch(() => { }).finally(() => setLoading(false));
   }, []);
@@ -57,6 +61,8 @@ export default function AdminSettingsPage() {
           listing_duration_180_days: duration180Days,
           listing_duration_365_days: duration365Days,
           allow_registration: allowRegistration ? 'true' : 'false',
+          allow_currency_change: allowCurrencyChange ? 'true' : 'false',
+          allow_buy_coins: allowBuyCoins ? 'true' : 'false',
           repost_discount_percent: String(Math.min(100, Math.max(0, Number(repostDiscount) || 0))),
         }
       });
@@ -102,6 +108,28 @@ export default function AdminSettingsPage() {
                 className="rounded accent-orange-500"
                 style={{ background: '#f6f8fa', borderColor: '#d0d7de' }} />
               <label htmlFor="reg" className="text-sm text-gray-500">Allow new user registration</label>
+            </div>
+            <div>
+              <div className="flex items-center gap-3">
+                <input type="checkbox" id="currency-change" checked={allowCurrencyChange} onChange={(e) => setAllowCurrencyChange(e.target.checked)}
+                  className="rounded accent-orange-500"
+                  style={{ background: '#f6f8fa', borderColor: '#d0d7de' }} />
+                <label htmlFor="currency-change" className="text-sm text-gray-500">Allow currency change in the navbar</label>
+              </div>
+              <p className="text-[11px] text-gray-500 mt-1 ml-6">
+                Off by default: prices stay in RWF. Turn on to let visitors pick a currency from the top bar. Admins can always change it.
+              </p>
+            </div>
+            <div>
+              <div className="flex items-center gap-3">
+                <input type="checkbox" id="buy-coins" checked={allowBuyCoins} onChange={(e) => setAllowBuyCoins(e.target.checked)}
+                  className="rounded accent-orange-500"
+                  style={{ background: '#f6f8fa', borderColor: '#d0d7de' }} />
+                <label htmlFor="buy-coins" className="text-sm text-gray-500">Allow buying coins (MoMo top-up)</label>
+              </div>
+              <p className="text-[11px] text-gray-500 mt-1 ml-6">
+                Off by default: coin purchases (crypto) are not yet enabled. Turn on to let users top up coins via MTN MoMo. Admins and CEO can always buy.
+              </p>
             </div>
           </div>
           <div className="mt-6 flex items-center gap-3">

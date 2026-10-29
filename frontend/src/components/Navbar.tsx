@@ -66,7 +66,7 @@ function SearchForm({ placeholder, onDone }: { placeholder: string; onDone?: () 
 function NavbarView({ pathname, tab, registrationOpen }: { pathname: string | null; tab: string | null; registrationOpen?: boolean | null }) {
   const { user, logout } = useAuth();
   const { lang, setLang, T } = useLanguage();
-  const { currency, setCurrency, currencies } = useCurrency();
+  const { currency, setCurrency, currencies, canChangeCurrency } = useCurrency();
   const [menuOpen, setMenuOpen] = useState(false);
   const [catsOpen, setCatsOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -164,8 +164,12 @@ function NavbarView({ pathname, tab, registrationOpen }: { pathname: string | nu
             }}
           >
             <span style={{ fontSize: 12, fontWeight: 700 }}>{lang.toUpperCase()}</span>
-            <span style={{ opacity: 0.6, fontSize: 8 }}>•</span>
-            <span style={{ fontSize: 12, fontWeight: 700 }}>{currency}</span>
+            {canChangeCurrency && (
+              <>
+                <span style={{ opacity: 0.6, fontSize: 8 }}>•</span>
+                <span style={{ fontSize: 12, fontWeight: 700 }}>{currency}</span>
+              </>
+            )}
             <span style={{ fontSize: 8, marginLeft: 2, transition: 'transform 0.2s', transform: prefOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}>▼</span>
           </button>
           {prefOpen && (
@@ -215,47 +219,51 @@ function NavbarView({ pathname, tab, registrationOpen }: { pathname: string | nu
                 ))}
               </div>
 
-              <p className="px-4 pb-2 text-[10px] font-bold uppercase tracking-widest text-gray-400 border-b border-gray-100 mt-2">Currency</p>
-              <div className="py-2">
-                {currencies.map(c => (
-                  <button
-                    key={c.code}
-                    onClick={() => { setCurrency(c.code); setPrefOpen(false); }}
-                    className="w-full text-left px-4 py-2 text-xs transition flex items-center justify-between group"
-                    style={{
-                      color: currency === c.code ? '#E85D04' : '#374151',
-                      background: currency === c.code ? 'rgba(232, 93, 4, 0.05)' : 'transparent',
-                    }}
-                    onMouseEnter={e => {
-                      if (currency !== c.code) {
-                        e.currentTarget.style.background = '#f9fafb';
-                      }
-                    }}
-                    onMouseLeave={e => {
-                      if (currency !== c.code) {
-                        e.currentTarget.style.background = 'transparent';
-                      }
-                    }}
-                  >
-                    <span className="flex items-center gap-2">
-                      <span style={{
-                        fontSize: 11,
-                        fontWeight: 700,
-                        background: currency === c.code ? 'rgba(232, 93, 4, 0.1)' : '#f3f4f6',
-                        padding: '2px 6px',
-                        borderRadius: 4,
-                        color: currency === c.code ? '#E85D04' : '#6b7280'
-                      }}>
-                        {c.code}
-                      </span>
-                      <span className="font-medium">{c.name}</span>
-                    </span>
-                    {currency === c.code && (
-                      <span style={{ color: '#E85D04', fontSize: 10 }}>✓</span>
-                    )}
-                  </button>
-                ))}
-              </div>
+              {canChangeCurrency && (
+                <>
+                  <p className="px-4 pb-2 text-[10px] font-bold uppercase tracking-widest text-gray-400 border-b border-gray-100 mt-2">Currency</p>
+                  <div className="py-2">
+                    {currencies.map(c => (
+                      <button
+                        key={c.code}
+                        onClick={() => { setCurrency(c.code); setPrefOpen(false); }}
+                        className="w-full text-left px-4 py-2 text-xs transition flex items-center justify-between group"
+                        style={{
+                          color: currency === c.code ? '#E85D04' : '#374151',
+                          background: currency === c.code ? 'rgba(232, 93, 4, 0.05)' : 'transparent',
+                        }}
+                        onMouseEnter={e => {
+                          if (currency !== c.code) {
+                            e.currentTarget.style.background = '#f9fafb';
+                          }
+                        }}
+                        onMouseLeave={e => {
+                          if (currency !== c.code) {
+                            e.currentTarget.style.background = 'transparent';
+                          }
+                        }}
+                      >
+                        <span className="flex items-center gap-2">
+                          <span style={{
+                            fontSize: 11,
+                            fontWeight: 700,
+                            background: currency === c.code ? 'rgba(232, 93, 4, 0.1)' : '#f3f4f6',
+                            padding: '2px 6px',
+                            borderRadius: 4,
+                            color: currency === c.code ? '#E85D04' : '#6b7280'
+                          }}>
+                            {c.code}
+                          </span>
+                          <span className="font-medium">{c.name}</span>
+                        </span>
+                        {currency === c.code && (
+                          <span style={{ color: '#E85D04', fontSize: 10 }}>✓</span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
             </div>
           )}
         </div>
@@ -464,50 +472,52 @@ function NavbarView({ pathname, tab, registrationOpen }: { pathname: string | nu
                 </div>
               </div>
 
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">Currency</p>
-                <div className="flex flex-col gap-1">
-                  {currencies.map(c => (
-                    <button
-                      key={c.code}
-                      onClick={() => setCurrency(c.code)}
-                      className="w-full text-left px-3 py-2 text-xs rounded-lg transition flex items-center justify-between"
-                      style={{
-                        border: `1px solid ${currency === c.code ? '#E85D04' : '#e5e7eb'}`,
-                        background: currency === c.code ? 'rgba(232, 93, 4, 0.05)' : '#fff',
-                        color: currency === c.code ? '#E85D04' : '#374151',
-                      }}
-                      onMouseEnter={e => {
-                        if (currency !== c.code) {
-                          e.currentTarget.style.background = '#f9fafb';
-                        }
-                      }}
-                      onMouseLeave={e => {
-                        if (currency !== c.code) {
-                          e.currentTarget.style.background = '#fff';
-                        }
-                      }}
-                    >
-                      <span className="flex items-center gap-2">
-                        <span style={{
-                          fontSize: 10,
-                          fontWeight: 700,
-                          background: currency === c.code ? 'rgba(232, 93, 4, 0.1)' : '#f3f4f6',
-                          padding: '2px 5px',
-                          borderRadius: 3,
-                          color: currency === c.code ? '#E85D04' : '#6b7280'
-                        }}>
-                          {c.code}
+              {canChangeCurrency && (
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">Currency</p>
+                  <div className="flex flex-col gap-1">
+                    {currencies.map(c => (
+                      <button
+                        key={c.code}
+                        onClick={() => setCurrency(c.code)}
+                        className="w-full text-left px-3 py-2 text-xs rounded-lg transition flex items-center justify-between"
+                        style={{
+                          border: `1px solid ${currency === c.code ? '#E85D04' : '#e5e7eb'}`,
+                          background: currency === c.code ? 'rgba(232, 93, 4, 0.05)' : '#fff',
+                          color: currency === c.code ? '#E85D04' : '#374151',
+                        }}
+                        onMouseEnter={e => {
+                          if (currency !== c.code) {
+                            e.currentTarget.style.background = '#f9fafb';
+                          }
+                        }}
+                        onMouseLeave={e => {
+                          if (currency !== c.code) {
+                            e.currentTarget.style.background = '#fff';
+                          }
+                        }}
+                      >
+                        <span className="flex items-center gap-2">
+                          <span style={{
+                            fontSize: 10,
+                            fontWeight: 700,
+                            background: currency === c.code ? 'rgba(232, 93, 4, 0.1)' : '#f3f4f6',
+                            padding: '2px 5px',
+                            borderRadius: 3,
+                            color: currency === c.code ? '#E85D04' : '#6b7280'
+                          }}>
+                            {c.code}
+                          </span>
+                          <span className="font-medium">{c.name}</span>
                         </span>
-                        <span className="font-medium">{c.name}</span>
-                      </span>
-                      {currency === c.code && (
-                        <span style={{ color: '#E85D04', fontSize: 10 }}>✓</span>
-                      )}
-                    </button>
-                  ))}
+                        {currency === c.code && (
+                          <span style={{ color: '#E85D04', fontSize: 10 }}>✓</span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           </div>
         </div>

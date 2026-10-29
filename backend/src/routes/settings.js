@@ -1,5 +1,5 @@
 const router = require('express').Router();
-const { authenticate, requireAdmin } = require('../middleware/auth');
+const { authenticate } = require('../middleware/auth');
 const pool = require('../config/db');
 const { logger } = require('../config/logger');
 
@@ -15,10 +15,22 @@ router.get('/', async (req, res) => {
   }
 });
 
-router.put('/', authenticate, requireAdmin, async (req, res) => {
+router.put('/', authenticate, async (req, res) => {
   const { settings } = req.body;
   if (!settings || typeof settings !== 'object') {
     return res.status(400).json({ message: 'settings object required' });
+  }
+  const isAdmin = req.user?.role === 'admin';
+  const isCEO = req.user?.executive_role === 'CEO';
+  if (!isAdmin && !isCEO) {
+    return res.status(403).json({ message: 'Admin access required' });
+  }
+  if (isCEO && !isAdmin) {
+    const allowedKeys = ['allow_buy_coins'];
+    const offending = Object.keys(settings).filter((k) => !allowedKeys.includes(k));
+    if (offending.length) {
+      return res.status(403).json({ message: 'CEO may only update the buy-coins setting' });
+    }
   }
   try {
     for (const [key, value] of Object.entries(settings)) {

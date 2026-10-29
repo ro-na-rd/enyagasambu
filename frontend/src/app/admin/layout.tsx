@@ -64,7 +64,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   useEffect(() => {
     if (!loading && !user && !isLoginPage) router.replace('/login');
-    if (!loading && user && !['admin', 'moderator', 'staff'].includes(user.role) && !isLoginPage) {
+    if (!loading && user && !['admin', 'moderator', 'staff'].includes(user.role) && user.executive_role !== 'CEO' && !isLoginPage) {
       router.replace('/login');
     }
   }, [user, loading, router, isLoginPage]);

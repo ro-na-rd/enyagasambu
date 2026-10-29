@@ -40,9 +40,11 @@ export default function CreateListingPage() {
   const [otpError, setOtpError] = useState('');
   const [publishing, setPublishing] = useState(false);
   const [otpResendCooldown, setOtpResendCooldown] = useState(0);
-  const [postSuccess, setPostSuccess] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState<'idle' | 'loading' | 'success' | 'failed'>('idle');
+  const [submitError, setSubmitError] = useState('');
   const [negotiable, setNegotiable] = useState(false);
   const [attributes, setAttributes] = useState<Record<string, string>>({});
+  const [descSections, setDescSections] = useState<Record<string, string>>({});
   const { register, handleSubmit, watch, setValue, formState: { errors, isSubmitting } } = useForm<CreateForm>({
     defaultValues: { listing_type: 'sell', currency: 'RWF' },
   });
@@ -58,9 +60,63 @@ export default function CreateListingPage() {
     return `${days} days`;
   };
 
+  const descFields = (() => {
+    const type = selectedCategory?.type;
+    if (type === 'rental_property') {
+      return [
+        { key: 'overview', label: 'Overview *', placeholder: 'A short summary of the property...', multiline: true },
+        { key: 'size', label: 'Size / Rooms', placeholder: 'e.g. 3 bedrooms, 2 bathrooms, 120 m²', multiline: false },
+        { key: 'amenities', label: 'Amenities', placeholder: 'e.g. Parking, water, electricity, WiFi', multiline: true },
+        { key: 'condition', label: 'Condition', placeholder: 'e.g. Newly built, renovated', multiline: false },
+        { key: 'locationNotes', label: 'Location notes', placeholder: 'e.g. Near main road, quiet area', multiline: false },
+      ];
+    }
+    if (type === 'rental_vehicle') {
+      return [
+        { key: 'overview', label: 'Overview *', placeholder: 'A short summary of the vehicle...', multiline: true },
+        { key: 'makeModel', label: 'Make & Model', placeholder: 'e.g. Toyota Corolla 2018', multiline: false },
+        { key: 'mileage', label: 'Mileage / Condition', placeholder: 'e.g. 45,000 km, excellent', multiline: false },
+        { key: 'features', label: 'Features (one per line)', placeholder: 'e.g. AC\nBluetooth\nAirbags', multiline: true },
+        { key: 'locationNotes', label: 'Location notes', placeholder: 'e.g. Pickup in Kigali', multiline: false },
+      ];
+    }
+    if (type === 'service') {
+      return [
+        { key: 'overview', label: 'Overview *', placeholder: 'A short summary of the service...', multiline: true },
+        { key: 'scope', label: 'Scope of work', placeholder: 'What is included in the service', multiline: true },
+        { key: 'availability', label: 'Availability', placeholder: 'e.g. Mon–Sat, 8am–6pm', multiline: false },
+        { key: 'experience', label: 'Experience / Qualifications', placeholder: 'e.g. 5 years experience', multiline: false },
+        { key: 'locationNotes', label: 'Service area', placeholder: 'e.g. Kigali and surrounding', multiline: false },
+      ];
+    }
+    return [
+      { key: 'overview', label: 'Overview *', placeholder: 'A short summary of the item...', multiline: true },
+      { key: 'features', label: 'Key features (one per line)', placeholder: 'e.g. 128GB storage\n5G support', multiline: true },
+      { key: 'condition', label: 'Condition', placeholder: 'e.g. Like new, used, brand new', multiline: false },
+      { key: 'included', label: 'Included items', placeholder: 'e.g. Box, charger, warranty card', multiline: false },
+      { key: 'locationNotes', label: 'Location notes', placeholder: 'e.g. Pickup in Kicukiro', multiline: false },
+    ];
+  })();
+
+  const assembleDescription = () => {
+    const parts: string[] = [];
+    for (const f of descFields) {
+      const val = (descSections[f.key] || '').trim();
+      if (!val) continue;
+      if (f.key === 'features' || f.key === 'amenities' || f.key === 'scope') {
+        const lines = val.split('\n').map((l) => l.trim()).filter(Boolean);
+        parts.push(`${f.label}:\n${lines.map((l) => `- ${l}`).join('\n')}`);
+      } else {
+        parts.push(`${f.label}:\n${val}`);
+      }
+    }
+    return parts.join('\n\n');
+  };
+
   // Each category collects its own answers, so drop anything typed for the previous one.
   useEffect(() => {
     setAttributes({});
+    setDescSections({});
   }, [selectedCategoryId]);
 
   useEffect(() => {
@@ -101,7 +157,14 @@ export default function CreateListingPage() {
       setError('Select the Rwanda address for this property.');
       return;
     }
+    if (!descSections.overview.trim()) {
+      setError('Please provide an overview in the description.');
+      return;
+    }
     setError('');
+    data.description = assembleDescription();
+    setSubmitError('');
+    setSubmitStatus('loading');
     const form = new FormData();
     Object.entries(data).forEach(([k, v]) => form.append(k, v));
     form.append('attributes', JSON.stringify(attributes));
@@ -111,14 +174,12 @@ export default function CreateListingPage() {
     form.append('phone', sellerPhone.trim());
     images.forEach((f) => form.append('images', f));
     try {
-      const { data: res } = await api.post('/listings', form, { headers: { 'Content-Type': 'multipart/form-data' } });
-      setPostSuccess(true);
-      setTimeout(() => {
-        window.location.href = `/listings/${res.listingId}`;
-      }, 2000);
+      await api.post('/listings', form, { headers: { 'Content-Type': 'multipart/form-data' } });
+      setSubmitStatus('success');
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
-      setError(msg || 'Failed to create listing.');
+      setSubmitError(msg || 'Failed to create listing.');
+      setSubmitStatus('failed');
     }
   };
 
@@ -135,7 +196,12 @@ export default function CreateListingPage() {
       setError('Select the Rwanda address for this property.');
       return;
     }
+    if (!descSections.overview.trim()) {
+      setError('Please provide an overview in the description.');
+      return;
+    }
     setError('');
+    data.description = assembleDescription();
     const form = new FormData();
     Object.entries(data).forEach(([k, v]) => form.append(k, v));
     form.append('attributes', JSON.stringify(attributes));
@@ -356,6 +422,49 @@ export default function CreateListingPage() {
     );
   }
 
+  if (submitStatus === 'loading') {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 px-4 py-8 text-center">
+        <div className="bg-white rounded-2xl shadow p-8 space-y-6 w-full max-w-md">
+          <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto animate-pulse">
+            <span className="text-3xl"><Clock size={32} className="animate-spin" /></span>
+          </div>
+          <h2 className="text-xl font-bold text-gray-900">Posting your listing…</h2>
+          <p className="text-gray-500 text-sm">Please wait while we publish your listing.</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (submitStatus === 'failed') {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 px-4 py-8 text-center">
+        <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-xl space-y-5">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-red-100 text-2xl">!</div>
+          <h2 className="text-xl font-bold text-gray-900">Posting failed</h2>
+          <p className="text-sm text-gray-600">{submitError || 'We could not publish your listing. Please check your details and try again.'}</p>
+          <button onClick={() => { setSubmitStatus('idle'); setSubmitError(''); }} className="w-full rounded-lg bg-[#E85D04] py-3 font-semibold text-white transition hover:bg-[#e05d00]">Try again</button>
+          <button onClick={() => { setSubmitStatus('idle'); setSubmitError(''); }} className="w-full py-2 text-sm font-semibold text-gray-600 hover:text-gray-900">Edit listing details</button>
+        </div>
+      </div>
+    );
+  }
+
+  if (submitStatus === 'success') {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 px-4 py-8 text-center">
+        <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-xl space-y-5">
+          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto">
+            <span className="text-3xl"><Sparkles size={32} /></span>
+          </div>
+          <h2 className="text-xl font-bold text-gray-900">Listing posted successfully!</h2>
+          <p className="text-gray-500 text-sm">Your listing is now live. Continue to view your posted products.</p>
+          <button onClick={() => router.push('/my-listings')} className="w-full rounded-lg bg-[#E85D04] py-3 font-semibold text-white transition hover:bg-[#e05d00]">Continue</button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-2xl mx-auto px-4 py-10">
       <h1 className="text-2xl font-bold text-gray-900 mb-2">{T.postAListingTitle}</h1>
@@ -368,13 +477,6 @@ export default function CreateListingPage() {
       </p>
 
       {error && <div className="bg-red-50 text-red-700 text-sm rounded-lg px-4 py-3 mb-4">{error}</div>}
-
-      {postSuccess && (
-        <div className="bg-green-50 text-green-700 text-sm rounded-lg px-4 py-3 mb-4 flex items-center gap-2">
-          <CheckCircle size={16} />
-          <span>Listing posted successfully! Redirecting...</span>
-        </div>
-      )}
 
       <form onSubmit={handleSubmit(postingFree ? onSubmitFree : onSubmitPaid)} className="bg-white rounded-2xl shadow p-6 space-y-5">
         <div>
@@ -421,14 +523,31 @@ export default function CreateListingPage() {
           {errors.title && <p className="text-red-500 text-xs mt-1">{errors.title.message}</p>}
         </div>
 
-        <div>
+        <div className="space-y-3">
           <label className="block text-sm font-medium text-gray-700 mb-1">{T.descriptionField}</label>
-          <textarea
-            {...register('description')}
-            rows={4}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none"
-            placeholder="Describe the item or service..."
-          />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {descFields.map((f) => (
+              <div key={f.key} className={f.multiline ? 'sm:col-span-2' : ''}>
+                <label className="block text-xs font-medium text-gray-600 mb-1">{f.label}</label>
+                {f.multiline ? (
+                  <textarea
+                    value={descSections[f.key] || ''}
+                    onChange={(e) => setDescSections((p) => ({ ...p, [f.key]: e.target.value }))}
+                    rows={3}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none"
+                    placeholder={f.placeholder}
+                  />
+                ) : (
+                  <input
+                    value={descSections[f.key] || ''}
+                    onChange={(e) => setDescSections((p) => ({ ...p, [f.key]: e.target.value }))}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none"
+                    placeholder={f.placeholder}
+                  />
+                )}
+              </div>
+            ))}
+          </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-[1fr_140px] gap-4">
@@ -551,10 +670,10 @@ export default function CreateListingPage() {
 
         <button
           type="submit"
-          disabled={isSubmitting || postSuccess}
+          disabled={isSubmitting}
           className="w-full bg-[#E85D04] text-white font-semibold py-3 rounded-lg hover:bg-[#e05d00] transition disabled:opacity-60"
         >
-          {postSuccess ? 'Posted!' : isSubmitting ? 'Processing...' : postingFree ? 'Post Listing (Free)' : `Pay & Post (${formatRWF(durationPrices[durationDays])})`}
+          {postingFree ? 'Post Listing (Free)' : `Pay & Post (${formatRWF(durationPrices[durationDays])})`}
         </button>
       </form>
     </div>

@@ -2,6 +2,7 @@ const crypto = require('crypto');
 const pool = require('../config/db');
 const { sendSms } = require('../services/smsService');
 const { loadCategoryFields, sanitizeAttributes } = require('../services/categoryFieldsService');
+const { computeAuctionWindow } = require('../services/auctionPricing');
 const { logger } = require('../config/logger');
 
 const OTP_TTL_MINUTES = 5;
@@ -36,7 +37,7 @@ exports.sendPaymentOtp = async (req, res) => {
 
   try {
     const [[payment]] = await pool.query(
-      "SELECT * FROM payments WHERE provider_ref = ? AND type = 'listing_token'",
+      "SELECT * FROM payments WHERE provider_ref = ? AND type IN ('listing_token','auction_token')",
       [referenceId]
     );
     if (!payment) return res.status(404).json({ message: 'Payment record not found' });
@@ -79,7 +80,7 @@ exports.verifyPaymentOtp = async (req, res) => {
     await conn.beginTransaction();
 
     const [[payment]] = await conn.query(
-      "SELECT * FROM payments WHERE provider_ref = ? AND type = 'listing_token'",
+      "SELECT * FROM payments WHERE provider_ref = ? AND type IN ('listing_token','auction_token') FOR UPDATE",
       [referenceId]
     );
     if (!payment) {
@@ -99,13 +100,14 @@ exports.verifyPaymentOtp = async (req, res) => {
 
     const [[otp]] = await conn.query(
       `SELECT id FROM payment_otps
-       WHERE payment_id = ? AND code = ? AND verified = 0 AND expires_at > NOW()`,
+       WHERE payment_id = ? AND code = ? AND verified = 0 AND expires_at > NOW()
+       FOR UPDATE`,
       [payment.id, code]
     );
 
     if (!otp) {
       const [[lastOtp]] = await conn.query(
-        'SELECT id FROM payment_otps WHERE payment_id = ? AND verified = 0 ORDER BY id DESC LIMIT 1',
+        'SELECT id FROM payment_otps WHERE payment_id = ? AND verified = 0 ORDER BY id DESC LIMIT 1 FOR UPDATE',
         [payment.id]
       );
       if (lastOtp) {
@@ -151,26 +153,54 @@ exports.verifyPaymentOtp = async (req, res) => {
       userId = result.insertId;
     }
 
-    const durationDays = payload.duration_days || 3;
-    const expiresAt = new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000);
-    const { values: attributes } = sanitizeAttributes(await loadCategoryFields(payload.category_id), payload.attributes);
+    const durationDays = payload.duration_days || (payment.type === 'auction_token' ? 7 : 3);
+    const categoryFields = await loadCategoryFields(payload.category_id, conn);
+    const { values: attributes } = sanitizeAttributes(categoryFields, payload.attributes);
     const attributesJson = Object.keys(attributes).length ? JSON.stringify(attributes) : null;
-    const [listingResult] = await conn.query(
-      `INSERT INTO listings (user_id, category_id, title, description, price, price_type, currency, location, listing_type, attributes, expires_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [userId, payload.category_id, payload.title, payload.description, payload.price, payload.price_type, payload.currency || 'RWF', payload.location, payload.listing_type, attributesJson, expiresAt]
-    );
+
+    let listingId;
+    let expiresAt;
+
+    if (payment.type === 'auction_token') {
+      const window = computeAuctionWindow(durationDays);
+      expiresAt = window.expires_at;
+      const reserve = payload.reserve_price !== undefined && payload.reserve_price !== null && payload.reserve_price !== ''
+        ? Number(payload.reserve_price)
+        : null;
+      const [auctionResult] = await conn.query(
+        `INSERT INTO listings
+           (user_id, category_id, title, description, price, price_type, currency, location,
+            listing_type, attributes, status, expires_at, auction_start, minimum_increment,
+            reserve_price, anti_sniping, sniping_window)
+         VALUES (?, ?, ?, ?, ?, 'fixed', ?, ?, 'auction', ?, 'active', ?, ?, ?, ?, ?, ?)`,
+        [
+          userId, payload.category_id, payload.title, payload.description, payload.starting_price,
+          payload.currency || 'RWF', payload.location || 'Kigali', attributesJson, expiresAt,
+          window.auction_start, payload.minimum_increment, reserve,
+          payload.anti_sniping ? 1 : 0, payload.sniping_window || 30,
+        ]
+      );
+      listingId = auctionResult.insertId;
+    } else {
+      expiresAt = new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000);
+      const [listingResult] = await conn.query(
+        `INSERT INTO listings (user_id, category_id, title, description, price, price_type, currency, location, listing_type, attributes, expires_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [userId, payload.category_id, payload.title, payload.description, payload.price, payload.price_type, payload.currency || 'RWF', payload.location, payload.listing_type, attributesJson, expiresAt]
+      );
+      listingId = listingResult.insertId;
+    }
 
     if (payload.images?.length) {
-      const imageValues = payload.images.map((imageUrl, i) => [listingResult.insertId, imageUrl, i === 0]);
+      const imageValues = payload.images.map((imageUrl, i) => [listingId, imageUrl, i === 0]);
       await conn.query('INSERT INTO listing_images (listing_id, image_url, is_primary) VALUES ?', [imageValues]);
     }
 
-    await conn.query('UPDATE payments SET status = ?, listing_id = ? WHERE id = ?', ['confirmed', listingResult.insertId, payment.id]);
+    await conn.query('UPDATE payments SET status = ?, listing_id = ? WHERE id = ?', ['confirmed', listingId, payment.id]);
 
     const sellerPhone = req.user ? normalizePhone(req.user.phone) : normalizePhone(payload.guest_phone || '');
     if (sellerPhone) {
-      await createRenewalToken(conn, listingResult.insertId, sellerPhone, expiresAt);
+      await createRenewalToken(conn, listingId, sellerPhone, expiresAt);
     }
 
     await conn.commit();
@@ -179,7 +209,11 @@ exports.verifyPaymentOtp = async (req, res) => {
       sendSms(sellerPhone, 'Your post has been published successfully. Thank you for using our platform.').catch(() => {});
     }
 
-    return res.json({ listingId: listingResult.insertId, message: 'Post published successfully' });
+    if (payment.type === 'auction_token') {
+      return res.json({ auctionId: listingId, listingId, message: 'Auction published successfully' });
+    }
+
+    return res.json({ listingId, message: 'Post published successfully' });
   } catch (err) {
     await conn.rollback();
     logger.error('[Payment OTP verify error]', err);
@@ -195,7 +229,7 @@ exports.resendPaymentOtp = async (req, res) => {
 
   try {
     const [[payment]] = await pool.query(
-      "SELECT * FROM payments WHERE provider_ref = ? AND type = 'listing_token'",
+      "SELECT * FROM payments WHERE provider_ref = ? AND type IN ('listing_token','auction_token')",
       [referenceId]
     );
     if (!payment) return res.status(404).json({ message: 'Payment record not found' });
