@@ -2,6 +2,7 @@ const router = require('express').Router();
 const multer = require('multer');
 const { authenticate, authenticateOptional } = require('../middleware/auth');
 const ctrl = require('../controllers/auctionController');
+const paymentOtp = require('../controllers/paymentOtpController');
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -18,6 +19,12 @@ router.get('/my', authenticate, ctrl.getMyAuctions);
 router.get('/watched', authenticate, ctrl.getWatched);
 
 router.post('/', authenticate, upload.array('images', 6), ctrl.createAuction);
+
+router.post('/initiate', authenticateOptional, upload.array('images', 6), ctrl.initiateAuctionPayment);
+router.post('/confirm', authenticateOptional, ctrl.confirmAuctionPayment);
+router.post('/payment-otp/send', authenticateOptional, paymentOtp.sendPaymentOtp);
+router.post('/payment-otp/verify', authenticateOptional, paymentOtp.verifyPaymentOtp);
+router.post('/payment-otp/resend', authenticateOptional, paymentOtp.resendPaymentOtp);
 
 router.get('/:id', authenticateOptional, ctrl.getAuction);
 router.get('/:id/bids', ctrl.getBids);

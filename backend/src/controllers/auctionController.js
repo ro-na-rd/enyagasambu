@@ -1,5 +1,10 @@
 const pool = require('../config/db');
+const { randomUUID: uuidv4 } = require('crypto');
 const { uploadToS3 } = require('../services/s3Service');
+const { requestToPay, getPaymentStatus } = require('../services/momoService');
+const { sendSms } = require('../services/smsService');
+const { loadCategoryFields, sanitizeAttributes } = require('../services/categoryFieldsService');
+const { parseDurationPrices, resolveAuctionDuration } = require('../services/auctionPricing');
 const { notifyUser } = require('../services/notificationService');
 const { emitToAuction } = require('../config/socket');
 const { logger } = require('../config/logger');
@@ -544,6 +549,175 @@ exports.createAuction = async (req, res) => {
     return res.status(500).json({ message: 'Server error' });
   } finally {
     conn.release();
+  }
+};
+
+async function getAuctionDurationPrices() {
+  const [rows] = await pool.query(
+    'SELECT setting_key, setting_value FROM platform_settings WHERE setting_key LIKE "listing_duration_%"'
+  );
+  return parseDurationPrices(rows);
+}
+
+function normalizePhone(phone) {
+  return phone ? phone.replace(/\s+/g, '') : '';
+}
+
+/* ─────────────────────── Guest / paid auction creation ─────────────────────── */
+
+exports.initiateAuctionPayment = async (req, res) => {
+  const {
+    title, description, category_id, starting_price, minimum_increment,
+    reserve_price, location, currency, duration_days, anti_sniping, sniping_window,
+    provider = 'mtn',
+  } = req.body;
+
+  if (!title || !String(title).trim()) {
+    return res.status(400).json({ message: 'Product title is required.' });
+  }
+  if (!category_id) {
+    return res.status(400).json({ message: 'Product category is required.' });
+  }
+  const startPrice = Number(starting_price);
+  if (!Number.isFinite(startPrice) || startPrice <= 0) {
+    return res.status(400).json({ message: 'Starting price must be greater than zero.' });
+  }
+  const increment = Number(minimum_increment);
+  if (!Number.isFinite(increment) || increment <= 0) {
+    return res.status(400).json({ message: 'Minimum bid increment must be positive.' });
+  }
+  const reserve = reserve_price !== undefined && reserve_price !== '' ? Number(reserve_price) : null;
+  if (reserve != null && (!Number.isFinite(reserve) || reserve < 0)) {
+    return res.status(400).json({ message: 'Reserve price must be zero or greater.' });
+  }
+
+  const categoryFields = await loadCategoryFields(category_id);
+  const { values: attributes, errors: attributeErrors } = sanitizeAttributes(categoryFields, req.body.attributes);
+  if (attributeErrors.length) return res.status(422).json({ message: attributeErrors.join(', ') });
+
+  const prices = await getAuctionDurationPrices();
+  const { duration_days: duration, amount_rwf: amount } = resolveAuctionDuration(duration_days, prices);
+
+  let sellerPhone;
+  let guestName = '';
+  let guestPhone = '';
+  if (req.user) {
+    sellerPhone = normalizePhone(req.user.phone || req.body.phone || '');
+  } else {
+    guestName = req.body.guest_name || '';
+    guestPhone = normalizePhone(req.body.guest_phone || req.body.phone || '');
+    sellerPhone = guestPhone;
+  }
+  if (!sellerPhone) return res.status(400).json({ message: 'Seller phone is required for payment' });
+
+  const g = await getGlobalAntiSniping();
+  const effAntiSniping = anti_sniping !== undefined && anti_sniping !== ''
+    ? (anti_sniping === true || anti_sniping === 'true' || anti_sniping === '1')
+    : g.antiSniping;
+  const windowSec = parseInt(sniping_window, 10) || g.window || 30;
+
+  const images = [];
+  try {
+    if (req.files?.length) {
+      for (const file of req.files) {
+        const { url } = await uploadToS3(file);
+        images.push(url);
+      }
+    }
+  } catch (err) {
+    logger.error('[Auction image upload error]', err);
+    return res.status(502).json({ message: 'Failed to upload auction images' });
+  }
+
+  const payload = {
+    title: String(title).trim(),
+    description,
+    category_id,
+    starting_price: startPrice,
+    minimum_increment: increment,
+    reserve_price: reserve,
+    currency: currency || 'RWF',
+    location: location || 'Kigali',
+    duration_days: duration,
+    anti_sniping: effAntiSniping ? 1 : 0,
+    sniping_window: windowSec,
+    attributes,
+    images,
+    guest_name: guestName,
+    guest_phone: guestPhone,
+  };
+
+  const referenceId = uuidv4();
+  let paymentStored = false;
+  try {
+    const [paymentResult] = await pool.query(
+      'INSERT INTO payments (type, phone, provider, amount_rwf, status, provider_ref, payload) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      ['auction_token', sellerPhone, provider, amount, 'pending', referenceId, JSON.stringify(payload)]
+    );
+    paymentStored = paymentResult.affectedRows === 1;
+
+    await requestToPay({
+      referenceId,
+      amount,
+      payerPhone: sellerPhone,
+      payerMessage: `NMO auction payment for ${duration} days`,
+      payeeNote: 'Nyagasambu Market Online auction token',
+    });
+
+    return res.json({ referenceId, amount_rwf: amount, duration_days: duration });
+  } catch (err) {
+    if (paymentStored) {
+      await pool.query(
+        "UPDATE payments SET status = 'failed' WHERE provider_ref = ? AND status = 'pending'",
+        [referenceId]
+      ).catch(() => {});
+    }
+    logger.error('[Auction payment initiate error]', err?.response?.data || err.message);
+    return res.status(502).json({ message: 'Failed to initiate auction payment' });
+  }
+};
+
+exports.confirmAuctionPayment = async (req, res) => {
+  const { referenceId } = req.body;
+  if (!referenceId) return res.status(400).json({ message: 'referenceId is required' });
+
+  try {
+    const [[payment]] = await pool.query('SELECT * FROM payments WHERE provider_ref = ? AND type = ?', [referenceId, 'auction_token']);
+    if (!payment) return res.status(404).json({ message: 'Payment record not found' });
+    if (payment.status === 'confirmed') {
+      return res.json({ message: 'Auction already activated' });
+    }
+
+    const momoStatus = await getPaymentStatus(referenceId);
+    if (momoStatus.status === 'SUCCESSFUL') {
+      const wasAlreadyVerified = payment.status === 'verified';
+      if (!wasAlreadyVerified) {
+        await pool.query('UPDATE payments SET status = ? WHERE id = ?', ['verified', payment.id]);
+      }
+
+      const phone = normalizePhone(payment.phone);
+      if (phone && !wasAlreadyVerified) {
+        sendSms(phone, `Payment of ${payment.amount_rwf} RWF received for your auction. A verification code will be sent shortly.`).catch(() => { });
+      }
+
+      return res.json({ status: 'payment_verified', referenceId, amount_rwf: payment.amount_rwf });
+    }
+
+    if (momoStatus.status === 'FAILED') {
+      await pool.query('UPDATE payments SET status = ? WHERE id = ?', ['failed', payment.id]);
+
+      const phone = normalizePhone(payment.phone);
+      if (phone) {
+        sendSms(phone, 'Your payment has not been completed. Please complete the Mobile Money payment and try again.').catch(() => { });
+      }
+
+      return res.json({ status: 'failed', message: momoStatus.reason || 'Payment failed.' });
+    }
+
+    return res.json({ status: 'pending' });
+  } catch (err) {
+    logger.error('[Auction payment confirm error]', err?.response?.data || err.message);
+    return res.status(502).json({ message: 'Could not verify payment status' });
   }
 };
 

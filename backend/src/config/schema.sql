@@ -225,7 +225,7 @@ CREATE TABLE IF NOT EXISTS contact_reveals (
 
 CREATE TABLE IF NOT EXISTS payments (
   id INT AUTO_INCREMENT PRIMARY KEY,
-  type ENUM('listing_token','contact_reveal','listing_renewal') NOT NULL,
+  type ENUM('listing_token','contact_reveal','listing_renewal','auction_token') NOT NULL,
   phone VARCHAR(20),
   provider ENUM('mtn','airtel','bank') NOT NULL,
   amount_rwf INT NOT NULL,
@@ -393,7 +393,9 @@ INSERT IGNORE INTO platform_settings (setting_key, setting_value) VALUES
   ('listing_duration_60_days', '6500'),
   ('listing_duration_90_days', '9000'),
   ('listing_duration_180_days', '17000'),
-  ('listing_duration_365_days', '32000');
+  ('listing_duration_365_days', '32000'),
+  ('allow_currency_change', 'false'),
+  ('allow_buy_coins', 'false');
 
 CREATE TABLE IF NOT EXISTS contact_access_payments (
   id INT AUTO_INCREMENT PRIMARY KEY,
@@ -572,8 +574,10 @@ CREATE TABLE IF NOT EXISTS announcements (
   id INT AUTO_INCREMENT PRIMARY KEY,
   title VARCHAR(200) NOT NULL,
   body TEXT NOT NULL,
+  image_url VARCHAR(500) NULL,
   audience VARCHAR(20) DEFAULT 'all',
   is_published BOOLEAN DEFAULT TRUE,
+  is_trending TINYINT(1) NOT NULL DEFAULT 0,
   created_by INT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (created_by) REFERENCES staff(id) ON DELETE SET NULL,
