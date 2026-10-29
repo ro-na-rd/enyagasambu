@@ -201,7 +201,6 @@ export default function AboutPage() {
   const brokers = registeredMembers.filter(m => m.role.toLowerCase().includes('broker'));
   const ambassadors = registeredMembers.filter(m => m.role.toLowerCase().includes('ambassador'));
   const suppliers = registeredMembers.filter(m => m.role.toLowerCase().includes('supplier'));
-  const members = registeredMembers.filter(m => m.role.toLowerCase().includes('member'));
   const hasDirectory = registeredMembers.length > 0;
 
   const steps = [
@@ -293,7 +292,6 @@ export default function AboutPage() {
             <AvatarStack people={hasDirectory ? brokers : BROKERS}     label={T.aboutRegBrokers}     accent={org}     count={hasDirectory ? brokers.length : BROKERS.length}     countLabel={T.aboutRegistered} link="/broker/register"    linkLabel={T.aboutBecomeBroker} />
             <AvatarStack people={hasDirectory ? ambassadors : AMBASSADORS} label={T.aboutRegAmbassadors} accent="#3b82f6" count={hasDirectory ? ambassadors.length : AMBASSADORS.length} countLabel={T.aboutRegistered} link="/ambassador/register" linkLabel={T.aboutBecomeAmbassador} />
             <AvatarStack people={hasDirectory ? suppliers : SUPPLIERS}   label={T.aboutRegSuppliers}   accent="#1a6b3a" count={hasDirectory ? suppliers.length : SUPPLIERS.length}   countLabel={T.aboutRegistered} link="/supplier/register"  linkLabel={T.aboutBecomeSupplier} />
-            {hasDirectory && <AvatarStack people={members} label="Registered Members" accent="#374151" count={members.length} countLabel={T.aboutRegistered} link="/login" linkLabel="Register Now" />}
           </div>
         </div>
       </section>
@@ -342,23 +340,6 @@ export default function AboutPage() {
               </div>
             </div>
           ))}
-        </div>
-      </section>
-
-      {/* ── CTA ── */}
-      <section className="py-10 text-center text-white"
-        style={{ background: `linear-gradient(135deg, ${navy}, ${org})` }}>
-        <h3 className="text-xl font-semibold mb-3">{get('about.cta_title', T.aboutCtaTitle)}</h3>
-        <div className="flex gap-3 justify-center flex-wrap">
-          <Link href="/login"
-            className="bg-white font-bold px-6 py-2.5 rounded text-sm transition hover:opacity-90"
-            style={{ color: navy }}>
-            {T.aboutCtaRegister} →
-          </Link>
-          <Link href="/listings"
-            className="border border-white text-white font-medium px-6 py-2.5 rounded text-sm transition hover:bg-white/10">
-            {T.aboutCtaBrowse}
-          </Link>
         </div>
       </section>
     </div>
