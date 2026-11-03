@@ -14,6 +14,11 @@ import api from '@/lib/api';
 
 const navy = '#0f1e42';
 const org = '#E85D04';
+const LANGUAGE_LABELS: Record<Lang, string> = {
+  en: 'ENG',
+  fr: 'FRAN',
+  rw: 'KINY',
+};
 
 interface Announcement {
   id: number;
@@ -163,7 +168,7 @@ function NavbarView({ pathname, tab, registrationOpen }: { pathname: string | nu
               }
             }}
           >
-            <span style={{ fontSize: 12, fontWeight: 700 }}>{lang.toUpperCase()}</span>
+            <span style={{ fontSize: 12, fontWeight: 700 }}>{LANGUAGE_LABELS[lang]}</span>
             {canChangeCurrency && (
               <>
                 <span style={{ opacity: 0.6, fontSize: 8 }}>•</span>
@@ -214,7 +219,7 @@ function NavbarView({ pathname, tab, registrationOpen }: { pathname: string | nu
                       }
                     }}
                   >
-                    {code.toUpperCase()}
+                    {LANGUAGE_LABELS[code]}
                   </button>
                 ))}
               </div>
@@ -466,7 +471,7 @@ function NavbarView({ pathname, tab, registrationOpen }: { pathname: string | nu
                         color: lang === code ? '#fff' : '#374151',
                         boxShadow: lang === code ? '0 2px 8px rgba(15, 30, 66, 0.3)' : 'none',
                       }}>
-                      {code.toUpperCase()}
+                      {LANGUAGE_LABELS[code]}
                     </button>
                   ))}
                 </div>
