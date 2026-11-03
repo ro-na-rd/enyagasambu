@@ -3,6 +3,7 @@ import { Suspense, useEffect, useState, useMemo } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import api from '@/lib/api';
 import ListingCard from '@/components/ListingCard';
+import RwandaLocationMap from '@/components/RwandaLocationMap';
 import AppImage from '@/components/AppImage';
 import { useLanguage } from '@/context/LanguageContext';
 import { categoryMap } from '@/lib/translations';
@@ -66,9 +67,14 @@ function ListingsContent() {
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [mapLocationName, setMapLocationName] = useState<string | null>(null);
+  const [mapLocationTerms, setMapLocationTerms] = useState<string[]>([]);
   const perPage = 60;
 
   const currentTab = useMemo(() => TABS.find(t => t.key === tab) || null, [tab]);
+  const visibleListings = useMemo(() => mapLocationTerms.length === 0
+    ? listings
+    : listings.filter((listing) => mapLocationTerms.some((term) => listing.location.toLocaleLowerCase().includes(term))), [listings, mapLocationTerms]);
 
   const filterKey = [category, type, search, tab].join('|');
   const [lastFilterKey, setLastFilterKey] = useState(filterKey);
@@ -270,7 +276,7 @@ function ListingsContent() {
                   {search ? <span>Results for &ldquo;{search}&rdquo;</span> : tabLabels.find(t => t.key === tab)?.label || 'Browse Listings'}
                 </h1>
                 <p className="text-sm text-gray-500 mt-0.5">
-                  {loading ? 'Loading...' : `${total.toLocaleString()} listing${total !== 1 ? 's' : ''} found`}
+                  {loading ? 'Loading...' : `${(mapLocationName ? visibleListings.length : total).toLocaleString()} listing${(mapLocationName ? visibleListings.length : total) !== 1 ? 's' : ''} found${mapLocationName ? ` in ${mapLocationName}` : ''}`}
                 </p>
               </div>
               {total > perPage && !loading && (
@@ -286,6 +292,22 @@ function ListingsContent() {
               )}
             </div>
 
+            {category === 'supply-chain' && !loading && (
+              <RwandaLocationMap
+                listings={listings}
+                activeLocation={mapLocationName}
+                onLocationSelect={(location) => {
+                  if (!location || location.name === mapLocationName) {
+                    setMapLocationName(null);
+                    setMapLocationTerms([]);
+                    return;
+                  }
+                  setMapLocationName(location.name);
+                  setMapLocationTerms(location.terms);
+                }}
+              />
+            )}
+
             {loading ? (
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {Array.from({ length: 12 }).map((_, i) => (
@@ -299,7 +321,7 @@ function ListingsContent() {
                   </div>
                 ))}
               </div>
-            ) : listings.length === 0 ? (
+            ) : visibleListings.length === 0 ? (
               <div className="text-center py-24 bg-white rounded-2xl border border-gray-100 shadow-sm">
                 <div className="text-6xl mb-4"><Search size={48} /></div>
                 <h3 className="text-lg font-bold text-gray-800 mb-1">{T.noListingsFound}</h3>
@@ -308,7 +330,7 @@ function ListingsContent() {
             ) : (
               <>
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                  {listings.map((l) => <ListingCard key={l.id} listing={l} />)}
+                  {visibleListings.map((l) => <ListingCard key={l.id} listing={l} />)}
                 </div>
                 {totalPages > 1 && (
                   <div className="flex flex-wrap items-center justify-center gap-2 mt-10">
