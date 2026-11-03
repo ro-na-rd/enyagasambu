@@ -62,7 +62,7 @@ const NAV_GROUPS: NavGroup[] = [
   {
     title: 'Verification',
     items: [
-      { href: '/broker/certificate', iconKey: 'certificate', label: 'My Certificate', badge: 'Paid' },
+      { href: '/broker/certificate', iconKey: 'certificate', label: 'My Business Card', badge: 'Paid' },
     ],
   },
   {

@@ -57,7 +57,7 @@ function PhotoUploadStep({ onPhoto, onSkip }: { onPhoto: (url: string) => void; 
           <Camera size={24} className="text-white" />
         </div>
         <h2 className="text-xl font-bold mb-1" style={{ color: NAVY }}>Upload Profile Photo</h2>
-        <p className="text-sm text-gray-500 mb-6">Your photo will appear on your Certified Broker ID card.</p>
+        <p className="text-gray-500 text-sm mb-6">Your photo will appear on your verified broker business card.</p>
         <div
           onClick={() => inputRef.current?.click()}
           onDragOver={e => { e.preventDefault(); setDragging(true); }}
@@ -93,10 +93,10 @@ function CatalogStep({ types, onSelect }: { types: CertType[]; onSelect: (t: Cer
     <div className="space-y-4">
       <div className="flex items-center gap-2">
         <BadgeCheck size={18} style={{ color: ORG }} />
-        <p className="text-sm font-bold text-gray-800">Choose your certificate</p>
+        <p className="text-sm font-bold text-gray-800">Choose your business card</p>
       </div>
       <div className="space-y-3">
-        {types.length === 0 && <p className="text-sm text-gray-500">No certificates are currently available.</p>}
+        {types.length === 0 && <p className="text-sm text-gray-500">No business cards are currently available.</p>}
         {types.map(t => (
           <button key={t.id} onClick={() => onSelect(t)}
             className="w-full text-left bg-white rounded-xl border border-gray-200 p-4 hover:border-[#E85D04] hover:shadow-md transition group">
@@ -111,7 +111,7 @@ function CatalogStep({ types, onSelect }: { types: CertType[]; onSelect: (t: Cer
               <div className="text-right shrink-0">
                 <p className="text-lg font-extrabold" style={{ color: NAVY }}>{formatRWF(t.price_rwf)}</p>
                 <span className="text-[11px] font-bold text-white px-3 py-1.5 rounded-lg inline-block" style={{ background: ORG }}>
-                  Get Certified →
+                  Get Business Card →
                 </span>
               </div>
             </div>
@@ -157,7 +157,7 @@ function ProgressSteps({ current }: { current: 'request' | 'pay' | 'issued' }) {
 const statusMeta: Record<string, { label: string; color: string; bg: string }> = {
   pending:   { label: 'Payment Pending', color: '#b45309', bg: '#fffbeb' },
   paid:      { label: 'Paid – Awaiting Generation', color: '#1d4ed8', bg: '#eff6ff' },
-  generated: { label: 'Certificate Issued', color: '#15803d', bg: '#f0fdf4' },
+  generated: { label: 'Business Card Issued', color: '#15803d', bg: '#f0fdf4' },
 };
 
 export default function BrokerCertificatePage() {
@@ -272,14 +272,14 @@ export default function BrokerCertificatePage() {
   };
 
   const handleRequest = async () => {
-    if (!selectedType) { setMsg('Choose a certificate type first'); return; }
+    if (!selectedType) { setMsg('Choose a business card type first'); return; }
     setBusy(true); setMsg('');
     try {
       const { data } = await api.post('/broker/certificate/request', { certificateTypeId: selectedType.id });
       setMsg(data.message);
       fetchStatus();
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || (err instanceof Error ? err.message : 'Failed to request certificate');
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || (err instanceof Error ? err.message : 'Failed to request business card');
       setMsg(msg);
     } finally { setBusy(false); }
   };
@@ -298,9 +298,9 @@ export default function BrokerCertificatePage() {
           if (statusData.status === 'generated' || statusData.status === 'paid') {
             clearInterval(pollInterval);
             if (statusData.status === 'generated') {
-              setMsg('Certificate is ready!');
+              setMsg('Business card is ready!');
             } else {
-              setMsg('Payment successful! Waiting for admin to generate your certificate.');
+              setMsg('Payment successful! Waiting for admin to generate your business card.');
             }
             fetchStatus();
             setBusy(false);
@@ -355,8 +355,8 @@ export default function BrokerCertificatePage() {
     <div className="p-4 lg:p-8">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">My Broker Certificate</h1>
-          <p className="text-sm text-gray-500 mt-1">Your official E-Nyagasambu Certified Broker ID card</p>
+          <h1 className="text-2xl font-bold text-gray-900">My Business Card</h1>
+          <p className="text-sm text-gray-500 mt-1">Your official E-Nyagasambu verified broker business card</p>
         </div>
       </div>
 
@@ -370,7 +370,7 @@ export default function BrokerCertificatePage() {
         {/* Certificate Cards */}
         <div className="flex-shrink-0 space-y-4">
           <div>
-            <p className="text-xs font-bold text-gray-400 mb-2 tracking-widest uppercase">Certificate Preview</p>
+            <p className="text-xs font-bold text-gray-400 mb-2 tracking-widest uppercase">Business Card Preview</p>
             <BrokerCertificate
               name={user.name}
               brokerId={certNo}
@@ -396,13 +396,13 @@ export default function BrokerCertificatePage() {
         <div className="flex-1">
           <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 space-y-5">
             <h3 className="font-bold text-gray-900">
-              {cert?.type_name ? `${cert.type_name} Certificate` : 'Certificate Status'}
+              {cert?.type_name ? `${cert.type_name} Business Card` : 'Business Card Status'}
             </h3>
 
             {showCatalog ? (
               <div className="space-y-4">
                 <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 rounded-lg px-4 py-3 text-sm">
-                  You haven&apos;t requested a certificate yet. Choose a paid certificate below to get your official ID.
+                  You haven&apos;t requested a business card yet. Choose a paid business card below to get your official ID.
                 </div>
                 <CatalogStep types={types} onSelect={handleSelectType} />
               </div>
@@ -471,7 +471,7 @@ export default function BrokerCertificatePage() {
                         </button>
                       </div>
                       <p className="text-xs text-gray-400 mt-2">
-                        Admin will confirm your payment and generate the certificate.
+                        Admin will confirm your payment and generate your business card.
                       </p>
                     </div>
                   </div>
@@ -480,18 +480,18 @@ export default function BrokerCertificatePage() {
                 {/* Paid: waiting for admin */}
                 {certStatus === 'paid' && (
                   <div className="bg-blue-50 border border-blue-200 text-blue-800 rounded-lg px-4 py-3 text-sm">
-                    Payment confirmed. An admin will generate your certificate shortly.
+                    Payment confirmed. An admin will generate your business card shortly.
                   </div>
                 )}
 
                 {/* Generated: show details */}
                 {certStatus === 'generated' && cert && (
                   <div className="space-y-3 border-t border-gray-100 pt-4 text-sm">
-                    <div><span className="text-gray-400">Certificate No:</span> <span className="font-semibold font-mono">{cert.cert_no}</span></div>
+                    <div><span className="text-gray-400">Business Card No:</span> <span className="font-semibold font-mono">{cert.cert_no}</span></div>
                     <div><span className="text-gray-400">Issued:</span> {cert.issued_date ? new Date(cert.issued_date).toLocaleDateString('en-GB') : '-'}</div>
                     <div><span className="text-gray-400">Valid Until:</span> {cert.valid_until ? new Date(cert.valid_until).toLocaleDateString('en-GB') : '-'}</div>
                     <div className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-xs text-gray-500">
-                      <Lock size={14} className="inline mr-1 align-middle" /> Printing is available through the Admin Portal. Please contact an admin to print your certificate.
+                      <Lock size={14} className="inline mr-1 align-middle" /> Printing is available through the Admin Portal. Please contact an admin to print your business card.
                     </div>
                   </div>
                 )}

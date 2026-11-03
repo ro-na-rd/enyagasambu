@@ -81,7 +81,7 @@ export default function BrokerProfilePage() {
           {/* Authorized Services */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">Authorized Services</label>
-            <p className="text-xs text-gray-500 mb-3">Select the services you offer. These will appear on your certificate.</p>
+            <p className="text-xs text-gray-500 mb-3">Select the services you offer. These will appear on your business card.</p>
             <div className="space-y-2">
               {AVAILABLE_SERVICES.map(service => (
                 <label

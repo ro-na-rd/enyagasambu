@@ -98,7 +98,7 @@ export default function BrokerDashboardPage() {
             </div>
             <div className="hidden lg:flex items-center gap-4">
               <div className="bg-white/[0.08] backdrop-blur-sm rounded-xl px-6 py-4 border border-white/10">
-                <p className="text-xs text-blue-100/70 mb-1">Certificate Status</p>
+                <p className="text-xs text-blue-100/70 mb-1">Business Card Status</p>
                 <p className="text-lg font-bold flex items-center gap-2">
                   {cert?.status === 'generated' ? (
                     <><span className="w-2 h-2 rounded-full bg-green-400"></span>Active</>
@@ -124,7 +124,7 @@ export default function BrokerDashboardPage() {
                     <span className="text-amber-600 font-bold">!</span>
                   </div>
                   <div>
-                    <p className="font-semibold text-amber-900">Complete Your Certificate</p>
+                    <p className="font-semibold text-amber-900">Complete Your Business Card</p>
                     <p className="text-sm text-amber-700">Finish payment to get verified and access all features</p>
                   </div>
                 </div>
@@ -140,12 +140,12 @@ export default function BrokerDashboardPage() {
                   <Award size={20} style={{ color: '#0f1e42' }} />
                 </div>
                 <div>
-                  <p className="font-semibold text-blue-900">Get Your Broker Certificate</p>
+                  <p className="font-semibold text-blue-900">Get Your Broker Business Card</p>
                   <p className="text-sm text-blue-700">Become a verified broker and unlock premium features</p>
                 </div>
               </div>
               <Link href="/broker/certificate" className="px-4 py-2 bg-[#0f1e42] hover:bg-[#0a1530] text-white rounded-lg font-semibold text-sm transition shrink-0">
-                Get Certified ({formatRWF(certPrice)})
+                Get Business Card ({formatRWF(certPrice)})
               </Link>
             </div>
           )}

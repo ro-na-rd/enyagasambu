@@ -57,7 +57,7 @@ export default function BrokerPhotoPage() {
 
         <h1 className="text-xl font-bold mb-1" style={{ color: NAVY }}>Profile Photo</h1>
         <p className="text-sm text-gray-500 mb-6">
-          Welcome, <strong>{user?.name}</strong>! Upload a photo for your broker certificate.
+          Welcome, <strong>{user?.name}</strong>! Upload a photo for your broker business card.
         </p>
 
         <div

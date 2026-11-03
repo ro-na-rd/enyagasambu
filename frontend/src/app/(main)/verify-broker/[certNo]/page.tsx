@@ -35,7 +35,7 @@ export default function VerifyBrokerCertificatePage() {
         const { data } = await api.get(`/broker/certificate/verify/${certNo}`);
         setResult(data);
       } catch (err: unknown) {
-        setError((err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed to verify certificate');
+        setError((err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed to verify business card');
       } finally {
         setLoading(false);
       }
@@ -51,7 +51,7 @@ export default function VerifyBrokerCertificatePage() {
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <Loader2 className="mx-auto h-12 w-12 animate-spin text-gray-400" />
-          <p className="mt-4 text-gray-600">Verifying broker certificate...</p>
+          <p className="mt-4 text-gray-600">Verifying broker business card...</p>
         </div>
       </div>
     );
@@ -64,8 +64,8 @@ export default function VerifyBrokerCertificatePage() {
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-100 mb-4">
             <Search className="h-8 w-8 text-blue-600" />
           </div>
-          <h1 className="text-3xl font-bold text-gray-900">Broker Certificate Verification</h1>
-          <p className="text-gray-600 mt-2">Certificate Number: <span className="font-mono font-semibold">{certNo}</span></p>
+          <h1 className="text-3xl font-bold text-gray-900">Broker Business Card Verification</h1>
+          <p className="text-gray-600 mt-2">Business Card Number: <span className="font-mono font-semibold">{certNo}</span></p>
         </div>
 
         {error ? (
@@ -81,7 +81,7 @@ export default function VerifyBrokerCertificatePage() {
             </div>
             <div className="bg-red-50 rounded-lg p-4 mt-4">
               <p className="text-sm text-red-800">
-                Please ensure you have entered the correct certificate number. If you believe this is an error, please contact our support team.
+                Please ensure you have entered the correct business card number. If you believe this is an error, please contact our support team.
               </p>
             </div>
           </div>
@@ -92,8 +92,8 @@ export default function VerifyBrokerCertificatePage() {
                 <Check className="h-6 w-6 text-green-600" />
               </div>
               <div>
-                <h2 className="text-xl font-bold text-green-900">Valid Broker Certificate</h2>
-                <p className="text-green-700">This certificate is authentic and {result.certificate.is_expired ? 'has expired' : 'currently valid'}.</p>
+                <h2 className="text-xl font-bold text-green-900">Valid Broker Business Card</h2>
+                <p className="text-green-700">This business card is authentic and {result.certificate.is_expired ? 'has expired' : 'currently valid'}.</p>
               </div>
             </div>
 
@@ -104,7 +104,7 @@ export default function VerifyBrokerCertificatePage() {
                   <p className="font-semibold text-gray-900">{result.certificate.broker_name}</p>
                 </div>
                 <div className="bg-gray-50 rounded-lg p-4">
-                  <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Certificate Type</p>
+                  <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Business Card Type</p>
                   <p className="font-semibold text-gray-900">{result.certificate.type_name}</p>
                 </div>
                 <div className="bg-gray-50 rounded-lg p-4">
@@ -131,7 +131,7 @@ export default function VerifyBrokerCertificatePage() {
               {result.certificate.is_expired && (
                 <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                   <p className="text-sm text-yellow-800">
-                    <strong>Note:</strong> This certificate has expired. Please contact the broker or our support team for renewal information.
+                    <strong>Note:</strong> This business card has expired. Please contact the broker or our support team for renewal information.
                   </p>
                 </div>
               )}
@@ -150,8 +150,8 @@ export default function VerifyBrokerCertificatePage() {
                 <X className="h-6 w-6 text-yellow-600" />
               </div>
               <div>
-                <h2 className="text-xl font-bold text-yellow-900">Certificate Not Valid</h2>
-                <p className="text-yellow-700">{result?.message || 'This certificate is not currently valid.'}</p>
+                <h2 className="text-xl font-bold text-yellow-900">Business Card Not Valid</h2>
+                <p className="text-yellow-700">{result?.message || 'This business card is not currently valid.'}</p>
               </div>
             </div>
           </div>

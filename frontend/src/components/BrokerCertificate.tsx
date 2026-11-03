@@ -47,7 +47,7 @@ function BrokerFront({ name, brokerId, district, phone, email, qr, photo }: {
             </div>
           </div>
 
-          <div style={{ marginTop: 12, alignSelf: 'flex-start', background: ORG, color: '#fff', fontWeight: 800, fontSize: 11.5, letterSpacing: 1.5, padding: '4px 12px', borderRadius: 6 }}>CERTIFIED BROKER</div>
+          <div style={{ marginTop: 12, alignSelf: 'flex-start', background: ORG, color: '#fff', fontWeight: 800, fontSize: 11.5, letterSpacing: 1.5, padding: '4px 12px', borderRadius: 6 }}>BROKER BUSINESS CARD</div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12 }}>
             <User size={17} color="#ffb585" />
