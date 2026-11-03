@@ -16,10 +16,18 @@ const s3 = new S3Client({
 });
 
 const BUCKET = process.env.S3_BUCKET || 'nmo-images';
-const PUBLIC_URL = process.env.S3_PUBLIC_URL;
+const PUBLIC_URL = process.env.S3_PUBLIC_URL?.replace(/\/+$/, '');
 if (!PUBLIC_URL) {
   logger.error('[FATAL] S3_PUBLIC_URL must be set in environment');
   process.exit(1);
+}
+
+function encodeObjectKey(key) {
+  return key.split('/').map(encodeURIComponent).join('/');
+}
+
+function buildPublicUrl(key) {
+  return `${PUBLIC_URL}/${encodeObjectKey(key)}`;
 }
 
 async function sleep(ms) {
@@ -91,7 +99,7 @@ async function uploadToS3(file) {
     }));
   }, `upload "${key}"`, 3, 1000);
 
-  return { key, url: `${PUBLIC_URL}/${key}` };
+  return { key, url: buildPublicUrl(key) };
 }
 
 async function deleteFromS3(key) {
@@ -104,10 +112,28 @@ async function deleteFromS3(key) {
 
 function extractKeyFromUrl(url) {
   if (!url || typeof url !== 'string') return null;
-  const marker = `/${BUCKET}/`;
-  const idx = url.indexOf(marker);
-  if (idx !== -1) return url.slice(idx + marker.length);
-  return null;
+  const value = url.trim();
+  if (!value) return null;
+
+  if (!/^https?:\/\//i.test(value)) {
+    return value.replace(/^\/+/, '') || null;
+  }
+
+  try {
+    const objectUrl = new URL(value);
+    const publicUrl = new URL(PUBLIC_URL);
+    const publicPath = publicUrl.pathname.replace(/\/+$/, '');
+    const objectPath = objectUrl.pathname;
+    if (objectUrl.origin === publicUrl.origin && objectPath.startsWith(`${publicPath}/`)) {
+      return decodeURIComponent(objectPath.slice(publicPath.length + 1));
+    }
+
+    const marker = `/${BUCKET}/`;
+    const idx = objectPath.indexOf(marker);
+    return idx === -1 ? null : decodeURIComponent(objectPath.slice(idx + marker.length));
+  } catch {
+    return null;
+  }
 }
 
 async function deleteFromS3Url(url) {
@@ -165,4 +191,4 @@ async function deletePrivateObject(key) {
   }
 }
 
-module.exports = { uploadToS3, deleteFromS3, deleteFromS3Url, ensureBucket, waitForS3, uploadPrivateToS3, getPrivateObject, deletePrivateObject };
+module.exports = { uploadToS3, deleteFromS3, deleteFromS3Url, ensureBucket, waitForS3, uploadPrivateToS3, getPrivateObject, deletePrivateObject, buildPublicUrl, extractKeyFromUrl };

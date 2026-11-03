@@ -4,9 +4,10 @@ import { AuthProvider } from '@/context/AuthContext';
 import { LanguageProvider } from '@/context/LanguageContext';
 import { CurrencyProvider } from '@/context/CurrencyContext';
 import WhatsAppButton from '@/components/WhatsAppButton';
+import { SITE_URL } from '@/lib/config';
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://enyagasambu.rw'),
+  metadataBase: new URL(SITE_URL),
   title: {
     default: 'E-Nyagasambu | Digital Marketplace Rwanda',
     template: '%s | E-Nyagasambu',
@@ -18,7 +19,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     locale: 'en_US',
-    url: 'https://enyagasambu.rw',
+    url: SITE_URL,
     siteName: 'E-Nyagasambu',
     title: 'E-Nyagasambu | Digital Marketplace Rwanda',
     description: 'Buy, sell, rent, and auction goods & services in Rwanda.',
@@ -34,7 +35,19 @@ export const metadata: Metadata = {
     icon: '/logo.svg',
     apple: '/apple-touch-icon.png',
   },
-  robots: { index: true, follow: true },
+  alternates: { canonical: '/' },
+  category: 'marketplace',
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+      'max-video-preview': -1,
+    },
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
