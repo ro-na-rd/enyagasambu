@@ -13,14 +13,16 @@ const ORG = '#E85D04';
 
 export default function SupplierRegisterPage() {
   const router = useRouter();
-  const { login } = useAuth();
+  const { refreshUser } = useAuth();
   const [form, setForm] = useState({
-    name: '', email: '', phone: '', password: '', confirmPassword: '',
-    business_name: '', business_phone: '', business_location: '',
+    business_name: '', email: '', password: '', confirmPassword: '',
   });
+  const [step, setStep] = useState<'register' | 'verify'>('register');
+  const [verificationCode, setVerificationCode] = useState('');
+  const [resending, setResending] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState(false);
+  const [success, setSuccess] = useState('');
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm(f => ({ ...f, [e.target.name]: e.target.value }));
@@ -34,22 +36,45 @@ export default function SupplierRegisterPage() {
     setSubmitting(true);
     try {
       const { data } = await api.post('/auth/supplier/register', {
-        name: form.name,
+        business_name: form.business_name,
         email: form.email,
-        phone: form.phone,
         password: form.password,
-        business_name: form.business_name || undefined,
-        business_phone: form.business_phone || undefined,
-        business_location: form.business_location || undefined,
       });
-      localStorage.setItem('nmo_token', data.token);
-      setSuccess(true);
-      await login(form.email, form.password, 'supplier').catch(() => {});
-      setTimeout(() => router.replace('/supplier'), 800);
+      setSuccess(data.message || `Verification code sent to ${form.email}`);
+      if (data.requires_email_verification) setStep('verify');
     } catch (err: unknown) {
       setError((err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Registration failed. Please try again.');
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleVerify = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setSubmitting(true);
+    try {
+      const { data } = await api.post('/auth/supplier/verify-email', { email: form.email, code: verificationCode });
+      localStorage.setItem('nmo_token', data.token);
+      await refreshUser();
+      router.replace('/supplier');
+    } catch (err: unknown) {
+      setError((err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Verification failed. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleResend = async () => {
+    setError('');
+    setResending(true);
+    try {
+      await api.post('/auth/supplier/resend-verification', { email: form.email });
+      setSuccess('A new verification code has been sent to your email address.');
+    } catch (err: unknown) {
+      setError((err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Could not resend the verification code.');
+    } finally {
+      setResending(false);
     }
   };
 
@@ -63,12 +88,12 @@ export default function SupplierRegisterPage() {
           <Store size={22} style={{ color: '#fff' }} />
         </div>
         <h1 className="text-xl font-extrabold text-gray-900">Supplier Registration</h1>
-        <p className="text-sm text-gray-500 mt-1">Register your business to sell to the E-Nyagasambu marketplace</p>
+        <p className="text-sm text-gray-500 mt-1">Create your business account and verify its email address to start posting</p>
       </div>
 
           {success && (
             <div className="flex items-center gap-2 text-sm rounded-xl px-4 py-3 mb-4" style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', color: '#059669' }}>
-              <CheckCircle size={16} /> Account created! Redirecting...
+              <CheckCircle size={16} /> {success}
             </div>
           )}
           {error && (
@@ -77,59 +102,54 @@ export default function SupplierRegisterPage() {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid sm:grid-cols-2 gap-4">
+          {step === 'register' ? (
+            <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold mb-1.5 text-gray-500">Full Name *</label>
-                <input name="name" value={form.name} onChange={handleChange} required className={inputCls} placeholder="Your name" />
+                <label className="block text-xs font-semibold mb-1.5 text-gray-500">Business or Company Name *</label>
+                <input name="business_name" value={form.business_name} onChange={handleChange} required maxLength={100} className={inputCls} placeholder="Your business or company name" />
               </div>
               <div>
-                <label className="block text-xs font-semibold mb-1.5 text-gray-500">Email *</label>
-                <input name="email" type="email" value={form.email} onChange={handleChange} required className={inputCls} placeholder="you@example.com" />
+                <label className="block text-xs font-semibold mb-1.5 text-gray-500">Business Email *</label>
+                <input name="email" type="email" value={form.email} onChange={handleChange} required className={inputCls} placeholder="business@example.com" />
               </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold mb-1.5 text-gray-500">Phone *</label>
-              <input name="phone" value={form.phone} onChange={handleChange} required className={inputCls} placeholder="+250 7XX XXX XXX" />
-            </div>
-
-            <div className="grid sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-semibold mb-1.5 text-gray-500">Password *</label>
-                <input name="password" type="password" value={form.password} onChange={handleChange} required className={inputCls} placeholder="Min 6 characters" />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold mb-1.5 text-gray-500">Confirm Password *</label>
-                <input name="confirmPassword" type="password" value={form.confirmPassword} onChange={handleChange} required className={inputCls} placeholder="Repeat password" />
-              </div>
-            </div>
-
-            <div className="border-t border-gray-100 pt-4">
-              <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3">Business Details</p>
               <div className="grid sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold mb-1.5 text-gray-500">Business Name</label>
-                  <input name="business_name" value={form.business_name} onChange={handleChange} className={inputCls} placeholder="Your business name" />
+                  <label className="block text-xs font-semibold mb-1.5 text-gray-500">Password *</label>
+                  <input name="password" type="password" value={form.password} onChange={handleChange} required className={inputCls} placeholder="Min 6 characters" />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold mb-1.5 text-gray-500">Business Phone</label>
-                  <input name="business_phone" value={form.business_phone} onChange={handleChange} className={inputCls} placeholder="Business contact" />
+                  <label className="block text-xs font-semibold mb-1.5 text-gray-500">Confirm Password *</label>
+                  <input name="confirmPassword" type="password" value={form.confirmPassword} onChange={handleChange} required className={inputCls} placeholder="Repeat password" />
                 </div>
               </div>
-              <div className="mt-4">
-                <label className="block text-xs font-semibold mb-1.5 text-gray-500">Business Location</label>
-                <input name="business_location" value={form.business_location} onChange={handleChange} className={inputCls} placeholder="e.g. Kigali, Nyarugenge" />
-              </div>
-            </div>
 
-            <button type="submit" disabled={submitting}
-              className="w-full text-white font-bold py-3.5 rounded-xl text-sm transition hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-2"
-              style={{ background: `linear-gradient(135deg, ${NAVY}, ${ORG})` }}>
-              {submitting ? <Loader2 size={16} className="animate-spin" /> : <Store size={16} />}
-              {submitting ? 'Creating account...' : 'Register as Supplier'}
-            </button>
-          </form>
+              <button type="submit" disabled={submitting}
+                className="w-full text-white font-bold py-3.5 rounded-xl text-sm transition hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-2"
+                style={{ background: `linear-gradient(135deg, ${NAVY}, ${ORG})` }}>
+                {submitting ? <Loader2 size={16} className="animate-spin" /> : <Store size={16} />}
+                {submitting ? 'Sending code...' : 'Register and Verify Email'}
+              </button>
+            </form>
+          ) : (
+            <form onSubmit={handleVerify} className="space-y-4">
+              <div className="rounded-xl border border-orange-100 bg-orange-50 p-4 text-sm text-gray-600">
+                We sent a 6-digit code to <strong className="text-gray-900">{form.email}</strong>. Verify it to activate your supplier account.
+              </div>
+              <div>
+                <label className="block text-xs font-semibold mb-1.5 text-gray-500">Email Verification Code *</label>
+                <input value={verificationCode} onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6))} required inputMode="numeric" autoComplete="one-time-code" className={`${inputCls} text-center text-xl tracking-[0.4em]`} placeholder="000000" />
+              </div>
+              <button type="submit" disabled={submitting || verificationCode.length !== 6}
+                className="w-full text-white font-bold py-3.5 rounded-xl text-sm transition hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-2"
+                style={{ background: `linear-gradient(135deg, ${NAVY}, ${ORG})` }}>
+                {submitting ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle size={16} />}
+                Verify Email and Continue
+              </button>
+              <button type="button" onClick={handleResend} disabled={resending} className="w-full py-2 text-sm font-semibold disabled:opacity-50" style={{ color: ORG }}>
+                {resending ? 'Sending a new code...' : 'Resend verification code'}
+              </button>
+            </form>
+          )}
 
           <p className="text-center text-sm text-gray-500 mt-5">
             Already have an account?{' '}

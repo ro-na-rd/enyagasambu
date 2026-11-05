@@ -218,7 +218,7 @@ exports.createListing = async (req, res) => {
     if (req.user) {
       userId = req.user.id;
       isAdmin = req.user.role === 'admin';
-      [[user]] = await conn.query('SELECT name, coins, phone, role FROM users WHERE id = ? FOR UPDATE', [userId]);
+      [[user]] = await conn.query('SELECT name, coins, phone, role, is_verified FROM users WHERE id = ? FOR UPDATE', [userId]);
     } else {
       const { guest_name, guest_phone } = req.body;
       if (!guest_name || !guest_phone) {
@@ -246,6 +246,21 @@ exports.createListing = async (req, res) => {
       const isAmbassador = userRow?.role === 'ambassador';
       const isBroker = userRow?.role === 'broker';
       const isSupplier = userRow?.role === 'supplier';
+
+      if (isSupplier && !user?.is_verified) {
+        await conn.rollback();
+        return res.status(403).json({ message: 'Verify your supplier email before posting listings.' });
+      }
+
+      if (isSupplier && req.body.phone?.trim()) {
+        const supplierPhone = normalizePhone(req.body.phone);
+        if (supplierPhone.replace(/\D/g, '').length < 10) {
+          await conn.rollback();
+          return res.status(422).json({ message: 'Enter a valid supplier contact phone number.' });
+        }
+        await conn.query('UPDATE users SET phone = ? WHERE id = ?', [supplierPhone, userId]);
+        user.phone = supplierPhone;
+      }
 
       if (isAmbassador) {
         // Ambassadors MUST pay for posting

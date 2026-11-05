@@ -239,6 +239,18 @@ CREATE TABLE IF NOT EXISTS payments (
   FOREIGN KEY (listing_id) REFERENCES listings(id) ON DELETE SET NULL
 );
 
+CREATE TABLE IF NOT EXISTS supplier_email_otps (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL,
+  code VARCHAR(6) NOT NULL,
+  expires_at TIMESTAMP NOT NULL,
+  attempts TINYINT UNSIGNED NOT NULL DEFAULT 0,
+  verified BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_supplier_email_otps_active (user_id, verified, expires_at),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
 CREATE TABLE IF NOT EXISTS payment_otps (
   id INT AUTO_INCREMENT PRIMARY KEY,
   payment_id INT NOT NULL,

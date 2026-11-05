@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
 import { useLanguage } from '@/context/LanguageContext';
+import { useAuth } from '@/context/AuthContext';
 import api from '@/lib/api';
 import { formatRWF } from '@/lib/currencies';
 import CategoryFieldsInput, { findMissingRequiredField, type CategoryField } from '@/components/CategoryFieldsInput';
@@ -24,6 +25,7 @@ interface Category { id: number; name: string; slug: string; type: string; field
 
 export default function CreateListingPage() {
   const { T } = useLanguage();
+  const { user } = useAuth();
   const router = useRouter();
   const [categories, setCategories] = useState<Category[]>([]);
   const [durationPrices, setDurationPrices] = useState<Record<number, number>>({ 3: 500, 7: 1000, 30: 3500, 60: 6500, 90: 9000, 180: 17000, 365: 32000 });
@@ -53,6 +55,7 @@ export default function CreateListingPage() {
   const selectedCategory = categories.find((c) => String(c.id) === selectedCategoryId);
   const categoryFields = selectedCategory?.fields || [];
   const durationOptions = Object.keys(durationPrices).map(Number).sort((a, b) => a - b);
+  const isSupplier = user?.role === 'supplier';
 
   const durationLabel = (days: number) => {
     if (days === 365) return '1 year';
@@ -137,6 +140,12 @@ export default function CreateListingPage() {
     }).catch(() => { });
   }, []);
 
+  useEffect(() => {
+    if (!isSupplier) return;
+    setSellerName((current) => current || user?.name || '');
+    setSellerPhone((current) => current || user?.phone || '');
+  }, [isSupplier, user?.name, user?.phone]);
+
   const handleImages = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []).slice(0, 6);
     setImages(files);
@@ -146,7 +155,7 @@ export default function CreateListingPage() {
 
   const onSubmitFree = async (data: CreateForm) => {
     if (!sellerName.trim() || !sellerPhone.trim()) {
-      setError('Please provide your name and phone number.');
+      setError(isSupplier ? 'Provide the phone number buyers should use to contact your business.' : 'Please provide your name and phone number.');
       return;
     }
     const digits = sellerPhone.trim().replace(/\D/g, '');
@@ -459,7 +468,7 @@ export default function CreateListingPage() {
           </div>
           <h2 className="text-xl font-bold text-gray-900">Listing posted successfully!</h2>
           <p className="text-gray-500 text-sm">Your listing is now live. Continue to view your posted products.</p>
-          <button onClick={() => router.push('/my-listings')} className="w-full rounded-lg bg-[#E85D04] py-3 font-semibold text-white transition hover:bg-[#e05d00]">Continue</button>
+          <button onClick={() => router.push(isSupplier ? '/supplier/listings' : '/my-listings')} className="w-full rounded-lg bg-[#E85D04] py-3 font-semibold text-white transition hover:bg-[#e05d00]">Continue</button>
         </div>
       </div>
     );
@@ -469,7 +478,9 @@ export default function CreateListingPage() {
     <div className="max-w-2xl mx-auto px-4 py-10">
       <h1 className="text-2xl font-bold text-gray-900 mb-2">{T.postAListingTitle}</h1>
       <p className="text-gray-500 text-sm mb-6">
-        {postingFree ? (
+        {isSupplier ? (
+          <span className="text-green-700 font-semibold">Suppliers post directly from their account. Your contact phone is saved for this business.</span>
+        ) : postingFree ? (
           <span className="text-green-700 font-semibold">Posting is currently FREE! No account needed.</span>
         ) : (
           <span className="text-green-700 font-semibold">No account needed! Choose a duration and pay via MoMo.</span>
@@ -478,7 +489,7 @@ export default function CreateListingPage() {
 
       {error && <div className="bg-red-50 text-red-700 text-sm rounded-lg px-4 py-3 mb-4">{error}</div>}
 
-      <form onSubmit={handleSubmit(postingFree ? onSubmitFree : onSubmitPaid)} className="bg-white rounded-2xl shadow p-6 space-y-5">
+      <form onSubmit={handleSubmit(postingFree || isSupplier ? onSubmitFree : onSubmitPaid)} className="bg-white rounded-2xl shadow p-6 space-y-5">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">{T.category} *</label>
           <select
@@ -608,7 +619,7 @@ export default function CreateListingPage() {
           />
         </div>}
 
-        {!postingFree && (
+        {!postingFree && !isSupplier && (
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Listing Duration *</label>
             <select
@@ -628,16 +639,16 @@ export default function CreateListingPage() {
         <div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Your Name *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{isSupplier ? 'Business Name *' : 'Your Name *'}</label>
               <input
                 value={sellerName}
                 onChange={(e) => setSellerName(e.target.value)}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none"
-                placeholder="e.g. Jean Paul"
+                placeholder={isSupplier ? 'Your business name' : 'e.g. Jean Paul'}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{isSupplier ? 'Business Contact Phone *' : 'Phone Number *'}</label>
               <input
                 value={sellerPhone}
                 onChange={(e) => setSellerPhone(e.target.value)}
@@ -673,7 +684,7 @@ export default function CreateListingPage() {
           disabled={isSubmitting}
           className="w-full bg-[#E85D04] text-white font-semibold py-3 rounded-lg hover:bg-[#e05d00] transition disabled:opacity-60"
         >
-          {postingFree ? 'Post Listing (Free)' : `Pay & Post (${formatRWF(durationPrices[durationDays])})`}
+              {isSupplier ? 'Post Listing' : postingFree ? 'Post Listing (Free)' : `Pay & Post (${formatRWF(durationPrices[durationDays])})`}
         </button>
       </form>
     </div>

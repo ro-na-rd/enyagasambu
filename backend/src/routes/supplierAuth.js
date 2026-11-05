@@ -3,7 +3,7 @@ const { body, validationResult } = require('express-validator');
 const { authenticate, requireSupplier } = require('../middleware/auth');
 const { loginLimiter } = require('../middleware/rateLimiter');
 const { requireRegistrationOpen } = require('../middleware/registrationOpen');
-const { register, login, me, updateMe } = require('../controllers/supplierAuthController');
+const { register, verifyEmail, resendVerificationEmail, login, me, updateMe } = require('../controllers/supplierAuthController');
 
 const validate = (req, res, next) => {
   const errs = validationResult(req);
@@ -17,14 +17,24 @@ router.post(
   '/register',
   requireRegistrationOpen,
   [
-    body('name').trim().notEmpty().withMessage('Name is required'),
+    body('business_name').trim().notEmpty().isLength({ max: 100 }).withMessage('Business or company name is required and must be 100 characters or fewer'),
     body('email').isEmail().normalizeEmail().withMessage('Valid email required'),
     body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
-    body('phone').trim().notEmpty().withMessage('Phone is required'),
     validate,
   ],
   register
 );
+
+router.post('/verify-email', loginLimiter, [
+  body('email').isEmail().normalizeEmail().withMessage('Valid email required'),
+  body('code').trim().isLength({ min: 6, max: 6 }).withMessage('Enter the 6-digit verification code'),
+  validate,
+], verifyEmail);
+
+router.post('/resend-verification', loginLimiter, [
+  body('email').isEmail().normalizeEmail().withMessage('Valid email required'),
+  validate,
+], resendVerificationEmail);
 
 router.post(
   '/login',
