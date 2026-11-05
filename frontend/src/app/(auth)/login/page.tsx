@@ -13,7 +13,7 @@ import { Mail, Lock, Eye, EyeOff, X, AlertTriangle, Loader2, ArrowRight, Megapho
 const ORG = '#E85D04';
 
 interface LoginForm { email: string; password: string; }
-interface MarketplaceListing { id: number; title: string; price: number | null; currency?: string; like_count?: number; views?: number; }
+interface MarketplaceListing { id: number; title: string; price: number | null; currency?: string; like_count?: number; views?: number; primary_image?: string | null; }
 
 const ACCOUNT_TYPES = [
   {
@@ -110,11 +110,20 @@ export default function LoginPage() {
   }, []);
 
   const postPreview = (post: MarketplaceListing, liked: boolean) => (
-    <Link key={post.id} href={`/listings/${post.id}`} className="block rounded-xl border border-white/15 bg-white/10 p-4 transition hover:bg-white/15">
-      <p className="truncate text-sm font-bold text-white">{post.title}</p>
-      <div className="mt-2 flex items-center justify-between gap-3 text-xs">
-        <span className="font-semibold text-orange-300">{post.price != null ? `${post.currency || 'RWF'} ${post.price.toLocaleString()}` : 'Price on request'}</span>
-        <span className="inline-flex items-center gap-1 text-white/70">{liked ? <Heart size={13} /> : <Star size={13} />}{liked ? post.like_count || 0 : post.views || 0}</span>
+    <Link key={post.id} href={`/listings/${post.id}`} className="flex overflow-hidden rounded-xl border border-white/15 bg-white/10 transition hover:bg-white/15">
+      <div className="h-20 w-24 shrink-0 bg-white/10">
+        {post.primary_image ? (
+          <AppImage src={post.primary_image} alt={post.title} className="h-full w-full object-cover" />
+        ) : (
+          <div className="flex h-full items-center justify-center text-[10px] font-bold uppercase tracking-wider text-white/40">No image</div>
+        )}
+      </div>
+      <div className="min-w-0 flex-1 p-3">
+        <p className="truncate text-sm font-bold text-white">{post.title}</p>
+        <div className="mt-2 flex items-center justify-between gap-3 text-xs">
+          <span className="truncate font-semibold text-orange-300">{post.price != null ? `${post.currency || 'RWF'} ${post.price.toLocaleString()}` : 'Price on request'}</span>
+          <span className="inline-flex shrink-0 items-center gap-1 text-white/70">{liked ? <Heart size={13} /> : <Star size={13} />}{liked ? post.like_count || 0 : post.views || 0}</span>
+        </div>
       </div>
     </Link>
   );
@@ -161,7 +170,7 @@ export default function LoginPage() {
     <AuthRegisterLayout badge="Sign In" aside={(
       <div className="rounded-3xl bg-white/10 backdrop-blur-md border border-white/15 p-7 text-white shadow-2xl">
         <h2 className="text-2xl font-bold">Marketplace highlights</h2>
-        <p className="mt-2 text-sm text-white/70">The best posts and the most liked listings, without decorative images.</p>
+        <p className="mt-2 text-sm text-white/70">Explore the best posts and the most liked listings before you sign in.</p>
         <div className="mt-6 space-y-3">
           <p className="text-xs font-black uppercase tracking-widest text-orange-300">Best posts</p>
           {bestPosts.length ? bestPosts.map((post) => postPreview(post, false)) : <p className="text-sm text-white/60">No featured posts yet.</p>}

@@ -49,7 +49,7 @@ async function createRenewalToken(conn, listingId, sellerPhone, expiresAt) {
 }
 
 exports.getListings = async (req, res) => {
-  const { category, type, group, search, featured, sort, page = 1, limit = 20 } = req.query;
+  const { category, type, group, search, featured, advertised, sort, page = 1, limit = 20 } = req.query;
   const offset = (parseInt(page) - 1) * parseInt(limit);
 
   // Public marketplace results must never include listings that can no longer
@@ -74,11 +74,14 @@ exports.getListings = async (req, res) => {
     where += ' AND (l.title LIKE ? OR l.description LIKE ?)';
     params.push(`%${search}%`, `%${search}%`);
   }
+  if (advertised === '1' || advertised === 'true') {
+    where += ' AND l.is_advert = 1';
+  }
 
   try {
     const [rows] = await pool.query(
       `SELECT l.id, l.title, l.price, l.price_type, l.currency, l.location, l.listing_type, l.status,
-              l.is_featured, l.views, l.created_at, l.expires_at,
+              l.is_featured, l.is_advert, l.views, l.created_at, l.expires_at,
               c.name AS category_name, c.slug AS category_slug, c.type AS category_type,
               u.name AS seller_name,
               (SELECT image_url FROM listing_images WHERE listing_id = l.id AND is_primary = 1 LIMIT 1) AS primary_image,

@@ -8,7 +8,7 @@ import CategoryFieldsInput, { findMissingRequiredField, type CategoryField } fro
 const ORG = '#E85D04';
 const NAVY = '#0f1e42';
 
-interface Listing { id: number; title: string; status: string; listing_type: string; is_featured: boolean; seller_name: string; category_name: string; created_at: string; }
+interface Listing { id: number; title: string; status: string; listing_type: string; is_featured: boolean; is_advert: boolean; seller_name: string; category_name: string; created_at: string; }
 
 interface Category { id: number; name: string; slug: string; type: string; fields: CategoryField[]; }
 
@@ -42,6 +42,7 @@ export default function AdminListingsPage() {
     price: '',
     currency: 'RWF',
     location: '',
+    is_advert: true,
   });
   const [images, setImages] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
@@ -65,7 +66,7 @@ export default function AdminListingsPage() {
   }, []);
 
   const openCreate = () => {
-    setForm({ title: '', description: '', category_id: '', listing_type: 'sell', price: '', currency: 'RWF', location: '' });
+    setForm({ title: '', description: '', category_id: '', listing_type: 'sell', price: '', currency: 'RWF', location: '', is_advert: true });
     setImages([]);
     setPreviews([]);
     setAttributes({});
@@ -104,7 +105,7 @@ export default function AdminListingsPage() {
     try {
       if (images.length > 0) {
         const fd = new FormData();
-        Object.entries(form).forEach(([k, v]) => fd.append(k, v));
+        Object.entries(form).forEach(([k, v]) => fd.append(k, String(v)));
         fd.append('attributes', JSON.stringify(attributes));
         images.forEach((f) => fd.append('images', f));
         await api.post('/admin/listings/with-files', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
@@ -217,7 +218,7 @@ export default function AdminListingsPage() {
                       </div>
                       <div>
                         <p className="font-medium text-gray-800 truncate max-w-[200px]">{l.title}</p>
-                        <p className="text-xs text-gray-600">{l.category_name}</p>
+                        <p className="text-xs text-gray-600">{l.category_name}{l.is_advert ? ' · Sponsored advert' : ''}</p>
                       </div>
                     </div>
                   </td>
@@ -243,6 +244,9 @@ export default function AdminListingsPage() {
                       ) : l.status === 'sold' ? (
                         <button onClick={() => handleToggleStatus(l.id, 'active')}
                           className="text-xs font-semibold hover:underline text-green-400 hover:text-green-300">Reactivate</button>
+                      ) : l.status === 'expired' ? (
+                        <button onClick={() => handleToggleStatus(l.id, 'active')}
+                          className="text-xs font-semibold hover:underline text-green-400 hover:text-green-300">Activate for 90 days</button>
                       ) : null}
                       <button onClick={() => handleDelete(l.id)}
                         className="text-xs font-semibold hover:underline text-red-500 hover:text-red-400 ml-1">Delete</button>
@@ -339,6 +343,19 @@ export default function AdminListingsPage() {
                 <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })}
                   rows={4} className={inputCls} placeholder="Describe the listing…" />
               </div>
+
+              <label className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={form.is_advert}
+                  onChange={(e) => setForm({ ...form, is_advert: e.target.checked })}
+                  className="mt-0.5 h-4 w-4 accent-[#E85D04]"
+                />
+                <span>
+                  <span className="block text-sm font-semibold text-gray-800">Publish as a sponsored advert</span>
+                  <span className="block mt-0.5 text-xs text-gray-600">Show this admin post in the professional advert space on listing pages.</span>
+                </span>
+              </label>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Photos (up to 6)</label>

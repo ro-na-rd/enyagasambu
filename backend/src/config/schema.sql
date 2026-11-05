@@ -56,6 +56,7 @@ CREATE TABLE IF NOT EXISTS listings (
   status ENUM('active', 'expired', 'sold', 'deleted', 'disabled') DEFAULT 'active',
   listing_type ENUM('sell', 'rent', 'auction') DEFAULT 'sell',
   is_featured BOOLEAN DEFAULT FALSE,
+  is_advert BOOLEAN DEFAULT FALSE,
   featured_until TIMESTAMP NULL,
   views INT DEFAULT 0,
   expires_at TIMESTAMP,

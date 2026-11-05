@@ -215,7 +215,7 @@ exports.getAdminListings = async (req, res) => {
   if (status) { where += ' AND l.status = ?'; params.push(status); }
   try {
     const [listings] = await pool.query(
-      `SELECT l.id, l.title, l.status, l.listing_type, l.is_featured, l.expires_at, l.created_at,
+      `SELECT l.id, l.title, l.status, l.listing_type, l.is_featured, l.is_advert, l.expires_at, l.created_at,
               u.name AS seller_name, c.name AS category_name
        FROM listings l JOIN users u ON l.user_id = u.id JOIN categories c ON l.category_id = c.id
        WHERE ${where} ORDER BY l.created_at DESC LIMIT ? OFFSET ?`,
@@ -291,7 +291,19 @@ exports.toggleListingStatus = async (req, res) => {
     return res.status(400).json({ message: 'Invalid status' });
   }
   try {
-    await pool.query('UPDATE listings SET status = ? WHERE id = ?', [status, id]);
+    const [result] = status === 'active'
+      ? await pool.query(
+        `UPDATE listings
+         SET status = 'active',
+             expires_at = CASE
+               WHEN expires_at IS NULL OR expires_at <= NOW() THEN DATE_ADD(NOW(), INTERVAL 90 DAY)
+               ELSE expires_at
+             END
+         WHERE id = ?`,
+        [id]
+      )
+      : await pool.query('UPDATE listings SET status = ? WHERE id = ?', [status, id]);
+    if (result.affectedRows === 0) return res.status(404).json({ message: 'Listing not found' });
     return res.json({ message: `Listing status changed to ${status}` });
   } catch (err) {
     logger.error(err);
@@ -349,6 +361,7 @@ exports.getRevenueChart = async (req, res) => {
 
 exports.createListing = async (req, res) => {
   const { title, description, price, currency, category_id, location, listing_type, images } = req.body;
+  const isAdvert = req.body.is_advert === true || req.body.is_advert === 'true' || req.body.is_advert === '1';
   if (!title || !category_id) return res.status(400).json({ message: 'Title and category are required' });
   
   const conn = await pool.getConnection();
@@ -379,9 +392,9 @@ exports.createListing = async (req, res) => {
     const attributesJson = Object.keys(attributes).length ? JSON.stringify(attributes) : null;
 
     const [result] = await conn.query(
-      `INSERT INTO listings (user_id, category_id, title, description, price, currency, location, listing_type, attributes, status, expires_at, is_featured)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, 1)`,
-      [adminUserId, category_id, title, description || null, price || null, currency || 'RWF', location || null, listing_type || 'sell', attributesJson, expiresAt]
+      `INSERT INTO listings (user_id, category_id, title, description, price, currency, location, listing_type, attributes, status, expires_at, is_featured, is_advert)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, 1, ?)`,
+      [adminUserId, category_id, title, description || null, price || null, currency || 'RWF', location || null, listing_type || 'sell', attributesJson, expiresAt, isAdvert]
     );
     
     const listingId = result.insertId;
@@ -403,7 +416,8 @@ exports.createListing = async (req, res) => {
       message: 'Admin listing created successfully (free, featured, 90-day duration)', 
       id: listingId,
       expires_at: expiresAt,
-      is_featured: true
+      is_featured: true,
+      is_advert: isAdvert
     });
   } catch (err) {
     await conn.rollback();
@@ -420,6 +434,7 @@ exports.createListingWithFiles = async (req, res) => {
   }
   
   const { title, description, price, currency, category_id, location, listing_type } = req.body;
+  const isAdvert = req.body.is_advert === true || req.body.is_advert === 'true' || req.body.is_advert === '1';
   if (!title || !category_id) return res.status(400).json({ message: 'Title and category are required' });
   
   const conn = await pool.getConnection();
@@ -457,9 +472,9 @@ exports.createListingWithFiles = async (req, res) => {
     const attributesJson = Object.keys(attributes).length ? JSON.stringify(attributes) : null;
 
     const [result] = await conn.query(
-      `INSERT INTO listings (user_id, category_id, title, description, price, currency, location, listing_type, attributes, status, expires_at, is_featured)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, 1)`,
-      [adminUserId, category_id, title, description || null, price || null, currency || 'RWF', location || null, listing_type || 'sell', attributesJson, expiresAt]
+      `INSERT INTO listings (user_id, category_id, title, description, price, currency, location, listing_type, attributes, status, expires_at, is_featured, is_advert)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, 1, ?)`,
+      [adminUserId, category_id, title, description || null, price || null, currency || 'RWF', location || null, listing_type || 'sell', attributesJson, expiresAt, isAdvert]
     );
     
     const listingId = result.insertId;
@@ -477,7 +492,8 @@ exports.createListingWithFiles = async (req, res) => {
       id: listingId,
       images: imageUrls,
       expires_at: expiresAt,
-      is_featured: true
+      is_featured: true,
+      is_advert: isAdvert
     });
   } catch (err) {
     await conn.rollback();

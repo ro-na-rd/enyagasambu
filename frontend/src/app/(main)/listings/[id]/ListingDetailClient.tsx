@@ -55,6 +55,15 @@ interface RelatedListing {
   primary_image?: string;
 }
 
+interface SponsoredListing {
+  id: number;
+  title: string;
+  price: number | null;
+  currency?: string;
+  location: string;
+  primary_image?: string | null;
+}
+
 const ORG = '#E85D04';
 const NAVY = '#0f1e42';
 const CONTACT_FEE = 300;
@@ -112,6 +121,7 @@ export default function ListingDetailClient({ params }: { params: Promise<{ id: 
   const [relatedLoading, setRelatedLoading] = useState(false);
   const [relatedPage, setRelatedPage] = useState(1);
   const [hasMoreRelated, setHasMoreRelated] = useState(false);
+  const [sponsoredListings, setSponsoredListings] = useState<SponsoredListing[]>([]);
 
   const handleCopyLink = async () => {
     const url = `${window.location.origin}/listings/${id}`;
@@ -177,6 +187,14 @@ export default function ListingDetailClient({ params }: { params: Promise<{ id: 
     };
     fetchRelatedListings();
   }, [listing, relatedPage, id]);
+
+  useEffect(() => {
+    api.get('/listings?advertised=1&limit=3')
+      .then(({ data }) => {
+        setSponsoredListings((data.listings || []).filter((item: SponsoredListing) => item.id !== parseInt(id)).slice(0, 2));
+      })
+      .catch(() => setSponsoredListings([]));
+  }, [id]);
 
   useEffect(() => {
     if (!listing) return;
@@ -483,6 +501,36 @@ export default function ListingDetailClient({ params }: { params: Promise<{ id: 
               {listing.description || 'No description provided.'}
             </p>
           </div>
+
+          {sponsoredListings.length > 0 && (
+            <section aria-label="Sponsored adverts" className="mt-6 overflow-hidden rounded-2xl border border-orange-100 bg-gradient-to-br from-orange-50 via-white to-amber-50 shadow-sm">
+              <div className="flex items-center justify-between gap-4 border-b border-orange-100 px-5 py-3">
+                <div>
+                  <p className="text-[10px] font-extrabold uppercase tracking-[0.18em]" style={{ color: ORG }}>Sponsored adverts</p>
+                  <h2 className="mt-0.5 text-sm font-bold text-gray-900">Handpicked opportunities</h2>
+                </div>
+                <span className="rounded-full bg-white px-2.5 py-1 text-[10px] font-bold text-gray-500 shadow-sm">Admin posted</span>
+              </div>
+              <div className="grid gap-3 p-4 sm:grid-cols-2">
+                {sponsoredListings.map((advert) => (
+                  <Link key={advert.id} href={`/listings/${advert.id}`} className="group flex overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-orange-200 hover:shadow-md">
+                    <div className="h-24 w-28 shrink-0 bg-gray-100">
+                      {advert.primary_image ? (
+                        <AppImage src={advert.primary_image} alt={advert.title} className="h-full w-full object-cover transition duration-300 group-hover:scale-105" />
+                      ) : (
+                        <div className="flex h-full items-center justify-center text-gray-300"><Package size={26} /></div>
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1 p-3">
+                      <p className="line-clamp-2 text-sm font-bold leading-snug text-gray-800 transition group-hover:text-[#E85D04]">{advert.title}</p>
+                      <p className="mt-2 truncate text-xs font-extrabold" style={{ color: ORG }}>{advert.price ? `${Number(advert.price).toLocaleString()} ${advert.currency || 'RWF'}` : 'Price on request'}</p>
+                      <p className="mt-1 flex items-center gap-1 truncate text-[11px] text-gray-500"><MapPin size={11} /> {advert.location || 'Kigali'}</p>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </section>
+          )}
 
           {/* Comments Section */}
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mt-6">
