@@ -16,6 +16,8 @@ build/
 # Logs
 *.log
 npm-debug.log*
+backend_err.txt
+backend_out.txt
 
 # OS files
 .DS_Store

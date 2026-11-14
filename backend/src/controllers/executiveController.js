@@ -1116,12 +1116,24 @@ exports.updateProfile = async (req, res) => {
       [name || null, email || null, phone || null, req.user.id]
     );
 
+    // Keep the public About page leadership profile in sync with account details.
+    if (req.user.executive_role && name) {
+      await pool.query(
+        'UPDATE team_members SET name = ?, updated_by = ? WHERE executive_role = ? AND category = ? AND active = 1',
+        [String(name).trim(), req.user.id, req.user.executive_role, 'team']
+      );
+    }
+
     const ip = req.headers['x-forwarded-for'] || req.connection?.remoteAddress || 'unknown';
-    await pool.query(
-      `INSERT INTO executive_audit_log (staff_id, executive_role, action, module, ip_address, new_value)
-       VALUES (?, ?, 'update_profile', 'profile', ?, ?)`,
-      [req.user.id, req.user.executive_role || 'admin', ip, JSON.stringify({ name, email, phone })]
-    );
+    try {
+      await pool.query(
+        `INSERT INTO executive_audit_log (user_id, action, details, ip_address)
+         VALUES (?, 'update_profile', ?, ?)`,
+        [req.user.id, JSON.stringify({ name, email, phone }), ip]
+      );
+    } catch (auditErr) {
+      logger.warn('[Update profile] audit log skipped:', auditErr.message);
+    }
 
     const [[updated]] = await pool.query(
       'SELECT id, username, email, phone, role, executive_role FROM staff WHERE id = ?',

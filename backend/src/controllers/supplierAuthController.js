@@ -4,6 +4,7 @@ const crypto = require('crypto');
 const pool = require('../config/db');
 const { sendEmail } = require('../services/emailService');
 const { logger } = require('../config/logger');
+const { createSession } = require('../services/authSessionService');
 
 const OTP_TTL_MINUTES = 10;
 const MAX_OTP_ATTEMPTS = 5;
@@ -152,6 +153,7 @@ exports.verifyEmail = async (req, res) => {
     await conn.query('UPDATE users SET is_verified = 1 WHERE id = ?', [user.id]);
     await conn.commit();
     const verifiedUser = { ...user, is_verified: true };
+    await createSession(res, verifiedUser);
     return res.json({
       message: 'Email verified successfully',
       token: signToken(verifiedUser),
@@ -212,6 +214,7 @@ exports.login = async (req, res) => {
 
     const token = signToken(user);
     const { password_hash, ...safeUser } = user;
+    await createSession(res, safeUser);
     return res.json({ token, user: safeUser });
   } catch (err) {
     logger.error(err);

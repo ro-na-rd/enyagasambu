@@ -342,15 +342,25 @@ function NavbarView({ pathname, tab, registrationOpen }: { pathname: string | nu
                 </Link>
                 <div className="relative">
                   <button onClick={() => setMenuOpen(!menuOpen)}
-                    className="text-sm font-medium flex items-center gap-1 cursor-pointer transition hover:opacity-70"
+                    className="text-sm font-medium flex items-center gap-2 cursor-pointer transition hover:opacity-70"
                     style={{ color: navy, background: 'none', border: 'none', padding: 0, font: 'inherit' }}>
+                    {user.photo_url ? (
+                      <span className="block w-7 h-7 rounded-full overflow-hidden shrink-0" style={{ border: `2px solid ${org}` }}>
+                        <AppImage src={user.photo_url} alt={user.name} className="w-full h-full object-cover" width={28} height={28} />
+                      </span>
+                    ) : (
+                      <span className="flex w-7 h-7 rounded-full items-center justify-center text-white text-[11px] font-bold shrink-0" style={{ background: navy }}>
+                        {(user.name || '?').split(' ').map((p) => p[0]).join('').toUpperCase().slice(0, 2)}
+                      </span>
+                    )}
                     {user.name.split(' ')[0]} <span style={{ fontSize: 9 }}>▾</span>
                   </button>
                   {menuOpen && (
                     <div className="absolute right-0 mt-2 bg-white rounded-xl shadow-xl overflow-hidden border border-gray-100 z-30" style={{ width: 220, maxWidth: 'calc(100vw - 24px)' }}>
+                      <Link href="/account" className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold hover:bg-gray-50 border-b" style={{ color: navy }} onClick={close}>Dashboard</Link>
                       <Link href="/my-listings" className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold hover:bg-gray-50 border-b" style={{ color: navy }} onClick={close}><List size={15} /> {T.myListings}</Link>
                       <Link href="/coins" className="flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-gray-50 text-gray-800" onClick={close}><Coins size={15} /> {T.coinsWallet}</Link>
-                      <Link href="/subscriptions" className="flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-gray-50 text-gray-800" onClick={close}><Star size={15} /> {T.sellerPlans}</Link>
+                      <Link href="/about#seller-plans" className="flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-gray-50 text-gray-800" onClick={close}><Star size={15} /> {T.sellerPlans}</Link>
                       <Link href="/referral" className="flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-gray-50 text-gray-800" onClick={close}><Gift size={15} /> {T.referEarn}</Link>
                       {(user.role === 'admin' || user.role === 'staff') && (
                         <Link href="/staff" className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold hover:bg-gray-50 border-t" style={{ color: navy }} onClick={close}>

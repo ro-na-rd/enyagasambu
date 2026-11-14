@@ -1,15 +1,23 @@
 const jwt = require('jsonwebtoken');
+const { ACCESS_COOKIE, parseCookies, validateCookieAccess } = require('../services/authSessionService');
 
-const authenticate = (req, res, next) => {
+function bearerToken(req) {
   const header = req.headers.authorization;
-  if (!header || !header.startsWith('Bearer ')) {
+  return header && header.startsWith('Bearer ') ? header.slice(7) : null;
+}
+
+const authenticate = async (req, res, next) => {
+  const token = bearerToken(req);
+  const cookieToken = parseCookies(req.headers.cookie)[ACCESS_COOKIE];
+  if (!token && !cookieToken) {
     return res.status(401).json({ message: 'No token provided' });
   }
-  const token = header.split(' ')[1];
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = token
+      ? jwt.verify(token, process.env.JWT_SECRET)
+      : await validateCookieAccess(cookieToken);
     req.user = decoded;
-    next();
+    return next();
   } catch {
     return res.status(401).json({ message: 'Invalid or expired token' });
   }
@@ -50,15 +58,17 @@ const requireSupplier = (req, res, next) => {
   next();
 };
 
-const authenticateOptional = (req, res, next) => {
-  const header = req.headers.authorization;
-  if (!header || !header.startsWith('Bearer ')) {
+const authenticateOptional = async (req, res, next) => {
+  const token = bearerToken(req);
+  const cookieToken = parseCookies(req.headers.cookie)[ACCESS_COOKIE];
+  if (!token && !cookieToken) {
     req.user = null;
     return next();
   }
-  const token = header.split(' ')[1];
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = token
+      ? jwt.verify(token, process.env.JWT_SECRET)
+      : await validateCookieAccess(cookieToken);
     req.user = decoded;
   } catch {
     req.user = null;

@@ -4,14 +4,11 @@ const pool = require('../config/db');
 const { requestToPay, getPaymentStatus } = require('../services/momoService');
 const { sendSms } = require('../services/smsService');
 const { logger } = require('../config/logger');
+const { PaymentValidationError, normalizeMtnMomoPhone, withPaymentInitiationLock } = require('../services/paymentValidationService');
 
 const ACCESS_FEE = 300;
 const OTP_TTL_MINUTES = 5;
 const MAX_OTP_ATTEMPTS = 3;
-
-function normalizePhone(phone) {
-  return phone ? phone.replace(/\s+/g, '') : '';
-}
 
 function generateOtpCode() {
   return crypto.randomInt(100000, 999999).toString();
@@ -24,7 +21,13 @@ exports.initiatePayment = async (req, res) => {
     return res.status(400).json({ message: 'listingId and phone are required' });
   }
 
-  const phoneKey = normalizePhone(phone);
+  let phoneKey;
+  try {
+    phoneKey = normalizeMtnMomoPhone(phone);
+  } catch (err) {
+    if (err instanceof PaymentValidationError) return res.status(err.status).json({ message: err.message, code: err.code });
+    return res.status(400).json({ message: 'Invalid phone number' });
+  }
 
   try {
     const [[listing]] = await pool.query(
@@ -54,31 +57,34 @@ exports.initiatePayment = async (req, res) => {
       });
     }
 
-    // Check for an existing pending payment that hasn't expired (5 min window)
-    const [[pending]] = await pool.query(
-      `SELECT id, reference_id, status, created_at FROM contact_access_payments
-       WHERE listing_id = ? AND buyer_phone = ? AND status IN ('pending', 'verified')
-       AND created_at > DATE_SUB(NOW(), INTERVAL 10 MINUTE)
-       ORDER BY id DESC LIMIT 1`,
-      [listingId, phoneKey]
-    );
-    if (pending && pending.status === 'verified') {
-      return res.json({ referenceId: pending.reference_id, status: 'verified', message: 'Payment already verified. Enter OTP.' });
-    }
-    if (pending && pending.status === 'pending') {
-      return res.json({ referenceId: pending.reference_id, status: 'pending', message: 'Payment already initiated. Check your phone.' });
-    }
-
-    const referenceId = uuidv4();
     const buyerId = req.user?.id || null;
+    const initiation = await withPaymentInitiationLock(pool, 'contact-access', [listingId, phoneKey], async () => {
+      const [[pending]] = await pool.query(
+        `SELECT reference_id, status FROM contact_access_payments
+         WHERE listing_id = ? AND buyer_phone = ? AND status IN ('pending', 'verified')
+         AND created_at > DATE_SUB(NOW(), INTERVAL 10 MINUTE)
+         ORDER BY id DESC LIMIT 1`,
+        [listingId, phoneKey]
+      );
+      if (pending) return { referenceId: pending.reference_id, status: pending.status, reused: true };
 
-    await pool.query(
-      'INSERT INTO contact_access_payments (listing_id, buyer_id, buyer_phone, reference_id, amount_rwf) VALUES (?, ?, ?, ?, ?)',
-      [listingId, buyerId, phoneKey, referenceId, ACCESS_FEE]
-    );
+      const referenceId = uuidv4();
+      await pool.query(
+        'INSERT INTO contact_access_payments (listing_id, buyer_id, buyer_phone, reference_id, amount_rwf) VALUES (?, ?, ?, ?, ?)',
+        [listingId, buyerId, phoneKey, referenceId, ACCESS_FEE]
+      );
+      return { referenceId, status: 'pending', reused: false };
+    });
+    if (initiation.reused) {
+      return res.json({
+        referenceId: initiation.referenceId,
+        status: initiation.status,
+        message: initiation.status === 'verified' ? 'Payment already verified. Enter OTP.' : 'Payment already initiated. Check your phone.',
+      });
+    }
 
     await requestToPay({
-      referenceId,
+      referenceId: initiation.referenceId,
       amount: ACCESS_FEE,
       payerPhone: phoneKey,
       payerMessage: `NMO: Unlock seller contact for listing #${listingId} (${ACCESS_FEE} RWF)`,
@@ -87,7 +93,7 @@ exports.initiatePayment = async (req, res) => {
 
     return res.json({
       message: `A payment request of ${ACCESS_FEE} RWF has been sent to ${phoneKey}. Please approve the payment on your phone.`,
-      referenceId,
+      referenceId: initiation.referenceId,
       status: 'pending',
     });
   } catch (err) {

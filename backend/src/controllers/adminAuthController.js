@@ -3,6 +3,7 @@ const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const pool = require('../config/db');
 const { logger } = require('../config/logger');
+const { createSession } = require('../services/authSessionService');
 
 const OTP_TTL_MINUTES = 10;
 
@@ -34,6 +35,7 @@ exports.login = async (req, res) => {
       process.env.JWT_SECRET,
       { expiresIn: '8h' }
     );
+    await createSession(res, { id: staff.id, name: staff.username, username: staff.username, email: staff.email || staff.username, phone: staff.phone, role: staff.role, is_staff: true, executive_role: staff.executive_role || null });
 
     return res.json({
       token,
@@ -75,6 +77,7 @@ exports.verifyOtp = async (req, res) => {
       process.env.JWT_SECRET,
       { expiresIn: '8h' }
     );
+    await createSession(res, { id: otpRow.staff_id, name: staffInfo?.username || 'Admin', username: staffInfo?.username, email: staffInfo?.email || staffInfo?.username, phone: otpRow.phone, role: otpRow.role, is_staff: true, executive_role: staffInfo?.executive_role || null });
 
     return res.json({ token, role: otpRow.role, user: { id: otpRow.staff_id, name: staffInfo?.username || 'Admin', email: staffInfo?.email || staffInfo?.username, phone: otpRow.phone, role: otpRow.role, executive_role: staffInfo?.executive_role || null } });
   } catch (err) {

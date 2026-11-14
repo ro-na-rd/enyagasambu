@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken');
 const pool = require('../config/db');
 const { applyReferral } = require('./referralController');
 const { logger } = require('../config/logger');
+const { createSession } = require('../services/authSessionService');
 
 const CERT_PRICE = 2000;
 
@@ -54,6 +55,7 @@ exports.register = async(req, res) => {
         const [[user]] = await pool.query('SELECT id, name, email, phone, coins, role, created_at FROM users WHERE id = ?', [result.insertId]);
 
         const token = signToken({ id: result.insertId, email, role: 'ambassador' });
+        await createSession(res, user);
         return res.status(201).json({
             message: 'Ambassador account created successfully',
             token,
@@ -82,6 +84,7 @@ exports.login = async(req, res) => {
 
         const token = signToken(user);
         const { password_hash, ...safeUser } = user;
+        await createSession(res, safeUser);
         return res.json({ token, user: safeUser });
     } catch (err) {
         logger.error(err);

@@ -7,6 +7,7 @@ interface User {
   name: string;
   email: string;
   phone?: string;
+  photo_url?: string | null;
   coins: number;
   role: string;
   executive_role?: string;
@@ -17,7 +18,7 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   login: (email: string, password: string, role?: string) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
 }
 
@@ -38,7 +39,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const refreshUser = async () => {
     const token = localStorage.getItem('nmo_token');
     const payload = token ? decodeToken(token) : null;
-    if (!payload) return;
+    if (!payload) {
+      try {
+        const { data } = await api.get('/auth/session');
+        setUser(data.user);
+      } catch {
+        try {
+          const { data } = await api.post('/auth/session/refresh');
+          setUser(data.user);
+        } catch {
+          setUser(null);
+        }
+      }
+      return;
+    }
     if (payload.is_staff) {
       return api.get('/admin/auth/me')
         .then(({ data }) => setUser(data.user))
@@ -72,7 +86,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(data.user);
   };
 
-  const logout = () => {
+  const logout = async () => {
+    try {
+      await api.post('/auth/session/logout');
+    } catch {
+      // Local logout must still work when the session has already expired.
+    }
     localStorage.removeItem('nmo_token');
     setUser(null);
   };

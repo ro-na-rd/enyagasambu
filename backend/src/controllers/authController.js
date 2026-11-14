@@ -1,9 +1,11 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const pool = require('../config/db');
+const { uploadToS3, deleteFromS3Url } = require('../services/s3Service');
 const { applyReferral } = require('./referralController');
 const { notifyAdmins } = require('../services/notificationService');
 const { logger } = require('../config/logger');
+const { createSession } = require('../services/authSessionService');
 
 const signToken = (user) =>
   jwt.sign(
@@ -44,10 +46,11 @@ exports.register = async (req, res) => {
     notifyAdmins('New user registered', `${name} just created an account.`, 'user', '/admin/users');
 
     const token = signToken({ id: result.insertId, email, role: 'user' });
+    await createSession(res, { id: result.insertId, name, email, phone, photo_url: null, coins: user.coins, role: 'user' });
     return res.status(201).json({
       message: 'Account created successfully',
       token,
-      user: { id: result.insertId, name, email, phone, coins: user.coins, role: 'user' },
+      user: { id: result.insertId, name, email, phone, photo_url: null, coins: user.coins, role: 'user' },
     });
   } catch (err) {
     await conn.rollback();
@@ -62,7 +65,7 @@ exports.login = async (req, res) => {
   const { email, password } = req.body;
   try {
     const [rows] = await pool.query(
-      'SELECT id, name, email, phone, password_hash, coins, role FROM users WHERE email = ?',
+      'SELECT id, name, email, phone, photo_url, password_hash, coins, role FROM users WHERE email = ?',
       [email]
     );
     if (rows.length > 0) {
@@ -72,7 +75,8 @@ exports.login = async (req, res) => {
 
       const token = signToken(user);
       const { password_hash, ...safeUser } = user;
-      return res.json({ token, user: safeUser });
+      await createSession(res, safeUser);
+      return res.json({ token, user: { ...safeUser, photo_url: safeUser.photo_url || null } });
     }
 
     // Fallback: check staff table (admins/moderators) by username or email
@@ -90,6 +94,7 @@ exports.login = async (req, res) => {
       process.env.JWT_SECRET,
       { expiresIn: '8h' }
     );
+    await createSession(res, { id: staff.id, name: staff.username, username: staff.username, email: staff.email || staff.username, phone: staff.phone, role: staff.role, is_staff: true, executive_role: staff.executive_role || null });
 
     return res.json({
       token,
@@ -108,9 +113,9 @@ exports.me = async (req, res) => {
     const table = isStaff ? 'staff' : 'users';
     let query;
     if (isStaff) {
-      query = 'SELECT id, username as name, COALESCE(email, username) as email, phone, role, executive_role, created_at FROM staff WHERE id = ?';
+      query = 'SELECT id, username as name, COALESCE(email, username) as email, phone, NULL AS photo_url, role, executive_role, created_at FROM staff WHERE id = ?';
     } else {
-      query = 'SELECT id, name, email, phone, coins, role, referral_code, created_at FROM users WHERE id = ?';
+      query = 'SELECT id, name, email, phone, photo_url, coins, role, referral_code, created_at FROM users WHERE id = ?';
     }
     const [rows] = await pool.query(query, [req.user.id]);
     if (rows.length === 0) return res.status(401).json({ message: 'User not found' });
@@ -124,8 +129,73 @@ exports.me = async (req, res) => {
 exports.updateMe = async (req, res) => {
   const { name, phone } = req.body;
   try {
-    await pool.query('UPDATE users SET name = COALESCE(?, name), phone = COALESCE(?, phone) WHERE id = ?', [name, phone, req.user.id]);
-    return res.json({ message: 'Profile updated' });
+    const [[existing]] = await pool.query('SELECT id, name, phone, photo_url FROM users WHERE id = ?', [req.user.id]);
+    if (!existing) return res.status(404).json({ message: 'User not found' });
+
+    let photoUrl = existing.photo_url;
+    let uploadedNewPhoto = false;
+    if (req.file) {
+      const { url } = await uploadToS3(req.file);
+      photoUrl = url;
+      uploadedNewPhoto = true;
+    }
+
+    await pool.query(
+      'UPDATE users SET name = ?, phone = ?, photo_url = ? WHERE id = ?',
+      [name ? String(name).trim() : existing.name, phone ? String(phone).trim() : existing.phone, photoUrl, req.user.id]
+    );
+
+    const [[updated]] = await pool.query('SELECT id, name, email, phone, photo_url, coins, role, referral_code, created_at FROM users WHERE id = ?', [req.user.id]);
+    res.json({ message: 'Profile updated', user: updated });
+
+    if (uploadedNewPhoto && existing.photo_url) {
+      await deleteFromS3Url(existing.photo_url);
+    }
+  } catch (err) {
+    logger.error(err);
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
+
+exports.summary = async (req, res) => {
+  try {
+    if (req.user.is_staff) {
+      return res.json({
+        stats: { total: 0, active: 0, expired: 0, sold: 0, views: 0, coins: 0 },
+        recentListings: [],
+      });
+    }
+    const [[stats]] = await pool.query(
+      `SELECT COUNT(*) AS total,
+              SUM(CASE WHEN status = 'active' AND (expires_at IS NULL OR expires_at > NOW()) THEN 1 ELSE 0 END) AS active,
+              SUM(CASE WHEN status = 'sold' THEN 1 ELSE 0 END) AS sold,
+              SUM(CASE WHEN status = 'expired' OR (status = 'active' AND expires_at <= NOW()) THEN 1 ELSE 0 END) AS expired,
+              COALESCE(SUM(views), 0) AS views
+       FROM listings WHERE user_id = ? AND status != 'deleted'`,
+      [req.user.id]
+    );
+    const [[me]] = await pool.query('SELECT coins FROM users WHERE id = ?', [req.user.id]);
+    const [recentListings] = await pool.query(
+      `SELECT l.id, l.title, l.price, l.currency, l.location, l.status, l.views, l.expires_at, l.created_at,
+              c.name AS category_name,
+              (SELECT image_url FROM listing_images WHERE listing_id = l.id AND is_primary = 1 LIMIT 1) AS primary_image
+       FROM listings l
+       JOIN categories c ON l.category_id = c.id
+       WHERE l.user_id = ? AND l.status != 'deleted'
+       ORDER BY l.created_at DESC LIMIT 5`,
+      [req.user.id]
+    );
+    return res.json({
+      stats: {
+        total: Number(stats.total) || 0,
+        active: Number(stats.active) || 0,
+        expired: Number(stats.expired) || 0,
+        sold: Number(stats.sold) || 0,
+        views: Number(stats.views) || 0,
+        coins: Number(me?.coins) || 0,
+      },
+      recentListings,
+    });
   } catch (err) {
     logger.error(err);
     return res.status(500).json({ message: 'Server error' });

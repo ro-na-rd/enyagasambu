@@ -9,7 +9,7 @@ function normalizeCategory(value) {
 exports.getPublic = async (req, res) => {
   try {
     const [rows] = await pool.query(
-      `SELECT id, category, name, role, photo_url, photo_position, photo_zoom, sort_order
+      `SELECT id, category, name, role, executive_role, photo_url, photo_position, photo_zoom, sort_order
        FROM team_members
        WHERE active = 1
        ORDER BY category, sort_order, id`
@@ -24,7 +24,7 @@ exports.getPublic = async (req, res) => {
 exports.getAll = async (req, res) => {
   try {
     const [rows] = await pool.query(
-      `SELECT tm.id, tm.category, tm.name, tm.role, tm.photo_url, tm.photo_position, tm.photo_zoom, tm.sort_order, tm.active, tm.updated_at,
+      `SELECT tm.id, tm.category, tm.name, tm.role, tm.executive_role, tm.photo_url, tm.photo_position, tm.photo_zoom, tm.sort_order, tm.active, tm.updated_at,
               u.username AS updated_by_name
        FROM team_members tm
        LEFT JOIN staff u ON u.id = tm.updated_by
@@ -38,7 +38,7 @@ exports.getAll = async (req, res) => {
 };
 
 exports.create = async (req, res) => {
-  const { name, role, category, sort_order, photo_position, photo_zoom } = req.body;
+  const { name, role, executive_role, category, sort_order, photo_position, photo_zoom } = req.body;
   if (!name || !String(name).trim()) {
     return res.status(400).json({ message: 'Name is required' });
   }
@@ -50,12 +50,13 @@ exports.create = async (req, res) => {
       photoUrl = url;
     }
     const [result] = await pool.query(
-      `INSERT INTO team_members (category, name, role, photo_url, photo_position, photo_zoom, sort_order, updated_by)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO team_members (category, name, role, executive_role, photo_url, photo_position, photo_zoom, sort_order, updated_by)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         normalizeCategory(category),
         String(name).trim(),
         String(role || '').trim(),
+        executive_role ? String(executive_role).trim().toUpperCase() : null,
         photoUrl,
         photo_position || 'center',
         photo_zoom != null && !Number.isNaN(Number(photo_zoom)) ? Number(photo_zoom) : 1,
@@ -72,7 +73,7 @@ exports.create = async (req, res) => {
 };
 
 exports.update = async (req, res) => {
-  const { name, role, category, sort_order, active, photo_position, photo_zoom } = req.body;
+  const { name, role, executive_role, category, sort_order, active, photo_position, photo_zoom } = req.body;
   try {
     const [[existing]] = await pool.query(
       'SELECT id, photo_url FROM team_members WHERE id = ?',
@@ -92,6 +93,7 @@ exports.update = async (req, res) => {
       `UPDATE team_members SET
          name = COALESCE(?, name),
          role = COALESCE(?, role),
+         executive_role = COALESCE(?, executive_role),
          category = COALESCE(?, category),
          photo_url = COALESCE(?, photo_url),
          photo_position = COALESCE(?, photo_position),
@@ -103,6 +105,7 @@ exports.update = async (req, res) => {
       [
         name ? String(name).trim() : null,
         role !== undefined ? String(role).trim() : null,
+        executive_role !== undefined ? (executive_role ? String(executive_role).trim().toUpperCase() : null) : null,
         category ? normalizeCategory(category) : null,
         photoUrl,
         photo_position || null,

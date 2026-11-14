@@ -1,7 +1,9 @@
 const router = require('express').Router();
+const multer = require('multer');
 const { body, validationResult } = require('express-validator');
-const { register, login, me, updateMe, applyPromo } = require('../controllers/authController');
+const { register, login, me, updateMe, summary, applyPromo } = require('../controllers/authController');
 const { forgotPassword, resetPassword } = require('../controllers/resetPasswordController');
+const { current, refresh, logout } = require('../controllers/sessionController');
 const { authenticate } = require('../middleware/auth');
 const { loginLimiter, passwordResetLimiter } = require('../middleware/rateLimiter');
 const { requireRegistrationOpen } = require('../middleware/registrationOpen');
@@ -37,6 +39,10 @@ router.post(
   login
 );
 
+router.get('/session', authenticate, current);
+router.post('/session/refresh', refresh);
+router.post('/session/logout', logout);
+
 router.post('/forgot-password', passwordResetLimiter, [
   body('email').isEmail().normalizeEmail().withMessage('Valid email required'),
   validate,
@@ -48,8 +54,17 @@ router.post('/reset-password', [
   validate,
 ], resetPassword);
 
+const profileUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    cb(null, file.mimetype.startsWith('image/'));
+  },
+});
+
 router.get('/me', authenticate, me);
-router.put('/me', authenticate, updateMe);
+router.get('/me/summary', authenticate, summary);
+router.put('/me', authenticate, profileUpload.single('photo'), updateMe);
 router.post('/promo', authenticate, applyPromo);
 
 module.exports = router;

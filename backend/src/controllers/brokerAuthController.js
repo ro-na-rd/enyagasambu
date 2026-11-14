@@ -2,6 +2,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const pool = require('../config/db');
 const { logger } = require('../config/logger');
+const { createSession } = require('../services/authSessionService');
 
 const CERT_PRICE = 2000;
 
@@ -39,6 +40,7 @@ exports.register = async(req, res) => {
         ] = await pool.query('SELECT coins FROM users WHERE id = ?', [result.insertId]);
 
         const token = signToken({ id: result.insertId, email, role: 'broker' });
+        await createSession(res, { id: result.insertId, name, email, phone, coins: user.coins, role: 'broker' });
         return res.status(201).json({
             message: 'Broker account created successfully',
             token,
@@ -67,6 +69,7 @@ exports.login = async(req, res) => {
 
         const token = signToken(user);
         const { password_hash, ...safeUser } = user;
+        await createSession(res, safeUser);
         return res.json({ token, user: safeUser });
     } catch (err) {
         logger.error(err);

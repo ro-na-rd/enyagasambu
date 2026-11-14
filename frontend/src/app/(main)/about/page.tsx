@@ -2,10 +2,12 @@
 import AppImage from '@/components/AppImage';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Target, Eye, Diamond } from '@/lib/icons';
+import { Target, Eye, Diamond, CheckCircle, X, Coins, Star } from '@/lib/icons';
 import { useLanguage } from '@/context/LanguageContext';
+import { useAuth } from '@/context/AuthContext';
 import { roleMap } from '@/lib/translations';
 import { useSiteContent } from '@/lib/useSiteContent';
+import { initialsOf } from '@/lib/initials';
 import api from '@/lib/api';
 
 const navy = '#0f1e42';
@@ -22,28 +24,19 @@ interface Member {
 }
 
 const LEADERSHIP: Member[] = [
-  { name: 'Sinonza Polemon',    role: 'Chief Executive Officer',   initials: 'SP', color: navy,       photo: '/profiles/polemon.jpg' },
-  { name: 'Musinguzi Ronard',   role: 'Chief Information Officer', initials: 'MR', color: '#1a6b3a',  photo: '/profiles/ronard.jpg' },
-  { name: 'Manishimwe Blaise',  role: 'Chief Operations Officer',  initials: 'MB', color: '#7c3a8a',  photo: '/profiles/blaise.jpg' },
+  { name: 'Sinonza Polemon',    role: 'Chief Executive Officer',   initials: 'SP', color: navy,       photo: '/assets/members/Co-Founder & CEO.jpeg' },
+  { name: 'Musinguzi Ronard',   role: 'Chief Technology Officer',  initials: 'MR', color: '#1a6b3a',  photo: '/assets/members/Co-Founder & CTO.png' },
+  { name: 'Manishimwe Blaise',  role: 'Chief Operations Officer',  initials: 'MB', color: '#7c3a8a',  photo: '/assets/members/Co-Founder & COO.jpg' },
   { name: 'Kobusinge Florence', role: 'Chief Marketing Officer',   initials: 'KF', color: '#c04a00',  photo: '/profiles/florence.jpg' },
   { name: 'Tuyishime Eric',     role: 'Chief Financial Officer',   initials: 'TE', color: '#0a6494',  photo: '/profiles/eric.jpg' },
 ];
 
 const BOARD: Member[] = [
-  { name: 'Board Member 1', role: 'Chairman of the Board',     initials: 'B1', color: '#374151' },
-  { name: 'Board Member 2', role: 'Non-Executive Director',    initials: 'B2', color: '#374151' },
-  { name: 'Board Member 3', role: 'Independent Director',      initials: 'B3', color: '#374151' },
-  { name: 'Board Member 4', role: 'Board Secretary',           initials: 'B4', color: '#374151' },
+  { name: 'Board Member 1', role: 'Chairman of the Board',     initials: 'B1', color: '#374151', photo: '/assets/members/Chairman of the board.jpeg' },
+  { name: 'Board Member 2', role: 'Non-Executive Director',    initials: 'B2', color: '#374151', photo: '/assets/members/Non-Executive Director.jpeg' },
+  { name: 'Board Member 3', role: 'Independent Director',      initials: 'B3', color: '#374151', photo: '/assets/members/Independent Director1.jpeg' },
+  { name: 'Board Member 4', role: 'Board Secretary',           initials: 'B4', color: '#374151', photo: '/assets/members/Board Secretary.jpeg' },
 ];
-
-function initialsOf(name: string) {
-  return name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((w) => w[0]?.toUpperCase() || '')
-    .join('') || '?';
-}
 
 interface RegisteredPerson {
   name: string;
@@ -152,6 +145,101 @@ function Avatar({ member }: { member: Member }) {
   );
 }
 
+interface Plan { id: string; name: string; coins: number; listing_duration_days: number; max_active_listings: number; can_feature: boolean; }
+interface Sub { plan: string; listing_duration_days: number; max_active_listings: number; can_feature: boolean; expires_at?: string; }
+
+function SellerPlans() {
+  const { user, refreshUser } = useAuth();
+  const { T } = useLanguage();
+  const [plans, setPlans] = useState<Plan[]>([]);
+  const [current, setCurrent] = useState<Sub | null>(null);
+  const [subscribing, setSubscribing] = useState('');
+  const [msg, setMsg] = useState<React.ReactNode>('');
+
+  useEffect(() => {
+    api.get('/subscriptions/plans').then(({ data }) => setPlans(data.plans)).catch(() => {});
+    if (user) api.get('/subscriptions/me').then(({ data }) => setCurrent(data.subscription)).catch(() => {});
+  }, [user]);
+
+  const handleSubscribe = async (planId: string) => {
+    setSubscribing(planId); setMsg('');
+    try {
+      const { data } = await api.post('/subscriptions/subscribe', { plan: planId });
+      setMsg(<><CheckCircle size={16} className="inline" /> {data.message}</>);
+      await refreshUser();
+      const { data: sub } = await api.get('/subscriptions/me');
+      setCurrent(sub.subscription);
+    } catch (err: unknown) {
+      const m = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      setMsg(<><X size={16} className="inline" /> {m || 'Failed'}</>);
+    } finally { setSubscribing(''); }
+  };
+
+  const planColors: Record<string, string> = {
+    free: 'border-gray-200',
+    standard: 'border-[#E85D04]',
+    premium: 'border-yellow-400',
+  };
+
+  return (
+    <div className="max-w-4xl mx-auto">
+      <h2 className="text-2xl font-medium text-center mb-2" style={{ color: '#111827' }}>{T.sellerPlans}</h2>
+      <p className="text-sm text-gray-500 text-center mb-8">Upgrade to list more items, keep them active longer, and get featured.</p>
+      {user && <p className="text-sm text-[#E85D04] text-center mb-6">Your current balance: <Coins size={14} className="inline" /> {user.coins}</p>}
+
+      {current && (
+        <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 mb-6 text-sm">
+          <p className="font-semibold" style={{ color: navy }}>Current plan: <span className="capitalize">{current.plan}</span></p>
+          {current.expires_at && <p className="text-orange-500 text-xs mt-0.5">Valid until {new Date(current.expires_at).toLocaleDateString()}</p>}
+        </div>
+      )}
+
+      {msg && <div className="text-sm mb-5 px-4 py-3 bg-gray-50 rounded-lg">{msg}</div>}
+
+      <div className="grid sm:grid-cols-3 gap-5">
+        {plans.map((plan) => (
+          <div key={plan.id} className={`bg-white border-2 rounded-2xl p-5 flex flex-col ${planColors[plan.id] || 'border-gray-200'} ${plan.id === 'premium' ? 'shadow-md' : ''}`}>
+            {plan.id === 'premium' && (
+              <div className="bg-yellow-400 text-gray-900 text-xs font-bold text-center py-1 rounded-lg mb-3">BEST VALUE</div>
+            )}
+            <h3 className="text-lg font-bold text-gray-900">{plan.name}</h3>
+            <p className="text-2xl font-bold text-[#E85D04] mt-1">
+              {plan.coins === 0 ? 'Free' : <><Coins size={16} className="inline" /> {plan.coins}</>}
+              {plan.coins > 0 && <span className="text-sm font-normal text-gray-500"> / month</span>}
+            </p>
+
+            <ul className="mt-4 space-y-2 flex-1 text-sm text-gray-600">
+              <li>✓ {plan.listing_duration_days} days per listing</li>
+              <li>✓ Up to {plan.max_active_listings === 100 ? 'unlimited' : plan.max_active_listings} active listings</li>
+              <li className={plan.can_feature ? 'text-gray-800 font-medium' : 'text-gray-400 line-through'}>
+                ✓ Can feature listings (<Star size={12} className="inline" /> boost)
+              </li>
+            </ul>
+
+            {plan.id === 'free' ? (
+              <div className="mt-5 text-center text-xs text-gray-400 py-2">Default plan</div>
+            ) : !user ? (
+              <Link href="/login" className="mt-5 block text-center w-full font-semibold py-2.5 rounded-lg text-sm bg-[#0f1e42] text-white hover:opacity-90 transition">
+                Sign in to subscribe
+              </Link>
+            ) : current?.plan === plan.id ? (
+              <div className="mt-5 text-center text-sm text-[#E85D04] font-semibold py-2">✓ Active</div>
+            ) : (
+              <button
+                onClick={() => handleSubscribe(plan.id)}
+                disabled={!!subscribing}
+                className={`mt-5 w-full font-semibold py-2.5 rounded-lg text-sm transition disabled:opacity-60 ${plan.id === 'premium' ? 'bg-yellow-400 text-gray-900 hover:bg-yellow-300' : 'bg-[#E85D04] text-white hover:bg-[#e05d00]'}`}
+              >
+                {subscribing === plan.id ? 'Processing…' : `Subscribe (${plan.coins} coins)`}
+              </button>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function AboutPage() {
   const { T, lang } = useLanguage();
   const { get } = useSiteContent();
@@ -166,18 +254,17 @@ export default function AboutPage() {
       api.get('/team/public'),
       api.get('/directory'),
     ]).then(([{ data: teamData }, { data: directoryData }]) => {
-        if (directoryData?.members?.length) {
-          setRegisteredMembers(directoryData.members.map((m: { id: number; name: string; role: string; status: string; category: string }) => ({
-            name: m.name,
-            role: m.role,
-            initials: initialsOf(m.name),
-            color: m.category === 'broker' ? '#1a6b3a' : m.category === 'ambassador' ? '#7c3a8a' : m.category === 'supplier' ? '#0a6494' : '#374151',
-            status: m.status,
-          })));
-        }
+      if (directoryData?.members?.length) {
+        setRegisteredMembers(directoryData.members.map((m: { id: number; name: string; role: string; status: string; category: string }) => ({
+          name: m.name,
+          role: m.role,
+          initials: initialsOf(m.name),
+          color: m.category === 'broker' ? '#1a6b3a' : m.category === 'ambassador' ? '#7c3a8a' : m.category === 'supplier' ? '#0a6494' : '#374151',
+          status: m.status,
+        })));
+      }
 
-        if (teamData?.members?.length) {
-        if (!teamData?.members?.length) return;
+      if (teamData?.members?.length) {
         const toMember = (m: { name: string; role: string; photo_url: string | null; photo_position?: string | null; photo_zoom?: number | null }): Member => ({
           name: m.name,
           role: m.role || '',
@@ -191,8 +278,8 @@ export default function AboutPage() {
         const board = teamData.members.filter((m: { category: string }) => m.category === 'board').map(toMember);
         if (team.length) setTeamMembers(team);
         if (board.length) setBoardMembers(board);
-        }
-      })
+      }
+    })
       .catch(() => {});
   }, []);
 
@@ -314,6 +401,11 @@ export default function AboutPage() {
             ))}
           </div>
         </div>
+      </section>
+
+      {/* ── Seller Plans ── */}
+      <section id="seller-plans" className="py-12 px-6 bg-white border-t border-gray-100">
+        <SellerPlans />
       </section>
 
       {/* ── Partners ── */}

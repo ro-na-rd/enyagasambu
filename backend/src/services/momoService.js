@@ -1,4 +1,9 @@
 const axios = require('axios');
+const {
+  assertPaymentReference,
+  normalizeMtnMomoPhone,
+  parsePositiveRwfAmount,
+} = require('./paymentValidationService');
 
 function configuredBase(value, fallback) {
   const base = String(value || fallback).trim();
@@ -29,19 +34,7 @@ const TARGET_ENV = process.env.MOMO_ENV === 'production' ? 'mtnrwanda' : 'sandbo
 let cachedAccessToken = null;
 let accessTokenExpiresAt = 0;
 
-function normalizeMomoPhone(phone) {
-  const digits = String(phone || '').replace(/\D/g, '');
-  if (!digits) throw new Error('Payer phone number is required');
-
-  const countryCode = String(process.env.DEFAULT_PHONE_COUNTRY_CODE || '250').replace(/\D/g, '');
-  if (!countryCode) throw new Error('DEFAULT_PHONE_COUNTRY_CODE must contain digits');
-
-  if (digits.startsWith('00')) return digits.slice(2);
-  if (digits.startsWith(countryCode)) return digits;
-  if (digits.startsWith('0')) return `${countryCode}${digits.slice(1)}`;
-  if (digits.length === 9 && digits.startsWith('7')) return `${countryCode}${digits}`;
-  return digits;
-}
+const normalizeMomoPhone = normalizeMtnMomoPhone;
 
 async function getAccessToken() {
   if (cachedAccessToken && Date.now() < accessTokenExpiresAt) return cachedAccessToken;
@@ -68,34 +61,38 @@ async function getAccessToken() {
 }
 
 async function requestToPay({ referenceId, amount, payerPhone, payerMessage, payeeNote }) {
+  const validatedReference = assertPaymentReference(referenceId);
+  const validatedAmount = parsePositiveRwfAmount(amount);
+  const normalizedPayerPhone = normalizeMomoPhone(payerPhone);
   const token = await getAccessToken();
   await axios.post(
     `${COLLECTION_BASE}/collection/v1_0/requesttopay`,
     {
-      amount: String(amount),
+      amount: String(validatedAmount),
       currency: CURRENCY,
-      externalId: referenceId,
-      payer: { partyIdType: 'MSISDN', partyId: normalizeMomoPhone(payerPhone) },
+      externalId: validatedReference,
+      payer: { partyIdType: 'MSISDN', partyId: normalizedPayerPhone },
       payerMessage,
       payeeNote,
     },
     {
       headers: {
         Authorization: `Bearer ${token}`,
-        'X-Reference-Id': referenceId,
+        'X-Reference-Id': validatedReference,
         'X-Target-Environment': TARGET_ENV,
         'Ocp-Apim-Subscription-Key': SUBSCRIPTION_KEY,
         'Content-Type': 'application/json',
       },
     }
   );
-  return referenceId;
+  return validatedReference;
 }
 
 async function getPaymentStatus(referenceId) {
+  const validatedReference = assertPaymentReference(referenceId);
   const token = await getAccessToken();
   const { data } = await axios.get(
-    `${COLLECTION_BASE}/collection/v1_0/requesttopay/${referenceId}`,
+    `${COLLECTION_BASE}/collection/v1_0/requesttopay/${validatedReference}`,
     {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -104,6 +101,9 @@ async function getPaymentStatus(referenceId) {
       },
     }
   );
+  if (!data || typeof data.status !== 'string') {
+    throw new Error('MTN MoMo returned an invalid payment status response');
+  }
   return data;
 }
 

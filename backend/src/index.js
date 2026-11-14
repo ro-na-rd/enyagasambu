@@ -7,6 +7,7 @@ const { logger } = require('./config/logger');
 const requestId = require('./middleware/requestId');
 const httpLogger = require('./middleware/httpLogger');
 const errorHandler = require('./middleware/errorHandler');
+const { requireCsrfForCookieSession } = require('./middleware/csrf');
 const { startRenewalScheduler } = require('./services/renewalScheduler');
 const { startExpiryScheduler } = require('./services/expiryScheduler');
 const { startReminderScheduler } = require('./services/reminderScheduler');
@@ -45,6 +46,7 @@ if (clientUrls.length === 0) {
 app.use(cors({ origin: clientUrls, credentials: true }));
 app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ extended: true, limit: '2mb' }));
+app.use(requireCsrfForCookieSession);
 
 app.use(requestId);
 app.use(httpLogger);

@@ -25,7 +25,7 @@ async function runSqlFile(filePath) {
     .filter(Boolean);
   for (const stmt of statements) {
     if (!stmt) continue;
-    try { await pool.query(stmt); } catch (e) { if (!e.message.includes('already exists') && !e.code?.includes('ER_TABLE_EXISTS')) console.warn('[initDb] warn:', e.message.slice(0,120)); }
+    try { await pool.query(stmt); } catch (e) { if (!/already exists|Duplicate (column|key|foreign key)|ER_DUP_FIELDNAME|ER_DUP_KEYNAME/i.test(e.message + ' ' + (e.code||''))) console.warn('[initDb] warn:', e.message.slice(0,120)); }
   }
 }
 

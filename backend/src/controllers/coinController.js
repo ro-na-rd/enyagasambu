@@ -2,6 +2,7 @@ const { randomUUID: uuidv4 } = require('crypto');
 const pool = require('../config/db');
 const { requestToPay, getPaymentStatus } = require('../services/momoService');
 const { logger } = require('../config/logger');
+const { PaymentValidationError, normalizeMtnMomoPhone } = require('../services/paymentValidationService');
 
 const COIN_PACKAGES = [
   { id: 1, coins: 500,  price_rwf: 1000, label: '500 coins' },
@@ -34,7 +35,13 @@ exports.initiateMomoPayment = async (req, res) => {
   const { packageId, phone } = req.body;
   const pkg = COIN_PACKAGES.find((p) => p.id === parseInt(packageId));
   if (!pkg) return res.status(400).json({ message: 'Invalid package' });
-  if (!phone) return res.status(400).json({ message: 'Phone number required for MoMo payment' });
+  let payerPhone;
+  try {
+    payerPhone = normalizeMtnMomoPhone(phone);
+  } catch (err) {
+    if (err instanceof PaymentValidationError) return res.status(err.status).json({ message: err.message, code: err.code });
+    return res.status(400).json({ message: 'Invalid phone number' });
+  }
 
   // Buy coins is gated by a platform setting; only admin/CEO can bypass it.
   try {
@@ -64,7 +71,7 @@ exports.initiateMomoPayment = async (req, res) => {
     await requestToPay({
       referenceId,
       amount: pkg.price_rwf,
-      payerPhone: phone.replace(/\s+/g, ''),
+      payerPhone,
       payerMessage: `NMO: Buy ${pkg.coins} coins`,
       payeeNote: `${pkg.label} – Nyagasambu Market Online`,
     });
@@ -107,7 +114,21 @@ exports.checkMomoPayment = async (req, res) => {
       const conn = await pool.getConnection();
       try {
         await conn.beginTransaction();
-        await conn.query('UPDATE momo_payments SET status = ? WHERE reference_id = ?', ['successful', referenceId]);
+        const [[lockedPayment]] = await conn.query(
+          'SELECT * FROM momo_payments WHERE reference_id = ? AND user_id = ? FOR UPDATE',
+          [referenceId, req.user.id]
+        );
+        if (!lockedPayment) throw new Error('Payment not found during confirmation');
+        if (lockedPayment.status === 'successful') {
+          await conn.rollback();
+          const [[user]] = await pool.query('SELECT coins FROM users WHERE id = ?', [req.user.id]);
+          return res.json({ status: 'successful', coins: user?.coins ?? 0 });
+        }
+        if (lockedPayment.status !== 'pending') {
+          await conn.rollback();
+          return res.json({ status: lockedPayment.status });
+        }
+        await conn.query('UPDATE momo_payments SET status = ? WHERE id = ?', ['successful', lockedPayment.id]);
         await conn.query('UPDATE users SET coins = coins + ? WHERE id = ?', [payment.coins, req.user.id]);
         await conn.query(
           "INSERT INTO coin_transactions (user_id, amount, type, reference) VALUES (?, ?, 'purchase', ?)",

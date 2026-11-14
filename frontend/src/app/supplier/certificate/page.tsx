@@ -1,84 +1,15 @@
 'use client';
-import AppImage from '@/components/AppImage';
 import { useEffect, useState, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import api from '@/lib/api';
 import { Check, Lock, Download, Camera } from '@/lib/icons';
-import { SITE_URL } from '@/lib/config';
-import { useQrDataUrl } from '@/components/QrCode';
+import SupplierCertificate from '@/components/SupplierCertificate';
 
 const NAVY = '#0f1e42';
 const ORG = '#E85D04';
 const DEFAULT_PRICE = 2000;
 
 const fmtRWF = (n: number) => 'RWF ' + Number(n || 0).toLocaleString('en-US');
-
-function CertPreview({ name, businessName, photo, certNo, issued, validUntil }: { name: string; businessName?: string | null; photo?: string | null; certNo?: string; issued: string; validUntil: string }) {
-  const verifyUrl = `${SITE_URL}/verify-supplier/${certNo || 'pending'}`;
-  const qrUrl = useQrDataUrl(verifyUrl, { size: 100, color: NAVY, bgColor: '#ffffff' });
-
-  return (
-    <div id="supplier-cert-print" className="relative bg-white rounded-xl overflow-hidden border border-gray-200 select-none"
-      style={{ userSelect: 'none', WebkitUserSelect: 'none' }}
-      onContextMenu={e => e.preventDefault()}>
-      {['tl','tr','bl','br'].map(p => {
-        const W=90,H=90; const pts:Record<string,string>={tl:`0,0 ${W},0 0,${H}`,tr:`${W},0 ${W},${H} 0,0`,bl:`0,0 0,${H} ${W},${H}`,br:`${W},0 0,${H} ${W},${H}`};
-        const css:Record<string,React.CSSProperties>={tl:{top:0,left:0},tr:{top:0,right:0},bl:{bottom:0,left:0},br:{bottom:0,right:0}};
-        return (
-          <svg key={p} width={W} height={H} viewBox={`0 0 ${W} ${H}`} style={{position:'absolute',zIndex:1,pointerEvents:'none',...css[p]}}>
-            <polygon points={pts[p]} fill={NAVY}/>
-            {[[W/2-20,12],[W/2,18],[W/2+10,30],[18,H/2-5],[28,H/2+8],[40,H/2-2]].map(([cx,cy],i)=><circle key={i} cx={cx} cy={cy} r="2.5" fill="rgba(255,255,255,0.35)"/>)}
-          </svg>
-        );
-      })}
-      <div className="absolute top-4 bottom-4 left-5 w-0.5 opacity-30" style={{background:`linear-gradient(180deg,${ORG},transparent 40%,transparent 60%,${ORG})`}}/>
-      <div className="absolute top-4 bottom-4 right-5 w-0.5 opacity-30" style={{background:`linear-gradient(180deg,${ORG},transparent 40%,transparent 60%,${ORG})`}}/>
-      <div className="relative z-10 p-8">
-        <div className="flex items-center gap-4 mb-6">
-          <AppImage src="/assets/logo.png" alt="E-Nyagasambu" className="w-14 h-14 object-contain" />
-          <div>
-            <p className="font-extrabold text-lg leading-tight" style={{color:NAVY}}>E-NYAGASAMBU</p>
-            <p className="font-bold tracking-widest" style={{fontSize:10,color:ORG}}>DIGITAL MARKET PLACE</p>
-          </div>
-        </div>
-        <div className="text-center mb-6">
-          {photo && (
-            <div className="mb-4 flex justify-center">
-              <div className="w-24 h-24 rounded-full overflow-hidden border-4 shadow-lg" style={{borderColor:ORG}}>
-                <AppImage src={photo} alt={name} className="w-full h-full object-cover" />
-              </div>
-            </div>
-          )}
-          <p className="text-xs text-gray-400 uppercase tracking-widest mb-1">Certificate of Verification</p>
-          <p className="text-4xl font-extrabold" style={{color:NAVY}}>{name}</p>
-          {businessName && (
-            <p className="text-base font-bold mt-1" style={{color:ORG}}>{businessName}</p>
-          )}
-          <div className="w-32 h-0.5 mx-auto my-4" style={{background:`linear-gradient(90deg,transparent,${ORG},transparent)`}}/>
-          <p className="text-2xl font-black tracking-wide" style={{color:ORG}}>VERIFIED SUPPLIER</p>
-          <p className="text-sm text-gray-500 mt-1">on E-Nyagasambu Digital Marketplace</p>
-        </div>
-        <div className="border-t border-dashed border-gray-200 pt-4 grid grid-cols-3 gap-4 text-center text-xs">
-          <div>
-            <p className="text-gray-400 mb-0.5">Certificate No.</p>
-            <p className="font-bold" style={{color:NAVY}}>{certNo || '—'}</p>
-          </div>
-          <div>
-            <p className="text-gray-400 mb-0.5">Issue Date</p>
-            <p className="font-bold" style={{color:NAVY}}>{issued}</p>
-          </div>
-          <div>
-            <p className="text-gray-400 mb-0.5">Valid Until</p>
-            <p className="font-bold" style={{color:NAVY}}>{validUntil}</p>
-          </div>
-        </div>
-        <div className="mt-4 flex justify-center">
-          <AppImage src={qrUrl} alt="Verification QR" width={80} height={80} className="rounded border border-gray-300" />
-        </div>
-      </div>
-    </div>
-  );
-}
 
 function CertWatermark({ price }: { price: number }) {
   return (
@@ -161,7 +92,6 @@ export default function SupplierCertificatePage() {
       const { data } = await api.post('/supplier/certificate/pay', { phone, certificateTypeId: cert?.certificate_type_id });
       setMsg('Payment request sent. Approve on your phone.');
 
-      // Poll for payment status (max 5 minutes)
       pollDeadlineRef.current = Date.now() + 300000;
       pollRef.current = setInterval(async () => {
         if (Date.now() > pollDeadlineRef.current) {
@@ -187,13 +117,27 @@ export default function SupplierCertificatePage() {
             setPaying(false);
           }
         } catch {
-          // Transient network error — keep polling until deadline
         }
       }, 5000);
     } catch (err: unknown) {
       setMsg((err as { response?: { data?: { message?: string } } })?.response?.data?.message || (err instanceof Error ? err.message : 'Payment initiation failed'));
       setPaying(false);
     }
+  };
+
+  const handlePrint = async () => {
+    const certificate = document.getElementById('supplier-cert-print');
+    if (!certificate) return;
+
+    const images = Array.from(certificate.querySelectorAll('img'));
+    await Promise.all(images.map((image) => image.complete
+      ? Promise.resolve()
+      : new Promise<void>((resolve) => {
+        image.addEventListener('load', () => resolve(), { once: true });
+        image.addEventListener('error', () => resolve(), { once: true });
+      }))));
+    await document.fonts?.ready;
+    requestAnimationFrame(() => window.print());
   };
 
   const certYear = new Date().getFullYear();
@@ -240,7 +184,9 @@ export default function SupplierCertificatePage() {
             position: fixed !important;
             left: 0 !important;
             top: 0 !important;
-            width: 100vw !important;
+            width: 210mm !important;
+            height: 297mm !important;
+            max-width: none !important;
             border-radius: 0 !important;
             box-shadow: none !important;
             margin: 0 !important;
@@ -268,10 +214,9 @@ export default function SupplierCertificatePage() {
         }`}>{msg}</div>
       )}
 
-      {/* Certificate Preview — always visible */}
       <div className="relative mb-6">
-        <CertPreview
-          name={supplierName}
+        <SupplierCertificate
+          legalName={supplierName}
           businessName={businessName}
           photo={supplierPhoto}
           certNo={certNo}
@@ -281,7 +226,6 @@ export default function SupplierCertificatePage() {
         {!isGenerated && <CertWatermark price={certPrice} />}
       </div>
 
-      {/* Photo upload section (before payment) */}
       {!isGenerated && status !== 'paid' && (
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 mb-4">
           <h2 className="text-sm font-bold uppercase tracking-wider text-gray-800 mb-4">
@@ -309,7 +253,6 @@ export default function SupplierCertificatePage() {
         </div>
       )}
 
-      {/* Payment section (hidden if already generated) */}
       {!isGenerated && (
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 mb-4">
           <h2 className="text-sm font-bold uppercase tracking-wider text-gray-800 mb-4">
@@ -336,15 +279,14 @@ export default function SupplierCertificatePage() {
         </div>
       )}
 
-      {/* Download button — only when generated */}
       {isGenerated && (
         <div className="text-center">
-          <button onClick={() => window.print()}
+          <button onClick={handlePrint}
             className="inline-flex items-center gap-2 text-sm font-bold px-6 py-3 rounded-lg text-white transition hover:opacity-90"
             style={{ background: ORG }}>
-            <Download size={16} /> Download Certificate
+            <Download size={16} /> Print / Save as PDF
           </button>
-          <p className="text-xs text-gray-400 mt-2">Print or save as PDF</p>
+          <p className="text-xs text-gray-400 mt-2">Opens your browser&apos;s print dialog, where you can save an A4 PDF.</p>
         </div>
       )}
     </div>

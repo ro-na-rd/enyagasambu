@@ -4,14 +4,11 @@ const pool = require('../config/db');
 const { requestToPay, getPaymentStatus } = require('../services/momoService');
 const { sendSms } = require('../services/smsService');
 const { logger } = require('../config/logger');
+const { PaymentValidationError, normalizeMtnMomoPhone, parsePositiveRwfAmount } = require('../services/paymentValidationService');
 
 const MIN_DONATION = 100;
 const OTP_TTL_MINUTES = 5;
 const MAX_OTP_ATTEMPTS = 3;
-
-function normalizePhone(phone) {
-  return phone ? phone.replace(/\s+/g, '') : '';
-}
 
 function generateOtpCode() {
   return crypto.randomInt(100000, 999999).toString();
@@ -47,13 +44,15 @@ exports.initiateMomo = async (req, res) => {
   if (!donor_name || !donor_name.trim()) {
     return res.status(400).json({ message: 'Your name is required' });
   }
-  const amountRwf = parseInt(amount);
-  if (!amountRwf || isNaN(amountRwf) || amountRwf < MIN_DONATION) {
-    return res.status(400).json({ message: `Minimum donation is ${MIN_DONATION} RWF` });
-  }
-  const phone = normalizePhone(donor_phone);
-  if (!phone) {
-    return res.status(400).json({ message: 'Phone number is required for Mobile Money' });
+  let amountRwf;
+  let phone;
+  try {
+    if (provider !== 'mtn') throw new PaymentValidationError('Only MTN MoMo is currently available', 'UNSUPPORTED_PAYMENT_PROVIDER');
+    amountRwf = parsePositiveRwfAmount(amount, { minimum: MIN_DONATION, field: 'Donation amount' });
+    phone = normalizeMtnMomoPhone(donor_phone);
+  } catch (err) {
+    if (err instanceof PaymentValidationError) return res.status(err.status).json({ message: err.message, code: err.code });
+    throw err;
   }
 
   const referenceId = uuidv4();
@@ -229,40 +228,5 @@ exports.resendOtp = async (req, res) => {
 
 // Card donation (simulated for now — real gateway integration can be swapped in later)
 exports.processCard = async (req, res) => {
-  const { donor_name, donor_phone, donor_email, amount, card_number, card_name, card_expiry, card_cvv, message } = req.body;
-
-  if (!donor_name || !donor_name.trim()) {
-    return res.status(400).json({ message: 'Your name is required' });
-  }
-  const amountRwf = parseInt(amount);
-  if (!amountRwf || isNaN(amountRwf) || amountRwf < MIN_DONATION) {
-    return res.status(400).json({ message: `Minimum donation is ${MIN_DONATION} RWF` });
-  }
-  if (!card_number || String(card_number).replace(/\s+/g, '').length < 12) {
-    return res.status(400).json({ message: 'A valid card number is required' });
-  }
-  if (!card_expiry || !card_cvv) {
-    return res.status(400).json({ message: 'Card expiry and CVV are required' });
-  }
-
-  const userId = req.user?.id || null;
-  const cleanCard = String(card_number).replace(/\s+/g, '');
-  const last4 = cleanCard.slice(-4);
-  const brand = cleanCard.startsWith('4') ? 'visa' : cleanCard.startsWith('5') ? 'mastercard' : 'card';
-
-  try {
-    // Simulate gateway authorization
-    await new Promise((r) => setTimeout(r, 800));
-
-    const [result] = await pool.query(
-      `INSERT INTO donations (user_id, donor_name, donor_email, donor_phone, amount_rwf, method, provider, status, card_last4, card_brand, message)
-       VALUES (?, ?, ?, ?, ?, 'card', 'bank', 'confirmed', ?, ?, ?)`,
-      [userId, donor_name.trim(), donor_email || null, normalizePhone(donor_phone), amountRwf, last4, brand, message || null]
-    );
-
-    return res.json({ donationId: result.insertId, message: 'Donation successful. Thank you for your support!' });
-  } catch (err) {
-    logger.error('[Donation card error]', err);
-    return res.status(500).json({ message: 'Failed to process card donation' });
-  }
+  return res.status(501).json({ message: 'Card payments are not available because no card gateway is configured.' });
 };
