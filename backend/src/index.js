@@ -8,6 +8,7 @@ const requestId = require('./middleware/requestId');
 const httpLogger = require('./middleware/httpLogger');
 const errorHandler = require('./middleware/errorHandler');
 const { requireCsrfForCookieSession } = require('./middleware/csrf');
+const { createLimiter } = require('./middleware/rateLimiter');
 const { startRenewalScheduler } = require('./services/renewalScheduler');
 const { startExpiryScheduler } = require('./services/expiryScheduler');
 const { startReminderScheduler } = require('./services/reminderScheduler');
@@ -51,42 +52,18 @@ app.use(requireCsrfForCookieSession);
 app.use(requestId);
 app.use(httpLogger);
 
-const hits = new Map();
-
-const apiLimiter = (req, res, next) => {
-  const key = req.ip || req.connection.remoteAddress;
-  const now = Date.now();
-  const windowMs = 60 * 1000; // 1 minute window
-  const max = 20; // 20 requests per minute
-  const record = hits.get(key);
-
-  if (!record) {
-    hits.set(key, { start: now, count: 1 });
-    return next();
-  }
-
-  if (now - record.start > windowMs) {
-    hits.set(key, { start: now, count: 1 });
-    return next();
-  }
-
-  record.count++;
-  if (record.count > max) {
-    const retryAfterSeconds = Math.max(1, Math.ceil((record.start + windowMs - now) / 1000));
-    res.set('Retry-After', String(retryAfterSeconds));
-    return res.status(429).json({ message: 'Too many requests. Please try again later.' });
-  }
-  next();
-};
-
-setInterval(() => {
-  const now = Date.now();
-  for (const [key, record] of hits) {
-    if (now - record.start > 60 * 60 * 1000) hits.delete(key);
-  }
-}, 5 * 60 * 1000).unref();
-
-app.use(apiLimiter);
+// A single page load fires a dozen parallel API calls (categories, settings,
+// site content, listings, session), and React re-runs effects in development,
+// so a global cap below a hundred requests per minute throttles ordinary
+// browsing. Sensitive operations keep their own much tighter limiters below
+// (login, OTP, contact reveal, password reset), so this cap only guards
+// against a runaway client rather than normal traffic.
+app.use(createLimiter({
+  windowMs: 60 * 1000,
+  max: 120,
+  message: 'Too many requests. Please try again later.',
+  skipLoopback: true,
+}));
 
 // Once shutdown starts, do not accept work that may be interrupted halfway
 // through. Existing requests are allowed to complete below.

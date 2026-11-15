@@ -76,4 +76,4 @@ const taxAdvisoryLimiter = createLimiter({
   message: 'Too many tax advisory requests. Please try again later.',
 });
 
-module.exports = { loginLimiter, otpLimiter, passwordResetLimiter, revealLimiter, verifyOtpLimiter, executiveRateLimiter, taxAdvisoryLimiter };
+module.exports = { createLimiter, loginLimiter, otpLimiter, passwordResetLimiter, revealLimiter, verifyOtpLimiter, executiveRateLimiter, taxAdvisoryLimiter };
