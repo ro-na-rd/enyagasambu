@@ -1,6 +1,11 @@
 'use client';
 import AppImage from '@/components/AppImage';
 import { SITE_URL } from '@/lib/config';
+import {
+  AMBASSADOR_CERT_HEIGHT,
+  AMBASSADOR_CERT_SWOOSH_PATH,
+  AMBASSADOR_CERT_WIDTH,
+} from '@/lib/ambassadorCertFrame';
 import { useEffect } from 'react';
 import styles from './AmbassadorCertificate.module.css';
 import QrCode from './QrCode';
@@ -48,29 +53,30 @@ export default function AmbassadorCertificate({
   return (
     <div className={styles.certificatePage}>
       <div id={id} className={`${styles.certificate} ${className || ''}`}>
-        {/* Navy background + orange swooshes */}
-        <div className={styles.bgSwooshLeft}></div>
-        <div className={styles.bgSwooshRight}></div>
+        <svg className={styles.frameSvg} viewBox={`0 0 ${AMBASSADOR_CERT_WIDTH} ${AMBASSADOR_CERT_HEIGHT}`} preserveAspectRatio="none" aria-hidden>
+          <path d={AMBASSADOR_CERT_SWOOSH_PATH} fill="#ed5b22" />
+          <g transform={`translate(${AMBASSADOR_CERT_WIDTH} 0) scale(-1 1)`}>
+            <path d={AMBASSADOR_CERT_SWOOSH_PATH} fill="#ed5b22" />
+          </g>
+        </svg>
 
-        {/* Logo above badge + text beside logo */}
-        <div className={styles.medalStack}>
-          <div className={styles.stackBrandRow}>
-            <AppImage src="/assets/logo.png" alt="E-Nyagasambu" className={styles.stackLogo} />
-            <div className={styles.stackBrandText}>
-              <h1 className={styles.brandName}>E-NYAGASAMBU</h1>
-              <p className={styles.brandTagline}>Digital Market Place</p>
-              <p className={styles.brandSite}>www.enyagasambu.rw</p>
-            </div>
-          </div>
-          <AppImage src="/assets/Barge.png" alt="Official Brand Ambassador" className={styles.medalImage} />
-        </div>
-
-        {/* White card */}
         <div className={styles.whiteCard}>
           <div className={styles.layoutGrid}>
-            {/* Main column */}
+            {/* Left column: brand block, badge centred below */}
+            <aside className={styles.leftCol}>
+              <div className={styles.brandRow}>
+                <AppImage src="/assets/logo.png" alt="E-Nyagasambu" width={105} height={141} className={styles.stackLogo} />
+                <div>
+                  <h1 className={styles.brandName}>E-NYAGASAMBU</h1>
+                  <p className={styles.brandTagline}>Digital Market Place</p>
+                  <p className={styles.brandSite}>www.enyagasambu.rw</p>
+                </div>
+              </div>
+              <AppImage src="/assets/Barge.png" alt="Official Brand Ambassador" width={448} height={403} className={styles.medalImage} />
+            </aside>
+
+            {/* Centre column */}
             <div className={styles.mainCol}>
-              {/* Header: title only */}
               <header className={styles.headerRow}>
                 <div className={styles.titleBlock}>
                   <h2 className={styles.titleMain}>CERTIFICATE</h2>
@@ -84,7 +90,6 @@ export default function AmbassadorCertificate({
                 </div>
               </header>
 
-              {/* Award section */}
               <div className={styles.awardSection}>
                 <p className={styles.awardLabel}>This Certificate is Proudly Awarded To</p>
                 <h3 className={styles.recipientName}>{name}</h3>
@@ -100,7 +105,6 @@ export default function AmbassadorCertificate({
                 </p>
               </div>
 
-              {/* Info row */}
               <div className={styles.infoRow}>
                 <div className={styles.infoItem}>
                   <div className={styles.infoHead}>
@@ -137,7 +141,6 @@ export default function AmbassadorCertificate({
                 </div>
               </div>
 
-              {/* Signatures */}
               <footer className={styles.signaturesRow}>
                 <div className={styles.signatureCol}>
                   <svg className={styles.signatureSvg} viewBox="0 0 140 42" aria-hidden>
@@ -149,7 +152,7 @@ export default function AmbassadorCertificate({
                 </div>
 
                 <div className={styles.sealWrap}>
-                  <AppImage src="/assets/seal.png" alt="E-Nyagasambu Seal" className={styles.sealImage} />
+                  <AppImage src="/assets/seal.png" alt="E-Nyagasambu Seal" width={500} height={500} className={styles.sealImage} />
                 </div>
 
                 <div className={styles.signatureCol}>
@@ -163,7 +166,7 @@ export default function AmbassadorCertificate({
               </footer>
             </div>
 
-            {/* Right sidebar column */}
+            {/* Right column */}
             <aside className={styles.sideCol}>
               <div className={styles.qrBox}>
                 <QrCode data={verifyUrl} size={108} color="#0c2c5c" className={styles.qrCode} />

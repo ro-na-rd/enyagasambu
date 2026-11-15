@@ -1,5 +1,10 @@
 import { SITE_URL } from '@/lib/config';
 import { generateQrDataUrl } from '@/components/QrCode';
+import {
+  AMBASSADOR_CERT_HEIGHT,
+  AMBASSADOR_CERT_SWOOSH_PATH,
+  AMBASSADOR_CERT_WIDTH,
+} from '@/lib/ambassadorCertFrame';
 
 const NAVY = '#0c2c5c';
 const ORG = '#ed5b22';
@@ -36,79 +41,78 @@ export async function buildAmbassadorCertPrintHtml(opts: {
   @page { size: A4 landscape; margin: 0; }
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-print-color-adjust:exact; print-color-adjust:exact; color-adjust:exact; }
   body { font-family: "Montserrat", sans-serif; margin: 0; background: #fff; display:flex; justify-content:center; align-items:center; min-height:100vh; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
-  .cert { position:relative; width:1123px; height:794px; background:linear-gradient(120deg, #0c2c5c 0%, #12336a 55%, #0c2c5c 100%); border-radius:26px; overflow:hidden; flex-shrink:0; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
-  .bgSwooshLeft,.bgSwooshRight { position:absolute; top:-12%; width:190px; height:130%; background:linear-gradient(180deg, #ed5b22 0%, #ff8a3d 100%); }
-  .bgSwooshLeft { left:-60px; transform:rotate(14deg); border-radius:90px; }
-  .bgSwooshRight { right:-60px; transform:rotate(-14deg); border-radius:90px; }
-  .medalStack { position:absolute; top:32px; left:34px; z-index:3; width:150px; display:flex; flex-direction:column; align-items:center; gap:10px; }
-  .stackBrandRow { display:flex; align-items:center; gap:8px; align-self:stretch; }
-  .stackLogo { width:52px; height:52px; object-fit:contain; flex-shrink:0; }
-  .brandName { font-size:15px; font-weight:900; letter-spacing:0.6px; color:#0c2c5c; margin:0; line-height:1.1; }
-  .brandTagline { font-size:8.5px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:#ed5b22; margin:2px 0 0; }
-  .brandSite { font-size:7.5px; font-weight:600; color:#0c2c5c; margin:2px 0 0; }
-  .medalImage { width:128px; height:auto; object-fit:contain; filter:drop-shadow(0 6px 14px rgba(0,0,0,0.35)); }
+  .cert { position:relative; width:${AMBASSADOR_CERT_WIDTH}px; height:${AMBASSADOR_CERT_HEIGHT}px; background:${NAVY}; border-radius:26px; overflow:hidden; flex-shrink:0; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  .frameSvg { position:absolute; inset:0; width:100%; height:100%; z-index:0; }
   .whiteCard { position:absolute; inset:22px; background:#fff; border-radius:20px; z-index:2; overflow:hidden; }
-  .layoutGrid { display:grid; grid-template-columns:1fr 250px; gap:18px; height:100%; padding:26px 30px 22px 150px; }
+  .layoutGrid { display:grid; grid-template-columns:212px minmax(0,1fr) 240px; gap:20px; height:100%; padding:28px 28px 24px 26px; }
+  .leftCol { display:flex; flex-direction:column; min-width:0; }
+  .brandRow { display:flex; align-items:center; gap:10px; }
+  .stackLogo { width:58px; height:58px; object-fit:contain; flex-shrink:0; }
+  .brandName { font-size:17px; font-weight:900; letter-spacing:0.4px; color:${NAVY}; margin:0; line-height:1.05; white-space:nowrap; }
+  .brandTagline { font-size:9px; font-weight:800; letter-spacing:1.6px; text-transform:uppercase; color:${ORG}; margin:3px 0 0; white-space:nowrap; }
+  .brandSite { font-size:9px; font-weight:600; color:${NAVY}; margin:3px 0 0; }
+  .medalImage { width:200px; height:auto; object-fit:contain; margin:auto; filter:drop-shadow(0 8px 14px rgba(12,44,92,0.25)); }
   .mainCol { display:flex; flex-direction:column; min-width:0; }
-  .headerRow { display:flex; justify-content:center; align-items:start; }
-  .titleMain { font-family:"DM Serif Display",serif; font-size:54px; font-weight:400; letter-spacing:12px; color:#0c2c5c; margin:0; line-height:1; text-align:center; }
-  .titleSub { display:flex; align-items:center; justify-content:center; gap:8px; font-size:17px; font-weight:800; letter-spacing:5px; color:#ed5b22; margin:6px 0 0; white-space:nowrap; }
-  .titleDash { width:44px; height:2px; background:#ed5b22; }
-  .titleDot { width:7px; height:7px; border-radius:50%; background:#ed5b22; }
-  .awardSection { text-align:center; margin-top:18px; }
-  .awardLabel { font-size:13px; font-weight:600; color:#23324d; margin:0 0 6px; }
-  .recipientName { font-family:"Great Vibes",cursive; font-size:58px; font-weight:400; color:#12275c; margin:6px 0 0; line-height:1.1; }
-  .nameDivider { width:420px; max-width:80%; height:3px; margin:10px auto 14px; background:linear-gradient(90deg, transparent, #caa53d 18%, #caa53d 82%, transparent); border-radius:2px; }
-  .appointLabel { font-size:13px; font-weight:600; color:#23324d; margin:8px 0 4px; }
-  .appointRole { font-size:30px; font-weight:900; letter-spacing:1px; color:#ed5b22; margin:0; line-height:1.1; }
-  .appointOf { font-size:15px; font-weight:800; color:#0c2c5c; margin:6px 0 10px; }
-  .description { font-size:11px; font-weight:500; line-height:1.55; color:#33415e; margin:0; }
-  .infoRow { display:flex; align-items:stretch; justify-content:center; gap:22px; margin-top:22px; }
+  .headerRow { display:flex; justify-content:center; }
+  .titleBlock { text-align:center; margin-top:2px; }
+  .titleMain { font-family:"DM Serif Display",serif; font-size:58px; font-weight:400; letter-spacing:10px; color:${NAVY}; margin:0; line-height:1; }
+  .titleSub { display:flex; align-items:center; justify-content:center; gap:8px; font-size:18px; font-weight:800; letter-spacing:4px; color:${ORG}; margin:6px 0 0; white-space:nowrap; }
+  .titleDash { width:44px; height:2px; background:${ORG}; clip-path:polygon(0 45%, 72% 45%, 72% 0, 100% 50%, 72% 100%, 72% 55%, 0 55%); }
+  .titleDot { width:7px; height:7px; border-radius:50%; background:${ORG}; }
+  .awardSection { text-align:center; margin-top:16px; }
+  .awardLabel { font-size:13px; font-weight:600; color:#23324d; margin:0 0 4px; }
+  .recipientName { font-family:"Great Vibes",cursive; font-size:66px; font-weight:400; color:#12275c; margin:0; line-height:1.15; }
+  .nameDivider { width:380px; max-width:80%; height:3px; margin:6px auto 12px; background:linear-gradient(90deg, transparent, #caa53d 18%, #caa53d 82%, transparent); border-radius:2px; }
+  .appointLabel { font-size:13px; font-weight:600; color:#23324d; margin:4px 0 2px; }
+  .appointRole { font-size:38px; font-weight:900; letter-spacing:1px; color:${ORG}; margin:0; line-height:1.1; }
+  .appointOf { font-size:16px; font-weight:800; color:${NAVY}; margin:4px 0 8px; }
+  .description { font-size:11.5px; font-weight:500; line-height:1.55; color:#33415e; margin:0; }
+  .infoRow { display:flex; align-items:stretch; justify-content:center; gap:18px; margin-top:auto; }
   .infoSep { width:1px; background:#d7dde8; }
-  .infoItem { text-align:left; min-width:130px; }
-  .infoHead { display:flex; align-items:center; gap:7px; font-size:10.5px; font-weight:800; letter-spacing:0.8px; text-transform:uppercase; color:#ed5b22; }
+  .infoItem { text-align:left; }
+  .infoHead { display:flex; align-items:center; white-space:nowrap; gap:7px; font-size:10.5px; font-weight:800; letter-spacing:0.8px; text-transform:uppercase; color:${ORG}; }
   .infoIcon { width:17px; height:17px; flex-shrink:0; }
-  .infoValue { font-size:14px; font-weight:600; color:#16233f; margin:6px 0 0 24px; }
+  .infoValue { font-size:14px; font-weight:600; color:#16233f; margin:6px 0 0 24px; white-space:nowrap; }
   .infoDotted { border-bottom:2px dotted #9aa7bd; padding-bottom:3px; display:inline-block; }
-  .signaturesRow { margin-top:28px; display:flex; align-items:flex-end; justify-content:space-between; gap:12px; padding-top:16px; }
+  .signaturesRow { margin-top:26px; display:flex; align-items:flex-end; justify-content:space-between; gap:16px; padding-top:12px; }
   .signatureCol { text-align:center; flex:1; min-width:0; }
-  .signatureSvg { width:120px; height:38px; margin-bottom:-6px; }
-  .signatureLine { width:170px; max-width:100%; height:1.5px; background:#16233f; margin:0 auto 6px; }
-  .signatureTitle { font-size:11px; font-weight:800; color:#16233f; margin:0; }
+  .signatureSvg { width:130px; height:40px; margin-bottom:-6px; }
+  .signatureLine { width:190px; max-width:100%; height:1.5px; background:#16233f; margin:0 auto 6px; }
+  .signatureTitle { font-size:11.5px; font-weight:800; color:#16233f; margin:0; }
   .signatureOrg { font-size:10px; font-weight:600; color:#33415e; margin:2px 0 0; }
   .sealWrap { flex-shrink:0; margin-bottom:4px; }
-  .sealImage { width:96px; height:96px; object-fit:contain; }
-  .sideCol { display:flex; flex-direction:column; align-items:center; padding-top:6px; }
-  .qrBox { background:#fff; border:2px solid #0c2c5c; border-radius:10px; padding:8px; line-height:0; }
+  .sealImage { width:104px; height:104px; object-fit:contain; }
+  .sideCol { display:flex; flex-direction:column; align-items:center; padding-top:4px; min-width:0; }
+  .qrBox { background:#fff; border:2px solid ${NAVY}; border-radius:10px; padding:8px; line-height:0; }
   .qrCode { width:108px; height:108px; }
   .scanLabel { font-size:10.5px; font-weight:800; letter-spacing:1px; text-transform:uppercase; color:#16233f; margin:8px 0 12px; }
   .sideLabel { align-self:flex-start; font-size:11.5px; font-weight:600; color:#33415e; margin:6px 0 4px; }
-  .certNoPill { align-self:stretch; background:#0c2c5c; color:#fff; font-size:12px; font-weight:800; letter-spacing:1px; text-align:center; padding:7px 10px; border-radius:6px; }
+  .certNoPill { align-self:stretch; background:${NAVY}; color:#fff; font-size:12px; font-weight:800; letter-spacing:1px; text-align:center; padding:7px 10px; border-radius:6px; }
   .sideValue { align-self:flex-start; font-size:14px; font-weight:700; color:#16233f; margin:0; }
   .goldRule { align-self:stretch; height:2px; background:linear-gradient(90deg, #caa53d 0%, #e9cd74 100%); border-radius:2px; margin-top:6px; }
-  .respCard { align-self:stretch; margin-top:14px; border:2px solid #0c2c5c; border-radius:10px; overflow:hidden; background:#fff; }
-  .respTitleBar { background:#0c2c5c; color:#fff; font-size:11px; font-weight:800; letter-spacing:2px; text-align:center; padding:9px 10px; }
+  .respCard { align-self:stretch; margin-top:14px; border:2px solid ${NAVY}; border-radius:10px; overflow:hidden; background:#fff; }
+  .respTitleBar { background:${NAVY}; color:#fff; font-size:11px; font-weight:800; letter-spacing:2px; text-align:center; padding:9px 10px; }
   .respList { list-style:none; margin:0; padding:12px 14px; }
   @media print { body { background:#fff; } .cert { box-shadow:none; } }
 </style></head><body>
 <div class="cert">
-  <div class="bgSwooshLeft"></div><div class="bgSwooshRight"></div>
-  <div class="medalStack">
-    <div class="stackBrandRow">
-      <img src="${logoUrl}" alt="E-Nyagasambu" class="stackLogo" />
-      <div>
-        <h1 class="brandName">E-NYAGASAMBU</h1>
-        <p class="brandTagline">Digital Market Place</p>
-        <p class="brandSite">www.enyagasambu.rw</p>
-      </div>
-    </div>
-    <img src="${badgeUrl}" alt="Official Brand Ambassador" class="medalImage" />
-  </div>
+  <svg class="frameSvg" viewBox="0 0 ${AMBASSADOR_CERT_WIDTH} ${AMBASSADOR_CERT_HEIGHT}" preserveAspectRatio="none" aria-hidden="true"><path d="${AMBASSADOR_CERT_SWOOSH_PATH}" fill="${ORG}"/><g transform="translate(${AMBASSADOR_CERT_WIDTH} 0) scale(-1 1)"><path d="${AMBASSADOR_CERT_SWOOSH_PATH}" fill="${ORG}"/></g></svg>
   <div class="whiteCard">
     <div class="layoutGrid">
+      <aside class="leftCol">
+        <div class="brandRow">
+          <img src="${logoUrl}" alt="E-Nyagasambu" class="stackLogo" />
+          <div>
+            <h1 class="brandName">E-NYAGASAMBU</h1>
+            <p class="brandTagline">Digital Market Place</p>
+            <p class="brandSite">www.enyagasambu.rw</p>
+          </div>
+        </div>
+        <img src="${badgeUrl}" alt="Official Brand Ambassador" class="medalImage" />
+      </aside>
       <div class="mainCol">
         <header class="headerRow">
-          <div style="text-align:center">
+          <div class="titleBlock">
             <h2 class="titleMain">CERTIFICATE</h2>
             <p class="titleSub"><span class="titleDash"></span><span class="titleDot"></span>OF APPOINTMENT<span class="titleDot"></span><span class="titleDash"></span></p>
           </div>
@@ -140,14 +144,14 @@ export async function buildAmbassadorCertPrintHtml(opts: {
         </div>
         <footer class="signaturesRow">
           <div class="signatureCol">
-            <svg class="signatureSvg" viewBox="0 0 140 42" aria-hidden><path d="M14,30 C28,8 44,34 58,20 S86,6 104,26 C112,32 122,22 130,18" fill="none" stroke="#1a1a3a" stroke-width="2" stroke-linecap="round"/></svg>
+            <svg class="signatureSvg" viewBox="0 0 140 42" aria-hidden="true"><path d="M14,30 C28,8 44,34 58,20 S86,6 104,26 C112,32 122,22 130,18" fill="none" stroke="#1a1a3a" stroke-width="2" stroke-linecap="round"/></svg>
             <div class="signatureLine"></div>
             <p class="signatureTitle">Platform Director</p>
             <p class="signatureOrg">E-Nyagasambu Ltd</p>
           </div>
           <div class="sealWrap"><img src="${sealUrl}" alt="Seal" class="sealImage" /></div>
           <div class="signatureCol">
-            <svg class="signatureSvg" viewBox="0 0 140 42" aria-hidden><path d="M20,28 C36,10 50,32 66,18 C78,10 92,30 108,16 C118,10 128,24 134,20" fill="none" stroke="#1a1a3a" stroke-width="2" stroke-linecap="round"/></svg>
+            <svg class="signatureSvg" viewBox="0 0 140 42" aria-hidden="true"><path d="M20,28 C36,10 50,32 66,18 C78,10 92,30 108,16 C118,10 128,24 134,20" fill="none" stroke="#1a1a3a" stroke-width="2" stroke-linecap="round"/></svg>
             <div class="signatureLine"></div>
             <p class="signatureTitle">Business Development Officer</p>
             <p class="signatureOrg">E-Nyagasambu Ltd</p>
@@ -167,7 +171,7 @@ export async function buildAmbassadorCertPrintHtml(opts: {
         <div class="goldRule"></div>
         <div class="respCard">
           <div class="respTitleBar">RESPONSIBILITIES</div>
-          <ul class="respList" style="list-style:none;margin:0;padding:12px 14px">${respItems}</ul>
+          <ul class="respList">${respItems}</ul>
         </div>
       </aside>
     </div>

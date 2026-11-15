@@ -1,0 +1,6 @@
+export const AMBASSADOR_CERT_WIDTH = 1123;
+export const AMBASSADOR_CERT_HEIGHT = 794;
+
+// Orange swoosh on the left edge; the right edge mirrors it.
+export const AMBASSADOR_CERT_SWOOSH_PATH =
+  'M-20,250 C40,150 90,70 170,-20 L230,-20 C150,80 110,170 90,260 C70,350 60,440 80,540 C90,620 110,700 140,814 L60,814 C20,700 -10,560 -20,430 Z';
