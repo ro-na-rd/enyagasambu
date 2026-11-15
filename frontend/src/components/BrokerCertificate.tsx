@@ -6,6 +6,8 @@ import { useQrDataUrl } from './QrCode';
 
 const NAVY = '#0e1f4b';
 const ORG = '#f2701c';
+const CARD_W = 520;
+const CARD_H = 240;
 
 export interface BrokerCertificateProps {
   name: string;
@@ -28,64 +30,54 @@ const DEFAULT_SERVICES = [
   'Customer Support',
 ];
 
+const FONT = "'Poppins', Arial, sans-serif";
+const SHADOW = '0 22px 45px rgba(10,20,50,0.25)';
+
 function BrokerFront({ name, brokerId, district, phone, email, qr, photo }: {
   name: string; brokerId: string; district: string; phone: string; email: string; qr: string; photo: string | null;
 }) {
-  const W = 520, H = 300;
+  const fields = [
+    { ic: <BadgeCheck size={14} color={ORG} />, k: 'Broker ID', v: brokerId },
+    { ic: <MapPin size={14} color={ORG} />, k: 'District', v: district },
+    { ic: <Phone size={14} color={ORG} />, k: 'Phone', v: phone },
+    { ic: <Mail size={14} color={ORG} />, k: 'Email', v: email },
+  ];
+  const rowCentres = [139, 164, 189, 214];
+
   return (
-    <div style={{ width: W, height: H, borderRadius: 18, overflow: 'hidden', position: 'relative', background: NAVY, fontFamily: "'Poppins', Arial, sans-serif", boxShadow: '0 22px 45px rgba(10,20,50,0.25)', flexShrink: 0 }}>
-      <div style={{ position: 'absolute', top: 0, right: -90, bottom: 0, width: '42%', background: '#ffffff', transform: 'skewX(-12deg)', transformOrigin: 'top right' }} />
-      <div style={{ position: 'absolute', top: 0, right: -150, bottom: 0, width: '36%', background: ORG, transform: 'skewX(-12deg)', transformOrigin: 'top right' }} />
+    <div style={{ width: CARD_W, height: CARD_H, borderRadius: 18, overflow: 'hidden', position: 'relative', background: NAVY, fontFamily: FONT, boxShadow: SHADOW, flexShrink: 0 }}>
+      <div style={{ position: 'absolute', inset: 0, background: ORG, clipPath: 'polygon(88% 0%, 100% 0%, 100% 20%, 93% 51%, 76% 100%, 71% 100%, 84% 50%)' }} />
+      <div style={{ position: 'absolute', inset: 0, background: '#f4f5f8', clipPath: 'polygon(62.8% 0%, 88% 0%, 91% 20%, 84% 52%, 74% 100%, 58.7% 45.5%)' }} />
 
-      <div style={{ position: 'relative', zIndex: 2, display: 'flex', height: '100%', padding: 26, gap: 12 }}>
-        <div style={{ flex: '1.9', display: 'flex', flexDirection: 'column' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-            <AppImage src="/assets/logo.png" alt="E-Nyagasambu" style={{ width: 38, height: 38, objectFit: 'contain', flexShrink: 0 }} />
-            <div>
-              <div style={{ fontWeight: 900, fontSize: 14.5, letterSpacing: 0.5, color: '#fff', lineHeight: 1.15, fontFamily: "'Literata', serif" }}>E-NYAGASAMBU</div>
-              <div style={{ fontSize: 7, fontWeight: 600, letterSpacing: 1.8, color: ORG }}>DIGITAL MARKET PLACE</div>
-            </div>
-          </div>
+      <AppImage src="/assets/logo.png" alt="E-Nyagasambu" width={105} height={141} style={{ position: 'absolute', left: 25, top: 11, width: 38, height: 38, objectFit: 'contain' }} />
+      <div style={{ position: 'absolute', left: 74, top: 14, fontWeight: 800, fontSize: 18, color: '#fff', lineHeight: 1, letterSpacing: -0.2, fontFamily: "'Literata', serif", whiteSpace: 'nowrap' }}>E-NYAGASAMBU</div>
+      <div style={{ position: 'absolute', left: 74, top: 37, fontSize: 9.5, fontWeight: 600, letterSpacing: 1.4, color: ORG, whiteSpace: 'nowrap' }}>DIGITAL MARKET PLACE</div>
 
-          <div style={{ marginTop: 12, fontWeight: 800, fontSize: 14, letterSpacing: 0.6, color: ORG }}>CERTIFIED BROKER</div>
+      <div style={{ position: 'absolute', left: 74, top: 58, fontSize: 15, fontWeight: 800, letterSpacing: 0.3, color: ORG, whiteSpace: 'nowrap' }}>CERTIFIED BROKER</div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12 }}>
-            <User size={17} color="#ffb585" />
-            <span style={{ fontWeight: 700, fontSize: 18, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 210 }}>{name}</span>
-          </div>
+      <div style={{ position: 'absolute', left: 25, top: 94, width: 16, height: 16, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <User size={16} color="#ffffff" />
+      </div>
+      <div style={{ position: 'absolute', left: 53, top: 92, fontSize: 17, fontWeight: 700, color: '#fff', whiteSpace: 'nowrap' }}>{name}</div>
 
-          <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {[
-              { ic: <BadgeCheck size={12} color={ORG} />, k: 'Broker ID', v: brokerId },
-              { ic: <MapPin size={12} color={ORG} />, k: 'District',  v: district },
-              { ic: <Phone size={12} color={ORG} />, k: 'Phone',     v: phone || 'N/A' },
-              { ic: <Mail size={12} color={ORG} />, k: 'Email',     v: email },
-            ].map(({ ic, k, v }) => (
-              <div key={k} style={{ display: 'flex', alignItems: 'center', gap: 9, fontSize: 11.5 }}>
-                <span style={{ width: 20, height: 20, borderRadius: 6, background: 'rgba(255,255,255,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: ORG, flexShrink: 0 }}>{ic}</span>
-                <span style={{ color: '#c6cde6', minWidth: 52 }}>{k}</span>
-                <span style={{ color: '#fff', fontWeight: 600, fontSize: k === 'Email' ? 10.5 : undefined, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>: {v}</span>
-              </div>
-            ))}
-          </div>
+      {fields.map(({ ic, k, v }, i) => (
+        <div key={k}>
+          <div style={{ position: 'absolute', left: 25, top: rowCentres[i] - 7, width: 14, height: 14, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{ic}</div>
+          <div style={{ position: 'absolute', left: 53, top: rowCentres[i] - 8, fontSize: 12, fontWeight: 500, color: '#e6e9f5', lineHeight: '16px', whiteSpace: 'nowrap' }}>{k}</div>
+          <div style={{ position: 'absolute', left: 147, top: rowCentres[i] - 8, fontSize: 12, fontWeight: 600, color: '#fff', lineHeight: '16px', whiteSpace: 'nowrap' }}>: {v}</div>
         </div>
+      ))}
 
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'space-between', padding: '4px 0' }}>
-          <div style={{ borderRadius: '50%', background: ORG, padding: 4, boxShadow: '0 6px 14px rgba(0,0,0,0.25)' }}>
-            <div style={{ width: 84, height: 84, borderRadius: '50%', border: '3px solid #fff', overflow: 'hidden', background: '#dfe3ef', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              {photo
-                ? <AppImage src={photo} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                : <User size={46} color="#98a1bd" />
-              }
-            </div>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <div style={{ background: '#fff', border: `2px solid ${ORG}`, borderRadius: 10, padding: 4, boxShadow: '0 4px 10px rgba(0,0,0,0.12)' }}>
-              <AppImage src={qr} alt="QR" width={54} height={54} style={{ display: 'block' }} />
-            </div>
-            <div style={{ fontSize: 7, fontWeight: 700, color: NAVY, letterSpacing: 0.8, marginTop: 3 }}>SCAN TO VERIFY</div>
-          </div>
-        </div>
+      <div style={{ position: 'absolute', left: 431, top: 122, width: 77, height: 77, boxSizing: 'border-box', background: '#fff', border: `2px solid ${ORG}`, borderRadius: 10, padding: 4, boxShadow: '0 4px 10px rgba(0,0,0,0.2)' }}>
+        {qr && <AppImage src={qr} alt="QR" width={65} height={65} style={{ display: 'block', width: 65, height: 65 }} />}
+      </div>
+      <div style={{ position: 'absolute', left: 431, top: 203, width: 77, textAlign: 'center', fontSize: 8.5, fontWeight: 800, color: '#fff', letterSpacing: 0.5, whiteSpace: 'nowrap' }}>SCAN TO VERIFY</div>
+
+      <div style={{ position: 'absolute', left: 336, top: 13, width: 114, height: 114, boxSizing: 'border-box', borderRadius: '50%', border: `3px solid ${ORG}`, background: '#dfe3ef', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        {photo
+          ? <AppImage src={photo} alt="Profile" width={108} height={108} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          : <User size={50} color="#98a1bd" />
+        }
       </div>
     </div>
   );
@@ -93,53 +85,43 @@ function BrokerFront({ name, brokerId, district, phone, email, qr, photo }: {
 
 function BrokerBack({ qr, services }: { qr: string; services: string[] }) {
   const displayServices = services.length > 0 ? services : DEFAULT_SERVICES;
+  const contacts = [
+    { ic: <Globe size={19} color={NAVY} />, label: 'Website', val: `www.${SITE_DOMAIN}`, labelTop: 57, iconTop: 61 },
+    { ic: <Mail size={19} color={NAVY} />, label: 'Email', val: `info@${SITE_DOMAIN}`, labelTop: 103, iconTop: 107 },
+    { ic: <Phone size={19} color={NAVY} />, label: 'Emergency Contact', val: '+250 788 300 003', labelTop: 144, iconTop: 148 },
+  ];
+
   return (
-    <div style={{ width: 520, height: 300, borderRadius: 18, overflow: 'hidden', position: 'relative', background: '#ffffff', fontFamily: "'Poppins', Arial, sans-serif", boxShadow: '0 22px 45px rgba(10,20,50,0.25)', flexShrink: 0 }}>
-      <div style={{ position: 'relative', zIndex: 2, display: 'flex', flexDirection: 'column', height: '100%', padding: '24px 26px 0' }}>
-        <div style={{ display: 'flex', flex: 1, gap: 16, minHeight: 0 }}>
-          <div style={{ flex: '1.2', display: 'flex', flexDirection: 'column' }}>
-            <span style={{ alignSelf: 'flex-start', background: NAVY, color: '#fff', fontSize: 10, fontWeight: 700, letterSpacing: 1.5, padding: '6px 14px', borderRadius: 6, marginBottom: 14 }}>AUTHORIZED SERVICES</span>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
-              {displayServices.map(s => (
-                <div key={s} style={{ display: 'flex', alignItems: 'center', gap: 9, fontSize: 11.5, color: NAVY, fontWeight: 600 }}>
-                  <span style={{ width: 16, height: 16, borderRadius: '50%', background: ORG, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, flexShrink: 0 }}><Check size={10} /></span>
-                  {s}
-                </div>
-              ))}
-            </div>
-          </div>
+    <div style={{ width: CARD_W, height: CARD_H, borderRadius: 18, overflow: 'hidden', position: 'relative', background: '#ffffff', fontFamily: FONT, boxShadow: SHADOW, flexShrink: 0 }}>
+      <div style={{ position: 'absolute', left: 0, right: 0, top: 193, height: 47, background: NAVY }} />
+      <div style={{ position: 'absolute', left: 0, right: 0, top: 193, height: 47, background: ORG, clipPath: 'polygon(79.4% 0%, 100% 0%, 100% 100%, 72.5% 100%)' }} />
+      <p style={{ position: 'absolute', left: 44, top: 210, margin: 0, fontSize: 9.5, fontWeight: 600, color: ORG, lineHeight: '14px', whiteSpace: 'nowrap' }}>Building Trust. Connecting Opportunities. Growing Together.</p>
 
-          <div style={{ width: 1, background: '#d7dde8', flexShrink: 0 }} />
+      <div style={{ position: 'absolute', left: 32, top: 20, width: 158, height: 22, boxSizing: 'border-box', background: NAVY, color: '#fff', borderRadius: 6, fontSize: 9.5, fontWeight: 700, letterSpacing: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', whiteSpace: 'nowrap' }}>AUTHORIZED SERVICES</div>
 
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 12, paddingTop: 30 }}>
-            {[
-              { ic: <Globe size={14} color={ORG} />, label: 'Website',   val: `www.${SITE_DOMAIN}` },
-              { ic: <Mail size={14} color={ORG} />, label: 'Email',     val: `info@${SITE_DOMAIN}` },
-              { ic: <Phone size={14} color={ORG} />, label: 'Emergency Contact', val: '+250 788 300 003' },
-            ].map(({ ic, label, val }) => (
-              <div key={label} style={{ display: 'flex', gap: 9, alignItems: 'flex-start' }}>
-                <span style={{ color: ORG, marginTop: 1, flexShrink: 0 }}>{ic}</span>
-                <div>
-                  <div style={{ fontSize: 9.5, color: '#5c6684', fontWeight: 600 }}>{label}</div>
-                  <div style={{ fontSize: 11.5, color: NAVY, fontWeight: 700, whiteSpace: 'nowrap' }}>{val}</div>
-                </div>
-              </div>
-            ))}
+      {displayServices.map((s, i) => (
+        <div key={s}>
+          <div style={{ position: 'absolute', left: 25, top: 63 + i * 26, width: 14, height: 14, borderRadius: '50%', background: ORG, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Check size={9} />
           </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6, flexShrink: 0 }}>
-            <div style={{ border: `2px solid ${NAVY}`, borderRadius: 10, padding: 4, background: '#fff' }}>
-              <AppImage src={qr} alt="QR" width={70} height={70} style={{ display: 'block' }} />
-            </div>
-            <div style={{ fontSize: 7.5, fontWeight: 700, color: NAVY, letterSpacing: 0.8 }}>SCAN TO VERIFY</div>
-          </div>
+          <div style={{ position: 'absolute', left: 48, top: 63 + i * 26 - 1, fontSize: 10.5, fontWeight: 600, color: NAVY, lineHeight: '16px', whiteSpace: 'nowrap' }}>{s}</div>
         </div>
+      ))}
 
-        <div style={{ position: 'relative', margin: '0 -26px', height: 42, background: '#ffffff', borderTop: '1px solid #e6e9f2', display: 'flex', alignItems: 'center', padding: '0 26px', overflow: 'hidden' }}>
-          <div style={{ position: 'absolute', right: -24, bottom: -34, width: 130, height: 80, transform: 'rotate(-18deg)', background: ORG }} />
-          <p style={{ position: 'relative', margin: 0, fontSize: 11, fontWeight: 600, fontStyle: 'italic', color: ORG, letterSpacing: 0.3 }}>Building Trust. Connecting Opportunities. Growing Together.</p>
+      <div style={{ position: 'absolute', left: 201, top: 53, width: 1, height: 133, background: NAVY, opacity: 0.6 }} />
+
+      {contacts.map(({ ic, label, val, labelTop, iconTop }) => (
+        <div key={label}>
+          <div style={{ position: 'absolute', left: 221, top: iconTop, width: 19, height: 19, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{ic}</div>
+          <div style={{ position: 'absolute', left: 251, top: labelTop, fontSize: 10, fontWeight: 500, color: NAVY, lineHeight: '12px', whiteSpace: 'nowrap' }}>{label}</div>
+          <div style={{ position: 'absolute', left: 251, top: labelTop + 15, fontSize: 11.5, fontWeight: 500, color: NAVY, lineHeight: '14px', whiteSpace: 'nowrap' }}>{val}</div>
         </div>
+      ))}
+
+      <div style={{ position: 'absolute', left: 401, top: 60, width: 92, height: 92, boxSizing: 'border-box', background: '#fff', border: `2px solid ${NAVY}`, borderRadius: 10, padding: 4 }}>
+        {qr && <AppImage src={qr} alt="QR" width={76} height={76} style={{ display: 'block', width: 76, height: 76 }} />}
       </div>
+      <div style={{ position: 'absolute', left: 401, top: 162, width: 92, textAlign: 'center', fontSize: 9.5, fontWeight: 700, color: NAVY, letterSpacing: 0.5, whiteSpace: 'nowrap' }}>SCAN TO VERIFY</div>
     </div>
   );
 }
@@ -165,7 +147,7 @@ export default function BrokerCertificate({
         name={name}
         brokerId={brokerId}
         district={district}
-        phone={phone || ''}
+        phone={phone || 'N/A'}
         email={email}
         qr={qr}
         photo={photo}
