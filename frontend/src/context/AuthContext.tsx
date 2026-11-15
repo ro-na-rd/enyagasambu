@@ -64,7 +64,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    refreshUser().finally(() => setLoading(false));
+    let cancelled = false;
+    const hydrate = async () => {
+      try {
+        await refreshUser();
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    hydrate();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const login = async (email: string, password: string, role?: string) => {

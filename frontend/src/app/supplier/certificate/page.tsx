@@ -135,7 +135,7 @@ export default function SupplierCertificatePage() {
       : new Promise<void>((resolve) => {
         image.addEventListener('load', () => resolve(), { once: true });
         image.addEventListener('error', () => resolve(), { once: true });
-      }))));
+      })));
     await document.fonts?.ready;
     requestAnimationFrame(() => window.print());
   };

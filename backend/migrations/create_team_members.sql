@@ -1,6 +1,25 @@
 -- Ensure the new-schema columns exist so this migration runs against any prior team_members layout.
 -- MySQL 8.4 has no ADD COLUMN IF NOT EXISTS, so add each missing column via dynamic SQL.
 
+-- The base table is not part of schema.sql, so this migration must create it
+-- before the column backfills below can run against a fresh database.
+CREATE TABLE IF NOT EXISTS team_members (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  category ENUM('team','board') NOT NULL DEFAULT 'team',
+  name VARCHAR(255) NOT NULL,
+  role VARCHAR(255) DEFAULT NULL,
+  executive_role VARCHAR(20) DEFAULT NULL,
+  photo_url VARCHAR(500) DEFAULT NULL,
+  photo_position VARCHAR(50) NOT NULL DEFAULT 'center',
+  photo_zoom DECIMAL(6,2) NOT NULL DEFAULT 1.00,
+  sort_order INT NOT NULL DEFAULT 0,
+  active TINYINT(1) NOT NULL DEFAULT 1,
+  updated_by INT DEFAULT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  KEY idx_team_members_category_sort (category, sort_order, id)
+);
+
 SET @db = DATABASE();
 
 SET @col := (SELECT COUNT(*) FROM information_schema.COLUMNS
