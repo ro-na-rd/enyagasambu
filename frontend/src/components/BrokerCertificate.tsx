@@ -42,7 +42,7 @@ function BrokerFront({ name, brokerId, district, phone, email, qr, photo }: {
     { ic: <Phone size={14} color={ORG} />, k: 'Phone', v: phone },
     { ic: <Mail size={14} color={ORG} />, k: 'Email', v: email },
   ];
-  const rowCentres = [139, 164, 189, 214];
+  const rowCentres = [133, 158, 183, 208];
 
   return (
     <div style={{ width: CARD_W, height: CARD_H, borderRadius: 18, overflow: 'hidden', position: 'relative', background: NAVY, fontFamily: FONT, boxShadow: SHADOW, flexShrink: 0 }}>
@@ -93,9 +93,9 @@ function BrokerBack({ qr, services }: { qr: string; services: string[] }) {
 
   return (
     <div style={{ width: CARD_W, height: CARD_H, borderRadius: 18, overflow: 'hidden', position: 'relative', background: '#ffffff', fontFamily: FONT, boxShadow: SHADOW, flexShrink: 0 }}>
-      <div style={{ position: 'absolute', left: 0, right: 0, top: 193, height: 47, background: NAVY }} />
-      <div style={{ position: 'absolute', left: 0, right: 0, top: 193, height: 47, background: ORG, clipPath: 'polygon(79.4% 0%, 100% 0%, 100% 100%, 72.5% 100%)' }} />
-      <p style={{ position: 'absolute', left: 44, top: 210, margin: 0, fontSize: 9.5, fontWeight: 600, color: ORG, lineHeight: '14px', whiteSpace: 'nowrap' }}>Building Trust. Connecting Opportunities. Growing Together.</p>
+      <div style={{ position: 'absolute', left: 0, right: 0, top: 198, height: 42, background: NAVY }} />
+      <div style={{ position: 'absolute', left: 0, right: 0, top: 198, height: 42, background: ORG, clipPath: 'polygon(79.4% 0%, 100% 0%, 100% 100%, 72.5% 100%)' }} />
+      <p style={{ position: 'absolute', left: 44, top: 212,margin: 0, fontSize: 9.5, fontWeight: 600, color: ORG, lineHeight: '14px', whiteSpace: 'nowrap' }}>Building Trust. Connecting Opportunities. Growing Together.</p>
 
       <div style={{ position: 'absolute', left: 32, top: 20, width: 158, height: 22, boxSizing: 'border-box', background: NAVY, color: '#fff', borderRadius: 6, fontSize: 9.5, fontWeight: 700, letterSpacing: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', whiteSpace: 'nowrap' }}>AUTHORIZED SERVICES</div>
 
