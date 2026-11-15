@@ -34,11 +34,11 @@ function BrokerFront({ name, brokerId, district, phone, email, qr, photo }: {
   const W = 520, H = 300;
   return (
     <div style={{ width: W, height: H, borderRadius: 18, overflow: 'hidden', position: 'relative', background: NAVY, fontFamily: "'Poppins', Arial, sans-serif", boxShadow: '0 22px 45px rgba(10,20,50,0.25)', flexShrink: 0 }}>
-      <div style={{ position: 'absolute', top: 0, right: -30, bottom: 0, width: '52%', background: NAVY, transform: 'skewX(-12deg)', transformOrigin: 'top right' }} />
-      <div style={{ position: 'absolute', top: 0, right: -90, bottom: 0, width: '52%', background: ORG, transform: 'skewX(-12deg)', transformOrigin: 'top right' }} />
+      <div style={{ position: 'absolute', top: 0, right: -90, bottom: 0, width: '42%', background: '#ffffff', transform: 'skewX(-12deg)', transformOrigin: 'top right' }} />
+      <div style={{ position: 'absolute', top: 0, right: -150, bottom: 0, width: '36%', background: ORG, transform: 'skewX(-12deg)', transformOrigin: 'top right' }} />
 
       <div style={{ position: 'relative', zIndex: 2, display: 'flex', height: '100%', padding: 26, gap: 12 }}>
-        <div style={{ flex: '1.6', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ flex: '1.9', display: 'flex', flexDirection: 'column' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
             <AppImage src="/assets/logo.png" alt="E-Nyagasambu" style={{ width: 38, height: 38, objectFit: 'contain', flexShrink: 0 }} />
             <div>
@@ -59,12 +59,12 @@ function BrokerFront({ name, brokerId, district, phone, email, qr, photo }: {
               { ic: <BadgeCheck size={12} color={ORG} />, k: 'Broker ID', v: brokerId },
               { ic: <MapPin size={12} color={ORG} />, k: 'District',  v: district },
               { ic: <Phone size={12} color={ORG} />, k: 'Phone',     v: phone || 'N/A' },
-              { ic: <Mail size={12} color={ORG} />, k: 'Email',     v: email.length > 22 ? email.slice(0, 20) + '\u2026' : email },
+              { ic: <Mail size={12} color={ORG} />, k: 'Email',     v: email },
             ].map(({ ic, k, v }) => (
               <div key={k} style={{ display: 'flex', alignItems: 'center', gap: 9, fontSize: 11.5 }}>
                 <span style={{ width: 20, height: 20, borderRadius: 6, background: 'rgba(255,255,255,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: ORG, flexShrink: 0 }}>{ic}</span>
                 <span style={{ color: '#c6cde6', minWidth: 52 }}>{k}</span>
-                <span style={{ color: '#fff', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>: {v}</span>
+                <span style={{ color: '#fff', fontWeight: 600, fontSize: k === 'Email' ? 10.5 : undefined, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>: {v}</span>
               </div>
             ))}
           </div>
@@ -83,7 +83,7 @@ function BrokerFront({ name, brokerId, district, phone, email, qr, photo }: {
             <div style={{ background: '#fff', border: `2px solid ${ORG}`, borderRadius: 10, padding: 4, boxShadow: '0 4px 10px rgba(0,0,0,0.12)' }}>
               <AppImage src={qr} alt="QR" width={54} height={54} style={{ display: 'block' }} />
             </div>
-            <div style={{ fontSize: 7, fontWeight: 700, color: '#ffb585', letterSpacing: 0.8, marginTop: 3 }}>SCAN TO VERIFY</div>
+            <div style={{ fontSize: 7, fontWeight: 700, color: NAVY, letterSpacing: 0.8, marginTop: 3 }}>SCAN TO VERIFY</div>
           </div>
         </div>
       </div>
