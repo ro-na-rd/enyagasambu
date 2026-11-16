@@ -1,6 +1,7 @@
 const { refreshSession, revokeSession, clearSessionCookies } = require('../services/authSessionService');
 
 exports.current = (req, res) => {
+  if (!req.user) return res.json({ user: null });
   const { sid, typ, iat, exp, ...user } = req.user;
   return res.json({ user });
 };

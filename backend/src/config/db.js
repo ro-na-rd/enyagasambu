@@ -1,4 +1,5 @@
 const mysql = require('mysql2/promise');
+const { logger } = require('./logger');
 
 const pool = mysql.createPool({
   host: process.env.DB_HOST,

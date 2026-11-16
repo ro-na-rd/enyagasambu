@@ -76,6 +76,18 @@ const authenticateOptional = async (req, res, next) => {
   next();
 };
 
+// Lets anonymous requests through without a 401, but keeps expired tokens
+// rejected so the client can fall back to /auth/session/refresh.
+const authenticateIfPresent = (req, res, next) => {
+  const token = bearerToken(req);
+  const cookieToken = parseCookies(req.headers.cookie)[ACCESS_COOKIE];
+  if (!token && !cookieToken) {
+    req.user = null;
+    return next();
+  }
+  return authenticate(req, res, next);
+};
+
 const authenticatePhoneSeller = (req, res, next) => {
   const header = req.headers.authorization;
   if (!header || !header.startsWith('Bearer ')) {
@@ -123,4 +135,4 @@ const logExecutiveAction = async (pool, staffId, executiveRole, action, module, 
   );
 };
 
-module.exports = { authenticate, authenticateOptional, authenticatePhoneSeller, requireAdmin, requireStaff, requireBroker, requireAmbassador, requireSupplier, requireExecutive, requireExecutiveRole, checkExecutivePermission, logExecutiveAction };
+module.exports = { authenticate, authenticateOptional, authenticateIfPresent, authenticatePhoneSeller, requireAdmin, requireStaff, requireBroker, requireAmbassador, requireSupplier, requireExecutive, requireExecutiveRole, checkExecutivePermission, logExecutiveAction };

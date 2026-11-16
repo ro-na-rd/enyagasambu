@@ -4,7 +4,7 @@ const { body, validationResult } = require('express-validator');
 const { register, login, me, updateMe, summary, applyPromo } = require('../controllers/authController');
 const { forgotPassword, resetPassword } = require('../controllers/resetPasswordController');
 const { current, refresh, logout } = require('../controllers/sessionController');
-const { authenticate } = require('../middleware/auth');
+const { authenticate, authenticateIfPresent } = require('../middleware/auth');
 const { loginLimiter, passwordResetLimiter } = require('../middleware/rateLimiter');
 const { requireRegistrationOpen } = require('../middleware/registrationOpen');
 
@@ -39,7 +39,7 @@ router.post(
   login
 );
 
-router.get('/session', authenticate, current);
+router.get('/session', authenticateIfPresent, current);
 router.post('/session/refresh', refresh);
 router.post('/session/logout', logout);
 
