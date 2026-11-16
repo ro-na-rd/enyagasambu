@@ -1,6 +1,6 @@
 'use client';
 import { useAuth } from '@/context/AuthContext';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import api from '@/lib/api';
 import { CheckCircle, AlertCircle, User } from '@/lib/icons';
 
@@ -12,18 +12,27 @@ const BRAND = {
 };
 
 export default function AdminProfilePage() {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const [msg, setMsg] = useState<React.ReactNode>('');
   const [form, setForm] = useState({ name: user?.name || '', email: user?.email || '', phone: user?.phone || '' });
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    setForm({ name: user?.name || '', email: user?.email || '', phone: user?.phone || '' });
+  }, [user?.name, user?.email, user?.phone]);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setMsg('');
+    setSaving(true);
     try {
       await api.put('/admin/profile', form);
+      await refreshUser();
       setMsg(<><CheckCircle size={14} className="inline" style={{ color: '#2ea043' }} /> Profile updated</>);
     } catch {
       setMsg(<><AlertCircle size={14} className="inline" style={{ color: '#f85149' }} /> Failed to update</>);
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -82,8 +91,8 @@ export default function AdminProfilePage() {
                 className="border rounded-lg px-3 py-2.5 text-sm w-full focus:outline-none focus:ring-2 focus:ring-orange-500/30"
                 style={{ background: '#f6f8fa', borderColor: '#d0d7de', color: '#1a1a1a' }} />
             </div>
-            <button type="submit" className="text-white text-sm font-semibold px-5 py-2.5 rounded-lg transition"
-              style={{ background: `linear-gradient(135deg, ${BRAND.orange}, ${BRAND.orangeDark})` }}>Save Changes</button>
+            <button type="submit" disabled={saving} className="text-white text-sm font-semibold px-5 py-2.5 rounded-lg transition disabled:cursor-not-allowed disabled:opacity-60"
+              style={{ background: `linear-gradient(135deg, ${BRAND.orange}, ${BRAND.orangeDark})` }}>{saving ? 'Saving...' : 'Save Changes'}</button>
           </div>
         </form>
       </div>

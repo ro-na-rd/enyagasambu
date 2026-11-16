@@ -31,7 +31,7 @@ const STAFF_ROLES = [
   { value: 'moderator', label: 'Moderator', color: '#d29922', bg: 'rgba(210,153,34,0.1)' },
 ];
 
-const EXEC_ROLES = ['CEO', 'CIO', 'COO', 'CMO', 'CFO'];
+const EXEC_ROLES = ['CEO', 'CIO', 'CTO', 'COO', 'CMO', 'CFO'];
 
 export default function CEOStaffManagementPage() {
   const [staffList, setStaffList] = useState<StaffMember[]>([]);

@@ -1,36 +1,9 @@
 const pool = require('../config/db');
-const crypto = require('crypto');
 const { uploadToS3, deleteFromS3Url } = require('../services/s3Service');
 const { notifyAdmins, notifyUser } = require('../services/notificationService');
 const { loadCategoryFields, sanitizeAttributes } = require('../services/categoryFieldsService');
 const { logger } = require('../config/logger');
-
-// Staff accounts (admin/moderator) live in the `staff` table, but listings.user_id
-// is a FK to `users(id)`. Map a staff member to a marketplace users row, creating one if needed.
-async function getOrCreateAdminUserId(conn, staffId) {
-  const [[staff]] = await conn.query('SELECT id, username, email, phone FROM staff WHERE id = ?', [staffId]);
-  if (!staff) throw new Error('Staff account not found');
-
-  if (staff.email) {
-    const [[existing]] = await conn.query('SELECT id FROM users WHERE email = ? LIMIT 1', [staff.email]);
-    if (existing) return existing.id;
-  }
-
-  if (staff.phone) {
-    const phoneDigits = staff.phone.replace(/\D/g, '');
-    if (phoneDigits) {
-      const [rows] = await conn.query('SELECT id, phone FROM users WHERE phone IS NOT NULL');
-      const match = rows.find((u) => (u.phone || '').replace(/\D/g, '') === phoneDigits);
-      if (match) return match.id;
-    }
-  }
-
-  const [result] = await conn.query(
-    'INSERT INTO users (name, email, phone, password_hash, role, coins) VALUES (?, ?, ?, ?, ?, 0)',
-    [staff.username, staff.email || null, staff.phone || null, crypto.randomBytes(32).toString('hex'), 'admin']
-  );
-  return result.insertId;
-}
+const { getOrCreateStaffMarketplaceUser } = require('../services/marketplaceUserService');
 
 exports.getStats = async (req, res) => {
   try {
@@ -379,7 +352,7 @@ exports.createListing = async (req, res) => {
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 90);
     
-    const adminUserId = await getOrCreateAdminUserId(conn, req.user.id);
+    const adminUserId = await getOrCreateStaffMarketplaceUser(conn, req.user.id);
     
     const { values: attributes, errors: attributeErrors } = sanitizeAttributes(
       await loadCategoryFields(category_id, conn),
@@ -459,7 +432,7 @@ exports.createListingWithFiles = async (req, res) => {
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 90);
     
-    const adminUserId = await getOrCreateAdminUserId(conn, req.user.id);
+    const adminUserId = await getOrCreateStaffMarketplaceUser(conn, req.user.id);
     
     const { values: attributes, errors: attributeErrors } = sanitizeAttributes(
       await loadCategoryFields(category_id, conn),
@@ -891,11 +864,46 @@ exports.updateProfile = async (req, res) => {
   const { name, email, phone } = req.body;
   try {
     if (req.user.is_staff) {
-      await pool.query('UPDATE staff SET username = ?, phone = ? WHERE id = ?', [email || name, phone || null, req.user.id]);
+      const username = String(name || '').trim();
+      const normalizedEmail = String(email || '').trim() || null;
+      const normalizedPhone = String(phone || '').trim() || null;
+
+      if (!username) return res.status(400).json({ message: 'Name is required' });
+
+      const [[existing]] = await pool.query('SELECT id FROM staff WHERE id = ?', [req.user.id]);
+      if (!existing) return res.status(404).json({ message: 'Staff account not found' });
+
+      const [[usernameInUse]] = await pool.query(
+        'SELECT id FROM staff WHERE username = ? AND id != ?',
+        [username, req.user.id]
+      );
+      if (usernameInUse) return res.status(409).json({ message: 'Name is already in use' });
+
+      if (normalizedEmail) {
+        const [[emailInUse]] = await pool.query(
+          'SELECT id FROM staff WHERE email = ? AND id != ?',
+          [normalizedEmail, req.user.id]
+        );
+        if (emailInUse) return res.status(409).json({ message: 'Email is already in use' });
+      }
+
+      await pool.query(
+        'UPDATE staff SET username = ?, email = ?, phone = ? WHERE id = ?',
+        [username, normalizedEmail, normalizedPhone, req.user.id]
+      );
+      const [[updated]] = await pool.query(
+        'SELECT id, username AS name, COALESCE(email, username) AS email, phone, role, executive_role FROM staff WHERE id = ?',
+        [req.user.id]
+      );
+      return res.json({ message: 'Profile updated', user: updated });
     } else {
       await pool.query('UPDATE users SET name = ?, email = ?, phone = ? WHERE id = ?', [name, email, phone, req.user.id]);
+      const [[updated]] = await pool.query(
+        'SELECT id, name, email, phone, role FROM users WHERE id = ?',
+        [req.user.id]
+      );
+      return res.json({ message: 'Profile updated', user: updated });
     }
-    return res.json({ message: 'Profile updated' });
   } catch (err) {
     logger.error(err);
     return res.status(500).json({ message: 'Server error' });

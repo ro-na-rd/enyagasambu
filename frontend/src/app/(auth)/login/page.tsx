@@ -143,6 +143,7 @@ export default function LoginPage() {
       const execRedirects: Record<string, string> = {
         CEO: '/executive/ceo',
         CIO: '/executive/cio',
+        CTO: '/executive/cio',
         COO: '/executive/coo',
         CMO: '/executive/cmo',
         CFO: '/executive/cfo',

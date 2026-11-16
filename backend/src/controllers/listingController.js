@@ -8,6 +8,9 @@ const { uploadToS3 } = require('../services/s3Service');
 const { notifyAdmins, notifyUser } = require('../services/notificationService');
 const { loadCategoryFields, sanitizeAttributes, parseAttributes } = require('../services/categoryFieldsService');
 const { logger } = require('../config/logger');
+const { normalizeRwandaPhone: normalizePhone, isValidRwandaPhone } = require('../utils/phone');
+const { canPostMarketplaceListingForFree } = require('../services/executivePolicyService');
+const { getOrCreateStaffMarketplaceUser } = require('../services/marketplaceUserService');
 
 const LISTING_COST = 400;
 const CONNECT_COST = 300;
@@ -27,10 +30,6 @@ async function getListingPrices() {
     logger.error('Error fetching listing prices from settings:', err);
     return { 3: 500, 7: 1000, 30: 3500 }; // fallback to defaults
   }
-}
-
-function normalizePhone(phone) {
-  return phone ? phone.replace(/\s+/g, '') : '';
 }
 
 function generateRenewalToken() {
@@ -197,6 +196,7 @@ exports.createListing = async (req, res) => {
 
     let userId;
     let isAdmin = false;
+    let isExecutive = false;
     let postingFree = false;
     let postingFee = LISTING_COST;
     let user = null;
@@ -216,8 +216,10 @@ exports.createListing = async (req, res) => {
 
     // Get or create user
     if (req.user) {
-      userId = req.user.id;
+      const isStaff = req.user.is_staff === true;
+      userId = isStaff ? await getOrCreateStaffMarketplaceUser(conn, req.user.id) : req.user.id;
       isAdmin = req.user.role === 'admin';
+      isExecutive = canPostMarketplaceListingForFree(req.user) && !isAdmin;
       [[user]] = await conn.query('SELECT name, coins, phone, role, is_verified FROM users WHERE id = ? FOR UPDATE', [userId]);
     } else {
       const { guest_name, guest_phone } = req.body;
@@ -225,8 +227,13 @@ exports.createListing = async (req, res) => {
         await conn.rollback();
         return res.status(400).json({ message: 'Name and phone are required when not signed in.' });
       }
+      const normalizedGuestPhone = normalizePhone(guest_phone);
+      if (!isValidRwandaPhone(normalizedGuestPhone)) {
+        await conn.rollback();
+        return res.status(422).json({ message: 'Enter a valid Rwanda phone number (e.g. 0788123456).' });
+      }
       // Check for duplicate guest phone
-      const [existingPhone] = await conn.query('SELECT id FROM users WHERE phone = ?', [guest_phone]);
+      const [existingPhone] = await conn.query('SELECT id FROM users WHERE phone = ?', [normalizedGuestPhone]);
       if (existingPhone.length > 0) {
         await conn.rollback();
         return res.status(409).json({ message: 'Phone number already registered. Please log in.' });
@@ -234,14 +241,14 @@ exports.createListing = async (req, res) => {
       isGuest = true;
       const [result] = await conn.query(
         'INSERT INTO users (name, phone, password_hash, role) VALUES (?, ?, ?, ?)',
-        [guest_name, guest_phone, crypto.randomBytes(32).toString('hex'), 'user']
+        [guest_name, normalizedGuestPhone, crypto.randomBytes(32).toString('hex'), 'user']
       );
       userId = result.insertId;
     }
 
     // Determine posting fee and duration based on user role
     let durationDays = LISTING_DAYS;
-    if (!isGuest && !isAdmin) {
+    if (!isGuest && !isAdmin && !isExecutive) {
       const [[userRow]] = await conn.query('SELECT role, can_post_free FROM users WHERE id = ?', [userId]);
       const isAmbassador = userRow?.role === 'ambassador';
       const isBroker = userRow?.role === 'broker';
@@ -254,7 +261,7 @@ exports.createListing = async (req, res) => {
 
       if (isSupplier && req.body.phone?.trim()) {
         const supplierPhone = normalizePhone(req.body.phone);
-        if (supplierPhone.replace(/\D/g, '').length < 10) {
+        if (!isValidRwandaPhone(supplierPhone)) {
           await conn.rollback();
           return res.status(422).json({ message: 'Enter a valid supplier contact phone number.' });
         }
@@ -310,6 +317,8 @@ exports.createListing = async (req, res) => {
       // Admins get extended duration and free posting
       durationDays = 90;
       postingFree = true;
+    } else if (isExecutive) {
+      postingFree = true;
     }
 
     // Validate listing data
@@ -340,7 +349,7 @@ exports.createListing = async (req, res) => {
     );
 
     // Record transaction if fee was paid
-    if (!isGuest && !isAdmin && !postingFree) {
+    if (!isGuest && !isAdmin && !isExecutive && !postingFree) {
       await conn.query(
         'INSERT INTO coin_transactions (user_id, amount, type, listing_id) VALUES (?, ?, ?, ?)',
         [userId, -postingFee, 'listing_fee', result.insertId]
@@ -359,7 +368,7 @@ exports.createListing = async (req, res) => {
 
     // Create renewal token for authenticated users (not guests or admins)
     const sellerPhone = user ? normalizePhone(user.phone) : normalizePhone(req.body.guest_phone || '');
-    if (sellerPhone && !isGuest && !isAdmin) {
+    if (sellerPhone && !isGuest && !isAdmin && !isExecutive) {
       await createRenewalToken(conn, result.insertId, sellerPhone, expiresAt);
     }
 
@@ -424,6 +433,9 @@ exports.initiateListingPayment = async (req, res) => {
   }
 
   if (!sellerPhone) return res.status(400).json({ message: 'Seller phone is required for payment' });
+  if (!isValidRwandaPhone(sellerPhone)) {
+    return res.status(422).json({ message: 'Enter a valid Rwanda phone number (e.g. 0788123456).' });
+  }
 
   const images = [];
   if (req.files?.length) {

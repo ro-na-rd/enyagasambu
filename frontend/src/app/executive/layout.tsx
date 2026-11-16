@@ -6,7 +6,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import {
   Server, Settings, BarChart3, DollarSign,
-  FileText, CheckCircle, LogOut, Menu, X, ChevronRight, Users, User
+  FileText, CheckCircle, LogOut, Menu, X, ChevronRight, Users, User, Plus
 } from '@/lib/icons';
 import NotificationBell from '@/components/NotificationBell';
 import { useUnreadCount } from '@/lib/useUnreadCount';
@@ -27,17 +27,21 @@ interface NavItem {
   roles: string[];
 }
 
+const EXECUTIVE_ROLES = ['CEO', 'CIO', 'CTO', 'COO', 'CMO', 'CFO'];
+const STAFF_MANAGEMENT_ROLES = ['CEO', 'CIO', 'CTO', 'COO'];
+
 const getNavItems = (executiveRole?: string): NavItem[] => {
   const allItems: NavItem[] = [
     { href: '/executive/ceo', icon: <BarChart3 size={18} />, label: 'CEO Dashboard', roles: ['CEO'] },
-    { href: '/executive/ceo/staff', icon: <Users size={18} />, label: 'Staff Management', roles: ['CEO'] },
-    { href: '/executive/cio', icon: <Server size={18} />, label: 'CIO Dashboard', roles: ['CIO'] },
+    { href: '/executive/ceo/staff', icon: <Users size={18} />, label: 'Staff Management', roles: STAFF_MANAGEMENT_ROLES },
+    { href: '/executive/cio', icon: <Server size={18} />, label: 'Technology Dashboard', roles: ['CIO', 'CTO'] },
     { href: '/executive/coo', icon: <Settings size={18} />, label: 'COO Dashboard', roles: ['COO'] },
     { href: '/executive/cmo', icon: <DollarSign size={18} />, label: 'CMO Dashboard', roles: ['CMO'] },
     { href: '/executive/cfo', icon: <DollarSign size={18} />, label: 'CFO Dashboard', roles: ['CFO'] },
-    { href: '/executive/audit', icon: <FileText size={18} />, label: 'Audit Log', roles: ['CEO', 'CIO', 'COO', 'CMO', 'CFO'] },
-    { href: '/executive/approvals', icon: <CheckCircle size={18} />, label: 'Approvals', roles: ['CEO', 'CIO', 'COO', 'CMO', 'CFO'] },
-    { href: '/executive/profile', icon: <User size={18} />, label: 'My Profile', roles: ['CEO', 'CIO', 'COO', 'CMO', 'CFO'] },
+    { href: '/listings/create', icon: <Plus size={18} />, label: 'Post Listing', roles: EXECUTIVE_ROLES },
+    { href: '/executive/audit', icon: <FileText size={18} />, label: 'Audit Log', roles: EXECUTIVE_ROLES },
+    { href: '/executive/approvals', icon: <CheckCircle size={18} />, label: 'Approvals', roles: EXECUTIVE_ROLES },
+    { href: '/executive/profile', icon: <User size={18} />, label: 'My Profile', roles: EXECUTIVE_ROLES },
   ];
   if (!executiveRole) return allItems;
   return allItems.filter(item => item.roles.includes(executiveRole));
@@ -69,10 +73,12 @@ export default function ExecutiveLayout({ children }: { children: React.ReactNod
     const roleHub: Record<string, string> = {
       CEO: '/executive/ceo',
       CIO: '/executive/cio',
+      CTO: '/executive/cio',
       COO: '/executive/coo',
       CMO: '/executive/cmo',
       CFO: '/executive/cfo',
     };
+    if (pathname.startsWith('/executive/ceo/staff') && STAFF_MANAGEMENT_ROLES.includes(user.executive_role)) return;
     const path = pathname.split('/')[2];
     if (path && ['ceo', 'cio', 'coo', 'cmo', 'cfo'].includes(path)) {
       const allowed = roleHub[user.executive_role];

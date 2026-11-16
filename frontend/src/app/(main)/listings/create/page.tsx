@@ -10,6 +10,7 @@ import { formatRWF } from '@/lib/currencies';
 import CategoryFieldsInput, { findMissingRequiredField, type CategoryField } from '@/components/CategoryFieldsInput';
 import RwandaPropertyLocation, { isPropertyCategory } from '@/components/RwandaPropertyLocation';
 import { Smartphone, Clock, CheckCircle, Sparkles } from '@/lib/icons';
+import { normalizeRwandaPhone, isValidRwandaPhone } from '@/lib/phone';
 
 interface CreateForm {
   title: string;
@@ -56,6 +57,8 @@ export default function CreateListingPage() {
   const categoryFields = selectedCategory?.fields || [];
   const durationOptions = Object.keys(durationPrices).map(Number).sort((a, b) => a - b);
   const isSupplier = user?.role === 'supplier';
+  const isExecutive = Boolean(user?.executive_role);
+  const canPostForFree = postingFree || isSupplier || isExecutive;
 
   const durationLabel = (days: number) => {
     if (days === 365) return '1 year';
@@ -141,10 +144,10 @@ export default function CreateListingPage() {
   }, []);
 
   useEffect(() => {
-    if (!isSupplier) return;
+    if (!isSupplier && !isExecutive) return;
     setSellerName((current) => current || user?.name || '');
-    setSellerPhone((current) => current || user?.phone || '');
-  }, [isSupplier, user?.name, user?.phone]);
+    setSellerPhone((current) => current || normalizeRwandaPhone(user?.phone || ''));
+  }, [isSupplier, isExecutive, user?.name, user?.phone]);
 
   const handleImages = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []).slice(0, 6);
@@ -158,8 +161,7 @@ export default function CreateListingPage() {
       setError(isSupplier ? 'Provide the phone number buyers should use to contact your business.' : 'Please provide your name and phone number.');
       return;
     }
-    const digits = sellerPhone.trim().replace(/\D/g, '');
-    if (digits.length < 10) { setError('Please enter the full phone number (at least 10 digits)'); return; }
+    if (!isValidRwandaPhone(sellerPhone)) { setError('Please enter a valid Rwanda phone number (e.g. 0788123456)'); return; }
     const missing = findMissingRequiredField(categoryFields, attributes);
     if (missing) { setError(`${missing.label} is required`); return; }
     if (isPropertyCategory(selectedCategory) && !data.location?.trim()) {
@@ -179,8 +181,8 @@ export default function CreateListingPage() {
     form.append('attributes', JSON.stringify(attributes));
     form.append('price_type', negotiable ? 'negotiable' : 'fixed');
     form.append('guest_name', sellerName.trim());
-    form.append('guest_phone', sellerPhone.trim());
-    form.append('phone', sellerPhone.trim());
+    form.append('guest_phone', normalizeRwandaPhone(sellerPhone));
+    form.append('phone', normalizeRwandaPhone(sellerPhone));
     images.forEach((f) => form.append('images', f));
     try {
       await api.post('/listings', form, { headers: { 'Content-Type': 'multipart/form-data' } });
@@ -197,8 +199,7 @@ export default function CreateListingPage() {
       setError('Please provide your name and phone number.');
       return;
     }
-    const digits = sellerPhone.trim().replace(/\D/g, '');
-    if (digits.length < 10) { setError('Please enter the full phone number (at least 10 digits)'); return; }
+    if (!isValidRwandaPhone(sellerPhone)) { setError('Please enter a valid Rwanda phone number (e.g. 0788123456)'); return; }
     const missing = findMissingRequiredField(categoryFields, attributes);
     if (missing) { setError(`${missing.label} is required`); return; }
     if (isPropertyCategory(selectedCategory) && !data.location?.trim()) {
@@ -216,7 +217,7 @@ export default function CreateListingPage() {
     form.append('attributes', JSON.stringify(attributes));
     form.append('price_type', negotiable ? 'negotiable' : 'fixed');
     form.append('guest_name', sellerName.trim());
-    form.append('guest_phone', sellerPhone.trim());
+    form.append('guest_phone', normalizeRwandaPhone(sellerPhone));
     form.append('duration_days', String(durationDays));
     form.append('provider', 'mtn');
     images.forEach((f) => form.append('images', f));
@@ -489,7 +490,7 @@ export default function CreateListingPage() {
 
       {error && <div className="bg-red-50 text-red-700 text-sm rounded-lg px-4 py-3 mb-4">{error}</div>}
 
-      <form onSubmit={handleSubmit(postingFree || isSupplier ? onSubmitFree : onSubmitPaid)} className="bg-white rounded-2xl shadow p-6 space-y-5">
+      <form onSubmit={handleSubmit(canPostForFree ? onSubmitFree : onSubmitPaid)} className="bg-white rounded-2xl shadow p-6 space-y-5">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">{T.category} *</label>
           <select
@@ -619,7 +620,7 @@ export default function CreateListingPage() {
           />
         </div>}
 
-        {!postingFree && !isSupplier && (
+        {!canPostForFree && (
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Listing Duration *</label>
             <select
@@ -650,6 +651,9 @@ export default function CreateListingPage() {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">{isSupplier ? 'Business Contact Phone *' : 'Phone Number *'}</label>
               <input
+                type="tel"
+                inputMode="tel"
+                autoComplete="tel"
                 value={sellerPhone}
                 onChange={(e) => setSellerPhone(e.target.value)}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none"
@@ -684,7 +688,7 @@ export default function CreateListingPage() {
           disabled={isSubmitting}
           className="w-full bg-[#E85D04] text-white font-semibold py-3 rounded-lg hover:bg-[#e05d00] transition disabled:opacity-60"
         >
-              {isSupplier ? 'Post Listing' : postingFree ? 'Post Listing (Free)' : `Pay & Post (${formatRWF(durationPrices[durationDays])})`}
+              {isSupplier ? 'Post Listing' : canPostForFree ? 'Post Listing (Free)' : `Pay & Post (${formatRWF(durationPrices[durationDays])})`}
         </button>
       </form>
     </div>

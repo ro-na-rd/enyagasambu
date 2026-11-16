@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const { ACCESS_COOKIE, parseCookies, validateCookieAccess } = require('../services/authSessionService');
+const { canManageStaff, normalizeExecutiveRole } = require('../services/executivePolicyService');
 
 function bearerToken(req) {
   const header = req.headers.authorization;
@@ -114,8 +115,15 @@ const requireExecutive = (req, res, next) => {
 };
 
 const requireExecutiveRole = (allowedRoles) => (req, res, next) => {
-  if (!req.user || !allowedRoles.includes(req.user.executive_role)) {
+  if (!req.user || !allowedRoles.includes(normalizeExecutiveRole(req.user.executive_role))) {
     return res.status(403).json({ message: 'Executive role not authorized' });
+  }
+  next();
+};
+
+const requireStaffManagementExecutive = (req, res, next) => {
+  if (!canManageStaff(req.user)) {
+    return res.status(403).json({ message: 'CEO, CTO, or COO access required' });
   }
   next();
 };
@@ -135,4 +143,4 @@ const logExecutiveAction = async (pool, staffId, executiveRole, action, module, 
   );
 };
 
-module.exports = { authenticate, authenticateOptional, authenticateIfPresent, authenticatePhoneSeller, requireAdmin, requireStaff, requireBroker, requireAmbassador, requireSupplier, requireExecutive, requireExecutiveRole, checkExecutivePermission, logExecutiveAction };
+module.exports = { authenticate, authenticateOptional, authenticateIfPresent, authenticatePhoneSeller, requireAdmin, requireStaff, requireBroker, requireAmbassador, requireSupplier, requireExecutive, requireExecutiveRole, requireStaffManagementExecutive, checkExecutivePermission, logExecutiveAction };

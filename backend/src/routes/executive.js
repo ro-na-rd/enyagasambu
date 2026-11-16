@@ -1,5 +1,5 @@
 const router = require('express').Router();
-const { authenticate, requireAdmin } = require('../middleware/auth');
+const { authenticate, requireAdmin, requireStaffManagementExecutive } = require('../middleware/auth');
 const { executiveRateLimiter } = require('../middleware/rateLimiter');
 const ctrl = require('../controllers/executiveController');
 
@@ -23,9 +23,9 @@ router.get('/export', ctrl.exportDashboardData);
 router.get('/permissions/:role', ctrl.getRolePermissions);
 
 router.get('/staff', ctrl.listStaff);
-router.post('/staff', ctrl.createStaff);
-router.put('/staff/:id', ctrl.updateStaff);
-router.delete('/staff/:id', ctrl.deleteStaff);
+router.post('/staff', requireStaffManagementExecutive, ctrl.createStaff);
+router.put('/staff/:id', requireStaffManagementExecutive, ctrl.updateStaff);
+router.delete('/staff/:id', requireStaffManagementExecutive, ctrl.deleteStaff);
 router.get('/profile', ctrl.getProfile);
 router.put('/profile', ctrl.updateProfile);
 router.post('/change-password', ctrl.changePassword);
