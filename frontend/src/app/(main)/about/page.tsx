@@ -219,9 +219,14 @@ function SellerPlans() {
             {plan.id === 'free' ? (
               <div className="mt-5 text-center text-xs text-gray-400 py-2">Default plan</div>
             ) : !user ? (
-              <Link href="/login" className="mt-5 block text-center w-full font-semibold py-2.5 rounded-lg text-sm bg-[#0f1e42] text-white hover:opacity-90 transition">
-                Sign in to subscribe
-              </Link>
+              <>
+                <Link href="/login" className="mt-5 block text-center w-full font-semibold py-2.5 rounded-lg text-sm bg-[#0f1e42] text-white hover:opacity-90 transition">
+                  Post in to subscribe
+                </Link>
+                <Link href="/my-listings" className="mt-2 block text-center text-xs font-medium text-[#0f1e42] hover:underline">
+                  Go to posting list
+                </Link>
+              </>
             ) : current?.plan === plan.id ? (
               <div className="mt-5 text-center text-sm text-[#E85D04] font-semibold py-2">✓ Active</div>
             ) : (
