@@ -24,9 +24,9 @@ interface Member {
 }
 
 const LEADERSHIP: Member[] = [
-  { name: 'Sinonza Polemon',    role: 'Chief Executive Officer',   initials: 'SP', color: navy,       photo: '/assets/members/Co-Founder & CEO.jpeg' },
-  { name: 'Musinguzi Ronard',   role: 'Chief Technology Officer',  initials: 'MR', color: '#1a6b3a',  photo: '/assets/members/Co-Founder & CTO.png' },
-  { name: 'Manishimwe Blaise',  role: 'Chief Operations Officer',  initials: 'MB', color: '#7c3a8a',  photo: '/assets/members/Co-Founder & COO.jpg' },
+  { name: 'Sinonza Polemon',    role: 'Chief Executive Officer',   initials: 'SP', color: navy,       photo: '/assets/members/co-founder-ceo.jpeg' },
+  { name: 'Musinguzi Ronard',   role: 'Chief Technology Officer',  initials: 'MR', color: '#1a6b3a',  photo: '/assets/members/co-founder-cto.png' },
+  { name: 'Manishimwe Blaise',  role: 'Chief Operations Officer',  initials: 'MB', color: '#7c3a8a',  photo: '/assets/members/co-founder-coo.jpg' },
   { name: 'Kobusinge Florence', role: 'Chief Marketing Officer',   initials: 'KF', color: '#c04a00',  photo: '/profiles/florence.jpg' },
   { name: 'Tuyishime Eric',     role: 'Chief Financial Officer',   initials: 'TE', color: '#0a6494',  photo: '/profiles/eric.jpg' },
 ];
@@ -220,7 +220,7 @@ function SellerPlans() {
               <div className="mt-5 text-center text-xs text-gray-400 py-2">Default plan</div>
             ) : !user ? (
               <>
-                <Link href="/login" className="mt-5 block text-center w-full font-semibold py-2.5 rounded-lg text-sm bg-[#0f1e42] text-white hover:opacity-90 transition">
+                <Link href="/listings/create" className="mt-5 block text-center w-full font-semibold py-2.5 rounded-lg text-sm bg-[#0f1e42] text-white hover:opacity-90 transition">
                   Post in to subscribe
                 </Link>
                 <Link href="/my-listings" className="mt-2 block text-center text-xs font-medium text-[#0f1e42] hover:underline">

@@ -3,12 +3,9 @@ const { uploadToS3 } = require('../services/s3Service');
 const { notifyAdmins, notifyUser } = require('../services/notificationService');
 const { loadCategoryFields, sanitizeAttributes } = require('../services/categoryFieldsService');
 const { logger } = require('../config/logger');
+const { normalizeRwandaPhone: normalizePhone } = require('../utils/phone');
 
 const BROKER_LISTING_DAYS = 30;
-
-function normalizePhone(phone) {
-  return phone ? phone.replace(/\s+/g, '') : '';
-}
 
 function createRenewalToken(listingId, sellerPhone, expiresAt) {
   const crypto = require('crypto');

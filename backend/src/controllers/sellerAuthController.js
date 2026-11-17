@@ -4,12 +4,9 @@ const jwt = require('jsonwebtoken');
 const pool = require('../config/db');
 const { sendSms } = require('../services/smsService');
 const { logger } = require('../config/logger');
+const { normalizeRwandaPhone: normalizePhone } = require('../utils/phone');
 
 const OTP_TTL_MINUTES = 10;
-
-function normalizePhone(phone) {
-  return phone.replace(/\s+/g, '');
-}
 
 function generateCode() {
   return String(crypto.randomInt(100000, 1000000));

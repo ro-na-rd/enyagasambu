@@ -8,6 +8,7 @@ const { parseDurationPrices, resolveAuctionDuration } = require('../services/auc
 const { notifyUser } = require('../services/notificationService');
 const { emitToAuction } = require('../config/socket');
 const { logger } = require('../config/logger');
+const { normalizeRwandaPhone: normalizePhone, isValidRwandaPhone } = require('../utils/phone');
 
 const ENDING_SOON_MINUTES = 5;
 const DEFAULT_INCREMENT = 500;
@@ -559,10 +560,6 @@ async function getAuctionDurationPrices() {
   return parseDurationPrices(rows);
 }
 
-function normalizePhone(phone) {
-  return phone ? phone.replace(/\s+/g, '') : '';
-}
-
 /* ─────────────────────── Guest / paid auction creation ─────────────────────── */
 
 exports.initiateAuctionPayment = async (req, res) => {
@@ -609,6 +606,9 @@ exports.initiateAuctionPayment = async (req, res) => {
     sellerPhone = guestPhone;
   }
   if (!sellerPhone) return res.status(400).json({ message: 'Seller phone is required for payment' });
+  if (!isValidRwandaPhone(sellerPhone)) {
+    return res.status(422).json({ message: 'Enter a valid Rwanda phone number (e.g. 0788123456).' });
+  }
 
   const g = await getGlobalAntiSniping();
   const effAntiSniping = anti_sniping !== undefined && anti_sniping !== ''

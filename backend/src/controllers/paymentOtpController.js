@@ -4,13 +4,10 @@ const { sendSms } = require('../services/smsService');
 const { loadCategoryFields, sanitizeAttributes } = require('../services/categoryFieldsService');
 const { computeAuctionWindow } = require('../services/auctionPricing');
 const { logger } = require('../config/logger');
+const { normalizeRwandaPhone: normalizePhone } = require('../utils/phone');
 
 const OTP_TTL_MINUTES = 5;
 const MAX_OTP_ATTEMPTS = 3;
-
-function normalizePhone(phone) {
-  return phone ? phone.replace(/\s+/g, '') : '';
-}
 
 function generateCode() {
   return crypto.randomInt(100000, 999999).toString();

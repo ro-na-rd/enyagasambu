@@ -10,6 +10,7 @@ import CategoryFieldsInput, { findMissingRequiredField, type CategoryField } fro
 import {
   Gavel, Clock, CheckCircle, Smartphone, Sparkles, ArrowLeft, Image as ImageIcon,
 } from '@/lib/icons';
+import { normalizeRwandaPhone, isValidRwandaPhone } from '@/lib/phone';
 
 interface CreateForm {
   title: string;
@@ -107,8 +108,7 @@ export default function CreateAuctionPage() {
       setError('Please provide your name and phone number.');
       return;
     }
-    const digits = sellerPhone.trim().replace(/\D/g, '');
-    if (digits.length < 10) { setError('Please enter the full phone number (at least 10 digits)'); return; }
+    if (!isValidRwandaPhone(sellerPhone)) { setError('Please enter a valid Rwanda phone number (e.g. 0788123456)'); return; }
     const missing = findMissingRequiredField(categoryFields, attributes);
     if (missing) { setError(`${missing.label} is required`); return; }
     const start = Number(data.starting_price);
@@ -130,7 +130,7 @@ export default function CreateAuctionPage() {
     form.append('location', data.location.trim() || 'Kigali');
     form.append('attributes', JSON.stringify(attributes));
     form.append('guest_name', sellerName.trim());
-    form.append('guest_phone', sellerPhone.trim());
+    form.append('guest_phone', normalizeRwandaPhone(sellerPhone));
     form.append('duration_days', String(durationDays));
     form.append('provider', 'mtn');
     if (data.reserve_price.trim() !== '') form.append('reserve_price', data.reserve_price);
@@ -486,6 +486,9 @@ export default function CreateAuctionPage() {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number *</label>
             <input
+              type="tel"
+              inputMode="tel"
+              autoComplete="tel"
               value={sellerPhone}
               onChange={(e) => setSellerPhone(e.target.value)}
               className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none"

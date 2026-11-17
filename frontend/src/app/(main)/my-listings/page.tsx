@@ -6,6 +6,7 @@ import api from '@/lib/api';
 import { FileText, Smartphone, Package } from '@/lib/icons';
 import { useLanguage } from '@/context/LanguageContext';
 import CategoryFieldsInput, { findMissingRequiredField, type CategoryField } from '@/components/CategoryFieldsInput';
+import { normalizeRwandaPhone, isValidRwandaPhone } from '@/lib/phone';
 
 interface Listing {
   id: number;
@@ -34,7 +35,7 @@ const NAVY = '#0f1e42';
 export default function MyListingsPage() {
   const { T } = useLanguage();
   const [step, setStep] = useState<'phone' | 'otp' | 'listings'>('phone');
-  const [phone, setPhone] = useState('0785470311');
+  const [phone, setPhone] = useState('');
   const [code, setCode] = useState('');
   const [token, setToken] = useState('');
   const [listings, setListings] = useState<Listing[]>([]);
@@ -83,11 +84,11 @@ export default function MyListingsPage() {
 
   const handleRequestOtp = async () => {
     if (!phone.trim()) { setError(T.mlErrPhone); return; }
-    const digits = phone.trim().replace(/\D/g, '');
-    if (digits.length < 10) { setError(T.mlErrPhoneDigits); return; }
+    const normalizedPhone = normalizeRwandaPhone(phone);
+    if (!isValidRwandaPhone(normalizedPhone)) { setError(T.mlErrPhoneInvalid); return; }
     setError(''); setLoading(true);
     try {
-      const { data } = await api.post('/listings/phone-access/request', { phone: phone.trim() });
+      const { data } = await api.post('/listings/phone-access/request', { phone: normalizedPhone });
       if ((data as { bypassed?: boolean })?.bypassed || data?.token) {
         setToken(data.token);
         setListings(data.listings);
@@ -108,7 +109,7 @@ export default function MyListingsPage() {
     if (!code.trim()) { setError(T.mlErrOtp); return; }
     setError(''); setLoading(true);
     try {
-      const { data } = await api.post('/listings/phone-access/verify', { phone: phone.trim(), code: code.trim() });
+      const { data } = await api.post('/listings/phone-access/verify', { phone: normalizeRwandaPhone(phone), code: code.trim() });
       setToken(data.token);
       setListings(data.listings);
       localStorage.setItem('phone_seller_token', data.token);
@@ -264,6 +265,8 @@ export default function MyListingsPage() {
           {error && <div className="bg-red-50 text-red-700 text-sm rounded-lg px-4 py-3 mb-4">{error}</div>}
           <input
             type="tel"
+            inputMode="tel"
+            autoComplete="tel"
             value={phone}
             onChange={e => setPhone(e.target.value)}
             placeholder={T.mlPhonePlaceholder}

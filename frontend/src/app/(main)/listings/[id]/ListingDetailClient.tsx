@@ -8,6 +8,7 @@ import { useLanguage } from '@/context/LanguageContext';
 import { ArrowLeft, Star, ChevronLeft, ChevronRight, Package, MapPin, Phone, Loader2, X, MessageCircle, Clock, CheckCircle, AlertCircle, RefreshCw, Heart, Send, AlertOctagon, Link as LinkIcon } from '@/lib/icons';
 import StarRating from '@/components/StarRating';
 import ShareButton from '@/components/ShareButton';
+import { normalizeRwandaPhone, isValidRwandaPhone } from '@/lib/phone';
 
 interface ListingDetail {
   id: number;
@@ -257,11 +258,10 @@ export default function ListingDetailClient({ params }: { params: Promise<{ id: 
 
   const handleInitiatePayment = async () => {
     if (!phone.trim()) { setContactError('Please enter your phone number'); return; }
-    const digits = phone.trim().replace(/\D/g, '');
-    if (digits.length < 10) { setContactError('Please enter the full phone number (at least 10 digits)'); return; }
+    if (!isValidRwandaPhone(phone)) { setContactError('Please enter a valid Rwanda phone number (e.g. 0788123456)'); return; }
     setWorking(true); setContactError(''); setContactSuccess('');
     try {
-      const { data } = await api.post('/contact-access/initiate', { listingId: parseInt(id), phone: phone.trim() });
+      const { data } = await api.post('/contact-access/initiate', { listingId: parseInt(id), phone: normalizeRwandaPhone(phone) });
       if (data.alreadyUnlocked) {
         setSellerPhone(data.sellerPhone);
         setSellerName(data.sellerName);
@@ -822,7 +822,7 @@ export default function ListingDetailClient({ params }: { params: Promise<{ id: 
                           <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
                             <Phone size={16} />
                           </div>
-                          <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)}
+                          <input type="tel" inputMode="tel" autoComplete="tel" value={phone} onChange={(e) => setPhone(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && !working && handleInitiatePayment()}
                             placeholder="+250 7XX XXX XXX"
                             className="w-full border border-gray-300 rounded-xl pl-10 pr-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#E85D04]/30 focus:border-[#E85D04] transition" />

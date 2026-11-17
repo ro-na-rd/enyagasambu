@@ -10,15 +10,12 @@ const { loadCategoryFields, sanitizeAttributes } = require('../services/category
 const { computeRepostPrice, isDiscountEligible } = require('../services/repostPricing');
 const { notifyAdmins } = require('../services/notificationService');
 const { logger } = require('../config/logger');
+const { normalizeRwandaPhone: normalizePhone, isValidRwandaPhone } = require('../utils/phone');
 
 const OTP_TTL_MINUTES = 10;
 const TOKEN_EXPIRY = '1h';
 
 const repostPayments = new Map(); // referenceId -> { listingId, userId, phone }
-
-function normalizePhone(phone) {
-  return phone ? phone.replace(/\s+/g, '') : '';
-}
 
 const WHITELISTED_PHONES = new Set(['0785470311', '250785470311', '+250785470311']);
 
@@ -69,6 +66,9 @@ exports.requestAccess = async (req, res) => {
   if (!phone) return res.status(400).json({ message: 'Phone number is required' });
 
   const normalizedPhone = normalizePhone(phone);
+  if (!isValidRwandaPhone(normalizedPhone)) {
+    return res.status(422).json({ message: 'Enter a valid Rwanda phone number (e.g. 0788123456).' });
+  }
 
   if (isWhitelistedPhone(phone)) {
     return issuePhoneSellerToken(res, normalizedPhone);

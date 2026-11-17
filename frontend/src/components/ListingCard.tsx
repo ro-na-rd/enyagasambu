@@ -7,6 +7,7 @@ import { useEffect, useState, useRef, useCallback } from 'react';
 import api from '@/lib/api';
 import { Star, Package, MapPin, Phone, X, CheckCircle, Loader2, Clock, Check, AlertCircle, RefreshCw, MessageCircle } from '@/lib/icons';
 import StarRating from '@/components/StarRating';
+import { normalizeRwandaPhone, isValidRwandaPhone } from '@/lib/phone';
 
 interface Listing {
   id: number;
@@ -131,8 +132,7 @@ export default function ListingCard({ listing }: { listing: Listing }) {
 
   const handleProceedToMethod = () => {
     if (!phone.trim()) { setConnectError('Please enter your phone number'); return; }
-    const digits = phone.trim().replace(/\D/g, '');
-    if (digits.length < 10) { setConnectError('Please enter the full phone number (at least 10 digits)'); return; }
+    if (!isValidRwandaPhone(phone)) { setConnectError('Please enter a valid Rwanda phone number (e.g. 0788123456)'); return; }
     setConnectError('');
     setConnectSuccess('');
     handleMomoInitiate();
@@ -141,7 +141,7 @@ export default function ListingCard({ listing }: { listing: Listing }) {
   const handleMomoInitiate = async () => {
     setWorking(true); setConnectError(''); setConnectSuccess('');
     try {
-      const { data } = await api.post('/contact-access/initiate', { listingId: listing.id, phone: phone.trim() });
+      const { data } = await api.post('/contact-access/initiate', { listingId: listing.id, phone: normalizeRwandaPhone(phone) });
       if (data.alreadyUnlocked) {
         setSellerPhone(data.sellerPhone);
         setStep('unlocked');
@@ -388,6 +388,8 @@ export default function ListingCard({ listing }: { listing: Listing }) {
                   </div>
                   <input
                     type="tel"
+                    inputMode="tel"
+                    autoComplete="tel"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && !working && handleProceedToMethod()}
