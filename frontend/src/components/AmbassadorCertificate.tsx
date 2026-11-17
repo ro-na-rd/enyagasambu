@@ -143,11 +143,9 @@ export default function AmbassadorCertificate({
 
               <footer className={styles.signaturesRow}>
                 <div className={styles.signatureCol}>
-                  <svg className={styles.signatureSvg} viewBox="0 0 140 42" aria-hidden>
-                    <path d="M14,30 C28,8 44,34 58,20 S86,6 104,26 C112,32 122,22 130,18" fill="none" stroke="#1a1a3a" strokeWidth="2" strokeLinecap="round" />
-                  </svg>
+                  <AppImage src="/assets/signatures/ceo-signature.png" alt="Co-Founder & CEO signature" className={styles.signatureImage} />
                   <div className={styles.signatureLine}></div>
-                  <p className={styles.signatureTitle}>Platform Director</p>
+                  <p className={styles.signatureTitle}>Co-Founder & CEO</p>
                   <p className={styles.signatureOrg}>E-Nyagasambu Ltd</p>
                 </div>
 
@@ -156,11 +154,9 @@ export default function AmbassadorCertificate({
                 </div>
 
                 <div className={styles.signatureCol}>
-                  <svg className={styles.signatureSvg} viewBox="0 0 140 42" aria-hidden>
-                    <path d="M20,28 C36,10 50,32 66,18 C78,10 92,30 108,16 C118,10 128,24 134,20" fill="none" stroke="#1a1a3a" strokeWidth="2" strokeLinecap="round" />
-                  </svg>
+                  <AppImage src="/assets/signatures/coo-signature.png" alt="Co-Founder & COO signature" className={styles.signatureImage} />
                   <div className={styles.signatureLine}></div>
-                  <p className={styles.signatureTitle}>Business Development Officer</p>
+                  <p className={styles.signatureTitle}>Co-Founder & COO</p>
                   <p className={styles.signatureOrg}>E-Nyagasambu Ltd</p>
                 </div>
               </footer>

@@ -77,6 +77,7 @@ export async function buildAmbassadorCertPrintHtml(opts: {
   .signaturesRow { margin-top:26px; display:flex; align-items:flex-end; justify-content:space-between; gap:16px; padding-top:12px; }
   .signatureCol { text-align:center; flex:1; min-width:0; }
   .signatureSvg { width:130px; height:40px; margin-bottom:-6px; }
+  .signatureImage { width:130px; height:40px; margin-bottom:-6px; object-fit:contain; flex-shrink:0; }
   .signatureLine { width:190px; max-width:100%; height:1.5px; background:#16233f; margin:0 auto 6px; }
   .signatureTitle { font-size:11.5px; font-weight:800; color:#16233f; margin:0; }
   .signatureOrg { font-size:10px; font-weight:600; color:#33415e; margin:2px 0 0; }
@@ -144,16 +145,16 @@ export async function buildAmbassadorCertPrintHtml(opts: {
         </div>
         <footer class="signaturesRow">
           <div class="signatureCol">
-            <svg class="signatureSvg" viewBox="0 0 140 42" aria-hidden="true"><path d="M14,30 C28,8 44,34 58,20 S86,6 104,26 C112,32 122,22 130,18" fill="none" stroke="#1a1a3a" stroke-width="2" stroke-linecap="round"/></svg>
+            <img src="${SITE_URL}/assets/signatures/ceo-signature.png" alt="Co-Founder & CEO signature" class="signatureImage" />
             <div class="signatureLine"></div>
-            <p class="signatureTitle">Platform Director</p>
+            <p class="signatureTitle">Co-Founder & CEO</p>
             <p class="signatureOrg">E-Nyagasambu Ltd</p>
           </div>
           <div class="sealWrap"><img src="${sealUrl}" alt="Seal" class="sealImage" /></div>
           <div class="signatureCol">
-            <svg class="signatureSvg" viewBox="0 0 140 42" aria-hidden="true"><path d="M20,28 C36,10 50,32 66,18 C78,10 92,30 108,16 C118,10 128,24 134,20" fill="none" stroke="#1a1a3a" stroke-width="2" stroke-linecap="round"/></svg>
+            <img src="${SITE_URL}/assets/signatures/coo-signature.png" alt="Co-Founder & COO signature" class="signatureImage" />
             <div class="signatureLine"></div>
-            <p class="signatureTitle">Business Development Officer</p>
+            <p class="signatureTitle">Co-Founder & COO</p>
             <p class="signatureOrg">E-Nyagasambu Ltd</p>
           </div>
         </footer>

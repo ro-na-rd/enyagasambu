@@ -24,18 +24,18 @@ interface Member {
 }
 
 const LEADERSHIP: Member[] = [
-  { name: 'Sinonza Polemon',    role: 'Chief Executive Officer',   initials: 'SP', color: navy,       photo: '/assets/members/co-founder-ceo.jpeg' },
-  { name: 'Musinguzi Ronard',   role: 'Chief Technology Officer',  initials: 'MR', color: '#1a6b3a',  photo: '/assets/members/co-founder-cto.png' },
-  { name: 'Manishimwe Blaise',  role: 'Chief Operations Officer',  initials: 'MB', color: '#7c3a8a',  photo: '/assets/members/co-founder-coo.jpg' },
-  { name: 'Kobusinge Florence', role: 'Chief Marketing Officer',   initials: 'KF', color: '#c04a00',  photo: '/profiles/florence.jpg' },
-  { name: 'Tuyishime Eric',     role: 'Chief Financial Officer',   initials: 'TE', color: '#0a6494',  photo: '/profiles/eric.jpg' },
+  { name: 'Sinonza Polemon',    role: 'Chief Executive Officer',   initials: 'SP', color: navy },
+  { name: 'Musinguzi Ronard',   role: 'Chief Technology Officer',  initials: 'MR', color: '#1a6b3a' },
+  { name: 'Manishimwe Blaise',  role: 'Chief Operations Officer',  initials: 'MB', color: '#7c3a8a' },
+  { name: 'Kobusinge Florence', role: 'Chief Marketing Officer',   initials: 'KF', color: '#c04a00' },
+  { name: 'Tuyishime Eric',     role: 'Chief Financial Officer',   initials: 'TE', color: '#0a6494' },
 ];
 
 const BOARD: Member[] = [
-  { name: 'Board Member 1', role: 'Chairman of the Board',     initials: 'B1', color: '#374151', photo: '/assets/members/Chairman of the board.jpeg' },
-  { name: 'Board Member 2', role: 'Non-Executive Director',    initials: 'B2', color: '#374151', photo: '/assets/members/Non-Executive Director.jpeg' },
-  { name: 'Board Member 3', role: 'Independent Director',      initials: 'B3', color: '#374151', photo: '/assets/members/Independent Director1.jpeg' },
-  { name: 'Board Member 4', role: 'Board Secretary',           initials: 'B4', color: '#374151', photo: '/assets/members/Board Secretary.jpeg' },
+  { name: 'Board Member 1', role: 'Chairman of the Board',     initials: 'B1', color: '#374151' },
+  { name: 'Board Member 2', role: 'Non-Executive Director',    initials: 'B2', color: '#374151' },
+  { name: 'Board Member 3', role: 'Independent Director',      initials: 'B3', color: '#374151' },
+  { name: 'Board Member 4', role: 'Board Secretary',           initials: 'B4', color: '#374151' },
 ];
 
 interface RegisteredPerson {

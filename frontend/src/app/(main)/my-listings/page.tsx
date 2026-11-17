@@ -5,6 +5,7 @@ import Link from 'next/link';
 import api from '@/lib/api';
 import { FileText, Smartphone, Package } from '@/lib/icons';
 import { useLanguage } from '@/context/LanguageContext';
+import { useAuth } from '@/context/AuthContext';
 import CategoryFieldsInput, { findMissingRequiredField, type CategoryField } from '@/components/CategoryFieldsInput';
 import { normalizeRwandaPhone, isValidRwandaPhone } from '@/lib/phone';
 
@@ -34,8 +35,9 @@ const NAVY = '#0f1e42';
 
 export default function MyListingsPage() {
   const { T } = useLanguage();
+  const { user } = useAuth();
   const [step, setStep] = useState<'phone' | 'otp' | 'listings'>('phone');
-  const [phone, setPhone] = useState('');
+  const [phone, setPhone] = useState(user?.phone || '');
   const [code, setCode] = useState('');
   const [token, setToken] = useState('');
   const [listings, setListings] = useState<Listing[]>([]);
@@ -81,6 +83,14 @@ export default function MyListingsPage() {
         .catch(() => { localStorage.removeItem('phone_seller_token'); setToken(''); });
     }
   }, []);
+
+  // Prefill the phone with the seller's current profile number so they can
+  // post under their default contact without re-typing it, but they may change it.
+  useEffect(() => {
+    if (user?.phone && !phone) {
+      setPhone(user.phone);
+    }
+  }, [user?.phone, phone]);
 
   const handleRequestOtp = async () => {
     if (!phone.trim()) { setError(T.mlErrPhone); return; }
