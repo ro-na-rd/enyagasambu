@@ -37,6 +37,7 @@ export default function CreateListingPage() {
   const [sellerPhone, setSellerPhone] = useState('');
   const [postingFree, setPostingFree] = useState(false);
   const [durationDays, setDurationDays] = useState(3);
+  const [wizardStep, setWizardStep] = useState<'category' | 'details' | 'pricing' | 'seller' | 'review'>('category');
   const [step, setStep] = useState<'form' | 'pay' | 'waiting' | 'otp' | 'success' | 'failed'>('form');
   const [referenceId, setReferenceId] = useState('');
   const [otpCode, setOtpCode] = useState('');
@@ -55,6 +56,10 @@ export default function CreateListingPage() {
   const selectedCategoryId = watch('category_id');
   const selectedCategory = categories.find((c) => String(c.id) === selectedCategoryId);
   const categoryFields = selectedCategory?.fields || [];
+  const listingType = watch('listing_type');
+  const formTitle = watch('title');
+  const formPrice = watch('price');
+  const formLocation = watch('location');
   const durationOptions = Object.keys(durationPrices).map(Number).sort((a, b) => a - b);
   const isSupplier = user?.role === 'supplier';
   const isExecutive = Boolean(user?.executive_role);
@@ -72,7 +77,6 @@ export default function CreateListingPage() {
       return [
         { key: 'overview', label: 'Overview *', placeholder: 'A short summary of the property...', multiline: true },
         { key: 'size', label: 'Size / Rooms', placeholder: 'e.g. 3 bedrooms, 2 bathrooms, 120 m²', multiline: false },
-        { key: 'amenities', label: 'Amenities', placeholder: 'e.g. Parking, water, electricity, WiFi', multiline: true },
         { key: 'condition', label: 'Condition', placeholder: 'e.g. Newly built, renovated', multiline: false },
         { key: 'locationNotes', label: 'Location notes', placeholder: 'e.g. Near main road, quiet area', multiline: false },
       ];
@@ -82,14 +86,12 @@ export default function CreateListingPage() {
         { key: 'overview', label: 'Overview *', placeholder: 'A short summary of the vehicle...', multiline: true },
         { key: 'makeModel', label: 'Make & Model', placeholder: 'e.g. Toyota Corolla 2018', multiline: false },
         { key: 'mileage', label: 'Mileage / Condition', placeholder: 'e.g. 45,000 km, excellent', multiline: false },
-        { key: 'features', label: 'Features (one per line)', placeholder: 'e.g. AC\nBluetooth\nAirbags', multiline: true },
         { key: 'locationNotes', label: 'Location notes', placeholder: 'e.g. Pickup in Kigali', multiline: false },
       ];
     }
     if (type === 'service') {
       return [
         { key: 'overview', label: 'Overview *', placeholder: 'A short summary of the service...', multiline: true },
-        { key: 'scope', label: 'Scope of work', placeholder: 'What is included in the service', multiline: true },
         { key: 'availability', label: 'Availability', placeholder: 'e.g. Mon–Sat, 8am–6pm', multiline: false },
         { key: 'experience', label: 'Experience / Qualifications', placeholder: 'e.g. 5 years experience', multiline: false },
         { key: 'locationNotes', label: 'Service area', placeholder: 'e.g. Kigali and surrounding', multiline: false },
@@ -97,7 +99,6 @@ export default function CreateListingPage() {
     }
     return [
       { key: 'overview', label: 'Overview *', placeholder: 'A short summary of the item...', multiline: true },
-      { key: 'features', label: 'Key features (one per line)', placeholder: 'e.g. 128GB storage\n5G support', multiline: true },
       { key: 'condition', label: 'Condition', placeholder: 'e.g. Like new, used, brand new', multiline: false },
       { key: 'included', label: 'Included items', placeholder: 'e.g. Box, charger, warranty card', multiline: false },
       { key: 'locationNotes', label: 'Location notes', placeholder: 'e.g. Pickup in Kicukiro', multiline: false },
@@ -109,12 +110,7 @@ export default function CreateListingPage() {
     for (const f of descFields) {
       const val = (descSections[f.key] || '').trim();
       if (!val) continue;
-      if (f.key === 'features' || f.key === 'amenities' || f.key === 'scope') {
-        const lines = val.split('\n').map((l) => l.trim()).filter(Boolean);
-        parts.push(`${f.label}:\n${lines.map((l) => `- ${l}`).join('\n')}`);
-      } else {
-        parts.push(`${f.label}:\n${val}`);
-      }
+      parts.push(`${f.label}:\n${val}`);
     }
     return parts.join('\n\n');
   };
@@ -475,169 +471,258 @@ export default function CreateListingPage() {
     );
   }
 
+  const wizardSteps = [
+    { id: 'category', label: 'Category' },
+    { id: 'details', label: 'Details' },
+    { id: 'pricing', label: 'Pricing' },
+    { id: 'seller', label: 'Seller & Photos' },
+    { id: 'review', label: 'Review' },
+  ];
+
+  const wizardProgress = (wizardSteps.findIndex((s) => s.id === wizardStep) + 1) / wizardSteps.length;
+
+  const goNext = () => {
+    const idx = wizardSteps.findIndex((s) => s.id === wizardStep);
+    if (idx < wizardSteps.length - 1) setWizardStep(wizardSteps[idx + 1].id);
+  };
+
+  const goPrev = () => {
+    const idx = wizardSteps.findIndex((s) => s.id === wizardStep);
+    if (idx > 0) setWizardStep(wizardSteps[idx - 1].id);
+  };
+
+  const canAdvance = () => {
+    switch (wizardStep) {
+      case 'category':
+        return !!selectedCategoryId && !!listingType;
+      case 'details':
+        return !!formTitle && !!descSections.overview?.trim();
+      case 'pricing':
+        if (!negotiable && !formPrice) return false;
+        if (isPropertyCategory(selectedCategory) && !formLocation) return false;
+        return true;
+      case 'seller':
+        return !!sellerName.trim() && !!sellerPhone.trim() && isValidRwandaPhone(sellerPhone);
+      default:
+        return true;
+    }
+  };
+
   return (
     <div className="max-w-2xl mx-auto px-4 py-10">
-      <h1 className="text-2xl font-bold text-gray-900 mb-2">{T.postAListingTitle}</h1>
-      <p className="text-gray-500 text-sm mb-6">
-        {isSupplier ? (
-          <span className="text-green-700 font-semibold">Suppliers post directly from their account. Your contact phone is saved for this business.</span>
-        ) : postingFree ? (
-          <span className="text-green-700 font-semibold">Posting is currently FREE! No account needed.</span>
-        ) : (
-          <span className="text-green-700 font-semibold">No account needed! Choose a duration and pay via MoMo.</span>
-        )}
-      </p>
+      {wizardStep !== 'review' && (
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+              Step {wizardSteps.findIndex((s) => s.id === wizardStep) + 1} of {wizardSteps.length}
+            </span>
+            <span className="text-xs font-semibold text-[#E85D04]">
+              {wizardSteps.find((s) => s.id === wizardStep)?.label}
+            </span>
+          </div>
+          <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-[#E85D04] transition-all duration-300"
+              style={{ width: `${wizardProgress * 100}%` }}
+            ></div>
+          </div>
+        </div>
+      )}
 
       {error && <div className="bg-red-50 text-red-700 text-sm rounded-lg px-4 py-3 mb-4">{error}</div>}
 
-      <form onSubmit={handleSubmit(canPostForFree ? onSubmitFree : onSubmitPaid)} className="bg-white rounded-2xl shadow p-6 space-y-5">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">{T.category} *</label>
-          <select
-            {...register('category_id', { required: 'Select a category' })}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none"
-          >
-            <option value="">Select a category first…</option>
-            {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-          </select>
-          {errors.category_id && <p className="text-red-500 text-xs mt-1">{errors.category_id.message}</p>}
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      {/* ── Step 1: Category ── */}
+      {wizardStep === 'category' && (
+        <form onSubmit={handleSubmit(canPostForFree ? onSubmitFree : onSubmitPaid)} className="bg-white rounded-2xl shadow p-6 space-y-5">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{T.type} *</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{T.category} *</label>
             <select
-              {...register('listing_type')}
+              {...register('category_id', { required: 'Select a category' })}
               className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none"
+              onChange={goNext}
             >
-              <option value="sell">{T.forSale}</option>
-              <option value="rent">{T.forRent}</option>
+              <option value="">Select a category first…</option>
+              {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
+            {errors.category_id && <p className="text-red-500 text-xs mt-1">{errors.category_id.message}</p>}
           </div>
-        </div>
 
-        {categoryFields.length > 0 && (
-          <CategoryFieldsInput
-            fields={categoryFields}
-            values={attributes}
-            onChange={setAttributes}
-            heading={`${selectedCategory?.name} details`}
-          />
-        )}
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">{T.titleField} *</label>
-          <input
-            {...register('title', { required: 'Title is required' })}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none"
-            placeholder="e.g. iPhone 13 Pro Max – Like New"
-          />
-          {errors.title && <p className="text-red-500 text-xs mt-1">{errors.title.message}</p>}
-        </div>
-
-        <div className="space-y-3">
-          <label className="block text-sm font-medium text-gray-700 mb-1">{T.descriptionField}</label>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {descFields.map((f) => (
-              <div key={f.key} className={f.multiline ? 'sm:col-span-2' : ''}>
-                <label className="block text-xs font-medium text-gray-600 mb-1">{f.label}</label>
-                {f.multiline ? (
-                  <textarea
-                    value={descSections[f.key] || ''}
-                    onChange={(e) => setDescSections((p) => ({ ...p, [f.key]: e.target.value }))}
-                    rows={3}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none"
-                    placeholder={f.placeholder}
-                  />
-                ) : (
-                  <input
-                    value={descSections[f.key] || ''}
-                    onChange={(e) => setDescSections((p) => ({ ...p, [f.key]: e.target.value }))}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none"
-                    placeholder={f.placeholder}
-                  />
-                )}
-              </div>
-            ))}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{T.type} *</label>
+              <select
+                {...register('listing_type')}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none"
+                onChange={goNext}
+              >
+                <option value="sell">{T.forSale}</option>
+                <option value="rent">{T.forRent}</option>
+              </select>
+            </div>
           </div>
-        </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-[1fr_140px] gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{T.priceLabel} {!negotiable && <span className="text-red-500">*</span>}</label>
-            <input
-              type="number"
-              {...register('price', { validate: v => (!negotiable && !v ? 'Price is required when not negotiable' : undefined) })}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none"
-              placeholder={negotiable ? T.leaveBlankIfNegotiable : 'Enter price'}
+          {categoryFields.length > 0 && (
+            <CategoryFieldsInput
+              fields={categoryFields}
+              values={attributes}
+              onChange={setAttributes}
+              heading={`${selectedCategory?.name} details`}
             />
-            {errors.price && <p className="text-red-500 text-xs mt-1">{errors.price.message}</p>}
+          )}
+
+          <div className="flex justify-between mt-6">
+            <button type="button" disabled={!canAdvance()} onClick={goNext} className="px-4 py-2.5 bg-[#E85D04] text-white rounded-lg font-semibold disabled:opacity-50">
+              Continue →
+            </button>
           </div>
+        </form>
+      )}
+
+      {/* ── Step 2: Details ── */}
+      {wizardStep === 'details' && (
+        <form onSubmit={handleSubmit(canPostForFree ? onSubmitFree : onSubmitPaid)} className="bg-white rounded-2xl shadow p-6 space-y-5">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{T.currencyLabel}</label>
-            <select
-              {...register('currency')}
+            <label className="block text-sm font-medium text-gray-700 mb-1">{T.titleField} *</label>
+            <input
+              {...register('title', { required: 'Title is required' })}
               className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none"
-            >
-              {['RWF', 'USD', 'EUR', 'GBP', 'KES', 'TZS', 'UGX', 'ZAR', 'XAF', 'CHF', 'CAD', 'AUD'].map((c) => (
-                <option key={c} value={c}>{c}</option>
+              placeholder="e.g. iPhone 13 Pro Max – Like New"
+            />
+            {errors.title && <p className="text-red-500 text-xs mt-1">{errors.title.message}</p>}
+          </div>
+
+          <div className="space-y-3">
+            <label className="block text-sm font-medium text-gray-700 mb-1">{T.descriptionField}</label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {descFields.map((f) => (
+                <div key={f.key} className={f.multiline ? 'sm:col-span-2' : ''}>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">{f.label}</label>
+                  {f.multiline ? (
+                    <textarea
+                      value={descSections[f.key] || ''}
+                      onChange={(e) => setDescSections((p) => ({ ...p, [f.key]: e.target.value }))}
+                      rows={3}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none"
+                      placeholder={f.placeholder}
+                    />
+                  ) : (
+                    <input
+                      value={descSections[f.key] || ''}
+                      onChange={(e) => setDescSections((p) => ({ ...p, [f.key]: e.target.value }))}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none"
+                      placeholder={f.placeholder}
+                    />
+                  )}
+                </div>
               ))}
-            </select>
+            </div>
           </div>
-        </div>
-        <div className="mt-2">
-          <label className="block text-sm font-medium text-gray-700 mb-1">{T.priceType}</label>
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={() => setNegotiable(false)}
-              className={`border rounded-lg px-3 py-2.5 text-sm font-medium transition ${!negotiable ? 'border-[#E85D04] bg-orange-50 text-[#E85D04]' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}
-            >
-              {T.notNegotiable}
+
+          <div className="flex justify-between mt-6">
+            <button type="button" onClick={goPrev} className="px-4 py-2.5 border border-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-50">
+              ← Back
             </button>
-            <button
-              type="button"
-              onClick={() => setNegotiable(true)}
-              className={`border rounded-lg px-3 py-2.5 text-sm font-medium transition ${negotiable ? 'border-[#E85D04] bg-orange-50 text-[#E85D04]' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}
-            >
-              {T.negotiable}
+            <button type="button" disabled={!canAdvance()} onClick={goNext} className="px-4 py-2.5 bg-[#E85D04] text-white rounded-lg font-semibold disabled:opacity-50">
+              Continue →
             </button>
           </div>
-        </div>
+        </form>
+      )}
 
-        {isPropertyCategory(selectedCategory) ? (
-          <RwandaPropertyLocation
-            value={watch('location') || ''}
-            onChange={(location) => setValue('location', location, { shouldDirty: true })}
-            required
-          />
-        ) : <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">{T.locationField}</label>
-          <input
-            {...register('location')}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none"
-            placeholder="e.g. Kicukiro, Kigali"
-          />
-        </div>}
-
-        {!canPostForFree && (
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Listing Duration *</label>
-            <select
-              value={durationDays}
-              onChange={(e) => setDurationDays(Number(e.target.value))}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#E85D04] focus:border-[#E85D04] bg-white"
-            >
-              {durationOptions.map((d) => (
-                <option key={d} value={d}>
-                  {durationLabel(d)} - {formatRWF(durationPrices[d])}
-                </option>
-              ))}
-            </select>
+      {/* ── Step 3: Pricing ── */}
+      {wizardStep === 'pricing' && (
+        <form onSubmit={handleSubmit(canPostForFree ? onSubmitFree : onSubmitPaid)} className="bg-white rounded-2xl shadow p-6 space-y-5">
+          <div className="grid grid-cols-1 sm:grid-cols-[1fr_140px] gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{T.priceLabel} {!negotiable && <span className="text-red-500">*</span>}</label>
+              <input
+                type="number"
+                {...register('price', { validate: v => (!negotiable && !v ? 'Price is required when not negotiable' : undefined) })}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none"
+                placeholder={negotiable ? T.leaveBlankIfNegotiable : 'Enter price'}
+              />
+              {errors.price && <p className="text-red-500 text-xs mt-1">{errors.price.message}</p>}
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{T.currencyLabel}</label>
+              <select
+                {...register('currency')}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none"
+              >
+                {['RWF', 'USD', 'EUR', 'GBP', 'KES', 'TZS', 'UGX', 'ZAR', 'XAF', 'CHF', 'CAD', 'AUD'].map((c) => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+            </div>
           </div>
-        )}
+          <div className="mt-2">
+            <label className="block text-sm font-medium text-gray-700 mb-1">{T.priceType}</label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setNegotiable(false)}
+                className={`border rounded-lg px-3 py-2.5 text-sm font-medium transition ${!negotiable ? 'border-[#E85D04] bg-orange-50 text-[#E85D04]' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}
+              >
+                {T.notNegotiable}
+              </button>
+              <button
+                type="button"
+                onClick={() => setNegotiable(true)}
+                className={`border rounded-lg px-3 py-2.5 text-sm font-medium transition ${negotiable ? 'border-[#E85D04] bg-orange-50 text-[#E85D04]' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}
+              >
+                {T.negotiable}
+              </button>
+            </div>
+          </div>
 
-        <div>
+          {isPropertyCategory(selectedCategory) ? (
+            <RwandaPropertyLocation
+              value={watch('location') || ''}
+              onChange={(location) => setValue('location', location, { shouldDirty: true })}
+              required
+            />
+          ) : (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{T.locationField}</label>
+              <input
+                {...register('location')}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none"
+                placeholder="e.g. Kicukiro, Kigali"
+              />
+            </div>
+          )}
+
+          {!canPostForFree && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Listing Duration *</label>
+              <select
+                value={durationDays}
+                onChange={(e) => setDurationDays(Number(e.target.value))}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#E85D04] focus:border-[#E85D04] bg-white"
+              >
+                {durationOptions.map((d) => (
+                  <option key={d} value={d}>
+                    {durationLabel(d)} - {formatRWF(durationPrices[d])}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          <div className="flex justify-between mt-6">
+            <button type="button" onClick={goPrev} className="px-4 py-2.5 border border-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-50">
+              ← Back
+            </button>
+            <button type="button" disabled={!canAdvance()} onClick={goNext} className="px-4 py-2.5 bg-[#E85D04] text-white rounded-lg font-semibold disabled:opacity-50">
+              Continue →
+            </button>
+          </div>
+        </form>
+      )}
+
+      {/* ── Step 4: Seller & Photos ── */}
+      {wizardStep === 'seller' && (
+        <form onSubmit={handleSubmit(canPostForFree ? onSubmitFree : onSubmitPaid)} className="bg-white rounded-2xl shadow p-6 space-y-5">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">{isSupplier ? 'Business Name *' : 'Your Name *'}</label>
@@ -661,36 +746,99 @@ export default function CreateListingPage() {
               />
             </div>
           </div>
-        </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">{T.photos} (up to 6)</label>
-          <input
-            type="file"
-            accept="image/*"
-            multiple
-            onChange={handleImages}
-            className="text-sm text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-orange-50 file:text-[#E85D04] file:font-medium hover:file:bg-orange-100"
-          />
-          {previews.length > 0 && (
-            <div className="flex gap-2 mt-3 flex-wrap">
-              {previews.map((url, i) => (
-                <div key={i} className="w-16 h-16 rounded-lg overflow-hidden border border-gray-200">
-                  <AppImage src={url} alt={`Preview ${i + 1}`} className="w-full h-full object-cover" />
-                </div>
-              ))}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{T.photos} (up to 6)</label>
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handleImages}
+              className="text-sm text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-orange-50 file:text-[#E85D04] file:font-medium hover:file:bg-orange-100"
+            />
+            {previews.length > 0 && (
+              <div className="flex gap-2 mt-3 flex-wrap">
+                {previews.map((url, i) => (
+                  <div key={i} className="w-16 h-16 rounded-lg overflow-hidden border border-gray-200">
+                    <AppImage src={url} alt={`Preview ${i + 1}`} className="w-full h-full object-cover" />
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="flex justify-between mt-6">
+            <button type="button" onClick={goPrev} className="px-4 py-2.5 border border-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-50">
+              ← Back
+            </button>
+            <button type="button" disabled={!canAdvance()} onClick={goNext} className="px-4 py-2.5 bg-[#E85D04] text-white rounded-lg font-semibold disabled:opacity-50">
+              Review & Post →
+            </button>
+          </div>
+        </form>
+      )}
+
+      {/* ── Step 5: Review ── */}
+      {wizardStep === 'review' && (
+        <div className="bg-white rounded-2xl shadow p-6 space-y-5">
+          <h2 className="text-lg font-bold text-gray-900">Review your listing</h2>
+
+          <div className="grid grid-cols-2 gap-4 text-sm">
+            <div>
+              <p className="text-gray-500 font-medium">Category</p>
+              <p className="text-gray-900">{selectedCategory?.name || '—'}</p>
+            </div>
+            <div>
+              <p className="text-gray-500 font-medium">Type</p>
+              <p className="text-gray-900">{watch('listing_type') === 'sell' ? T.forSale : T.forRent}</p>
+            </div>
+            <div>
+              <p className="text-gray-500 font-medium">Title</p>
+              <p className="text-gray-900 truncate">{watch('title') || '—'}</p>
+            </div>
+            <div>
+              <p className="text-gray-500 font-medium">Price</p>
+              <p className="text-gray-900">{watch('price') ? formatRWF(Number(watch('price'))) + ' ' + watch('currency') : '—'}</p>
+            </div>
+            <div>
+              <p className="text-gray-500 font-medium">Location</p>
+              <p className="text-gray-900">{watch('location') || '—'}</p>
+            </div>
+            <div>
+              <p className="text-gray-500 font-medium">Seller</p>
+              <p className="text-gray-900">{sellerName || '—'}</p>
+            </div>
+            <div>
+              <p className="text-gray-500 font-medium">Phone</p>
+              <p className="text-gray-900">{sellerPhone || '—'}</p>
+            </div>
+            <div>
+              <p className="text-gray-500 font-medium">Photos</p>
+              <p className="text-gray-900">{previews.length} uploaded</p>
+            </div>
+          </div>
+
+          {descSections.overview && (
+            <div>
+              <p className="text-gray-500 font-medium mb-1">Overview</p>
+              <p className="text-gray-700 text-sm">{descSections.overview}</p>
             </div>
           )}
-        </div>
 
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="w-full bg-[#E85D04] text-white font-semibold py-3 rounded-lg hover:bg-[#e05d00] transition disabled:opacity-60"
-        >
+          <div className="flex justify-between mt-8">
+            <button type="button" onClick={goPrev} className="px-4 py-2.5 border border-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-50">
+              ← Back
+            </button>
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="w-full bg-[#E85D04] text-white font-semibold py-3 rounded-lg hover:bg-[#e05d00] transition disabled:opacity-60"
+            >
               {isSupplier ? 'Post Listing' : canPostForFree ? 'Post Listing (Free)' : `Pay & Post (${formatRWF(durationPrices[durationDays])})`}
-        </button>
-      </form>
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
