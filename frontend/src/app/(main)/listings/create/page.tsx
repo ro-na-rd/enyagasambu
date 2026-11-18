@@ -477,7 +477,7 @@ export default function CreateListingPage() {
     { id: 'pricing', label: 'Pricing' },
     { id: 'seller', label: 'Seller & Photos' },
     { id: 'review', label: 'Review' },
-  ];
+  ] as const;
 
   const wizardProgress = (wizardSteps.findIndex((s) => s.id === wizardStep) + 1) / wizardSteps.length;
 
