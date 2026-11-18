@@ -51,6 +51,8 @@ export default function MyListingsPage() {
   const [editAttributes, setEditAttributes] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
 
+  const didPrefillPhone = useRef(false);
+
   const editCategoryFields = categories.find((c) => String(c.id) === editForm.category_id)?.fields || [];
 
   const [confirmDelete, setConfirmDelete] = useState<number | null>(null);
@@ -87,7 +89,8 @@ export default function MyListingsPage() {
   // Prefill the phone with the seller's current profile number so they can
   // post under their default contact without re-typing it, but they may change it.
   useEffect(() => {
-    if (user?.phone && !phone) {
+    if (user?.phone && !phone && !didPrefillPhone.current) {
+      didPrefillPhone.current = true;
       setPhone(user.phone);
     }
   }, [user?.phone, phone]);
