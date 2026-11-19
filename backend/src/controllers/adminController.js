@@ -1,7 +1,7 @@
 const pool = require('../config/db');
 const { uploadToS3, deleteFromS3Url } = require('../services/s3Service');
 const { notifyAdmins, notifyUser } = require('../services/notificationService');
-const { loadCategoryFields, sanitizeAttributes } = require('../services/categoryFieldsService');
+const { loadCategoryFields, sanitizeAttributes, parseAttributes } = require('../services/categoryFieldsService');
 const { logger } = require('../config/logger');
 const { getOrCreateStaffMarketplaceUser } = require('../services/marketplaceUserService');
 
@@ -204,6 +204,35 @@ exports.getAdminListings = async (req, res) => {
   }
 };
 
+exports.getAdminListing = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const [[listing]] = await pool.query(
+      `SELECT l.id, l.title, l.description, l.category_id, l.listing_type, l.price, l.price_type,
+              l.currency, l.location, l.attributes, l.is_advert, l.status, l.created_at,
+              c.name AS category_name, c.slug AS category_slug, c.type AS category_type,
+              u.name AS seller_name, u.id AS seller_id
+       FROM listings l
+       JOIN categories c ON c.id = l.category_id
+       JOIN users u ON u.id = l.user_id
+       WHERE l.id = ? AND l.status != 'deleted'`,
+      [id]
+    );
+    if (!listing) return res.status(404).json({ message: 'Listing not found' });
+
+    const [images] = await pool.query(
+      'SELECT id, image_url, is_primary FROM listing_images WHERE listing_id = ? ORDER BY is_primary DESC, id',
+      [id]
+    );
+    return res.json({
+      listing: { ...listing, attributes: parseAttributes(listing.attributes), images },
+    });
+  } catch (err) {
+    logger.error('[Admin get listing error]', err);
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
+
 exports.deleteListing = async (req, res) => {
   const { id } = req.params;
   
@@ -281,6 +310,166 @@ exports.toggleListingStatus = async (req, res) => {
   } catch (err) {
     logger.error(err);
     return res.status(500).json({ message: 'Server error' });
+  }
+};
+
+exports.updateListing = async (req, res) => {
+  const { id } = req.params;
+  const { title, category_id } = req.body;
+  const hasFiles = Array.isArray(req.files) && req.files.length > 0;
+
+  if (typeof title !== 'string' || !title.trim()) {
+    return res.status(400).json({ message: 'Title is required' });
+  }
+  if (title.trim().length > 200) {
+    return res.status(400).json({ message: 'Title must be less than 200 characters' });
+  }
+  if (!Number.isInteger(Number(category_id)) || Number(category_id) <= 0) {
+    return res.status(400).json({ message: 'Category is required' });
+  }
+  if (req.body.listing_type !== undefined && !['sell', 'rent', 'auction'].includes(req.body.listing_type)) {
+    return res.status(400).json({ message: 'Type must be sell, rent, or auction' });
+  }
+  if (req.body.price !== undefined && req.body.price !== '' && (!Number.isFinite(Number(req.body.price)) || Number(req.body.price) < 0)) {
+    return res.status(400).json({ message: 'Price must be a positive number' });
+  }
+  if (req.body.currency !== undefined && !/^[A-Za-z]{3}$/.test(req.body.currency)) {
+    return res.status(400).json({ message: 'Currency must be 3 characters (e.g., RWF)' });
+  }
+
+  const conn = await pool.getConnection();
+  const uploadedImageUrls = [];
+  let oldImages = [];
+  try {
+    await conn.beginTransaction();
+
+    const [[existing]] = await conn.query(
+      `SELECT id, description, price, price_type, currency, location, listing_type, attributes, is_advert
+       FROM listings WHERE id = ? FOR UPDATE`,
+      [id]
+    );
+    if (!existing) {
+      await conn.rollback();
+      return res.status(404).json({ message: 'Listing not found' });
+    }
+
+    const normalizedCategoryId = Number(category_id);
+    const [[category]] = await conn.query('SELECT id FROM categories WHERE id = ?', [normalizedCategoryId]);
+    if (!category) {
+      await conn.rollback();
+      return res.status(400).json({ message: 'Invalid category' });
+    }
+
+    const attributeInput = req.body.attributes === undefined
+      ? parseAttributes(existing.attributes)
+      : req.body.attributes;
+    const { values: attributes, errors: attributeErrors } = sanitizeAttributes(
+      await loadCategoryFields(normalizedCategoryId, conn),
+      attributeInput
+    );
+    if (attributeErrors.length) {
+      await conn.rollback();
+      return res.status(422).json({ message: attributeErrors.join(', ') });
+    }
+
+    if (hasFiles) {
+      for (const file of req.files) {
+        const { url } = await uploadToS3(file);
+        uploadedImageUrls.push(url);
+      }
+      [oldImages] = await conn.query(
+        'SELECT id, image_url FROM listing_images WHERE listing_id = ? ORDER BY is_primary DESC, id',
+        [id]
+      );
+    }
+
+    const description = req.body.description === undefined
+      ? existing.description
+      : (String(req.body.description).trim() || null);
+    const location = req.body.location === undefined
+      ? existing.location
+      : (String(req.body.location).trim() || null);
+    const price = req.body.price === undefined
+      ? existing.price
+      : (req.body.price === '' ? null : Number(req.body.price));
+    const priceType = req.body.price_type === undefined ? existing.price_type : String(req.body.price_type).trim();
+    const currency = req.body.currency === undefined ? existing.currency : req.body.currency.toUpperCase();
+    const listingType = req.body.listing_type === undefined ? existing.listing_type : req.body.listing_type;
+    const isAdvert = req.body.is_advert === undefined
+      ? existing.is_advert
+      : (req.body.is_advert === true || req.body.is_advert === 'true' || req.body.is_advert === '1' ? 1 : 0);
+
+    await conn.query(
+      `UPDATE listings
+       SET category_id = ?, title = ?, description = ?, price = ?, price_type = ?, currency = ?, location = ?,
+           listing_type = ?, attributes = ?, is_advert = ?
+       WHERE id = ?`,
+      [
+        normalizedCategoryId,
+        title.trim(),
+        description,
+        price,
+        priceType || null,
+        currency,
+        location,
+        listingType,
+        Object.keys(attributes).length ? JSON.stringify(attributes) : null,
+        isAdvert,
+        id,
+      ]
+    );
+
+    if (hasFiles) {
+      await conn.query('DELETE FROM listing_images WHERE listing_id = ?', [id]);
+      await conn.query(
+        'INSERT INTO listing_images (listing_id, image_url, is_primary) VALUES ?',
+        [uploadedImageUrls.map((url, index) => [id, url, index === 0])]
+      );
+    }
+
+    const [[listing]] = await conn.query(
+      `SELECT l.*, c.name AS category_name, c.slug AS category_slug, c.type AS category_type,
+              u.name AS seller_name, u.id AS seller_id
+       FROM listings l
+       JOIN categories c ON c.id = l.category_id
+       JOIN users u ON u.id = l.user_id
+       WHERE l.id = ?`,
+      [id]
+    );
+    const [images] = await conn.query(
+      'SELECT id, image_url, is_primary FROM listing_images WHERE listing_id = ? ORDER BY is_primary DESC, id',
+      [id]
+    );
+
+    await conn.commit();
+
+    if (hasFiles) {
+      for (const image of oldImages) {
+        try {
+          await deleteFromS3Url(image.image_url);
+        } catch (err) {
+          logger.error('[Admin update listing image cleanup error]', err);
+        }
+      }
+    }
+
+    return res.json({
+      message: 'Listing updated',
+      listing: { ...listing, attributes: parseAttributes(listing.attributes), images },
+    });
+  } catch (err) {
+    await conn.rollback();
+    for (const imageUrl of uploadedImageUrls) {
+      try {
+        await deleteFromS3Url(imageUrl);
+      } catch (cleanupErr) {
+        logger.error('[Admin update listing upload cleanup error]', cleanupErr);
+      }
+    }
+    logger.error('[Admin update listing error]', err);
+    return res.status(500).json({ message: 'Server error' });
+  } finally {
+    conn.release();
   }
 };
 

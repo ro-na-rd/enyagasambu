@@ -321,6 +321,8 @@ function ListingsContent() {
                   </div>
                 ))}
               </div>
+            ) : category === 'supply-chain' && visibleListings.length === 0 ? (
+              null
             ) : visibleListings.length === 0 ? (
               <div className="text-center py-24 bg-white rounded-2xl border border-gray-100 shadow-sm">
                 <div className="text-6xl mb-4"><Search size={48} /></div>
@@ -368,18 +370,32 @@ function ListingsContent() {
 }
 
 export default function ListingsPage() {
+  const [category, setCategory] = useState<string>('');
+  const [tab, setTab] = useState<string>('');
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    setCategory(params.get('category') || '');
+    setTab(params.get('tab') || '');
+  }, []);
+
+  const showPostingButton = category !== 'supply-chain' && tab !== 'adverts';
+
   return (
     <div className="max-w-7xl mx-auto px-4 py-8 relative min-h-screen">
       <Suspense fallback={<div className="text-center py-16 text-gray-500 text-sm">Loading listings...</div>}>
         <ListingsContent />
       </Suspense>
-      <Link href="/listings/create"
-        className="fixed bottom-24 right-8 z-50 px-6 py-3.5 rounded-full shadow-2xl flex items-center gap-2 text-white text-sm font-bold hover:scale-105 active:scale-95 transition-all duration-200 hover:shadow-orange-500/30 group"
-        style={{ background: `linear-gradient(135deg, ${NAVY}, ${ORG})` }}
-        title="Create New Listing">
-        <span className="text-xl leading-none group-hover:rotate-90 transition-transform duration-300">+</span>
-        <span>Posting</span>
-      </Link>
+      {showPostingButton && (
+        <Link href="/listings/create"
+          className="fixed bottom-24 right-8 z-50 px-6 py-3.5 rounded-full shadow-2xl flex items-center gap-2 text-white text-sm font-bold hover:scale-105 active:scale-95 transition-all duration-200 hover:shadow-orange-500/30 group"
+          style={{ background: `linear-gradient(135deg, ${NAVY}, ${ORG})` }}
+          title="Create New Listing">
+          <span className="text-xl leading-none group-hover:rotate-90 transition-transform duration-300">+</span>
+          <span>Posting</span>
+        </Link>
+      )}
     </div>
   );
 }

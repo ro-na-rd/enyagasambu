@@ -45,6 +45,7 @@ const normalizePhone = (value: string) => {
 export default function RwandaLocationMap({ listings, activeLocation, onLocationSelect }: RwandaLocationMapProps) {
   const [selectedLocation, setSelectedLocation] = useState<MapLocation>(LOCATIONS[3]);
   const [recipientPhone, setRecipientPhone] = useState('');
+  const [senderPhone, setSenderPhone] = useState('');
   const [phoneError, setPhoneError] = useState('');
   const [usingCurrentLocation, setUsingCurrentLocation] = useState(false);
 
@@ -95,7 +96,10 @@ export default function RwandaLocationMap({ listings, activeLocation, onLocation
       return;
     }
 
-    const message = `I am sharing a location with you: ${selectedLocation.name}\n${locationUrl}`;
+    const senderLine = senderPhone.trim()
+      ? `Sender: ${senderPhone.trim()}\n`
+      : '';
+    const message = `${senderLine}I am sharing a location with you: ${selectedLocation.name}\n${locationUrl}`;
     window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank', 'noopener,noreferrer');
     setPhoneError('');
   };
@@ -149,6 +153,17 @@ export default function RwandaLocationMap({ listings, activeLocation, onLocation
 
       <div className="border-t border-orange-100 bg-orange-50/50 p-4 sm:p-5">
         <div className="grid items-end gap-3 md:grid-cols-[minmax(0,1fr)_auto]">
+          <label className="block">
+            <span className="mb-1.5 flex items-center gap-1.5 text-sm font-semibold text-gray-800"><Phone size={15} /> Sender WhatsApp number</span>
+            <input
+              type="tel"
+              value={senderPhone}
+              onChange={(event) => { setSenderPhone(event.target.value); setPhoneError(''); }}
+              placeholder="+250 7XX XXX XXX"
+              className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-[#E85D04] focus:ring-2 focus:ring-orange-100"
+              aria-describedby="whatsapp-location-help"
+            />
+          </label>
           <label className="block">
             <span className="mb-1.5 flex items-center gap-1.5 text-sm font-semibold text-gray-800"><Phone size={15} /> Recipient WhatsApp number</span>
             <input

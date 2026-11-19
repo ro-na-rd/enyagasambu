@@ -34,8 +34,10 @@ router.get('/users/:id/details', authenticate, requireAdmin, ctrl.getUserDetails
 router.post('/users/:id/suspend', authenticate, requireAdmin, ctrl.suspendUser);
 router.post('/users/:id/unsuspend', authenticate, requireAdmin, ctrl.unsuspendUser);
 router.delete('/users/:id', authenticate, requireAdmin, ctrl.deleteUser);
+router.get('/listings/:id', authenticate, requireAdmin, ctrl.getAdminListing);
 router.delete('/listings/:id',   authenticate, requireAdmin, ctrl.deleteListing);
 router.patch('/listings/:id/status', authenticate, requireAdmin, ctrl.toggleListingStatus);
+router.put('/listings/:id',      authenticate, requireAdmin, upload.array('images', 10), ctrl.updateListing);
 router.post('/listings',         authenticate, requireAdmin, ctrl.createListing);
 router.post('/listings/with-files', authenticate, requireAdmin, upload.array('images', 10), ctrl.createListingWithFiles);
 router.post('/listings/bulk',    authenticate, requireAdmin, ctrl.bulkUpdateListings);

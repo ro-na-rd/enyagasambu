@@ -7,7 +7,7 @@ import Link from 'next/link';
 import {
   LayoutDashboard, Users, Package, Folder, FileText, Award, BarChart3,
   Activity, Ticket, Settings, LogOut, Menu, X, ChevronRight,
-  Medal, Store, Link as LinkIcon, Heart, Megaphone, Bell, Gavel, MessageSquare
+  Medal, Store, Link as LinkIcon, Heart, Megaphone, Bell, Gavel, MessageSquare, User
 } from '@/lib/icons';
 import NotificationBell from '@/components/NotificationBell';
 import { useUnreadCount } from '@/lib/useUnreadCount';
@@ -50,6 +50,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: '/admin/team', icon: <Users size={18} />, label: 'Team & Board' },
   { href: '/admin/home-buttons', icon: <LinkIcon size={18} />, label: 'Join Buttons' },
   { href: '/admin/settings', icon: <Settings size={18} />, label: 'Settings' },
+  { href: '/admin/profile', icon: <User size={18} />, label: 'Profile' },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {

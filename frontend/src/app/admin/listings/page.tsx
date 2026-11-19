@@ -10,6 +10,16 @@ const NAVY = '#0f1e42';
 
 interface Listing { id: number; title: string; status: string; listing_type: string; is_featured: boolean; is_advert: boolean; seller_name: string; category_name: string; created_at: string; }
 
+interface ListingDetails extends Listing {
+  description?: string;
+  category_id?: number | string;
+  price?: number | string | null;
+  currency?: string | null;
+  location?: string | null;
+  attributes?: Record<string, string> | string | null;
+  images?: unknown[];
+}
+
 interface Category { id: number; name: string; slug: string; type: string; fields: CategoryField[]; }
 
 const statusColors: Record<string, string> = {
@@ -48,7 +58,27 @@ export default function AdminListingsPage() {
   const [previews, setPreviews] = useState<string[]>([]);
   const [attributes, setAttributes] = useState<Record<string, string>>({});
 
+  const [showEdit, setShowEdit] = useState(false);
+  const [editingListing, setEditingListing] = useState<ListingDetails | null>(null);
+  const [editLoading, setEditLoading] = useState(false);
+  const [editSaving, setEditSaving] = useState(false);
+  const [editError, setEditError] = useState('');
+  const [editForm, setEditForm] = useState({
+    title: '',
+    description: '',
+    category_id: '',
+    listing_type: 'sell',
+    price: '',
+    currency: 'RWF',
+    location: '',
+    is_advert: false,
+  });
+  const [editAttributes, setEditAttributes] = useState<Record<string, string>>({});
+  const [editImages, setEditImages] = useState<File[]>([]);
+  const [editPreviews, setEditPreviews] = useState<string[]>([]);
+
   const categoryFields = categories.find((c) => String(c.id) === form.category_id)?.fields || [];
+  const editCategoryFields = categories.find((c) => String(c.id) === editForm.category_id)?.fields || [];
 
   const load = (q = '', status = '') => {
     const params = new URLSearchParams();
@@ -133,6 +163,90 @@ export default function AdminListingsPage() {
   const handleToggleStatus = async (id: number, newStatus: string) => {
     await api.patch(`/admin/listings/${id}/status`, { status: newStatus });
     load(search, statusFilter);
+  };
+
+  const parseAttributes = (value: ListingDetails['attributes']): Record<string, string> => {
+    if (!value) return {};
+    if (typeof value === 'object') return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, String(item ?? '')]));
+    try {
+      const parsed: unknown = JSON.parse(value);
+      return parsed && typeof parsed === 'object'
+        ? Object.fromEntries(Object.entries(parsed).map(([key, item]) => [key, String(item ?? '')]))
+        : {};
+    } catch {
+      return {};
+    }
+  };
+
+  const openEdit = async (id: number) => {
+    setShowEdit(true);
+    setEditLoading(true);
+    setEditError('');
+    setEditingListing(null);
+    setEditImages([]);
+    setEditPreviews([]);
+    try {
+      const { data } = await api.get(`/admin/listings/${id}`);
+      const listing = (data.listing || data) as ListingDetails;
+      setEditingListing(listing);
+      setEditForm({
+        title: listing.title || '',
+        description: listing.description || '',
+        category_id: String(listing.category_id || ''),
+        listing_type: listing.listing_type || 'sell',
+        price: listing.price == null ? '' : String(listing.price),
+        currency: listing.currency || 'RWF',
+        location: listing.location || '',
+        is_advert: Boolean(listing.is_advert),
+      });
+      setEditAttributes(parseAttributes(listing.attributes));
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      setEditError(msg || 'Failed to load listing details.');
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
+  const handleEditImages = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []).slice(0, 6);
+    setEditImages(files);
+    setEditPreviews(files.map((file) => URL.createObjectURL(file)));
+  };
+
+  const removeEditImage = (idx: number) => {
+    setEditImages((current) => current.filter((_, index) => index !== idx));
+    setEditPreviews((current) => current.filter((_, index) => index !== idx));
+  };
+
+  const handleEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingListing || !editForm.title.trim() || !editForm.category_id) {
+      setEditError('Title and category are required.');
+      return;
+    }
+    const missing = findMissingRequiredField(editCategoryFields, editAttributes);
+    if (missing) {
+      setEditError(`${missing.label} is required.`);
+      return;
+    }
+    setEditSaving(true);
+    setEditError('');
+    try {
+      const fd = new FormData();
+      Object.entries(editForm).forEach(([key, value]) => fd.append(key, String(value)));
+      fd.append('attributes', JSON.stringify(editAttributes));
+      editImages.forEach((file) => fd.append('images', file));
+      await api.put(`/admin/listings/${editingListing.id}`, fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+      setShowEdit(false);
+      setFetching(true);
+      load(search, statusFilter);
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      setEditError(msg || 'Failed to update listing.');
+    } finally {
+      setEditSaving(false);
+    }
   };
 
   const inputCls = "w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#E85D04] bg-white";
@@ -248,6 +362,8 @@ export default function AdminListingsPage() {
                         <button onClick={() => handleToggleStatus(l.id, 'active')}
                           className="text-xs font-semibold hover:underline text-green-400 hover:text-green-300">Activate for 90 days</button>
                       ) : null}
+                      <button onClick={() => openEdit(l.id)}
+                        className="text-xs font-semibold hover:underline text-[#E85D04] hover:text-[#c44d00]">Edit</button>
                       <button onClick={() => handleDelete(l.id)}
                         className="text-xs font-semibold hover:underline text-red-500 hover:text-red-400 ml-1">Delete</button>
                     </div>
@@ -400,6 +516,158 @@ export default function AdminListingsPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {showEdit && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => !editSaving && setShowEdit(false)} />
+          <div className="relative w-full max-w-2xl bg-white rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col animate-fadeInUp">
+            <div className="relative px-6 py-5 flex items-center justify-between"
+              style={{ background: `linear-gradient(135deg, ${NAVY}, #1a2d5a)` }}>
+              <div>
+                <h2 className="text-lg font-bold text-white">Edit Listing</h2>
+                <p className="text-white/60 text-xs mt-0.5">Correct listing details without changing its status or ownership</p>
+              </div>
+              <button onClick={() => !editSaving && setShowEdit(false)}
+                className="p-1.5 rounded-full bg-white/10 text-white/70 hover:bg-white/20 hover:text-white transition-colors">
+                <X size={18} />
+              </button>
+            </div>
+
+            {editLoading ? (
+              <div className="flex flex-1 items-center justify-center gap-2 p-12 text-sm text-gray-600">
+                <Loader2 size={18} className="animate-spin" /> Loading listing details…
+              </div>
+            ) : (
+              <form onSubmit={handleEdit} className="p-6 space-y-4 overflow-y-auto">
+                {editError && (
+                  <div className="flex items-center gap-2 rounded-lg px-4 py-3 text-sm" style={{ background: '#fef2f2', color: '#b91c1c' }}>
+                    <AlertCircle size={16} /> {editError}
+                  </div>
+                )}
+
+                {editingListing && <>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Title *</label>
+                    <input value={editForm.title} onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+                      className={inputCls} placeholder="e.g. Executive House in Kicukiro" maxLength={200} />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Category *</label>
+                      <select value={editForm.category_id} onChange={(e) => setEditForm({ ...editForm, category_id: e.target.value })}
+                        className={inputCls}>
+                        <option value="">Select…</option>
+                        {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
+                      <select value={editForm.listing_type} onChange={(e) => setEditForm({ ...editForm, listing_type: e.target.value as 'sell' | 'rent' })}
+                        className={inputCls}>
+                        <option value="sell">For Sale</option>
+                        <option value="rent">For Rent</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {editCategoryFields.length > 0 && (
+                    <CategoryFieldsInput
+                      fields={editCategoryFields}
+                      values={editAttributes}
+                      onChange={setEditAttributes}
+                      heading={`${categories.find((c) => String(c.id) === editForm.category_id)?.name || 'Category'} details`}
+                    />
+                  )}
+
+                  <div className="grid grid-cols-1 sm:grid-cols-[1fr_140px] gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Price</label>
+                      <input type="number" value={editForm.price} onChange={(e) => setEditForm({ ...editForm, price: e.target.value })}
+                        className={inputCls} placeholder="e.g. 45,000,000" min={0} />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Currency</label>
+                      <select value={editForm.currency} onChange={(e) => setEditForm({ ...editForm, currency: e.target.value })}
+                        className={inputCls}>
+                        {CURRENCIES.map((c) => <option key={c} value={c}>{c}</option>)}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
+                    <input value={editForm.location} onChange={(e) => setEditForm({ ...editForm, location: e.target.value })}
+                      className={inputCls} placeholder="e.g. Kicukiro, Kigali" />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                    <textarea value={editForm.description} onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                      rows={4} className={inputCls} placeholder="Describe the listing…" />
+                  </div>
+
+                  <label className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={editForm.is_advert}
+                      onChange={(e) => setEditForm({ ...editForm, is_advert: e.target.checked })}
+                      className="mt-0.5 h-4 w-4 accent-[#E85D04]"
+                    />
+                    <span>
+                      <span className="block text-sm font-semibold text-gray-800">Publish as a sponsored advert</span>
+                      <span className="block mt-0.5 text-xs text-gray-600">Show this listing in the professional advert space on listing pages.</span>
+                    </span>
+                  </label>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Replace photos (optional, up to 6)</label>
+                    <p className="mb-2 text-xs text-gray-600">
+                      {editingListing.images?.length ? `${editingListing.images.length} current photo(s). ` : ''}
+                      Leave this empty to keep the current photos. Selecting new photos replaces them.
+                    </p>
+                    <label className={`flex flex-col items-center justify-center gap-2 border-2 border-dashed rounded-xl px-4 py-6 cursor-pointer transition ${editImages.length > 0 ? 'border-green-400 bg-green-50/40' : 'border-gray-300 hover:border-[#E85D04] hover:bg-orange-50/30'}`}>
+                      <Upload size={22} className={editImages.length > 0 ? 'text-green-600' : 'text-gray-400'} />
+                      <p className="text-xs text-gray-500">
+                        {editImages.length > 0 ? `${editImages.length} replacement image(s) selected — click to change` : 'Click to choose replacement pictures'}
+                      </p>
+                      <input type="file" accept="image/*" multiple className="hidden" onChange={handleEditImages} />
+                    </label>
+                    {editPreviews.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {editPreviews.map((preview, index) => (
+                          <div key={preview} className="relative w-16 h-16 rounded-lg overflow-hidden group">
+                            <AppImage src={preview} alt={`Replacement preview ${index + 1}`} className="w-full h-full object-cover" />
+                            <button type="button" onClick={() => removeEditImage(index)}
+                              className="absolute top-0.5 right-0.5 p-0.5 rounded-full bg-black/60 text-white opacity-0 group-hover:opacity-100 transition">
+                              <X size={12} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex justify-end gap-3 pt-1">
+                    <button type="button" onClick={() => setShowEdit(false)} disabled={editSaving}
+                      className="px-5 py-2.5 rounded-lg text-sm font-semibold border transition disabled:opacity-60"
+                      style={{ borderColor: '#d0d7de', color: '#555' }}>
+                      Cancel
+                    </button>
+                    <button type="submit" disabled={editSaving}
+                      className="px-6 py-2.5 rounded-lg text-sm font-bold text-white flex items-center gap-2 transition disabled:opacity-60"
+                      style={{ background: ORG }}
+                      onMouseEnter={(e) => e.currentTarget.style.background = '#c44d00'}
+                      onMouseLeave={(e) => e.currentTarget.style.background = ORG}>
+                      {editSaving ? <><Loader2 size={16} className="animate-spin" /> Saving…</> : <>Save Changes</>}
+                    </button>
+                  </div>
+                </>}
+              </form>
+            )}
           </div>
         </div>
       )}
