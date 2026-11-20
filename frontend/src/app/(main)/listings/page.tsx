@@ -1,5 +1,5 @@
 'use client';
-import { Suspense, useEffect, useState, useMemo } from 'react';
+import { Suspense, useMemo, useState, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import api from '@/lib/api';
 import ListingCard from '@/components/ListingCard';
@@ -365,29 +365,9 @@ function ListingsContent() {
           </div>
         </div>
       )}
-    </div>
-  );
-}
-
-export default function ListingsPage() {
-  const [category, setCategory] = useState<string>('');
-  const [tab, setTab] = useState<string>('');
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const params = new URLSearchParams(window.location.search);
-    setCategory(params.get('category') || '');
-    setTab(params.get('tab') || '');
-  }, []);
-
-  const showPostingButton = category !== 'supply-chain' && tab !== 'adverts';
-
-  return (
-    <div className="max-w-7xl mx-auto px-4 py-8 relative min-h-screen">
-      <Suspense fallback={<div className="text-center py-16 text-gray-500 text-sm">Loading listings...</div>}>
-        <ListingsContent />
-      </Suspense>
-      {showPostingButton && (
+      
+      {/* Floating posting button — hidden on supply-chain and adverts tabs */}
+      {tab !== 'supply-chain' && tab !== 'adverts' && (
         <Link href="/listings/create"
           className="fixed bottom-24 right-8 z-50 px-6 py-3.5 rounded-full shadow-2xl flex items-center gap-2 text-white text-sm font-bold hover:scale-105 active:scale-95 transition-all duration-200 hover:shadow-orange-500/30 group"
           style={{ background: `linear-gradient(135deg, ${NAVY}, ${ORG})` }}
@@ -396,6 +376,16 @@ export default function ListingsPage() {
           <span>Posting</span>
         </Link>
       )}
+    </div>
+  );
+}
+
+export default function ListingsPage() {
+  return (
+    <div className="max-w-7xl mx-auto px-4 py-8 relative min-h-screen">
+      <Suspense fallback={<div className="text-center py-16 text-gray-500 text-sm">Loading listings...</div>}>
+        <ListingsContent />
+      </Suspense>
     </div>
   );
 }
