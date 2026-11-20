@@ -46,6 +46,7 @@ export default function CreateListingPage() {
   const [otpResendCooldown, setOtpResendCooldown] = useState(0);
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'loading' | 'success' | 'failed'>('idle');
   const [submitError, setSubmitError] = useState('');
+  const [isPosting, setIsPosting] = useState(false);
   const [negotiable, setNegotiable] = useState(false);
   const [attributes, setAttributes] = useState<Record<string, string>>({});
   const [descSections, setDescSections] = useState<Record<string, string>>({});
@@ -151,14 +152,10 @@ export default function CreateListingPage() {
       setError('Select the Rwanda address for this property.');
       return;
     }
-    if (!descSections.overview.trim()) {
-      setError('Please provide an overview in the description.');
-      return;
-    }
     setError('');
     data.description = assembleDescription();
     setSubmitError('');
-    setSubmitStatus('loading');
+    setIsPosting(true);
     const form = new FormData();
     Object.entries(data).forEach(([k, v]) => form.append(k, v));
     form.append('attributes', JSON.stringify(attributes));
@@ -174,6 +171,8 @@ export default function CreateListingPage() {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
       setSubmitError(msg || 'Failed to create listing.');
       setSubmitStatus('failed');
+    } finally {
+      setIsPosting(false);
     }
   };
 
@@ -185,14 +184,6 @@ export default function CreateListingPage() {
     if (!isValidRwandaPhone(sellerPhone)) { setError('Please enter a valid Rwanda phone number (e.g. 0788123456)'); return; }
     const missing = findMissingRequiredField(categoryFields, attributes);
     if (missing) { setError(`${missing.label} is required`); return; }
-    if (isPropertyCategory(selectedCategory) && !data.location?.trim()) {
-      setError('Select the Rwanda address for this property.');
-      return;
-    }
-    if (!descSections.overview.trim()) {
-      setError('Please provide an overview in the description.');
-      return;
-    }
     setError('');
     data.description = assembleDescription();
     const form = new FormData();
@@ -205,6 +196,7 @@ export default function CreateListingPage() {
     form.append('duration_days', String(durationDays));
     form.append('provider', 'mtn');
     images.forEach((f) => form.append('images', f));
+    setIsPosting(true);
     try {
       const { data: res } = await api.post('/listings/initiate', form, { headers: { 'Content-Type': 'multipart/form-data' } });
       setReferenceId(res.referenceId);
@@ -212,6 +204,8 @@ export default function CreateListingPage() {
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
       setError(msg || 'Failed to initiate payment.');
+    } finally {
+      setIsPosting(false);
     }
   };
 
@@ -479,18 +473,10 @@ export default function CreateListingPage() {
   };
 
   const canAdvance = () => {
-    switch (wizardStep) {
-      case 'basic':
-        return !!selectedCategoryId && !!listingType && !!formTitle && !!descSections.overview?.trim();
-      case 'pricing':
-        if (!negotiable && !formPrice) return false;
-        if (isPropertyCategory(selectedCategory) && !formLocation) return false;
-        return true;
-      case 'seller':
-        return !!sellerName.trim() && !!sellerPhone.trim() && isValidRwandaPhone(sellerPhone);
-      default:
-        return true;
-    }
+    // Only category, type, and title are strictly required by the backend.
+    // Description, price, and location can be left empty depending on category.
+    if (!selectedCategoryId || !listingType || !formTitle?.trim()) return false;
+    return true;
   };
 
   return (
@@ -783,8 +769,11 @@ export default function CreateListingPage() {
               ← Back
             </button>
             <button
-              type="submit"
-              disabled={isSubmitting}
+              type="button"
+              onClick={() => {
+                handleSubmit(canPostForFree ? onSubmitFree : onSubmitPaid)();
+              }}
+              disabled={isPosting}
               className="w-full bg-[#E85D04] text-white font-semibold py-3 rounded-lg hover:bg-[#e05d00] transition disabled:opacity-60"
             >
               {isSupplier ? 'Post Listing' : canPostForFree ? 'Post Listing (Free)' : `Pay & Post (${formatRWF(durationPrices[durationDays])})`}
