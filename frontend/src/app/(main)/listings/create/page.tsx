@@ -37,7 +37,7 @@ export default function CreateListingPage() {
   const [sellerPhone, setSellerPhone] = useState('');
   const [postingFree, setPostingFree] = useState(false);
   const [durationDays, setDurationDays] = useState(3);
-  const [wizardStep, setWizardStep] = useState<'category' | 'details' | 'pricing' | 'seller' | 'review'>('category');
+  const [wizardStep, setWizardStep] = useState<'basic' | 'pricing' | 'seller' | 'review'>('basic');
   const [step, setStep] = useState<'form' | 'pay' | 'waiting' | 'otp' | 'success' | 'failed'>('form');
   const [referenceId, setReferenceId] = useState('');
   const [otpCode, setOtpCode] = useState('');
@@ -76,32 +76,20 @@ export default function CreateListingPage() {
     if (type === 'rental_property') {
       return [
         { key: 'overview', label: 'Overview *', placeholder: 'A short summary of the property...', multiline: true },
-        { key: 'size', label: 'Size / Rooms', placeholder: 'e.g. 3 bedrooms, 2 bathrooms, 120 m²', multiline: false },
-        { key: 'condition', label: 'Condition', placeholder: 'e.g. Newly built, renovated', multiline: false },
-        { key: 'locationNotes', label: 'Location notes', placeholder: 'e.g. Near main road, quiet area', multiline: false },
       ];
     }
     if (type === 'rental_vehicle') {
       return [
         { key: 'overview', label: 'Overview *', placeholder: 'A short summary of the vehicle...', multiline: true },
-        { key: 'makeModel', label: 'Make & Model', placeholder: 'e.g. Toyota Corolla 2018', multiline: false },
-        { key: 'mileage', label: 'Mileage / Condition', placeholder: 'e.g. 45,000 km, excellent', multiline: false },
-        { key: 'locationNotes', label: 'Location notes', placeholder: 'e.g. Pickup in Kigali', multiline: false },
       ];
     }
     if (type === 'service') {
       return [
         { key: 'overview', label: 'Overview *', placeholder: 'A short summary of the service...', multiline: true },
-        { key: 'availability', label: 'Availability', placeholder: 'e.g. Mon–Sat, 8am–6pm', multiline: false },
-        { key: 'experience', label: 'Experience / Qualifications', placeholder: 'e.g. 5 years experience', multiline: false },
-        { key: 'locationNotes', label: 'Service area', placeholder: 'e.g. Kigali and surrounding', multiline: false },
       ];
     }
     return [
       { key: 'overview', label: 'Overview *', placeholder: 'A short summary of the item...', multiline: true },
-      { key: 'condition', label: 'Condition', placeholder: 'e.g. Like new, used, brand new', multiline: false },
-      { key: 'included', label: 'Included items', placeholder: 'e.g. Box, charger, warranty card', multiline: false },
-      { key: 'locationNotes', label: 'Location notes', placeholder: 'e.g. Pickup in Kicukiro', multiline: false },
     ];
   })();
 
@@ -115,7 +103,6 @@ export default function CreateListingPage() {
     return parts.join('\n\n');
   };
 
-  // Each category collects its own answers, so drop anything typed for the previous one.
   useEffect(() => {
     setAttributes({});
     setDescSections({});
@@ -214,6 +201,7 @@ export default function CreateListingPage() {
     form.append('price_type', negotiable ? 'negotiable' : 'fixed');
     form.append('guest_name', sellerName.trim());
     form.append('guest_phone', normalizeRwandaPhone(sellerPhone));
+    form.append('phone', normalizeRwandaPhone(sellerPhone));
     form.append('duration_days', String(durationDays));
     form.append('provider', 'mtn');
     images.forEach((f) => form.append('images', f));
@@ -472,11 +460,10 @@ export default function CreateListingPage() {
   }
 
   const wizardSteps = [
-    { id: 'category', label: 'Category' },
-    { id: 'details', label: 'Details' },
-    { id: 'pricing', label: 'Pricing' },
-    { id: 'seller', label: 'Seller & Photos' },
-    { id: 'review', label: 'Review' },
+    { id: 'basic', label: 'What you are posting' },
+    { id: 'pricing', label: 'Price & Location' },
+    { id: 'seller', label: 'Your Contact & Photos' },
+    { id: 'review', label: 'Review & Post' },
   ] as const;
 
   const wizardProgress = (wizardSteps.findIndex((s) => s.id === wizardStep) + 1) / wizardSteps.length;
@@ -493,10 +480,8 @@ export default function CreateListingPage() {
 
   const canAdvance = () => {
     switch (wizardStep) {
-      case 'category':
-        return !!selectedCategoryId && !!listingType;
-      case 'details':
-        return !!formTitle && !!descSections.overview?.trim();
+      case 'basic':
+        return !!selectedCategoryId && !!listingType && !!formTitle && !!descSections.overview?.trim();
       case 'pricing':
         if (!negotiable && !formPrice) return false;
         if (isPropertyCategory(selectedCategory) && !formLocation) return false;
@@ -531,15 +516,14 @@ export default function CreateListingPage() {
 
       {error && <div className="bg-red-50 text-red-700 text-sm rounded-lg px-4 py-3 mb-4">{error}</div>}
 
-      {/* ── Step 1: Category ── */}
-      {wizardStep === 'category' && (
+      {/* ── Step 1: Basic Info ── */}
+      {wizardStep === 'basic' && (
         <form onSubmit={handleSubmit(canPostForFree ? onSubmitFree : onSubmitPaid)} className="bg-white rounded-2xl shadow p-6 space-y-5">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">{T.category} *</label>
             <select
               {...register('category_id', { required: 'Select a category' })}
               className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none"
-              onChange={goNext}
             >
               <option value="">Select a category first…</option>
               {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -553,12 +537,32 @@ export default function CreateListingPage() {
               <select
                 {...register('listing_type')}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none"
-                onChange={goNext}
               >
                 <option value="sell">{T.forSale}</option>
                 <option value="rent">{T.forRent}</option>
               </select>
             </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{T.titleField} *</label>
+            <input
+              {...register('title', { required: 'Title is required' })}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none"
+              placeholder="e.g. iPhone 13 Pro Max – Like New"
+            />
+            {errors.title && <p className="text-red-500 text-xs mt-1">{errors.title.message}</p>}
+          </div>
+
+          <div className="space-y-3">
+            <label className="block text-sm font-medium text-gray-700 mb-1">{T.descriptionField}</label>
+            <textarea
+              value={descSections.overview || ''}
+              onChange={(e) => setDescSections((p) => ({ ...p, overview: e.target.value }))}
+              rows={4}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none"
+              placeholder={descFields[0]?.placeholder || 'A short summary of the item...'}
+            />
           </div>
 
           {categoryFields.length > 0 && (
@@ -578,58 +582,7 @@ export default function CreateListingPage() {
         </form>
       )}
 
-      {/* ── Step 2: Details ── */}
-      {wizardStep === 'details' && (
-        <form onSubmit={handleSubmit(canPostForFree ? onSubmitFree : onSubmitPaid)} className="bg-white rounded-2xl shadow p-6 space-y-5">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{T.titleField} *</label>
-            <input
-              {...register('title', { required: 'Title is required' })}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none"
-              placeholder="e.g. iPhone 13 Pro Max – Like New"
-            />
-            {errors.title && <p className="text-red-500 text-xs mt-1">{errors.title.message}</p>}
-          </div>
-
-          <div className="space-y-3">
-            <label className="block text-sm font-medium text-gray-700 mb-1">{T.descriptionField}</label>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {descFields.map((f) => (
-                <div key={f.key} className={f.multiline ? 'sm:col-span-2' : ''}>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">{f.label}</label>
-                  {f.multiline ? (
-                    <textarea
-                      value={descSections[f.key] || ''}
-                      onChange={(e) => setDescSections((p) => ({ ...p, [f.key]: e.target.value }))}
-                      rows={3}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none"
-                      placeholder={f.placeholder}
-                    />
-                  ) : (
-                    <input
-                      value={descSections[f.key] || ''}
-                      onChange={(e) => setDescSections((p) => ({ ...p, [f.key]: e.target.value }))}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none"
-                      placeholder={f.placeholder}
-                    />
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="flex justify-between mt-6">
-            <button type="button" onClick={goPrev} className="px-4 py-2.5 border border-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-50">
-              ← Back
-            </button>
-            <button type="button" disabled={!canAdvance()} onClick={goNext} className="px-4 py-2.5 bg-[#E85D04] text-white rounded-lg font-semibold disabled:opacity-50">
-              Continue →
-            </button>
-          </div>
-        </form>
-      )}
-
-      {/* ── Step 3: Pricing ── */}
+      {/* ── Step 2: Pricing & Location ── */}
       {wizardStep === 'pricing' && (
         <form onSubmit={handleSubmit(canPostForFree ? onSubmitFree : onSubmitPaid)} className="bg-white rounded-2xl shadow p-6 space-y-5">
           <div className="grid grid-cols-1 sm:grid-cols-[1fr_140px] gap-4">
@@ -720,7 +673,7 @@ export default function CreateListingPage() {
         </form>
       )}
 
-      {/* ── Step 4: Seller & Photos ── */}
+      {/* ── Step 3: Seller & Photos ── */}
       {wizardStep === 'seller' && (
         <form onSubmit={handleSubmit(canPostForFree ? onSubmitFree : onSubmitPaid)} className="bg-white rounded-2xl shadow p-6 space-y-5">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -778,7 +731,7 @@ export default function CreateListingPage() {
         </form>
       )}
 
-      {/* ── Step 5: Review ── */}
+      {/* ── Step 4: Review ── */}
       {wizardStep === 'review' && (
         <div className="bg-white rounded-2xl shadow p-6 space-y-5">
           <h2 className="text-lg font-bold text-gray-900">Review your listing</h2>
