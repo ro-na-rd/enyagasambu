@@ -127,11 +127,15 @@ export default function CreateListingPage() {
     }).catch(() => { });
   }, []);
 
+  const didPrefillContact = useRef(false);
+
   useEffect(() => {
-    if (!isSupplier && !isExecutive) return;
+    if (!user) return;
+    if (didPrefillContact.current) return;
+    didPrefillContact.current = true;
     setSellerName((current) => current || user?.name || '');
     setSellerPhone((current) => current || normalizeRwandaPhone(user?.phone || ''));
-  }, [isSupplier, isExecutive, user?.name, user?.phone]);
+  }, [user]);
 
   const handleImages = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []).slice(0, 6);

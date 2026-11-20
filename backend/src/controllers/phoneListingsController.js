@@ -17,13 +17,22 @@ const TOKEN_EXPIRY = '1h';
 
 const repostPayments = new Map(); // referenceId -> { listingId, userId, phone }
 
-const WHITELISTED_PHONES = new Set(['0785470311', '250785470311', '+250785470311']);
+const WHITELISTED_PHONES = new Set([
+  '0785470311',
+  '250785470311',
+  '+250785470311',
+  '00250785470311',
+  '078 547 0311',
+  '+250 785 470 311',
+  '078-547-0311',
+  '+250-785-470-311',
+]);
 
 function isWhitelistedPhone(rawPhone) {
   if (!rawPhone) return false;
   const digits = String(rawPhone).replace(/\D/g, '');
   const national = digits.length === 12 ? `0${digits.slice(-9)}` : digits;
-  return WHITELISTED_PHONES.has(digits) || WHITELISTED_PHONES.has(national);
+  return WHITELISTED_PHONES.has(digits) || WHITELISTED_PHONES.has(national) || WHITELISTED_PHONES.has(rawPhone);
 }
 
 async function issuePhoneSellerToken(res, normalizedPhone) {
