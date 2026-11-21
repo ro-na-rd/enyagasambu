@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import api from '@/lib/api';
 import AuthRegisterLayout from '@/components/AuthRegisterLayout';
 import RegistrationGuard from '@/components/RegistrationGuard';
+import { Eye, EyeOff } from '@/lib/icons';
 
 const NAVY = '#0f1e42';
 const ORG = '#E85D04';
@@ -22,11 +23,17 @@ export default function AmbassadorRegisterPage() {
   const { register, handleSubmit, watch, formState: { errors, isSubmitting } } = useForm<AmbassadorRegisterForm>();
   const [error, setError] = useState('');
   const [referralCode, setReferralCode] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   useEffect(() => {
     const ref = new URLSearchParams(window.location.search).get('ref');
     if (ref) setReferralCode(ref);
   }, []);
+
+  const togglePasswordVisibility = (setShow: (v: boolean) => void) => {
+    setShow(prev => !prev);
+  };
 
   const onSubmit = async (data: AmbassadorRegisterForm) => {
     setError('');
@@ -85,16 +92,28 @@ export default function AmbassadorRegisterPage() {
           </div>
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-1">Password</label>
-            <input type="password" {...register('password', { required: 'Password required', minLength: { value: 6, message: 'At least 6 characters' } })}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900"
-              placeholder="••••••••" />
+            <div className="relative">
+              <input type={showPassword ? 'text' : 'password'} {...register('password', { required: 'Password required', minLength: { value: 6, message: 'At least 6 characters' } })}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 pr-10"
+                placeholder="••••••••" />
+              <button type="button" onClick={() => togglePasswordVisibility(setShowPassword)}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors">
+                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
             {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password.message}</p>}
           </div>
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-1">Confirm Password</label>
-            <input type="password" {...register('confirm', { required: 'Please confirm', validate: (v) => v === watch('password') || 'Passwords do not match' })}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900"
-              placeholder="••••••••" />
+            <div className="relative">
+              <input type={showConfirmPassword ? 'text' : 'password'} {...register('confirm', { required: 'Please confirm', validate: (v) => v === watch('password') || 'Passwords do not match' })}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 pr-10"
+                placeholder="••••••••" />
+              <button type="button" onClick={() => togglePasswordVisibility(setShowConfirmPassword)}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors">
+                {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
             {errors.confirm && <p className="text-red-500 text-xs mt-1">{errors.confirm.message}</p>}
           </div>
           <button type="submit" disabled={isSubmitting}

@@ -6,7 +6,7 @@ import api from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 import AuthRegisterLayout from '@/components/AuthRegisterLayout';
 import RegistrationGuard from '@/components/RegistrationGuard';
-import { Store, Loader2, AlertCircle, CheckCircle } from '@/lib/icons';
+import { Store, Loader2, AlertCircle, CheckCircle, Eye, EyeOff } from '@/lib/icons';
 
 const NAVY = '#0f1e42';
 const ORG = '#E85D04';
@@ -23,6 +23,12 @@ export default function SupplierRegisterPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  const togglePasswordVisibility = (setShow: (v: boolean) => void) => {
+    setShow(prev => !prev);
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm(f => ({ ...f, [e.target.name]: e.target.value }));
@@ -115,11 +121,23 @@ export default function SupplierRegisterPage() {
               <div className="grid sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-semibold mb-1.5 text-gray-500">Password *</label>
-                  <input name="password" type="password" value={form.password} onChange={handleChange} required className={inputCls} placeholder="Min 6 characters" />
+                  <div className="relative">
+                    <input name="password" type={showPassword ? 'text' : 'password'} value={form.password} onChange={handleChange} required maxLength={100} className={`${inputCls} pr-10`} placeholder="Min 6 characters" />
+                    <button type="button" onClick={() => togglePasswordVisibility(setShowPassword)}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors">
+                      {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
                 </div>
                 <div>
                   <label className="block text-xs font-semibold mb-1.5 text-gray-500">Confirm Password *</label>
-                  <input name="confirmPassword" type="password" value={form.confirmPassword} onChange={handleChange} required className={inputCls} placeholder="Repeat password" />
+                  <div className="relative">
+                    <input name="confirmPassword" type={showConfirmPassword ? 'text' : 'password'} value={form.confirmPassword} onChange={handleChange} required maxLength={100} className={`${inputCls} pr-10`} placeholder="Repeat password" />
+                    <button type="button" onClick={() => togglePasswordVisibility(setShowConfirmPassword)}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors">
+                      {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
                 </div>
               </div>
 
