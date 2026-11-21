@@ -3,12 +3,16 @@ const http = require('http');
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
+const cluster = require('cluster');
 const { logger } = require('./config/logger');
 const requestId = require('./middleware/requestId');
 const httpLogger = require('./middleware/httpLogger');
 const errorHandler = require('./middleware/errorHandler');
 const { requireCsrfForCookieSession } = require('./middleware/csrf');
 const { createLimiter } = require('./middleware/rateLimiter');
+const requestTimeout = require('./middleware/requestTimeout');
+const concurrencyLimiter = require('./middleware/concurrencyLimiter');
+const backpressureMonitor = require('./middleware/backpressureMonitor');
 const { startRenewalScheduler } = require('./services/renewalScheduler');
 const { startExpiryScheduler } = require('./services/expiryScheduler');
 const { startReminderScheduler } = require('./services/reminderScheduler');
@@ -64,6 +68,13 @@ app.use(createLimiter({
   message: 'Too many requests. Please try again later.',
   skipLoopback: true,
 }));
+
+// Abort long-running requests so they don't exhaust the event loop / DB pool.
+app.use(requestTimeout());
+// Reject new work once concurrent capacity is reached instead of piling up.
+app.use(concurrencyLimiter());
+// Log backpressure signals (slow responses, 503s) for operators.
+app.use(backpressureMonitor());
 
 // Once shutdown starts, do not accept work that may be interrupted halfway
 // through. Existing requests are allowed to complete below.
@@ -159,17 +170,19 @@ app.use(errorHandler);
 const PORT = process.env.PORT || 5000;
 const server = http.createServer(app);
 initSocket(server);
-if (process.env.ENABLE_SCHEDULERS === 'true') {
+if (process.env.ENABLE_SCHEDULERS === 'true' && !cluster.isWorker) {
   startRenewalScheduler();
   startExpiryScheduler();
   startReminderScheduler();
   startAuctionScheduler();
   startPaymentReconciliationScheduler();
   logger.info('Background schedulers enabled for this process');
+} else if (cluster.isWorker) {
+  logger.info('Background schedulers disabled for clustered worker (run in master process)');
 } else {
   logger.info('Background schedulers disabled for this process');
 }
-server.listen(PORT, () => logger.info(`NMO API + Socket.IO running on port ${PORT}`, { port: PORT }));
+server.listen(PORT, () => logger.info(`NMO API + Socket.IO running on port ${PORT}`, { port: PORT, worker: cluster.isWorker ? cluster.worker.id : 'master' }));
 
 function shutdown(signal) {
   if (shuttingDown) return;
