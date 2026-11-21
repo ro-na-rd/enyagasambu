@@ -31,7 +31,7 @@ export default function AmbassadorRegisterPage() {
     if (ref) setReferralCode(ref);
   }, []);
 
-  const togglePasswordVisibility = (setShow: (v: boolean) => void) => {
+  const togglePasswordVisibility = (setShow: React.Dispatch<React.SetStateAction<boolean>>) => {
     setShow(prev => !prev);
   };
 

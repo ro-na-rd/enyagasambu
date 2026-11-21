@@ -26,7 +26,7 @@ export default function SupplierRegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  const togglePasswordVisibility = (setShow: (v: boolean) => void) => {
+  const togglePasswordVisibility = (setShow: React.Dispatch<React.SetStateAction<boolean>>) => {
     setShow(prev => !prev);
   };
 
