@@ -365,9 +365,20 @@ function ListingsContent() {
           </div>
         </div>
       )}
-      
-      {/* Floating posting button — hidden on supply-chain and adverts tabs */}
-      {tab !== 'supply-chain' && tab !== 'adverts' && (
+    </div>
+  );
+}
+
+export default async function ListingsPage({ searchParams }: { searchParams?: { tab?: string; category?: string } }) {
+  const tab = searchParams?.tab || '';
+  const showPostingButton = tab !== 'supply-chain' && tab !== 'adverts';
+
+  return (
+    <div className="max-w-7xl mx-auto px-4 py-8 relative min-h-screen">
+      <Suspense fallback={<div className="text-center py-16 text-gray-500 text-sm">Loading listings...</div>}>
+        <ListingsContent />
+      </Suspense>
+      {showPostingButton && (
         <Link href="/listings/create"
           className="fixed bottom-24 right-8 z-50 px-6 py-3.5 rounded-full shadow-2xl flex items-center gap-2 text-white text-sm font-bold hover:scale-105 active:scale-95 transition-all duration-200 hover:shadow-orange-500/30 group"
           style={{ background: `linear-gradient(135deg, ${NAVY}, ${ORG})` }}
@@ -376,16 +387,6 @@ function ListingsContent() {
           <span>Posting</span>
         </Link>
       )}
-    </div>
-  );
-}
-
-export default function ListingsPage() {
-  return (
-    <div className="max-w-7xl mx-auto px-4 py-8 relative min-h-screen">
-      <Suspense fallback={<div className="text-center py-16 text-gray-500 text-sm">Loading listings...</div>}>
-        <ListingsContent />
-      </Suspense>
     </div>
   );
 }

@@ -6,11 +6,10 @@ import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
 import { useCurrency } from '@/context/CurrencyContext';
 import { useRegistrationStatus } from '@/hooks/useRegistrationStatus';
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, useState } from 'react';
 import type { Lang } from '@/lib/translations';
 import { Search, UserPlus, Star, Heart, Menu, X, Coins, List, Gift, Wrench, LogOut, Home } from '@/lib/icons';
 import { categoryMap } from '@/lib/translations';
-import api from '@/lib/api';
 
 const navy = '#0f1e42';
 const org = '#E85D04';
@@ -19,13 +18,6 @@ const LANGUAGE_LABELS: Record<Lang, string> = {
   fr: 'FRAN',
   rw: 'KINY',
 };
-
-interface Announcement {
-  id: number;
-  title: string;
-  body: string;
-  created_at: string;
-}
 
 function catLabel(slug: string, lang: 'en' | 'fr' | 'rw') {
   return categoryMap[slug]?.[lang] ?? categoryMap[slug]?.en ?? slug;
@@ -73,11 +65,8 @@ function NavbarView({ pathname, tab, registrationOpen }: { pathname: string | nu
   const { lang, setLang, T } = useLanguage();
   const { currency, setCurrency, currencies, canChangeCurrency } = useCurrency();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [catsOpen, setCatsOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [prefOpen, setPrefOpen] = useState(false);
-  const [adverts, setAdverts] = useState<Announcement[]>([]);
-  const [advertsLoaded, setAdvertsLoaded] = useState(false);
   const close = () => setMenuOpen(false);
   const closeMobile = () => setMobileOpen(false);
 
@@ -107,15 +96,6 @@ function NavbarView({ pathname, tab, registrationOpen }: { pathname: string | nu
     { label: catLabel('farmer-product', lang), href: '/listings?category=farmer-product' },
     { label: catLabel('supply-chain', lang), href: '/listings?category=supply-chain' },
   ];
-
-  useEffect(() => {
-    if (!catsOpen || advertsLoaded) return;
-
-    api.get('/announcements/public')
-      .then(({ data }) => setAdverts(Array.isArray(data) ? data.slice(0, 5) : []))
-      .catch(() => setAdverts([]))
-      .finally(() => setAdvertsLoaded(true));
-  }, [catsOpen, advertsLoaded]);
 
   return (
     <>
@@ -403,30 +383,9 @@ function NavbarView({ pathname, tab, registrationOpen }: { pathname: string | nu
                   className="py-2.5 text-sm flex items-center justify-between"
                   style={{ color: key === activeKey ? org : navy, fontWeight: key === activeKey ? 700 : 500, textDecoration: 'none' }}>
                   <span className="flex items-center gap-2">{icon}{label}</span>
-                  {key === 'adverts' && <span style={{ fontSize: 9 }}>▾</span>}
                 </Link>
               ))}
             </nav>
-
-            {/* Adverts categories */}
-            <div className="pt-3 border-t border-gray-100">
-              <p className="text-[11px] font-bold uppercase tracking-widest text-gray-400 mb-2">{T.allCategories}</p>
-              <div className="flex flex-wrap gap-1.5">
-                {CAT_LINKS.map(({ label, href, disabled }) => (
-                  disabled ? (
-                    <span key={label} className="text-xs px-2.5 py-1 rounded border border-gray-200 text-gray-300 cursor-not-allowed">
-                      {label}
-                    </span>
-                  ) : (
-                    <Link key={label} href={href} onClick={closeMobile}
-                      className="text-xs px-2.5 py-1 rounded border transition"
-                      style={{ borderColor: org, color: org, textDecoration: 'none' }}>
-                      {label}
-                    </Link>
-                  )
-                ))}
-              </div>
-            </div>
 
             {/* Quick links */}
             <div className="flex flex-col gap-1 pt-3 border-t border-gray-100">
@@ -543,77 +502,6 @@ function NavbarView({ pathname, tab, registrationOpen }: { pathname: string | nu
         <div className="flex">
           {NAV_LINKS.map(({ key, href, label, icon }) => {
             const isActive = key === activeKey;
-            if (key === 'adverts') {
-              return (
-                <div
-                  key={key}
-                  className="relative"
-                  onMouseEnter={() => setCatsOpen(true)}
-                  onMouseLeave={() => setCatsOpen(false)}
-                >
-                  <Link
-                    href={href}
-                    className="text-sm px-4 py-3 transition block flex items-center gap-1"
-                    style={{
-                      color: '#cdd4f0',
-                      borderBottom: (isActive || catsOpen) ? `3px solid ${org}` : '3px solid transparent',
-                      textDecoration: 'none',
-                    }}
-                    onMouseEnter={e => {
-                      e.currentTarget.style.color = '#fff';
-                      e.currentTarget.style.borderBottomColor = org;
-                    }}
-                    onMouseLeave={e => {
-                      e.currentTarget.style.color = '#cdd4f0';
-                      e.currentTarget.style.borderBottomColor = (isActive || catsOpen) ? org : 'transparent';
-                    }}
-                    onClick={() => setCatsOpen(o => !o)}
-                  >
-                    {label} <span style={{ fontSize: 9 }}>▾</span>
-                  </Link>
-                  {catsOpen && (
-                    <div className="absolute left-0 top-full bg-white rounded-b-lg shadow-2xl border border-gray-100 z-30 min-w-80 max-w-96 overflow-hidden">
-                      <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between gap-4">
-                        <span className="text-xs font-bold uppercase tracking-wider" style={{ color: navy }}>Latest adverts</span>
-                        <Link
-                          href={href}
-                          className="text-xs font-semibold whitespace-nowrap"
-                          style={{ color: org, textDecoration: 'none' }}
-                          onClick={() => setCatsOpen(false)}
-                        >
-                          View all
-                        </Link>
-                      </div>
-                      {!advertsLoaded ? (
-                        <p className="px-4 py-4 text-sm text-gray-500">Loading adverts...</p>
-                      ) : adverts.length === 0 ? (
-                        <p className="px-4 py-4 text-sm text-gray-500">No adverts have been published yet.</p>
-                      ) : (
-                        <div className="divide-y divide-gray-100">
-                          {adverts.map(advert => (
-                            <Link
-                              key={advert.id}
-                              href={href}
-                              className="block px-4 py-3 transition"
-                              style={{ textDecoration: 'none' }}
-                              onMouseEnter={e => { e.currentTarget.style.background = '#fff4ec'; }}
-                              onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
-                              onClick={() => setCatsOpen(false)}
-                            >
-                              <p className="text-sm font-semibold truncate" style={{ color: navy }}>{advert.title}</p>
-                              <p className="mt-1 text-xs text-gray-600 line-clamp-2 whitespace-pre-line">{advert.body}</p>
-                              <p className="mt-1.5 text-[11px] font-medium" style={{ color: org }}>
-                                {new Date(advert.created_at).toLocaleDateString()}
-                              </p>
-                            </Link>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              );
-            }
             return (
               <Link
                 key={key}
