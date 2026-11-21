@@ -369,7 +369,7 @@ function ListingsContent() {
   );
 }
 
-export default async function ListingsPage({ searchParams }: { searchParams?: { tab?: string; category?: string } }) {
+export default function ListingsPage({ searchParams }: { searchParams: { tab?: string; category?: string } }) {
   const tab = searchParams?.tab || '';
   const showPostingButton = tab !== 'supply-chain' && tab !== 'adverts';
 
